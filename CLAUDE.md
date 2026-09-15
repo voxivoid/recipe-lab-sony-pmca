@@ -9,9 +9,12 @@ The rules below are the ones that break things when ignored.
 ## Branching
 
 - **Never commit to `main`.** `main` is releases only; every commit on it is tagged.
-- Branch off `development`: `feat/<issue>-<slug>`, `fix/<issue>-<slug>`, also
+- Branch off `development`: `feat/<issue>-<slug>` or `feat/<slug>`, likewise `fix/`, and also
   `docs/ refactor/ chore/ build/ ci/ perf/ test/`.
-- There must be a GitHub issue first; its number goes in the branch name.
+- A GitHub issue is not required. If one exists, put its number in the branch name; otherwise drop the
+  number and use `<type>/<slug>`. Never open an issue just to have one, and never invent a number.
+- **Never open a PR unless asked.** Finish the change, commit, and stop there — pushing the branch
+  and opening the PR is the user's call. `/commit-and-pr` is that ask; so is "open a PR".
 - **Never merge a PR yourself.** Every PR needs an approving review from a code owner; open it
   and leave the merge to a human.
 - **Rebase onto `development` before asking for a merge.** Required checks are strict: a PR whose base
@@ -28,8 +31,9 @@ type(scope): subject
 Closes #123
 ```
 
-- **Every commit references its issue**, in a footer: `Closes #N` when it finishes the issue, `Refs #N`
-  when it is one step of several. The number is in the branch name.
+- **A commit references its issue when there is one**, in a footer: `Closes #N` when it finishes the
+  issue, `Refs #N` when it is one step of several. The number comes from the branch name. No issue → no
+  footer; do not guess a number.
 
 - Types: `feat fix docs refactor perf test build ci chore revert`.
 - Scopes: `ui input browser recipes tools build ci docs deps release`. Optional.
