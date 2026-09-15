@@ -57,8 +57,8 @@ jobs:
             exit 1
           fi
 
-      # A green build is the gate CI can give. Nothing about recipes or the settings store
-      # can be proven without a camera.
+      # A green development build -- unit tests included -- is the gate CI can give. Nothing
+      # about recipes or the settings store can be proven without a camera.
       - name: Did the last development build pass?
         if: ${{ !inputs.allow_failing_checks }}
         env:
@@ -132,7 +132,14 @@ jobs:
           git fetch --no-tags origin development
           # A merge commit, never a squash: main stays a strict superset of development.
           git merge --no-ff FETCH_HEAD -m "chore(release): merge development"
-          git push origin main
+
+      # On the merged tree and before anything is pushed: a release never ships what the
+      # tests reject, and a failure here leaves main untouched.
+      - name: Run the unit tests
+        run: ./tools/test.sh
+
+      - name: Push the merge to main
+        run: git push origin main
 
       # Decides the version from the commits, writes the manifest via tools/bump-version.sh,
       # builds the APK, tags, publishes the release and commits the manifest back to main.

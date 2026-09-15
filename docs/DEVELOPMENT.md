@@ -215,7 +215,8 @@ export JAVA_HOME=$HOME/toolchains/jdk17
 ./tools/test.sh Writes       # only test classes whose name contains "Writes"
 ```
 
-That is the whole of the `test` CI job. It needs a JDK 17 and nothing else: `Recipes.java` and `Params.java`
+That is the whole of the `test` CI job on work branches; `dev-build` runs the same script before every
+development build and `create-release` before anything is pushed to `main`. It needs a JDK 17 and nothing else: `Recipes.java` and `Params.java`
 are compiled against the bare JDK — no `android.jar`, no NDK — then the tests under `test/` are compiled and run
 with the JUnit 5 console launcher, one jar fetched from Maven Central into `out/test/` on first use and checked
 against a SHA-256 pinned in the script (`JUNIT_JAR=<path>` points it at a copy when offline). Reports land in

@@ -32,6 +32,10 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+      # ci.yml does not run on development, so the tests run here. A development build that
+      # fails them never becomes a dev prerelease, and create-release refuses to ship it.
+      - name: Run the unit tests
+        run: ./tools/test.sh
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: '22'

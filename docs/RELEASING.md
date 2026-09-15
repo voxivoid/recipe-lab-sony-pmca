@@ -18,8 +18,9 @@ gh workflow run create-release.yml -f dry_run=true    # just report what would s
 | `allow_failing_checks` | Release even though the last `development` build failed. |
 
 It refuses if `development` has nothing `main` lacks, if the last development build
-failed, or if no commit since the last tag carries a releasable type. Then it merges
-`development` into `main` with a **merge commit**, and semantic-release decides the
+failed (that build runs the unit tests first), or if no commit since the last tag carries
+a releasable type. Then it merges `development` into `main` with a **merge commit**, runs
+the unit tests once more on the merged tree before pushing, and semantic-release decides the
 version, writes `AndroidManifest.xml` via `tools/bump-version.sh`, builds the APK, tags,
 publishes the release and commits the manifest back. Finally `development` is
 fast-forwarded onto `main` and the rolling `dev` prerelease is rebuilt.
@@ -49,6 +50,7 @@ If the workflow is broken:
 ```bash
 git switch main && git pull
 git merge --no-ff development -m "chore(release): merge development"
+./tools/test.sh
 git push origin main
 GITHUB_TOKEN=$(gh auth token) npx semantic-release
 git switch development && git merge --ff-only main && git push

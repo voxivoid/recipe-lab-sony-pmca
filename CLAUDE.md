@@ -63,7 +63,7 @@ Closes #123
 - Keep `build.cmd` and `build.sh` in step. A change to one needs the same change in the other.
 - The `errno.h` park must stay reversible (`build.sh` does it from an `EXIT` trap). A build that leaves the
   submodule dirty is a bug.
-- `./tools/test.sh` runs the unit tests: the `test` CI job, JDK 17 only, no SDK. Logic that needs no camera
+- `./tools/test.sh` runs the unit tests: the `test` CI job, also run by `dev-build` and `create-release`; JDK 17 only, no SDK. Logic that needs no camera
   goes in `Params.java` or `Recipes.java` **with a test**, never into `MainActivity`. Both are compiled there
   **without** `android.jar`, so an `android.*` import in either breaks the job.
 
