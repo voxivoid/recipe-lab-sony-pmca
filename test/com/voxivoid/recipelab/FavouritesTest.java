@@ -60,8 +60,8 @@ class FavouritesTest {
     }
 
     @Test void toggleMessage() {
-        assertEquals("Velvia added to Favourites  ·  3 marked", Favourites.toggleMessage("Velvia", true, 3));
-        assertEquals("Velvia removed from Favourites", Favourites.toggleMessage("Velvia", false, 2));
+        assertEquals("Velvia added to Favourites", Favourites.toggleMessage("Velvia", true));
+        assertEquals("Velvia removed from Favourites", Favourites.toggleMessage("Velvia", false));
     }
 
     @Test void favouritesSitFirstInTheBrandColumnAndTheColumnWraps() {
