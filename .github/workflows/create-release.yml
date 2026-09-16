@@ -156,15 +156,18 @@ jobs:
         run: |
           export ANDROID_SDK="$ANDROID_SDK_ROOT"
           export ANDROID_NDK="$ANDROID_SDK_ROOT/ndk/16.1.4479499"
-          # --no-ci because in CI mode semantic-release takes the current branch from
-          # GITHUB_REF -- the ref the run was dispatched on, which is development (this
-          # repo's default branch), not the main this job has checked out. It would then
-          # find itself on a branch .releaserc.js does not publish from and no-op, after
-          # the merge had already been pushed, leaving main untagged. GITHUB_REF cannot be
-          # overridden in env: -- the runner reserves the GITHUB_ prefix and puts its own
-          # value back. Without CI mode the branch comes from the checkout, which is what
-          # this job actually releases. tools/next-version.sh does the same.
-          npx semantic-release --no-ci
+          # semantic-release reads the current branch from GITHUB_REF: the ref the run was
+          # dispatched on, which is development (this repo's default branch), not the main
+          # this job checked out. Left alone it finds itself on a branch .releaserc.js does
+          # not publish from and no-ops -- after the merge has already been pushed, leaving
+          # main untagged. This job only ever releases main, so say so.
+          #
+          # It has to be an export here, not an env: entry on the step: the runner reserves
+          # the GITHUB_ prefix and injects its own value over anything env: sets. Exporting
+          # inside the step's shell happens after that, so npx inherits this one. --no-ci
+          # does not help either; env-ci still detects Actions from GITHUB_ACTIONS.
+          export GITHUB_REF=refs/heads/main
+          npx semantic-release
 
       # The tag sits on main, which is now ahead of development by the release commit.
       # Without this, git describe on development would not see the tag and the -dev.N
