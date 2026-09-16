@@ -55,7 +55,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private PickerView picker;
     private HorizontalScrollView chipScroll;
     private boolean swallowMenuUp = false;
-    private TextView name, badge, tag, fav, count, meta, mini, toast;
+    private TextView name, badge, tag, count, meta, mini, toast;
+    private StarView fav;
     private PromptView prompt;
     private int promptSel = 0; private boolean promptOpen = false;
     private SharedPreferences prefs;
@@ -93,7 +94,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         name = (TextView) findViewById(R.id.name);
         badge = (TextView) findViewById(R.id.badge);
         tag = (TextView) findViewById(R.id.tag);
-        fav = (TextView) findViewById(R.id.fav);
+        fav = (StarView) findViewById(R.id.fav);
         count = (TextView) findViewById(R.id.count);
         meta = (TextView) findViewById(R.id.meta);
         hints = (HintBar) findViewById(R.id.hints);

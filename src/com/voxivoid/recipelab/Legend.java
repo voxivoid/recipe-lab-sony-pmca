@@ -27,6 +27,21 @@ public class Legend {
         keyText.setColor(0xCCFFFFFF); keyText.setTextAlign(Paint.Align.CENTER); keyText.setFakeBoldText(true);
     }
 
+    private static final Path STAR = new Path();
+
+    /** a five-point star centred on (cx, cy) with outer radius r — the favourite mark, shared by every view that draws one */
+    public static void star(Canvas c, float cx, float cy, float r, Paint p) {
+        STAR.reset();
+        for (int i = 0; i < 10; i++) {
+            double ang = Math.toRadians(-90 + i * 36);
+            float rr = (i % 2 == 0) ? r : r * 0.45f;
+            float x = cx + (float) Math.cos(ang) * rr, y = cy + (float) Math.sin(ang) * rr;
+            if (i == 0) STAR.moveTo(x, y); else STAR.lineTo(x, y);
+        }
+        STAR.close();
+        c.drawPath(STAR, p);
+    }
+
     /** natural height for a legend row at scale 1 */
     public float height() { return 16 * d; }
 
