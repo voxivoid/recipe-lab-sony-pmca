@@ -149,12 +149,6 @@ jobs:
       - name: semantic-release
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          # semantic-release takes the current branch from GITHUB_REF, which is the ref the
-          # workflow was dispatched on -- not what this job checked out. Dispatched from the
-          # Actions tab on development (or with --ref development) it would see a branch its
-          # config does not publish from, and no-op *after* the merge had already been pushed,
-          # leaving main untagged. This job only ever releases main, so say so.
-          GITHUB_REF: refs/heads/main
           ANDROID_KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
@@ -162,7 +156,15 @@ jobs:
         run: |
           export ANDROID_SDK="$ANDROID_SDK_ROOT"
           export ANDROID_NDK="$ANDROID_SDK_ROOT/ndk/16.1.4479499"
-          npx semantic-release
+          # --no-ci because in CI mode semantic-release takes the current branch from
+          # GITHUB_REF -- the ref the run was dispatched on, which is development (this
+          # repo's default branch), not the main this job has checked out. It would then
+          # find itself on a branch .releaserc.js does not publish from and no-op, after
+          # the merge had already been pushed, leaving main untagged. GITHUB_REF cannot be
+          # overridden in env: -- the runner reserves the GITHUB_ prefix and puts its own
+          # value back. Without CI mode the branch comes from the checkout, which is what
+          # this job actually releases. tools/next-version.sh does the same.
+          npx semantic-release --no-ci
 
       # The tag sits on main, which is now ahead of development by the release commit.
       # Without this, git describe on development would not see the tag and the -dev.N
