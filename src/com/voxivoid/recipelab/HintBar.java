@@ -11,11 +11,11 @@ public class HintBar extends View {
     private static final int[][] ICONS = {
         { Legend.FN, Legend.ENTER, Legend.ENTER, Legend.TRASH, Legend.AEL, Legend.MENU },
         { Legend.ENTER, Legend.FN, Legend.TRASH, Legend.AEL, Legend.MENU },
-        { Legend.ENTER, Legend.MENU } };
+        { Legend.ENTER } };
     private static final String[][] TEXT = {
-        { "browse", "select", "fav (hold)", "factory", "hide", "exit" },
+        { "browse", "pick", "fav (hold)", "factory", "hide", "exit" },
         { "edit", "browse", "factory", "hide", "exit" },
-        { "done", "done" } };
+        { "done" } };
 
     private final Legend legend;
     private int mode = RECIPE;

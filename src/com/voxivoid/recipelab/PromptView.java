@@ -10,8 +10,8 @@ import android.view.View;
 /** Modal question: title, one explanation line, option pills, icon legend. Canvas-drawn. */
 public class PromptView extends View {
     private static final int ACCENT = 0xFFF2B85C, INK = 0xFF1A1208;
-    private static final int[] LEGEND_ICONS = { Legend.LEFTRIGHT, Legend.ENTER, Legend.MENU };
-    private static final String[] LEGEND_TEXT = { "choose", "confirm", "cancel" };
+    private static final int[] LEGEND_ICONS = { Legend.ENTER, Legend.MENU };
+    private static final String[] LEGEND_TEXT = { "confirm", "cancel" };
 
     private final Paint bg = new Paint(Paint.ANTI_ALIAS_FLAG), edge = new Paint(Paint.ANTI_ALIAS_FLAG), title = new Paint(Paint.ANTI_ALIAS_FLAG),
             body = new Paint(Paint.ANTI_ALIAS_FLAG), opt = new Paint(Paint.ANTI_ALIAS_FLAG), pill = new Paint(Paint.ANTI_ALIAS_FLAG), note = new Paint(Paint.ANTI_ALIAS_FLAG);
