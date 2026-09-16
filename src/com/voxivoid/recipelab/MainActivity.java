@@ -313,7 +313,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         int pos = favs.indexOf(recipe);
         boolean on = Favourites.toggle(favs, recipe);
         saveFavourites();
-        showToast(Favourites.toggleMessage(Recipes.ALL[recipe].name, on, favs.size()), 2500);
+        showToast(Favourites.toggleMessage(Recipes.ALL[recipe].name, on), 2500);
         if (overlay == 3 && browserGroup == Favourites.GROUP && !on) {
             // unmarked inside the Favourites list: the highlight moves to a neighbour, or back to the brand column when the list is empty
             int next = Favourites.afterRemoval(favs, pos);

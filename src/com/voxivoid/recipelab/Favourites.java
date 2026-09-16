@@ -64,8 +64,8 @@ final class Favourites {
     }
 
     /** the toast after a toggle */
-    static String toggleMessage(String recipeName, boolean on, int count) {
-        return on ? recipeName + " added to " + NAME + "  ·  " + count + " marked" : recipeName + " removed from " + NAME;
+    static String toggleMessage(String recipeName, boolean on) {
+        return recipeName + (on ? " added to " : " removed from ") + NAME;
     }
 
     // ------------------------------------------------------------ browser navigation
