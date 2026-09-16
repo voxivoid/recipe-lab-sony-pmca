@@ -214,7 +214,7 @@ Then **turn the camera off and on**. The look is now the camera's default in eve
 the app closed, and the app reopens on that recipe.
 
 **Favourites.** Hold the **centre button** on a recipe and it joins the **Favourites** group at the top of the brand
-list, marked **FAV** next to its name; hold again to drop it. The group lists your picks in the order you marked them,
+list, with a star next to its name; hold again to drop it. The group lists your picks in the order you marked them,
 and the brand list opens straight on it whenever the recipe you are on is one of them. The wheel on the main screen
 still walks all 77 — favourites shorten the list in the browser, not the scroll. The marks are kept by the app, not in
 the camera's settings, so they survive a power cycle but go with the app if you remove it.
