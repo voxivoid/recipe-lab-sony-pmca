@@ -50,6 +50,12 @@ final class Params {
     static final int N = ROW_ID.length;
     /** chip display / navigation order (quality first) */
     static final int[] ORDER = { R_QUAL, R_STYLE, R_SAT, R_CON, R_SHARP, R_MTX, R_PE, R_SUB, R_WBMODE, R_KELVIN, R_AB, R_GM, R_EV, R_DRO };
+    /** the overlay MainActivity is in: the full panel, the pill, nothing, or the browser */
+    static final int OV_FULL = 0, OV_PILL = 1, OV_HIDDEN = 2, OV_BROWSER = 3;
+    /** the browser's two columns */
+    static final int COL_GROUPS = 0, COL_RECIPES = 1;
+    /** what a short press of the centre button does, by where the user is */
+    static final int ENTER_PICK = 0, ENTER_FOCUS = 1, ENTER_BROWSER_COLUMN = 2, ENTER_BROWSER_PICK = 3;
     /** WB modes as stored: 1 auto, 14 colour temperature */
     static final int WB_AUTO = 1, WB_KELVIN = 14;
     // PP3 colour matrix measured on this body, Q10 fixed point (1.0 = 1024)
@@ -243,6 +249,28 @@ final class Params {
         if (lastChip != R_RECIPE && rowVisible(lastChip, edit)) return lastChip;
         for (int i : ORDER) if (rowVisible(i, edit)) return i;
         return R_RECIPE;
+    }
+
+    // ------------------------------------------------------------ the centre button
+    /**
+     * Whether the keys act on the recipe line rather than on the chip strip. The chips only take the keys with the
+     * full panel up and the highlight off the recipe line — under the pill, or with the overlay hidden, there are no
+     * chips to act on.
+     */
+    static boolean onRecipeLine(int overlay, int row) { return row == R_RECIPE || overlay != OV_FULL; }
+
+    /**
+     * Whether a hold on the centre button marks a favourite where the user is. It does wherever a recipe is what the
+     * screen is about; it does not on the chip strip, or on the browser's group column, where the highlight is a group.
+     */
+    static boolean holdMarksFavourite(int overlay, int row, int browserCol) {
+        return overlay == OV_BROWSER ? browserCol == COL_RECIPES : onRecipeLine(overlay, row);
+    }
+
+    /** what the centre button does when it is released before the hold fires */
+    static int enterAction(int overlay, int row, int browserCol) {
+        if (overlay == OV_BROWSER) return browserCol == COL_GROUPS ? ENTER_BROWSER_COLUMN : ENTER_BROWSER_PICK;
+        return onRecipeLine(overlay, row) ? ENTER_PICK : ENTER_FOCUS;
     }
 
     // ------------------------------------------------------------ HUD strings

@@ -72,9 +72,9 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
 
     private SurfaceHolder holder;
     private Object cameraEx; private Camera camera; private String origFlat;
-    private int row = 0, recipe = 0, overlay = 0;     // overlay: 0 full, 1 pill, 2 hidden, 3 browser
-    private boolean focus = false;
-    private int browserCol = 1;                       // browser: 0 brand column, 1 recipe column                    // a chip is focused: UP/DOWN change its value
+    private int row = 0, recipe = 0, overlay = OV_FULL;   // Params.OV_*: the full panel, the pill, nothing, the browser
+    private boolean focus = false;                        // a chip is focused: UP/DOWN change its value
+    private int browserCol = COL_RECIPES;                 // browser: Params.COL_GROUPS or COL_RECIPES
     private int browserGroup = 0;                     // browser: the group the brand column is on — Favourites.GROUP or a brand
     private int lastChip = 0;                         // chip to return to when leaving the recipe line
     private final int[] cur = new int[N], edit = new int[N];
@@ -314,10 +314,10 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         boolean on = Favourites.toggle(favs, recipe);
         saveFavourites();
         showToast(Favourites.toggleMessage(Recipes.ALL[recipe].name, on), 2500);
-        if (overlay == 3 && browserGroup == Favourites.GROUP && !on) {
+        if (overlay == OV_BROWSER && browserGroup == Favourites.GROUP && !on) {
             // unmarked inside the Favourites list: the highlight moves to a neighbour, or back to the brand column when the list is empty
             int next = Favourites.afterRemoval(favs, pos);
-            if (next < 0) browserCol = 0;
+            if (next < 0) browserCol = COL_GROUPS;
             else { recipe = next; stageRecipe(); applyPreview(); }
         }
         render();
@@ -346,9 +346,9 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         boolean dirty = dirty();
         String pos = (recipe + 1) + " / " + Recipes.ALL.length;
         String grp = Recipes.GROUPS[r.group].toUpperCase();
-        picker.setVisibility(overlay == 3 ? View.VISIBLE : View.GONE);
-        if (overlay == 3) { panel.setVisibility(View.GONE); mini.setVisibility(View.GONE); picker.set(recipe, browserCol, browserGroup, favs); return; }
-        if (overlay == 0) {
+        picker.setVisibility(overlay == OV_BROWSER ? View.VISIBLE : View.GONE);
+        if (overlay == OV_BROWSER) { panel.setVisibility(View.GONE); mini.setVisibility(View.GONE); picker.set(recipe, browserCol, browserGroup, favs); return; }
+        if (overlay == OV_FULL) {
             panel.setVisibility(View.VISIBLE); mini.setVisibility(View.GONE);
             name.setText(r.name);
             name.setTextColor(row == 0 ? ACCENT : WHITE);
@@ -377,7 +377,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
                 } });
             }
             hints.setMode(row == 0 ? HintBar.RECIPE : focus ? HintBar.EDIT : HintBar.CHIPS);
-        } else if (overlay == 1) {
+        } else if (overlay == OV_PILL) {
             panel.setVisibility(View.GONE); mini.setVisibility(View.VISIBLE);
             mini.setText(Params.miniLine(recipe, cur, edit, dirty));
         } else {
@@ -416,9 +416,9 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     }
 
     private void openBrowser(boolean open) {
-        overlay = open ? 3 : 0; row = 0; focus = false;
+        overlay = open ? OV_BROWSER : OV_FULL; row = 0; focus = false;
         browserGroup = Favourites.openingGroup(favs, recipe);
-        browserCol = 1;
+        browserCol = COL_RECIPES;
         render();
     }
 
@@ -430,13 +430,12 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
 
     /** the recipe column is not reachable while the Favourites list is empty */
     private boolean enterRecipeColumn() {
-        if (browserGroup == Favourites.GROUP && favs.isEmpty()) { showToast(Favourites.EMPTY_HINT, 3000); return false; }
-        browserCol = 1; render(); return true;
+        if (!Favourites.hasRecipes(browserGroup, favs)) { showToast(Favourites.EMPTY_HINT, 3000); return false; }
+        browserCol = COL_RECIPES; render(); return true;
     }
 
-    /** the centre button released before the hold: pick in the recipe column, step into it from the brand column */
-    private void browserEnter() {
-        if (browserCol == 0) { enterRecipeColumn(); return; }
+    /** the centre button on a recipe in the browser: close it, leaving that recipe previewed */
+    private void pickInBrowser() {
         openBrowser(false); showToast(Recipes.ALL[recipe].name + " previewed — ENTER to pick", 3000);
     }
 
@@ -444,9 +443,9 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
 
     private boolean browserKey(int sc) {
         switch (sc) {
-            case K_UP: case K_WHEEL_CCW: case K_DIAL_CCW: if (browserCol == 0) nextGroup(-1); else nextInGroup(-1); return true;
-            case K_DOWN: case K_WHEEL_CW: case K_DIAL_CW: if (browserCol == 0) nextGroup(+1); else nextInGroup(+1); return true;
-            case K_LEFT: case K_RIGHT: if (browserCol == 1) { browserCol = 0; render(); } else enterRecipeColumn(); return true;
+            case K_UP: case K_WHEEL_CCW: case K_DIAL_CCW: if (browserCol == COL_GROUPS) nextGroup(-1); else nextInGroup(-1); return true;
+            case K_DOWN: case K_WHEEL_CW: case K_DIAL_CW: if (browserCol == COL_GROUPS) nextGroup(+1); else nextInGroup(+1); return true;
+            case K_LEFT: case K_RIGHT: if (browserCol == COL_RECIPES) { browserCol = COL_GROUPS; render(); } else enterRecipeColumn(); return true;
             case K_MENU: case K_SK1: swallowMenuUp = true; openBrowser(false); return true;
             case K_FN: case K_AEL: case K_DISP: openBrowser(false); return true;
             case K_C1: snapshotOrDiff(); return true;
@@ -466,10 +465,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     }
 
     /** whether a hold on the centre button marks a favourite where the user is now */
-    private boolean holdMarksFavourite() {
-        if (overlay == 3) return browserCol == 1;
-        return row == 0 || overlay != 0;
-    }
+    private boolean holdMarksFavourite() { return Params.holdMarksFavourite(overlay, row, browserCol); }
 
     /** the centre button pressed: the short action waits for the release, a hold becomes "favourite" */
     private void enterDown() {
@@ -484,20 +480,23 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         boolean held = enterHeld, fired = enterLong;
         enterHeld = false; enterLong = false;
         if (!held || fired) return;
-        if (overlay == 3) browserEnter();
-        else if (row == 0 || overlay != 0) writeAll();
-        else setFocus(!focus);
+        switch (Params.enterAction(overlay, row, browserCol)) {
+            case ENTER_BROWSER_COLUMN: enterRecipeColumn(); break;
+            case ENTER_BROWSER_PICK: pickInBrowser(); break;
+            case ENTER_PICK: writeAll(); break;
+            default: setFocus(!focus); break;
+        }
     }
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent e) {
         if (promptOpen) return promptKey(e.getScanCode());
         if (e.getScanCode() == K_ENTER) { enterDown(); return true; }
-        if (overlay == 3 && e.getScanCode() != K_PLAY) return browserKey(e.getScanCode());
+        if (overlay == OV_BROWSER && e.getScanCode() != K_PLAY) return browserKey(e.getScanCode());
         switch (e.getScanCode()) {
             case K_LEFT: case K_RIGHT: {
                 int dir = e.getScanCode() == K_RIGHT ? +1 : -1;
-                if (focus) stepValue(dir); else if (row == 0 || overlay != 0) nextRecipe(dir); else moveChip(dir);
+                if (focus) stepValue(dir); else if (Params.onRecipeLine(overlay, row)) nextRecipe(dir); else moveChip(dir);
                 return true;
             }
             case K_WHEEL_CW: case K_WHEEL_CCW: {
@@ -507,15 +506,15 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             }
             case K_DIAL_CW: case K_DIAL_CCW: {
                 int dir = e.getScanCode() == K_DIAL_CW ? +1 : -1;
-                if (focus) stepValue(dir); else if (row == 0 || overlay != 0) nextRecipe(dir); else moveChip(dir);
+                if (focus) stepValue(dir); else if (Params.onRecipeLine(overlay, row)) nextRecipe(dir); else moveChip(dir);
                 return true;
             }
             case K_UP: case K_DOWN: {
-                if (overlay != 0) return true;
+                if (overlay != OV_FULL) return true;
                 if (focus) stepValue(e.getScanCode() == K_UP ? +1 : -1); else toggleLine();
                 return true;
             }
-            case K_AEL: case K_DISP: overlay = (overlay + 1) % 3; render(); return true;
+            case K_AEL: case K_DISP: overlay = (overlay + 1) % 3; render(); return true;   // full → pill → hidden; the browser is not in the cycle
             case K_FN: openBrowser(true); return true;
             case K_C1: snapshotOrDiff(); return true;
             case K_DELETE: case K_SK2: stageFactory(); return true;

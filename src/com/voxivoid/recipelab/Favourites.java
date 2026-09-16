@@ -101,6 +101,9 @@ final class Favourites {
     /** how many recipes a group lists */
     static int groupCount(int group, List<Integer> favs) { return group == GROUP ? favs.size() : Recipes.GROUP_COUNT[group]; }
 
+    /** whether a group has anything in its recipe column — an empty Favourites list has not */
+    static boolean hasRecipes(int group, List<Integer> favs) { return groupCount(group, favs) > 0; }
+
     /** the k-th recipe of a group */
     static int recipeAt(int group, int k, List<Integer> favs) { return group == GROUP ? favs.get(k) : Recipes.GROUP_START[group] + k; }
 

@@ -59,6 +59,15 @@ class FavouritesTest {
         assertEquals(-1, Favourites.afterRemoval(f, 0));
     }
 
+    @Test void decodeReturnsAListTheCallerCanMarkInto() {
+        // MainActivity keeps the decoded list and adds to it on the first mark -- an immutable one would throw there
+        for (String stored : new String[] { null, "", "Velvia", "nope" }) {
+            List<Integer> f = Favourites.decode(stored);
+            Favourites.toggle(f, indexOf("Acros"));
+            assertTrue(f.contains(indexOf("Acros")), "decode(" + stored + ") returned a list that cannot be added to");
+        }
+    }
+
     @Test void toggleMessage() {
         assertEquals("Velvia added to Favourites", Favourites.toggleMessage("Velvia", true));
         assertEquals("Velvia removed from Favourites", Favourites.toggleMessage("Velvia", false));
@@ -89,6 +98,7 @@ class FavouritesTest {
         assertEquals(indexOf("Acros"), Favourites.next(f, indexOf("Kodak Gold 200"), +1));
         assertEquals(indexOf("Kodak Gold 200"), Favourites.next(f, indexOf("Acros"), -1));
         assertEquals(indexOf("Acros"), Favourites.next(f, indexOf("Provia"), +1), "an unmarked recipe steps onto the first favourite");
+        assertEquals(indexOf("Acros"), Favourites.next(f, indexOf("Provia"), -1), "backwards too, rather than into the middle of the list");
         assertEquals(-1, Favourites.next(new ArrayList<Integer>(), 0, +1));
     }
 
@@ -97,6 +107,13 @@ class FavouritesTest {
         assertEquals(Favourites.GROUP, Favourites.openingGroup(f, indexOf("Velvia")));
         assertEquals(Recipes.ALL[indexOf("Acros")].group, Favourites.openingGroup(f, indexOf("Acros")));
         assertEquals(0, Favourites.openingGroup(new ArrayList<Integer>(), 0));
+    }
+
+    @Test void onlyANonEmptyGroupHasARecipeColumn() {
+        List<Integer> f = favs("Velvia");
+        assertTrue(Favourites.hasRecipes(Favourites.GROUP, f));
+        assertFalse(Favourites.hasRecipes(Favourites.GROUP, new ArrayList<Integer>()));
+        assertTrue(Favourites.hasRecipes(0, new ArrayList<Integer>()), "a brand always has recipes");
     }
 
     @Test void aGroupListsItsRecipesByPosition() {
