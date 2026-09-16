@@ -50,7 +50,7 @@ Found by disassembling the camera app's parameter registration in `libObj.so`):
 
 | setting | id | notes |
 |---|---|---|
-| Creative Style | `0x01070175` | index in the runtime `color-mode-values` list (1 standard, 2 vivid, 3 neutral … 6 mono; verified) |
+| Creative Style | `0x01070175` | index in the runtime `color-mode-values` list (verified by menu diff: 1 standard, 2 vivid, 3 neutral, 6 mono, **14 sepia**). 13 is a style the menu never selected for us, so `Recipes.STYLE_NAMES[13]` is `null` and the chip skips it; 4..12 are still guessed from the runtime list order and each needs its own menu diff |
 | Contrast | `0x01070178` | signed byte |
 | Saturation | `0x01070187` | signed byte, core accepts ±16 |
 | Sharpness | `0x0107018a` | signed byte |

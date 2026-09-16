@@ -46,7 +46,7 @@ final class Params {
     static final String[] ROW_NAME = { "RECIPE", "STYLE", "SAT", "CON", "SHARP", "MATRIX", "EFFECT", "SUB", "WB", "KELVIN", "A-B", "G-M", "EV", "DRO", "QUALITY" };
     static final int[] ROW_ID = { NO_SLOT, ID_STYLE, ID_SAT, ID_CON, ID_SHARP, ID_PP_NO, ID_PE, SUB_SLOT, ID_WB_MODE, ID_WB_TEMP, ID_WB_AB, ID_WB_GM, ID_EV, ID_DRO, QUALITY_SLOTS };
     static final int[] ROW_MIN = { 0, 1, -16, -8, -8, 0, 0, 0, 0, 25, -7, -7, -15, 0, 0 };
-    static final int[] ROW_MAX = { 0, 13, 16, 8, 8, 1, 13, 4, 20, 99, 7, 7, 15, 6, 3 };
+    static final int[] ROW_MAX = { 0, 14, 16, 8, 8, 1, 13, 4, 20, 99, 7, 7, 15, 6, 3 };
     static final int N = ROW_ID.length;
     /** chip display / navigation order (quality first) */
     static final int[] ORDER = { R_QUAL, R_STYLE, R_SAT, R_CON, R_SHARP, R_MTX, R_PE, R_SUB, R_WBMODE, R_KELVIN, R_AB, R_GM, R_EV, R_DRO };
@@ -175,7 +175,7 @@ final class Params {
     static Map<String, String> preview(int[] edit) {
         Map<String, String> p = new LinkedHashMap<String, String>();
         int st = edit[R_STYLE];
-        p.put("color-mode", st >= 1 && st < Recipes.STYLE_NAMES.length ? Recipes.STYLE_NAMES[st] : "standard");
+        p.put("color-mode", Recipes.styleKnown(st) ? Recipes.STYLE_NAMES[st] : "standard");
         p.put("saturation", String.valueOf(edit[R_SAT]));
         p.put("contrast", String.valueOf(clamp(edit[R_CON], -3, 3)));
         p.put("sharpness", String.valueOf(clamp(edit[R_SHARP], -3, 3)));
@@ -220,6 +220,7 @@ final class Params {
     static boolean step(int[] edit, int row, int dir, int recipeQuality) {
         if (row == R_WBMODE) { edit[R_WBMODE] = edit[R_WBMODE] == WB_KELVIN ? WB_AUTO : WB_KELVIN; return false; }
         if (row == R_SUB) { String[] sv = Recipes.subValues(edit[R_PE]); int n = sv == null ? 1 : sv.length; edit[R_SUB] = (edit[R_SUB] + n + dir) % n; return false; }
+        if (row == R_STYLE) { int n = ROW_MAX[row] - ROW_MIN[row] + 1; do { edit[row] = ROW_MIN[row] + ((edit[row] - ROW_MIN[row] + n + dir) % n); } while (!Recipes.styleKnown(edit[row])); return false; }   // unidentified enum values are skipped
         if (isChoice(row)) { int n = ROW_MAX[row] - ROW_MIN[row] + 1; edit[row] = ROW_MIN[row] + ((edit[row] - ROW_MIN[row] + n + dir) % n); }   // choices wrap around
         else edit[row] = clamp(edit[row] + dir, ROW_MIN[row], ROW_MAX[row]);                                                                  // numbers clamp
         if (row == R_PE) { edit[R_SUB] = 0; edit[R_QUAL] = recipeQuality; if (edit[R_PE] != 0 && edit[R_QUAL] <= Q_RAWJPG) edit[R_QUAL] = Q_FINE; }

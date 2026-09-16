@@ -102,11 +102,18 @@ class ParamsPreviewTest {
         assertFalse(preview(e).containsKey("pe-soft-high-key-effect"));
     }
 
-    @Test void anOutOfRangeStyleFallsBackToStandard() {
+    @Test void anUnknownStyleFallsBackToStandard() {
         int[] e = factoryRows(); e[R_STYLE] = 0;
         assertEquals("standard", preview(e).get("color-mode"));
-        e[R_STYLE] = 14;
+        e[R_STYLE] = 13;                                        // in range, but no runtime name is known for it
         assertEquals("standard", preview(e).get("color-mode"));
+        e[R_STYLE] = 15;
+        assertEquals("standard", preview(e).get("color-mode"));
+    }
+
+    @Test void sepiaIsSentByName() {
+        int[] e = factoryRows(); e[R_STYLE] = Recipes.SEPIA;
+        assertEquals("sepia", preview(e).get("color-mode"));
     }
 
     @Test void droLevelsAndOff() {

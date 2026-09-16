@@ -5,7 +5,7 @@ package com.voxivoid.recipelab;
  * film-simulation lists; values are original. No gamma / per-hue colour depth / split-toning exists on this body,
  * so log profiles (S-Log, V-Log, Blackmagic Film) and tinted monochromes (selenium, cyanotype) are not included.
  *
- * style   : Creative Style (stored enum verified: 1 standard, 2 vivid, 3 neutral, 6 mono; order follows the runtime list)
+ * style   : Creative Style (stored enum verified on camera: 1 standard, 2 vivid, 3 neutral, 6 mono, 14 sepia; 13 is some style we have not identified, 4..12 still guessed from the runtime list order)
  * sat/con/sharp : Creative Style adjustments (menu range -3..+3; beyond = experimental, camera core accepts sat ±16)
  * matrix  : 1 = PP3 alternate colour matrix (~+45% chroma, blue/green cross-talk)
  * wbMode  : 0 = leave WB as is · 1 = auto · 14 = colour temperature (kelvin)
@@ -44,10 +44,10 @@ public class Recipes {
         }
     }
 
-    public static final int STD = 1, VIVID = 2, NEUTRAL = 3, PORTRAIT = 4, LANDSCAPE = 5, MONO = 6, CLEAR = 7, DEEP = 8, LIGHT = 9, SUNSET = 10, NIGHT = 11, AUTUMN = 12, SEPIA = 13;
-    /** index = stored enum; value = runtime color-mode name (API) */
-    public static final String[] STYLE_NAMES = { "?", "standard", "vivid", "neutral", "portrait", "landscape", "mono", "clear", "deep", "light", "sunset", "night", "red-leaves", "sepia" };
-    public static final String[] STYLE_LABEL = { "?", "Standard", "Vivid", "Neutral", "Portrait", "Landscape", "B&W", "Clear", "Deep", "Light", "Sunset", "Night", "Autumn", "Sepia" };
+    public static final int STD = 1, VIVID = 2, NEUTRAL = 3, PORTRAIT = 4, LANDSCAPE = 5, MONO = 6, CLEAR = 7, DEEP = 8, LIGHT = 9, SUNSET = 10, NIGHT = 11, AUTUMN = 12, SEPIA = 14;
+    /** index = stored enum; value = runtime color-mode name (API); null = an enum value the camera uses for something we have not identified */
+    public static final String[] STYLE_NAMES = { null, "standard", "vivid", "neutral", "portrait", "landscape", "mono", "clear", "deep", "light", "sunset", "night", "red-leaves", null, "sepia" };
+    public static final String[] STYLE_LABEL = { "?", "Standard", "Vivid", "Neutral", "Portrait", "Landscape", "B&W", "Clear", "Deep", "Light", "Sunset", "Night", "Autumn", "?", "Sepia" };
 
     private static final int AUTO = 1, K = 14;
 
@@ -55,8 +55,10 @@ public class Recipes {
     public static final String[] PE_KEYS = { "off", "toy-camera", "pop-color", "posterization", "retro-photo", "soft-high-key", "part-color", "rough-mono", "soft-focus", "hdr-art", "richtone-mono", "miniature", "illust", "watercolor" };
     public static final String[] PE_LABEL = { "off", "Toy", "Pop", "Poster", "Retro", "High-key", "Part col", "HC mono", "Soft foc", "HDR art", "Rich mono", "Miniature", "Illust", "Watercol" };
     public static final int PE_OFF = 0, PE_TOY = 1, PE_POP = 2, PE_RETRO = 4, PE_HIGHKEY = 5, PE_HCMONO = 7;
-    /** chip / HUD labels with a "?n" fallback for a stored value outside the table */
-    public static String styleLabel(int v) { return v >= 1 && v < STYLE_LABEL.length ? STYLE_LABEL[v] : "?" + v; }
+    /** a style whose runtime name we know — the others are enum values seen in the store but never identified */
+    public static boolean styleKnown(int v) { return v >= 1 && v < STYLE_NAMES.length && STYLE_NAMES[v] != null; }
+    /** chip / HUD labels with a "?n" fallback for an unidentified or out-of-table stored value */
+    public static String styleLabel(int v) { return styleKnown(v) ? STYLE_LABEL[v] : "?" + v; }
     public static String peLabel(int v) { return v >= 0 && v < PE_LABEL.length ? PE_LABEL[v] : "?" + v; }
     /** effect sub-parameter (tint / tone / hue / mode): runtime key, stored slot, value names — index = stored byte */
     public static String subKey(int pe) { switch (pe) { case 5: return "pe-soft-high-key-effect"; case 1: return "pe-toy-camera-effect"; case 6: return "pe-part-color-effect"; case 3: return "pe-posterization-effect"; default: return null; } }

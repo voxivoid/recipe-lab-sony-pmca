@@ -33,8 +33,10 @@ class ParamsChipsTest {
         for (int r : new int[] { R_SAT, R_CON, R_SHARP, R_KELVIN, R_AB, R_GM, R_EV }) assertFalse(isChoice(r), ROW_NAME[r]);
 
         int[] e = factoryRows();
-        e[R_STYLE] = 13; step(e, R_STYLE, +1, Q_FINE); assertEquals(1, e[R_STYLE], "past Sepia comes Standard");
-        step(e, R_STYLE, -1, Q_FINE); assertEquals(13, e[R_STYLE]);
+        e[R_STYLE] = Recipes.SEPIA; step(e, R_STYLE, +1, Q_FINE); assertEquals(1, e[R_STYLE], "past Sepia comes Standard");
+        step(e, R_STYLE, -1, Q_FINE); assertEquals(Recipes.SEPIA, e[R_STYLE]);
+        e[R_STYLE] = Recipes.AUTUMN; step(e, R_STYLE, +1, Q_FINE); assertEquals(Recipes.SEPIA, e[R_STYLE], "13 is unidentified and skipped");
+        step(e, R_STYLE, -1, Q_FINE); assertEquals(Recipes.AUTUMN, e[R_STYLE], "and skipped backwards too");
         e[R_DRO] = Recipes.DRO_AUTO; step(e, R_DRO, +1, Q_FINE); assertEquals(Recipes.DRO_OFF, e[R_DRO]);
         e[R_QUAL] = Q_STD; step(e, R_QUAL, +1, Q_FINE); assertEquals(Q_RAW, e[R_QUAL]);
 

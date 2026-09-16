@@ -82,7 +82,7 @@ class RecipesTest {
     }
 
     @Test void styleTablesLineUpWithTheStoredEnum() {
-        assertEquals(14, Recipes.STYLE_NAMES.length);
+        assertEquals(15, Recipes.STYLE_NAMES.length);
         assertEquals(Recipes.STYLE_NAMES.length, Recipes.STYLE_LABEL.length);
         assertEquals(Recipes.STYLE_NAMES.length - 1, Params.ROW_MAX[Params.R_STYLE]);
         assertEquals("standard", Recipes.STYLE_NAMES[Recipes.STD]);
@@ -90,8 +90,19 @@ class RecipesTest {
         assertEquals("neutral", Recipes.STYLE_NAMES[Recipes.NEUTRAL]);
         assertEquals("mono", Recipes.STYLE_NAMES[Recipes.MONO]);
         assertEquals("red-leaves", Recipes.STYLE_NAMES[Recipes.AUTUMN]);
+        assertEquals(14, Recipes.SEPIA, "sepia is 0x0e in the store, measured by menu diff");
         assertEquals("sepia", Recipes.STYLE_NAMES[Recipes.SEPIA]);
         assertEquals("B&W", Recipes.STYLE_LABEL[Recipes.MONO]);
+    }
+
+    @Test void unidentifiedStyleValuesAreMarkedUnknown() {
+        assertNull(Recipes.STYLE_NAMES[13], "13 sits between Autumn and Sepia and has never been identified");
+        assertFalse(Recipes.styleKnown(13));
+        assertFalse(Recipes.styleKnown(0));
+        assertFalse(Recipes.styleKnown(Recipes.STYLE_NAMES.length));
+        assertTrue(Recipes.styleKnown(Recipes.SEPIA));
+        assertEquals("?13", Recipes.styleLabel(13));
+        for (Recipes.Recipe r : Recipes.ALL) assertTrue(Recipes.styleKnown(r.style), r.name + " uses an unidentified style");
     }
 
     @Test void effectTablesLineUpWithTheStoredIndex() {
@@ -153,8 +164,9 @@ class RecipesTest {
 
     @Test void styleAndEffectLabelsFallBackToTheRawValue() {
         assertEquals("Neutral", Recipes.styleLabel(Recipes.NEUTRAL));
+        assertEquals("Sepia", Recipes.styleLabel(Recipes.SEPIA));
         assertEquals("?0", Recipes.styleLabel(0));
-        assertEquals("?14", Recipes.styleLabel(14));
+        assertEquals("?15", Recipes.styleLabel(15));
         assertEquals("off", Recipes.peLabel(0));
         assertEquals("Retro", Recipes.peLabel(Recipes.PE_RETRO));
         assertEquals("?14", Recipes.peLabel(14));
