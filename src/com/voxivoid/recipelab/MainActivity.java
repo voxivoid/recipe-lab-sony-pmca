@@ -33,6 +33,7 @@ import static com.voxivoid.recipelab.Params.*;
  * Preview = runtime camera parameters. ENTER = write the recipe's stored bytes + sync → power-cycle applies it everywhere.
  *
  * Keys: wheel / LEFT / RIGHT recipe · UP / DOWN parameter · top dial adjust · Fn brand browser · ENTER store
+ *       hold ENTER favourite (the centre button exists on every body; Fn / AEL / C1 do not — see issue #18)
  *       AEL / DISP overlay: full → pill → hidden · TRASH stage factory · C1 settings snapshot / diff (finds storage slots)
  *       SHUTTER photo · MENU exit
  *
@@ -47,14 +48,16 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             K_WHEEL_CW = 522, K_WHEEL_CCW = 523, K_DIAL_CW = 525, K_DIAL_CCW = 526;
 
     private static final int ACCENT = 0xFFF2B85C, INK = 0xFF1A1208, WHITE = 0xFFFFFFFF, DIM = 0x99FFFFFF;
+    /** how long the centre button is held before it means "favourite" instead of "store" / "pick" */
+    private static final long HOLD_MS = 600;
 
     private View panel;
     private PickerView picker;
     private HorizontalScrollView chipScroll;
     private boolean swallowMenuUp = false;
-    private TextView name, badge, tag, count, meta, mini, toast;
+    private TextView name, badge, tag, fav, count, meta, mini, toast;
     private PromptView prompt;
-    private int promptSel = 0; private boolean promptOpen = false; private long fnDown = 0;
+    private int promptSel = 0; private boolean promptOpen = false;
     private SharedPreferences prefs;
     private HintBar hints;
     private LinearLayout chips;
@@ -62,12 +65,16 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private final View[] chip = new View[N];
     private final Handler handler = new Handler();
     private final Runnable hideToast = new Runnable() { public void run() { toast.setVisibility(View.GONE); } };
+    private boolean enterHeld = false, enterLong = false;       // the centre button is down / has already fired its hold action
+    private final Runnable enterHold = new Runnable() { public void run() { enterLong = true; toggleFavourite(); } };
+    private List<Integer> favs = new ArrayList<Integer>();      // marked recipes, in marking order (Favourites decides, this holds)
 
     private SurfaceHolder holder;
     private Object cameraEx; private Camera camera; private String origFlat;
     private int row = 0, recipe = 0, overlay = 0;     // overlay: 0 full, 1 pill, 2 hidden, 3 browser
     private boolean focus = false;
     private int browserCol = 1;                       // browser: 0 brand column, 1 recipe column                    // a chip is focused: UP/DOWN change its value
+    private int browserGroup = 0;                     // browser: the group the brand column is on — Favourites.GROUP or a brand
     private int lastChip = 0;                         // chip to return to when leaving the recipe line
     private final int[] cur = new int[N], edit = new int[N];
     private boolean protectedStore = false, previewOk = false;
@@ -79,12 +86,14 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         setContentView(R.layout.main);
         prefs = getPreferences(MODE_PRIVATE);
         recipe = Math.max(0, Math.min(Recipes.ALL.length - 1, prefs.getInt("recipe", 0)));
+        favs = Favourites.decode(prefs.getString("favourites", ""));
         panel = findViewById(R.id.panel);
         picker = (PickerView) findViewById(R.id.picker);
         chipScroll = (HorizontalScrollView) findViewById(R.id.chipscroll);
         name = (TextView) findViewById(R.id.name);
         badge = (TextView) findViewById(R.id.badge);
         tag = (TextView) findViewById(R.id.tag);
+        fav = (TextView) findViewById(R.id.fav);
         count = (TextView) findViewById(R.id.count);
         meta = (TextView) findViewById(R.id.meta);
         hints = (HintBar) findViewById(R.id.hints);
@@ -137,6 +146,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     protected void onPause() {
         super.onPause();
         handler.removeCallbacks(hideToast);
+        handler.removeCallbacks(enterHold); enterHeld = false; enterLong = false;
         holder.removeCallback(this);
         // leave the live parameters equal to what is STORED (not to the launch snapshot): the camera writes some live
         // values (exposure bias, WB fine-tune) straight back into the settings store, which would undo a fresh store
@@ -294,6 +304,24 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         } catch (Throwable t) { showToast("snapshot error: " + t, 0); }
     }
 
+    // ------------------------------------------------------------ favourites (app storage, not the camera store: lost on uninstall)
+    private void saveFavourites() { prefs.edit().putString("favourites", Favourites.encode(favs)).commit(); }
+
+    /** hold on the centre button: mark / unmark the highlighted recipe */
+    private void toggleFavourite() {
+        int pos = favs.indexOf(recipe);
+        boolean on = Favourites.toggle(favs, recipe);
+        saveFavourites();
+        showToast(Favourites.toggleMessage(Recipes.ALL[recipe].name, on, favs.size()), 2500);
+        if (overlay == 3 && browserGroup == Favourites.GROUP && !on) {
+            // unmarked inside the Favourites list: the highlight moves to a neighbour, or back to the brand column when the list is empty
+            int next = Favourites.afterRemoval(favs, pos);
+            if (next < 0) browserCol = 0;
+            else { recipe = next; stageRecipe(); applyPreview(); }
+        }
+        render();
+    }
+
     // ------------------------------------------------------------ live preview (runtime params)
     private void applyPreview() {
         if (camera == null) return;
@@ -318,7 +346,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         String pos = (recipe + 1) + " / " + Recipes.ALL.length;
         String grp = Recipes.GROUPS[r.group].toUpperCase();
         picker.setVisibility(overlay == 3 ? View.VISIBLE : View.GONE);
-        if (overlay == 3) { panel.setVisibility(View.GONE); mini.setVisibility(View.GONE); picker.setSelected(recipe, browserCol); return; }
+        if (overlay == 3) { panel.setVisibility(View.GONE); mini.setVisibility(View.GONE); picker.set(recipe, browserCol, browserGroup, favs); return; }
         if (overlay == 0) {
             panel.setVisibility(View.VISIBLE); mini.setVisibility(View.GONE);
             name.setText(r.name);
@@ -326,6 +354,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             count.setText(grp + "   " + pos);
             tag.setText(edit[R_PE] != 0 ? "PE" : "CS");
             tag.setTextColor(edit[R_PE] != 0 ? ACCENT : 0xDDFFFFFF);
+            fav.setVisibility(favs.contains(recipe) ? View.VISIBLE : View.GONE);
             if (protectedStore) { badge.setText("PROTECTED"); badge.setBackgroundResource(R.drawable.badge_err); }
             else if (dirty) { badge.setText("PREVIEW"); badge.setBackgroundResource(R.drawable.badge_warn); }
             else { badge.setText("ACTIVE"); badge.setBackgroundResource(R.drawable.badge_ok); }
@@ -377,12 +406,38 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
 
     private void nextRecipe(int dir) { recipe = Recipes.next(recipe, dir); stageRecipe(); applyPreview(); render(); }
 
-    private void nextGroup(int dir) { recipe = Recipes.nextGroupStart(recipe, dir); stageRecipe(); applyPreview(); render(); }
+    /** brand column: the group above / below, its first recipe previewed (an empty Favourites list leaves the recipe alone) */
+    private void nextGroup(int dir) {
+        browserGroup = Favourites.nextGroup(browserGroup, dir);
+        int land = Favourites.landing(browserGroup, favs);
+        if (land >= 0) { recipe = land; stageRecipe(); applyPreview(); }
+        render();
+    }
 
-    private void openBrowser(boolean open) { overlay = open ? 3 : 0; row = 0; focus = false; browserCol = 1; render(); }
+    private void openBrowser(boolean open) {
+        overlay = open ? 3 : 0; row = 0; focus = false;
+        browserGroup = Favourites.openingGroup(favs, recipe);
+        browserCol = 1;
+        render();
+    }
 
-    /** recipe within the current brand, wrapping */
-    private void nextInGroup(int dir) { recipe = Recipes.nextInGroup(recipe, dir); stageRecipe(); applyPreview(); render(); }
+    /** recipe column: the next / previous recipe of the group the browser is on, wrapping */
+    private void nextInGroup(int dir) {
+        recipe = browserGroup == Favourites.GROUP ? Favourites.next(favs, recipe, dir) : Recipes.nextInGroup(recipe, dir);
+        stageRecipe(); applyPreview(); render();
+    }
+
+    /** the recipe column is not reachable while the Favourites list is empty */
+    private boolean enterRecipeColumn() {
+        if (browserGroup == Favourites.GROUP && favs.isEmpty()) { showToast(Favourites.EMPTY_HINT, 3000); return false; }
+        browserCol = 1; render(); return true;
+    }
+
+    /** the centre button released before the hold: pick in the recipe column, step into it from the brand column */
+    private void browserEnter() {
+        if (browserCol == 0) { enterRecipeColumn(); return; }
+        openBrowser(false); showToast(Recipes.ALL[recipe].name + " previewed — ENTER to store", 3000);
+    }
 
     private void stageFactory() { recipe = 0; stageRecipe(); applyPreview(); showToast("Factory values staged — ENTER to store", 3000); render(); }
 
@@ -390,10 +445,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         switch (sc) {
             case K_UP: case K_WHEEL_CCW: case K_DIAL_CCW: if (browserCol == 0) nextGroup(-1); else nextInGroup(-1); return true;
             case K_DOWN: case K_WHEEL_CW: case K_DIAL_CW: if (browserCol == 0) nextGroup(+1); else nextInGroup(+1); return true;
-            case K_LEFT: case K_RIGHT: browserCol ^= 1; render(); return true;
-            case K_ENTER:
-                if (browserCol == 0) { browserCol = 1; render(); return true; }
-                openBrowser(false); showToast(Recipes.ALL[recipe].name + " previewed — ENTER to store", 3000); return true;
+            case K_LEFT: case K_RIGHT: if (browserCol == 1) { browserCol = 0; render(); } else enterRecipeColumn(); return true;
             case K_MENU: case K_SK1: swallowMenuUp = true; openBrowser(false); return true;
             case K_FN: case K_AEL: case K_DISP: openBrowser(false); return true;
             case K_C1: snapshotOrDiff(); return true;
@@ -412,9 +464,34 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         return super.dispatchKeyEvent(e);
     }
 
+    /** whether a hold on the centre button marks a favourite where the user is now */
+    private boolean holdMarksFavourite() {
+        if (overlay == 3) return browserCol == 1;
+        return row == 0 || overlay != 0;
+    }
+
+    /** the centre button pressed: the short action waits for the release, a hold becomes "favourite" */
+    private void enterDown() {
+        if (enterHeld) return;                                   // key repeat while held
+        enterHeld = true; enterLong = false;
+        if (holdMarksFavourite()) handler.postDelayed(enterHold, HOLD_MS);
+    }
+
+    /** the centre button released before the hold fired: what ENTER used to do on the press */
+    private void enterUp() {
+        handler.removeCallbacks(enterHold);
+        boolean held = enterHeld, fired = enterLong;
+        enterHeld = false; enterLong = false;
+        if (!held || fired) return;
+        if (overlay == 3) browserEnter();
+        else if (row == 0 || overlay != 0) writeAll();
+        else setFocus(!focus);
+    }
+
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent e) {
         if (promptOpen) return promptKey(e.getScanCode());
+        if (e.getScanCode() == K_ENTER) { enterDown(); return true; }
         if (overlay == 3 && e.getScanCode() != K_PLAY) return browserKey(e.getScanCode());
         switch (e.getScanCode()) {
             case K_LEFT: case K_RIGHT: {
@@ -440,7 +517,6 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             case K_AEL: case K_DISP: overlay = (overlay + 1) % 3; render(); return true;
             case K_FN: openBrowser(true); return true;
             case K_C1: snapshotOrDiff(); return true;
-            case K_ENTER: if (row == 0 || overlay != 0) writeAll(); else setFocus(!focus); return true;
             case K_DELETE: case K_SK2: stageFactory(); return true;
             case K_S1: try { camera.autoFocus(null); } catch (Throwable t) {} return true;
             case K_S2: try { camera.takePicture(null, null, null); } catch (Throwable t) {} return true;
@@ -455,11 +531,12 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     public boolean onKeyUp(int keyCode, KeyEvent e) {
         if (promptOpen) { if (e.getScanCode() == K_MENU || e.getScanCode() == K_SK1) swallowMenuUp = false; return true; }
         switch (e.getScanCode()) {
+            case K_ENTER: enterUp(); return true;
             case K_FN: return true;
             case K_MENU: case K_SK1: if (swallowMenuUp) { swallowMenuUp = false; return true; } finish(); return true;
             case K_S1: try { camera.cancelAutoFocus(); } catch (Throwable t) {} return true;
             case K_S2: try { cameraEx.getClass().getMethod("cancelTakePicture").invoke(cameraEx); } catch (Throwable t) {} return true;
-            case K_UP: case K_DOWN: case K_LEFT: case K_RIGHT: case K_ENTER: case K_PLAY: case K_DISP:
+            case K_UP: case K_DOWN: case K_LEFT: case K_RIGHT: case K_PLAY: case K_DISP:
             case K_DELETE: case K_SK2: case K_C1: case K_AEL: case K_WHEEL_CW: case K_WHEEL_CCW: case K_DIAL_CW: case K_DIAL_CCW: return true;
         }
         return super.onKeyUp(keyCode, e);

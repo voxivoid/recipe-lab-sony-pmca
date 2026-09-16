@@ -138,7 +138,7 @@ would be painful, since the merge only ever squashes down to one commit anyway.
 and of a release — against a bare JDK 17 in a few seconds. They cover
 what the app decides without the camera: the recipe table, how each value is encoded in the settings store, the
 bytes ENTER writes, the live-preview parameters, chip navigation and the overlay text
-([details](DEVELOPMENT.md#unit-tests)). Logic of that kind goes into `Params.java` or `Recipes.java` with a
+([details](DEVELOPMENT.md#unit-tests)). Logic of that kind goes into `Params.java`, `Recipes.java` or `Favourites.java` with a
 test next to it; `MainActivity` and the views cannot be tested off the camera.
 
 ### On the camera

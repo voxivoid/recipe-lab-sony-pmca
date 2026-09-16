@@ -72,8 +72,10 @@ Closes #123
 - The `errno.h` park must stay reversible (`build.sh` does it from an `EXIT` trap). A build that leaves the
   submodule dirty is a bug.
 - `./tools/test.sh` runs the unit tests: the `test` CI job, also run by `dev-build` and `create-release`; JDK 17 only, no SDK. Logic that needs no camera
-  goes in `Params.java` or `Recipes.java` **with a test**, never into `MainActivity`. Both are compiled there
-  **without** `android.jar`, so an `android.*` import in either breaks the job.
+  goes in `Params.java`, `Recipes.java` or `Favourites.java` **with a test**, never into `MainActivity`. All three are
+  compiled there **without** `android.jar`, so an `android.*` import in any of them breaks the job.
+- **New key bindings go on keys every body has** (wheel, four-way, centre, MENU, shutter, TRASH) — a hold of the centre
+  button is the escape hatch. Fn, AEL, C1 and DISP are missing on several supported bodies (issue #18).
 
 ## What CI cannot check
 
