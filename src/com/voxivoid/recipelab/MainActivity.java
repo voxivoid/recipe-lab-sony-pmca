@@ -30,9 +30,9 @@ import static com.voxivoid.recipelab.Params.*;
 /**
  * Recipe Lab — film recipes with LIVE PREVIEW, then persistent write (photo + video, survives power-cycle).
  *
- * Preview = runtime camera parameters. ENTER = write the recipe's stored bytes + sync → power-cycle applies it everywhere.
+ * Preview = runtime camera parameters. ENTER selects the recipe: writes its bytes + sync → power-cycle applies it everywhere.
  *
- * Keys: wheel / LEFT / RIGHT recipe · UP / DOWN parameter · top dial adjust · Fn brand browser · ENTER store
+ * Keys: wheel / LEFT / RIGHT recipe · UP / DOWN parameter · top dial adjust · Fn brand browser · ENTER select
  *       hold ENTER favourite (the centre button exists on every body; Fn / AEL / C1 do not — see issue #18)
  *       AEL / DISP overlay: full → pill → hidden · TRASH stage factory · C1 settings snapshot / diff (finds storage slots)
  *       SHUTTER photo · MENU exit
@@ -48,7 +48,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             K_WHEEL_CW = 522, K_WHEEL_CCW = 523, K_DIAL_CW = 525, K_DIAL_CCW = 526;
 
     private static final int ACCENT = 0xFFF2B85C, INK = 0xFF1A1208, WHITE = 0xFFFFFFFF, DIM = 0x99FFFFFF;
-    /** how long the centre button is held before it means "favourite" instead of "store" / "pick" */
+    /** how long the centre button is held before it means "favourite" instead of "select" / "pick" */
     private static final long HOLD_MS = 600;
 
     private View panel;
@@ -222,14 +222,14 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
 
     private void writeAll(boolean confirmed) {
         if (!confirmed && qualityChanges()) { openPrompt(); return; }
-        if (!dirty()) { showToast("Already stored — nothing to write", 2500); return; }
+        if (!dirty()) { showToast("Already selected — nothing to write", 2500); return; }
         String msg;
         try {
             int storedSub = storedSub();
             int n = Params.dirtyRows(cur, edit, storedSub);
             for (Params.Write w : Params.writes(cur, edit, storedSub)) NativeBackup.writeByte(w.id, w.value);
             NativeBackup.sync();
-            msg = "Stored " + n + " value" + (n == 1 ? "" : "s") + " — power-cycle the camera to apply everywhere";
+            msg = "Selected — " + n + " value" + (n == 1 ? "" : "s") + " written, power-cycle the camera to apply everywhere";
         } catch (Throwable t) { msg = "WRITE FAILED: " + t.getMessage(); }
         load(); stageRecipe();
         showToast(msg, 5000); render();
@@ -253,7 +253,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             case K_LEFT: case K_WHEEL_CCW: case K_DIAL_CCW: case K_RIGHT: case K_WHEEL_CW: case K_DIAL_CW: promptSel ^= 1; renderPrompt(); return true;
             case K_ENTER:
                 closePrompt();
-                if (promptSel == 0) writeAll(true); else showToast("Not stored", 2000);   // cancel: recipe stays previewed only
+                if (promptSel == 0) writeAll(true); else showToast("Not selected", 2000);   // cancel: recipe stays previewed only
                 render(); return true;
             case K_MENU: case K_SK1: swallowMenuUp = true; closePrompt(); render(); return true;
         }
@@ -262,7 +262,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
 
     private void cycleQuality() {
         edit[R_QUAL] = (edit[R_QUAL] + 1) % 4; qualityChanged(); applyPreview(); render();
-        showToast("Quality: " + Q_LABEL[edit[R_QUAL]] + (qualityPersistent() ? "  — ENTER to store" : "  (live view only until the slot is known)"), 2500);
+        showToast("Quality: " + Q_LABEL[edit[R_QUAL]] + (qualityPersistent() ? "  — ENTER to select" : "  (live view only until the slot is known)"), 2500);
     }
 
     // ------------------------------------------------------------ snapshot / diff of the whole settings store (Fn long-press)
@@ -437,10 +437,10 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     /** the centre button released before the hold: pick in the recipe column, step into it from the brand column */
     private void browserEnter() {
         if (browserCol == 0) { enterRecipeColumn(); return; }
-        openBrowser(false); showToast(Recipes.ALL[recipe].name + " previewed — ENTER to store", 3000);
+        openBrowser(false); showToast(Recipes.ALL[recipe].name + " previewed — ENTER to select", 3000);
     }
 
-    private void stageFactory() { recipe = 0; stageRecipe(); applyPreview(); showToast("Factory values staged — ENTER to store", 3000); render(); }
+    private void stageFactory() { recipe = 0; stageRecipe(); applyPreview(); showToast("Factory values staged — ENTER to select", 3000); render(); }
 
     private boolean browserKey(int sc) {
         switch (sc) {
