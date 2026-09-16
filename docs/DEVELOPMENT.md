@@ -34,7 +34,9 @@ src/com/voxivoid/recipelab/
                                walks the Favourites group — pure functions, no Android, covered by test/
   res/raw/ids.txt              every settings entry of 16 bytes or less, used by the C1 snapshot/diff tool
   PickerView.java              Canvas-drawn brand browser (Favourites first, then the brands)
-  Legend.java                  Canvas-drawn key icons and the favourite star, fit-to-width (camera font has no symbol glyphs)
+  Legend.java                  Canvas-drawn key icons and the favourite star, fit-to-width (camera font has no symbol glyphs).
+                               The legend names the keys a body may not have; the four-way and the wheel are left out
+                               as self-evident, and a hold is the centre-button icon labelled "(hold)"
   StarView.java                the star next to the recipe name when it is a favourite
   HintBar.java                 legend view under the panel (uses Legend)
   NativeBackup.java            JNI: read / write / attr / sync / isProtected

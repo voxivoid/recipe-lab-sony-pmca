@@ -24,10 +24,10 @@ public class PickerView extends View {
     private final RectF r = new RectF();
     private final float d;
     private final Legend legend;
-    private static final int[] BRAND_ICONS = { Legend.UPDOWN, Legend.LEFTRIGHT, Legend.ENTER, Legend.FN };
-    private static final String[] BRAND_TEXT = { "brand", "column", "recipes", "close" };
-    private static final int[] RECIPE_ICONS = { Legend.UPDOWN, Legend.LEFTRIGHT, Legend.ENTER, Legend.HOLD, Legend.FN };
-    private static final String[] RECIPE_TEXT = { "recipe", "column", "pick", "fav", "close" };
+    private static final int[] BRAND_ICONS = { Legend.ENTER, Legend.FN };
+    private static final String[] BRAND_TEXT = { "recipes", "close" };
+    private static final int[] RECIPE_ICONS = { Legend.ENTER, Legend.ENTER, Legend.FN };
+    private static final String[] RECIPE_TEXT = { "pick", "fav (hold)", "close" };
     private final Paint outline = new Paint(Paint.ANTI_ALIAS_FLAG);
     private int selected = 0, column = 1, group = 0;              // column: 0 groups, 1 recipes · group: Favourites.GROUP or a brand
     private List<Integer> favs = new ArrayList<Integer>();
