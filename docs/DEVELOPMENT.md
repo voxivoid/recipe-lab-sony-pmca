@@ -30,8 +30,10 @@ src/com/voxivoid/recipelab/
   Params.java                  the parameter rows: slot ids, store encodings, preview parameters, chip
                                navigation, HUD strings — pure functions, no Android, covered by test/
   Recipes.java                 the 77 recipes, brands, GROUP_START / GROUP_COUNT, table navigation
+  Favourites.java              the favourites list: stored by name in the app's preferences, and how the browser
+                               walks the Favourites group — pure functions, no Android, covered by test/
   res/raw/ids.txt              every settings entry of 16 bytes or less, used by the C1 snapshot/diff tool
-  PickerView.java              Canvas-drawn brand browser
+  PickerView.java              Canvas-drawn brand browser (Favourites first, then the brands)
   Legend.java                  Canvas-drawn key icons, fit-to-width (camera font has no symbol glyphs)
   HintBar.java                 legend view under the panel (uses Legend)
   NativeBackup.java            JNI: read / write / attr / sync / isProtected
@@ -94,6 +96,19 @@ Goes through `Camera.Parameters`: `color-mode`, `saturation`, `contrast`, `sharp
 `color-compensation-for-white-balance`, `rgb-matrix` (Q10, 1.0 = 1024) + `rgb-matrix-mode`, `picture-effect`,
 `exposure-compensation` (1/3 EV steps), `dro-mode` + `dro-level`.
 **Key scan codes:** wheel 522 / 523, top dial 525 / 526, AEL 532, C1 622, Fn 520, trash 595, centre 232, MENU 514.
+
+## Centre button hold
+
+The centre button is the one key every PlayMemories body has, so anything new that needs a key goes on a **hold** of it
+rather than on Fn / AEL / C1, which several bodies lack (issue #18). Today a hold (`HOLD_MS`, 600 ms) marks the recipe
+as a favourite. To make room for it, ENTER's short action — store on the main screen, pick in the browser, focus a chip —
+runs on the key **release** instead of the press; a hold that has fired swallows the release. The hold is timed with a
+`Handler.postDelayed` armed on the press and cancelled on the release, so it does not depend on the firmware
+delivering key-repeat events. Held keys are cleared in `onPause`.
+
+Favourites live in `getPreferences(MODE_PRIVATE)` under `favourites`, as recipe **names** joined with `|` (so a table
+that gains a recipe does not shift the marks); a name the table no longer has is dropped on load. They are app storage,
+not the camera settings store: a power cycle keeps them, an uninstall does not.
 
 ## Developing on WSL
 
@@ -216,14 +231,14 @@ export JAVA_HOME=$HOME/toolchains/jdk17
 ```
 
 That is the whole of the `test` CI job on work branches; `dev-build` runs the same script before every
-development build and `create-release` before anything is pushed to `main`. It needs a JDK 17 and nothing else: `Recipes.java` and `Params.java`
+development build and `create-release` before anything is pushed to `main`. It needs a JDK 17 and nothing else: `Recipes.java`, `Params.java` and `Favourites.java`
 are compiled against the bare JDK — no `android.jar`, no NDK — then the tests under `test/` are compiled and run
 with the JUnit 5 console launcher, one jar fetched from Maven Central into `out/test/` on first use and checked
 against a SHA-256 pinned in the script (`JUNIT_JAR=<path>` points it at a copy when offline). Reports land in
 `out/test/reports/`.
 
-**What is covered.** Everything that decides without the camera lives in `Params` and `Recipes`, and the tests
-pin it down:
+**What is covered.** Everything that decides without the camera lives in `Params`, `Recipes` and `Favourites`, and the
+tests pin it down:
 
 | | |
 |---|---|
@@ -234,6 +249,7 @@ pin it down:
 | `ParamsChipsTest` | chip visibility, stepping (wrap vs clamp, the effect → SUB / quality side effects), LEFT/RIGHT and UP/DOWN landing spots, chip text |
 | `ParamsHudTest` | the meta line, the minimal pill, the quality prompt |
 | `ParamsToolsTest` | the C1 tool's id list — including that `res/raw/ids.txt` is well formed and lists every slot the app writes — and its diff lines |
+| `FavouritesTest` | the favourites list — stored by name, unknown names dropped, marking order kept, toggle, the highlight after a removal — and the browser's group order with Favourites first |
 
 **What is not, and cannot be.** `MainActivity` (key dispatch, overlays, the camera and the JNI store), the
 Canvas views (`PickerView`, `PromptView`, `HintBar`, `Legend`) and `jni/jni.cpp` need a running camera or an
@@ -241,9 +257,9 @@ Android runtime; there is no Gradle and no Robolectric here, and a mock of `Came
 stay on the [on-camera checklist](CONTRIBUTING.md#on-the-camera). Likewise the slot ids themselves: a
 test can show that the app writes `0x01070175 = 6`, not that the camera means B&W by it.
 
-**Keeping it that way.** New logic that does not need the camera goes into `Params` (or `Recipes`) with a test
-next to it, and is called from `MainActivity`, never the other way round. `tools/test.sh` compiles the two
-without `android.jar` on purpose: an `android.*` import in either fails there before it fails in CI. Tests
+**Keeping it that way.** New logic that does not need the camera goes into `Params` (or `Recipes`, `Favourites`, or a
+new class listed in `UNITS` in `tools/test.sh`) with a test next to it, and is called from `MainActivity`, never the
+other way round. `tools/test.sh` compiles those classes without `android.jar` on purpose: an `android.*` import in either fails there before it fails in CI. Tests
 are plain JUnit 5 (`org.junit.jupiter.api`), one behaviour per method, no mocking library; `Fixtures` has a
 factory-fresh camera as rows and as store bytes and a fake store to write into.
 

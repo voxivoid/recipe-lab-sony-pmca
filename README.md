@@ -201,8 +201,9 @@ Open **Recipe Lab** from the Application List. You get the live image with a pan
 |---|---|
 | **wheel** | scroll recipes, from anywhere — the live image changes at once, and that is what the camera will write |
 | **left / right**, **top dial** | scroll recipes too, but only on the recipe line; on the chip row they walk the chips |
-| **Fn** | open the brand list. Brands left, recipes right; left / right switches column (the active one is amber), wheel or up / down scrolls, centre picks |
+| **Fn** | open the brand list. **Favourites** first, then the brands, on the left; recipes on the right. Left / right switches column (the active one is amber), wheel or up / down scrolls, centre picks |
 | **centre** | store the recipe you are looking at. A message confirms it |
+| **hold centre** | mark the recipe as a favourite, or unmark it. Works on the main screen and inside the brand list |
 | **AEL** | hide the panel — once for a small label, twice for nothing. The wheel still works |
 | **up / down** | move between the recipe line and the row of value chips |
 | **TRASH** | stage the factory look, then **centre** to store it |
@@ -211,6 +212,12 @@ Open **Recipe Lab** from the Application List. You get the live image with a pan
 
 Then **turn the camera off and on**. The look is now the camera's default in every mode — P, A, S, M, movie — with
 the app closed, and the app reopens on that recipe.
+
+**Favourites.** Hold the **centre button** on a recipe and it joins the **Favourites** group at the top of the brand
+list, marked **FAV** next to its name; hold again to drop it. The group lists your picks in the order you marked them,
+and the brand list opens straight on it whenever the recipe you are on is one of them. The wheel on the main screen
+still walks all 77 — favourites shorten the list in the browser, not the scroll. The marks are kept by the app, not in
+the camera's settings, so they survive a power cycle but go with the app if you remove it.
 
 **The chips.** In the chip row, **left / right** walks the chips, **centre** focuses one (it turns amber),
 **up / down** changes its value, **centre** leaves it. The wheel keeps changing recipes throughout. A recipe only shows the chips it uses: **CS** recipes show style,

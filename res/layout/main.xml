@@ -58,6 +58,19 @@
                 android:textStyle="bold"
                 android:textColor="#DDFFFFFF"
                 android:background="@drawable/chip" />
+            <TextView
+                android:id="@+id/fav"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="6dp"
+                android:paddingLeft="5dp" android:paddingRight="5dp"
+                android:paddingTop="2dp" android:paddingBottom="2dp"
+                android:textSize="9sp"
+                android:textStyle="bold"
+                android:textColor="#FF1A1208"
+                android:text="FAV"
+                android:background="@drawable/chip_sel"
+                android:visibility="gone" />
             <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
             <TextView
                 android:id="@+id/count"
