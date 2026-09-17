@@ -95,7 +95,7 @@ public class Recipes {
         new Recipe(SONY,  "Sony VV (vivid)",                     VIVID,    0,  0,  0, 0, AUTO, 0,     0,  0),
         new Recipe(SONY,  "Sony VV2",                            VIVID,    2,  1,  0, 1, AUTO, 0,     0,  0),
         new Recipe(SONY,  "Sony FL (film-like)",                 NEUTRAL, -4, -1,  0, 0, AUTO, 0,     1,  0),
-        new Recipe(SONY,  "Sony IN (instant)",                   NEUTRAL, -6, -3,  0, 0, AUTO, 0,     0, -1),
+        new Recipe(SONY,  "Sony IN (instant)",                   NEUTRAL, -4, -3,  0, 0, AUTO, 0,     0, -1),   // -6 is already grey on this body
         new Recipe(SONY,  "Sony SH (soft high-key)",             LIGHT,   -2, -2,  0, 0, AUTO, 0,     1,  0,  5,  3, 6),
         // ---- Fujifilm simulations
         new Recipe(FSIM,  "Provia",                              STD,      1,  0,  0, 0, AUTO, 0,     0,  0,  0,  0, 6),
@@ -107,7 +107,7 @@ public class Recipes {
         new Recipe(FSIM,  "Reala Ace",                           STD,      0,  1,  0, 0, AUTO, 0,     0,  0),
         new Recipe(FSIM,  "Pro Neg Std",                         PORTRAIT,-2, -1,  0, 0, AUTO, 0,     0,  0),
         new Recipe(FSIM,  "Pro Neg Hi",                          PORTRAIT,-2,  1,  0, 0, AUTO, 0,     0,  0),
-        new Recipe(FSIM,  "Eterna",                              NEUTRAL, -6, -2, -1, 0, AUTO, 0,     0,  0,  0, -1, 3),
+        new Recipe(FSIM,  "Eterna",                              NEUTRAL, -4, -2, -1, 0, AUTO, 0,     0,  0,  0, -1, 3),   // -6 is already grey on this body
         new Recipe(FSIM,  "Eterna Bleach Bypass",                NEUTRAL, -6,  3,  0, 0, AUTO, 0,     0,  0,  0, -1, 6),   // sat -8 and below is pure grey on this body
         new Recipe(FSIM,  "Acros",                               MONO,     0,  1,  1, 0, AUTO, 0,     0,  0),
         new Recipe(FSIM,  "Acros +Ye (yellow filter)",           MONO,     0,  1,  1, 0, K,    4000,  0,  0),
@@ -127,9 +127,9 @@ public class Recipes {
         new Recipe(KODAK, "Kodak Gold 200",                      STD,      2,  1,  0, 0, AUTO, 0,     3,  1,  0,  1, 6),
         new Recipe(KODAK, "Kodak Ultra Max 400",                 STD,      0,  0,  0, 0, AUTO, 0,     0,  1,  0,  1, 6),
         new Recipe(KODAK, "Kodak Color Plus 200",                STD,      1,  1,  0, 0, AUTO, 0,     2,  1,  0,  1, 6),
-        new Recipe(KODAK, "Kodak Ektar 100",                     STD,      2,  1,  1, 0, AUTO, 0,     0,  0,  0, -1, 6),
+        new Recipe(KODAK, "Kodak Ektar 100",                     STD,      3,  1,  1, 0, AUTO, 0,     0,  0,  0, -1, 6),
         new Recipe(KODAK, "Kodak Ektachrome E100",               CLEAR,    3,  1,  0, 0, AUTO, 0,    -1,  0,  0, -1, 6),
-        new Recipe(KODAK, "Kodachrome 64",                       DEEP,     3,  2,  1, 0, AUTO, 0,     0, -1,  0, -1, 6),
+        new Recipe(KODAK, "Kodachrome 64",                       DEEP,     3,  2,  1, 0, AUTO, 0,    -1,  0,  0, -1, 6),   // M1 on Deep went magenta; the reference is cool-neutral
         new Recipe(KODAK, "Kodak Vision3 500T (daylight)",       NEUTRAL, -1,  0,  0, 0, K,    3200,  0,  0,  0,  1, 3),
         new Recipe(KODAK, "Kodak Vision 200T (Asteroid City)",   NEUTRAL, -2, -3,  0, 0, K,    5000,  2,  3,  0,  1, 3),   // yellow-green pastel, teal sky; Retro Photo washed it out
         new Recipe(KODAK, "Kodak Tri-X 400",                     MONO,     0,  2,  2, 0, AUTO, 0,     0,  0,  0,  1, 6),

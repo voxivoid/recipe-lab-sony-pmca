@@ -186,7 +186,7 @@ class RecipesTest {
         assertEquals("B&W  0/+1  4000K", recipe("Acros +Ye (yellow filter)").summary());
         assertEquals("B&W  0/+1  5600K  G4", recipe("Acros +G (green filter)").summary());
         assertEquals("Standard  -2/-1  5500K  B1  M1", recipe("Cinestill 50D (Blue Velvet)").summary());
-        assertEquals("Neutral  -6/-2  -0.3  DRO Lv3", recipe("Eterna").summary());
+        assertEquals("Neutral  -4/-2  -0.3  DRO Lv3", recipe("Eterna").summary());
         assertEquals("Neutral  -2/-2  DRO Lv5", recipe("Rec709 Video (flat-ish)").summary());
         assertEquals("Portrait  -1/-1  +0.7  A3  G1", recipe("Kodak Portra 400").summary());
         assertEquals("Neutral  -1/0  +0.3  DRO Lv3  3200K", recipe("Kodak Vision3 500T (daylight)").summary());

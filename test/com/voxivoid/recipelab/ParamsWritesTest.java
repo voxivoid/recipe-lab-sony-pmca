@@ -42,7 +42,7 @@ class ParamsWritesTest {
     }
 
     @Test void eternaWritesBothDroBytes() {
-        assertEquals(Arrays.asList(w(ID_STYLE, Recipes.NEUTRAL), w(ID_SAT, -6), w(ID_CON, -2), w(ID_SHARP, -1),
+        assertEquals(Arrays.asList(w(ID_STYLE, Recipes.NEUTRAL), w(ID_SAT, -4), w(ID_CON, -2), w(ID_SHARP, -1),
                 w(ID_EV, -1), w(ID_EV2, -1), w(ID_DRO, 4), w(ID_DRO_LVL, 4)),
                 writesFromFactory("Eterna", Q_FINE));
     }

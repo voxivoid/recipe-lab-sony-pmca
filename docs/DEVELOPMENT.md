@@ -365,3 +365,12 @@ A build never mutates the checked-in manifest; it writes `out/AndroidManifest.xm
 
 Adding a recipe is one line in `Recipes.java` inside its brand block. Adding a brand is a new entry in `GROUPS` plus
 a block of recipes.
+
+**Saturation is steep on this body.** The menu shows ±3 but the core takes ±16, and the sample frames put numbers on
+it: against the Factory look, `sat -4` keeps about half the chroma, `-6` is close to grey, `-8` and below is grey
+(measured chroma 0). A "muted" look is -2 to -4; -6 is a monochrome with a tint. Positive values are gentler:
+`+5` with the PP3 matrix roughly doubles the chroma.
+
+**Colour-temperature recipes cannot be judged indoors.** A fixed kelvin renders relative to the light in the room,
+not to the recipe's intent: 5600K under warm indoor light comes out amber, and 3200K comes out nearly neutral.
+Shoot those eight in daylight before deciding anything about them.
