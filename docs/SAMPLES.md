@@ -21,9 +21,6 @@ that fix a colour temperature (Acros +Ye / +R / +G, Vision3 500T, Asteroid City,
 render relative to the room, not to daylight — 5600K comes out amber here, 3200K nearly neutral. Judge those eight
 in daylight, not from this page.
 
-Four frames — Eterna, Sony IN, Kodak Ektar 100, Kodachrome 64 — were shot one step before the values shown under
-them and are marked; the difference is a saturation or white-balance nudge, not a different look.
-
 Values are read as in the app: *style  sat/con*, then the extras — `MTX` alternate colour matrix, `±EV`, `DRO`,
 kelvin, `A`/`B` amber-blue and `G`/`M` green-magenta fine tune. Effect recipes show the effect name instead of a style.
 
@@ -87,7 +84,7 @@ kelvin, `A`/`B` amber-blue and `G`/`M` green-magenta fine tune. Effect recipes s
 
 ### 07 · Sony IN (instant)
 
-`Neutral  -4/-3  M1`  — *frame shot with the previous values of this recipe*
+`Neutral  -4/-3  M1`
 
 ![Sony IN (instant)](samples/07-sony-in-instant.jpg "Sony IN (instant) — Neutral  -4/-3  M1")
 
@@ -120,9 +117,9 @@ kelvin, `A`/`B` amber-blue and `G`/`M` green-magenta fine tune. Effect recipes s
 
 ### 12 · Classic Chrome
 
-`Neutral  -3/+2  -0.3  A2`
+`Standard  -1/+2  -0.3  A3  G1`
 
-![Classic Chrome](samples/12-classic-chrome.jpg "Classic Chrome — Neutral  -3/+2  -0.3  A2")
+![Classic Chrome](samples/12-classic-chrome.jpg "Classic Chrome — Standard  -1/+2  -0.3  A3  G1")
 
 ### 13 · Classic Negative
 
@@ -156,7 +153,7 @@ kelvin, `A`/`B` amber-blue and `G`/`M` green-magenta fine tune. Effect recipes s
 
 ### 18 · Eterna
 
-`Neutral  -4/-2  -0.3  DRO Lv3`  — *frame shot with the previous values of this recipe*
+`Neutral  -4/-2  -0.3  DRO Lv3`
 
 ![Eterna](samples/18-eterna.jpg "Eterna — Neutral  -4/-2  -0.3  DRO Lv3")
 
@@ -270,7 +267,7 @@ kelvin, `A`/`B` amber-blue and `G`/`M` green-magenta fine tune. Effect recipes s
 
 ### 36 · Kodak Ektar 100
 
-`Standard  +3/+1  -0.3`  — *frame shot with the previous values of this recipe*
+`Standard  +3/+1  -0.3`
 
 ![Kodak Ektar 100](samples/36-kodak-ektar-100.jpg "Kodak Ektar 100 — Standard  +3/+1  -0.3")
 
@@ -282,7 +279,7 @@ kelvin, `A`/`B` amber-blue and `G`/`M` green-magenta fine tune. Effect recipes s
 
 ### 38 · Kodachrome 64
 
-`Deep  +3/+2  -0.3  B1`  — *frame shot with the previous values of this recipe*
+`Deep  +3/+2  -0.3  B1`
 
 ![Kodachrome 64](samples/38-kodachrome-64.jpg "Kodachrome 64 — Deep  +3/+2  -0.3  B1")
 
@@ -552,80 +549,80 @@ list the app writes to `samples.txt` in its own files directory, plus the file e
 
 | frame | recipe | brand | values | original |
 |---|---|---|---|---|
-| 01 | FACTORY (ST) | Sony | `Standard  0/0` | `DSC06490.JPG` |
-| 02 | Sony PT (portrait) | Sony | `Portrait  0/0` | `DSC06491.JPG` |
-| 03 | Sony NT (neutral) | Sony | `Neutral  0/0` | `DSC06492.JPG` |
-| 04 | Sony VV (vivid) | Sony | `Vivid  0/0` | `DSC06493.JPG` |
-| 05 | Sony VV2 | Sony | `Vivid  +2/+1  MTX` | `DSC06494.JPG` |
-| 06 | Sony FL (film-like) | Sony | `Neutral  -4/-1  A1` | `DSC06495.JPG` |
-| 07 | Sony IN (instant) | Sony | `Neutral  -4/-3  M1` | `DSC06496.JPG` |
-| 08 | Sony SH (soft high-key) | Sony | `High-key blue  +1.0  A1` | `DSC06497.JPG` |
-| 09 | Provia | Fuji Sim | `Standard  +1/0` | `DSC06498.JPG` |
-| 10 | Velvia | Fuji Sim | `Vivid  +5/+2  MTX` | `DSC06499.JPG` |
-| 11 | Astia | Fuji Sim | `Portrait  0/-1  +0.3  A1` | `DSC06500.JPG` |
-| 12 | Classic Chrome | Fuji Sim | `Neutral  -3/+2  -0.3  A2` | `DSC06501.JPG` |
-| 13 | Classic Negative | Fuji Sim | `Standard  -3/+3  B1  G1` | `DSC06502.JPG` |
-| 14 | Nostalgic Neg | Fuji Sim | `Standard  +1/0  A3` | `DSC06503.JPG` |
-| 15 | Reala Ace | Fuji Sim | `Standard  0/+1` | `DSC06504.JPG` |
-| 16 | Pro Neg Std | Fuji Sim | `Portrait  -2/-1` | `DSC06505.JPG` |
-| 17 | Pro Neg Hi | Fuji Sim | `Portrait  -2/+1` | `DSC06506.JPG` |
-| 18 | Eterna | Fuji Sim | `Neutral  -4/-2  -0.3  DRO Lv3` | `DSC06507.JPG` |
-| 19 | Eterna Bleach Bypass | Fuji Sim | `Neutral  -6/+3  -0.3` | `DSC06508.JPG` |
-| 20 | Acros | Fuji Sim | `B&W  0/+1` | `DSC06509.JPG` |
-| 21 | Acros +Ye (yellow filter) | Fuji Sim | `B&W  0/+1  4000K` | `DSC06510.JPG` |
-| 22 | Acros +R (red filter) | Fuji Sim | `HC mono  2500K` | `DSC06511.JPG` |
-| 23 | Acros +G (green filter) | Fuji Sim | `B&W  0/+1  5600K  G4` | `DSC06512.JPG` |
-| 24 | Sepia | Fuji Sim | `Sepia  0/0` | `DSC06513.JPG` |
-| 25 | Fuji Pro 400H | Fuji Film | `Light  -2/-2  +0.7  B1  G1` | `DSC06514.JPG` |
-| 26 | Fuji Fortia 50 | Fuji Film | `Vivid  +4/+2  MTX  -0.3  B1` | `DSC06515.JPG` |
-| 27 | Fuji Superia 400 | Fuji Film | `Standard  +1/+1  +0.3  A1  G1` | `DSC06516.JPG` |
-| 28 | Fuji C200 | Fuji Film | `Standard  0/0  B1  G1` | `DSC06517.JPG` |
-| 29 | Fuji Natura 1600 | Fuji Film | `Portrait  -2/-2  +0.3  A1` | `DSC06518.JPG` |
-| 30 | Kodak Portra 160 | Kodak | `Portrait  -3/-2  +0.7  A1  M1` | `DSC06519.JPG` |
-| 31 | Kodak Portra 400 | Kodak | `Portrait  -1/-1  +0.7  A3  G1` | `DSC06520.JPG` |
-| 32 | Kodak Portra 800 | Kodak | `Portrait  -2/-2  +0.3  A1  G1` | `DSC06521.JPG` |
-| 33 | Kodak Gold 200 | Kodak | `Standard  +2/+1  +0.3  A3  G1` | `DSC06522.JPG` |
-| 34 | Kodak Ultra Max 400 | Kodak | `Standard  0/0  +0.3  G1` | `DSC06523.JPG` |
-| 35 | Kodak Color Plus 200 | Kodak | `Standard  +1/+1  +0.3  A2  G1` | `DSC06524.JPG` |
-| 36 | Kodak Ektar 100 | Kodak | `Standard  +3/+1  -0.3` | `DSC06525.JPG` |
-| 37 | Kodak Ektachrome E100 | Kodak | `Clear  +3/+1  -0.3  B1` | `DSC06526.JPG` |
-| 38 | Kodachrome 64 | Kodak | `Deep  +3/+2  -0.3  B1` | `DSC06527.JPG` |
-| 39 | Kodak Vision3 500T (daylight) | Kodak | `Neutral  -1/0  +0.3  DRO Lv3  3200K` | `DSC06528.JPG` |
-| 40 | Kodak Vision 200T (Asteroid City) | Kodak | `Neutral  -2/-3  +0.3  DRO Lv3  5000K  A2  G3` | `DSC06529.JPG` |
-| 41 | Kodak Tri-X 400 | Kodak | `B&W  0/+2  +0.3` | `DSC06530.JPG` |
-| 42 | Kodak T-Max | Kodak | `B&W  0/+2` | `DSC06531.JPG` |
-| 43 | Kodak Tri-X 1600 (pushed) | Kodak | `HC mono  +0.3` | `DSC06532.JPG` |
-| 44 | Cinestill 50D (Blue Velvet) | Cine | `Standard  -2/-1  5500K  B1  M1` | `DSC06533.JPG` |
-| 45 | Cinestill 800T | Cine | `Neutral  0/0  +0.3  3200K  M1` | `DSC06534.JPG` |
-| 46 | Classic Cinema | Cine | `Standard  0/-1  DRO Lv3  6000K  A2` | `DSC06535.JPG` |
-| 47 | Rec709 Video (flat-ish) | Cine | `Neutral  -2/-2  DRO Lv5` | `DSC06536.JPG` |
-| 48 | GR Positive Film | Ricoh GR | `Standard  +3/+2  -0.3  A2` | `DSC06537.JPG` |
-| 49 | GR Negative Film | Ricoh GR | `Neutral  -2/+1  +0.3  B1  G1` | `DSC06538.JPG` |
-| 50 | GR Bleach Bypass | Ricoh GR | `Neutral  -6/+3` | `DSC06539.JPG` |
-| 51 | GR Retro | Ricoh GR | `Retro  A3  M1` | `DSC06540.JPG` |
-| 52 | GR Cross Process | Ricoh GR | `Vivid  +2/+2  B2  G4` | `DSC06541.JPG` |
-| 53 | GR Hi-Contrast B&W | Ricoh GR | `HC mono` | `DSC06542.JPG` |
-| 54 | GR Hard Monotone | Ricoh GR | `B&W  0/+2` | `DSC06543.JPG` |
-| 55 | GR Soft Monotone | Ricoh GR | `B&W  0/-2` | `DSC06544.JPG` |
-| 56 | Leica Contemporary | Leica | `Standard  +1/+1` | `DSC06545.JPG` |
-| 57 | Leica Classic | Leica | `Standard  -1/+2  A1` | `DSC06546.JPG` |
-| 58 | Leica Eternal | Leica | `Neutral  -3/-1  DRO Lv3  A1` | `DSC06547.JPG` |
-| 59 | Leica Monochrom | Leica | `B&W  0/+2` | `DSC06548.JPG` |
-| 60 | Hasselblad HNCS Natural | Hasselblad | `Neutral  -1/-1` | `DSC06549.JPG` |
-| 61 | Canon Standard | Canon / Nikon | `Standard  +1/+1  A1  M1` | `DSC06550.JPG` |
-| 62 | Canon Portrait | Canon / Nikon | `Portrait  0/0  A1  M1` | `DSC06551.JPG` |
-| 63 | Canon Faithful | Canon / Nikon | `Neutral  0/0` | `DSC06552.JPG` |
-| 64 | Nikon Flat | Canon / Nikon | `Neutral  -3/-3  DRO Lv5` | `DSC06553.JPG` |
-| 65 | Nikon Vivid | Canon / Nikon | `Vivid  +1/+1` | `DSC06554.JPG` |
-| 66 | Pana L.Monochrome D | Pana / Olympus | `B&W  0/+3` | `DSC06555.JPG` |
-| 67 | Pana L.ClassicNeo | Pana / Olympus | `Neutral  -3/-1  +0.3  A2` | `DSC06556.JPG` |
-| 68 | Olympus Pop Art | Pana / Olympus | `Vivid  +8/+2  MTX` | `DSC06557.JPG` |
-| 69 | Olympus Pale & Light | Pana / Olympus | `Light  -3/-2  +0.7` | `DSC06558.JPG` |
-| 70 | Agfa Vista 200 | Other Stocks | `Standard  +2/+1  +0.3  A2  M1` | `DSC06559.JPG` |
-| 71 | Agfa Ultra 100 | Other Stocks | `Vivid  +6/+1  MTX` | `DSC06560.JPG` |
-| 72 | Polaroid / Instax | Other Stocks | `Retro  +0.3  A1  M2` | `DSC06561.JPG` |
-| 73 | Ilford HP5 | Ilford | `B&W  0/+1  +0.3` | `DSC06562.JPG` |
-| 74 | Ilford FP4 | Ilford | `B&W  0/+1` | `DSC06563.JPG` |
-| 75 | Ilford Delta 100 | Ilford | `B&W  0/+1` | `DSC06564.JPG` |
-| 76 | Ilford Delta 3200 | Ilford | `B&W  0/+3  +0.7` | `DSC06565.JPG` |
-| 77 | Ilford Pan F 50 | Ilford | `B&W  0/+2` | `DSC06566.JPG` |
+| 01 | FACTORY (ST) | Sony | `Standard  0/0` | `DSC06567.JPG` |
+| 02 | Sony PT (portrait) | Sony | `Portrait  0/0` | `DSC06568.JPG` |
+| 03 | Sony NT (neutral) | Sony | `Neutral  0/0` | `DSC06569.JPG` |
+| 04 | Sony VV (vivid) | Sony | `Vivid  0/0` | `DSC06570.JPG` |
+| 05 | Sony VV2 | Sony | `Vivid  +2/+1  MTX` | `DSC06571.JPG` |
+| 06 | Sony FL (film-like) | Sony | `Neutral  -4/-1  A1` | `DSC06572.JPG` |
+| 07 | Sony IN (instant) | Sony | `Neutral  -4/-3  M1` | `DSC06573.JPG` |
+| 08 | Sony SH (soft high-key) | Sony | `High-key blue  +1.0  A1` | `DSC06574.JPG` |
+| 09 | Provia | Fuji Sim | `Standard  +1/0` | `DSC06575.JPG` |
+| 10 | Velvia | Fuji Sim | `Vivid  +5/+2  MTX` | `DSC06576.JPG` |
+| 11 | Astia | Fuji Sim | `Portrait  0/-1  +0.3  A1` | `DSC06577.JPG` |
+| 12 | Classic Chrome | Fuji Sim | `Standard  -1/+2  -0.3  A3  G1` | `DSC06578.JPG` |
+| 13 | Classic Negative | Fuji Sim | `Standard  -3/+3  B1  G1` | `DSC06579.JPG` |
+| 14 | Nostalgic Neg | Fuji Sim | `Standard  +1/0  A3` | `DSC06580.JPG` |
+| 15 | Reala Ace | Fuji Sim | `Standard  0/+1` | `DSC06581.JPG` |
+| 16 | Pro Neg Std | Fuji Sim | `Portrait  -2/-1` | `DSC06582.JPG` |
+| 17 | Pro Neg Hi | Fuji Sim | `Portrait  -2/+1` | `DSC06583.JPG` |
+| 18 | Eterna | Fuji Sim | `Neutral  -4/-2  -0.3  DRO Lv3` | `DSC06584.JPG` |
+| 19 | Eterna Bleach Bypass | Fuji Sim | `Neutral  -6/+3  -0.3` | `DSC06585.JPG` |
+| 20 | Acros | Fuji Sim | `B&W  0/+1` | `DSC06586.JPG` |
+| 21 | Acros +Ye (yellow filter) | Fuji Sim | `B&W  0/+1  4000K` | `DSC06587.JPG` |
+| 22 | Acros +R (red filter) | Fuji Sim | `HC mono  2500K` | `DSC06588.JPG` |
+| 23 | Acros +G (green filter) | Fuji Sim | `B&W  0/+1  5600K  G4` | `DSC06589.JPG` |
+| 24 | Sepia | Fuji Sim | `Sepia  0/0` | `DSC06590.JPG` |
+| 25 | Fuji Pro 400H | Fuji Film | `Light  -2/-2  +0.7  B1  G1` | `DSC06591.JPG` |
+| 26 | Fuji Fortia 50 | Fuji Film | `Vivid  +4/+2  MTX  -0.3  B1` | `DSC06592.JPG` |
+| 27 | Fuji Superia 400 | Fuji Film | `Standard  +1/+1  +0.3  A1  G1` | `DSC06593.JPG` |
+| 28 | Fuji C200 | Fuji Film | `Standard  0/0  B1  G1` | `DSC06594.JPG` |
+| 29 | Fuji Natura 1600 | Fuji Film | `Portrait  -2/-2  +0.3  A1` | `DSC06595.JPG` |
+| 30 | Kodak Portra 160 | Kodak | `Portrait  -3/-2  +0.7  A1  M1` | `DSC06596.JPG` |
+| 31 | Kodak Portra 400 | Kodak | `Portrait  -1/-1  +0.7  A3  G1` | `DSC06597.JPG` |
+| 32 | Kodak Portra 800 | Kodak | `Portrait  -2/-2  +0.3  A1  G1` | `DSC06598.JPG` |
+| 33 | Kodak Gold 200 | Kodak | `Standard  +2/+1  +0.3  A3  G1` | `DSC06599.JPG` |
+| 34 | Kodak Ultra Max 400 | Kodak | `Standard  0/0  +0.3  G1` | `DSC06600.JPG` |
+| 35 | Kodak Color Plus 200 | Kodak | `Standard  +1/+1  +0.3  A2  G1` | `DSC06601.JPG` |
+| 36 | Kodak Ektar 100 | Kodak | `Standard  +3/+1  -0.3` | `DSC06602.JPG` |
+| 37 | Kodak Ektachrome E100 | Kodak | `Clear  +3/+1  -0.3  B1` | `DSC06603.JPG` |
+| 38 | Kodachrome 64 | Kodak | `Deep  +3/+2  -0.3  B1` | `DSC06604.JPG` |
+| 39 | Kodak Vision3 500T (daylight) | Kodak | `Neutral  -1/0  +0.3  DRO Lv3  3200K` | `DSC06605.JPG` |
+| 40 | Kodak Vision 200T (Asteroid City) | Kodak | `Neutral  -2/-3  +0.3  DRO Lv3  5000K  A2  G3` | `DSC06606.JPG` |
+| 41 | Kodak Tri-X 400 | Kodak | `B&W  0/+2  +0.3` | `DSC06607.JPG` |
+| 42 | Kodak T-Max | Kodak | `B&W  0/+2` | `DSC06608.JPG` |
+| 43 | Kodak Tri-X 1600 (pushed) | Kodak | `HC mono  +0.3` | `DSC06609.JPG` |
+| 44 | Cinestill 50D (Blue Velvet) | Cine | `Standard  -2/-1  5500K  B1  M1` | `DSC06610.JPG` |
+| 45 | Cinestill 800T | Cine | `Neutral  0/0  +0.3  3200K  M1` | `DSC06611.JPG` |
+| 46 | Classic Cinema | Cine | `Standard  0/-1  DRO Lv3  6000K  A2` | `DSC06612.JPG` |
+| 47 | Rec709 Video (flat-ish) | Cine | `Neutral  -2/-2  DRO Lv5` | `DSC06613.JPG` |
+| 48 | GR Positive Film | Ricoh GR | `Standard  +3/+2  -0.3  A2` | `DSC06614.JPG` |
+| 49 | GR Negative Film | Ricoh GR | `Neutral  -2/+1  +0.3  B1  G1` | `DSC06615.JPG` |
+| 50 | GR Bleach Bypass | Ricoh GR | `Neutral  -6/+3` | `DSC06616.JPG` |
+| 51 | GR Retro | Ricoh GR | `Retro  A3  M1` | `DSC06617.JPG` |
+| 52 | GR Cross Process | Ricoh GR | `Vivid  +2/+2  B2  G4` | `DSC06618.JPG` |
+| 53 | GR Hi-Contrast B&W | Ricoh GR | `HC mono` | `DSC06619.JPG` |
+| 54 | GR Hard Monotone | Ricoh GR | `B&W  0/+2` | `DSC06620.JPG` |
+| 55 | GR Soft Monotone | Ricoh GR | `B&W  0/-2` | `DSC06621.JPG` |
+| 56 | Leica Contemporary | Leica | `Standard  +1/+1` | `DSC06622.JPG` |
+| 57 | Leica Classic | Leica | `Standard  -1/+2  A1` | `DSC06623.JPG` |
+| 58 | Leica Eternal | Leica | `Neutral  -3/-1  DRO Lv3  A1` | `DSC06624.JPG` |
+| 59 | Leica Monochrom | Leica | `B&W  0/+2` | `DSC06625.JPG` |
+| 60 | Hasselblad HNCS Natural | Hasselblad | `Neutral  -1/-1` | `DSC06626.JPG` |
+| 61 | Canon Standard | Canon / Nikon | `Standard  +1/+1  A1  M1` | `DSC06627.JPG` |
+| 62 | Canon Portrait | Canon / Nikon | `Portrait  0/0  A1  M1` | `DSC06628.JPG` |
+| 63 | Canon Faithful | Canon / Nikon | `Neutral  0/0` | `DSC06629.JPG` |
+| 64 | Nikon Flat | Canon / Nikon | `Neutral  -3/-3  DRO Lv5` | `DSC06630.JPG` |
+| 65 | Nikon Vivid | Canon / Nikon | `Vivid  +1/+1` | `DSC06631.JPG` |
+| 66 | Pana L.Monochrome D | Pana / Olympus | `B&W  0/+3` | `DSC06632.JPG` |
+| 67 | Pana L.ClassicNeo | Pana / Olympus | `Neutral  -3/-1  +0.3  A2` | `DSC06633.JPG` |
+| 68 | Olympus Pop Art | Pana / Olympus | `Vivid  +8/+2  MTX` | `DSC06634.JPG` |
+| 69 | Olympus Pale & Light | Pana / Olympus | `Light  -3/-2  +0.7` | `DSC06635.JPG` |
+| 70 | Agfa Vista 200 | Other Stocks | `Standard  +2/+1  +0.3  A2  M1` | `DSC06636.JPG` |
+| 71 | Agfa Ultra 100 | Other Stocks | `Vivid  +6/+1  MTX` | `DSC06637.JPG` |
+| 72 | Polaroid / Instax | Other Stocks | `Retro  +0.3  A1  M2` | `DSC06638.JPG` |
+| 73 | Ilford HP5 | Ilford | `B&W  0/+1  +0.3` | `DSC06639.JPG` |
+| 74 | Ilford FP4 | Ilford | `B&W  0/+1` | `DSC06640.JPG` |
+| 75 | Ilford Delta 100 | Ilford | `B&W  0/+1` | `DSC06641.JPG` |
+| 76 | Ilford Delta 3200 | Ilford | `B&W  0/+3  +0.7` | `DSC06642.JPG` |
+| 77 | Ilford Pan F 50 | Ilford | `B&W  0/+2` | `DSC06643.JPG` |
