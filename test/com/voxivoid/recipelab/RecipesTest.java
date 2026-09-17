@@ -175,27 +175,26 @@ class RecipesTest {
 
     @Test void isEffectMeansAPictureEffectIsOn() {
         assertFalse(recipe("Velvia").isEffect());
-        assertTrue(recipe("Nostalgic Neg").isEffect());
+        assertTrue(recipe("GR Retro").isEffect());
         assertTrue(recipe("Sony SH (soft high-key)").isEffect());
     }
 
     @Test void summaryReadsLikeTheBrowserLine() {
         assertEquals("Standard  0/0", Recipes.ALL[0].summary());
         assertEquals("Neutral  -4/-1  A1", recipe("Sony FL (film-like)").summary());
-        assertEquals("Vivid  +5/+1  MTX", recipe("Velvia").summary());
+        assertEquals("Vivid  +5/+2  MTX", recipe("Velvia").summary());
         assertEquals("B&W  0/+1  4000K", recipe("Acros +Ye (yellow filter)").summary());
         assertEquals("B&W  0/+1  5600K  G4", recipe("Acros +G (green filter)").summary());
-        assertEquals("Standard  -1/+1  5600K  B2", recipe("Cinestill 50D (Blue Velvet)").summary());
+        assertEquals("Standard  -2/-1  5500K  B1  M1", recipe("Cinestill 50D (Blue Velvet)").summary());
         assertEquals("Neutral  -6/-2  -0.3  DRO Lv3", recipe("Eterna").summary());
         assertEquals("Neutral  -2/-2  DRO Lv5", recipe("Rec709 Video (flat-ish)").summary());
-        assertEquals("Portrait  -1/0  +0.7  A2  G1", recipe("Kodak Portra 400").summary());
+        assertEquals("Portrait  -1/-1  +0.7  A3  G1", recipe("Kodak Portra 400").summary());
         assertEquals("Neutral  -1/0  +0.3  DRO Lv3  3200K", recipe("Kodak Vision3 500T (daylight)").summary());
     }
 
     @Test void summaryOfAnEffectNamesTheEffectAndItsSubParameter() {
         assertEquals("High-key blue  +1.0  A1", recipe("Sony SH (soft high-key)").summary());
-        assertEquals("High-key green  +0.7  B1  G1", recipe("Fuji Pro 400H").summary());
-        assertEquals("Retro  +0.3  A2", recipe("Nostalgic Neg").summary());
+        assertEquals("Retro  A3  M1", recipe("GR Retro").summary());
         assertEquals("HC mono  2500K", recipe("Acros +R (red filter)").summary());
         // a matrix is meaningless under an effect and stays out of the line
         Recipes.Recipe r = new Recipes.Recipe(0, "x", Recipes.STD, 0, 0, 0, 1, Params.WB_AUTO, 0, 0, 0, Recipes.PE_POP, 0, Recipes.DRO_AUTO);

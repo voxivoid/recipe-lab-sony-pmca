@@ -29,15 +29,15 @@ class ParamsWritesTest {
     @Test void portra400FromFactory() {
         assertEquals(Arrays.asList(
                 w(ID_STYLE, Recipes.PORTRAIT),
-                w(ID_SAT, -1),
-                w(ID_WB_AB, 2), w(ID_WB_AB_AWB, 2),
+                w(ID_SAT, -1), w(ID_CON, -1),
+                w(ID_WB_AB, 3), w(ID_WB_AB_AWB, 3),
                 w(ID_WB_GM, -1), w(ID_WB_GM_AWB, -1),   // G1 goes in magenta-positive
                 w(ID_EV, 2), w(ID_EV2, 2)),            // exposure bias and its companion copy
                 writesFromFactory("Kodak Portra 400", Q_FINE));
     }
 
     @Test void velviaWritesPictureProfileThreeForTheMatrix() {
-        assertEquals(Arrays.asList(w(ID_STYLE, Recipes.VIVID), w(ID_SAT, 5), w(ID_CON, 1), w(ID_PP_NO, 3)),
+        assertEquals(Arrays.asList(w(ID_STYLE, Recipes.VIVID), w(ID_SAT, 5), w(ID_CON, 2), w(ID_PP_NO, 3)),
                 writesFromFactory("Velvia", Q_FINE));
     }
 
@@ -85,7 +85,9 @@ class ParamsWritesTest {
     }
 
     @Test void theSubParameterGoesToTheStagedEffectsSlot() {
-        List<Write> ws = writesFromFactory("Fuji Pro 400H", Q_FINE);
+        int[] cur = factoryRows();
+        int[] edit = staged(Fixtures.recipe("Sony SH (soft high-key)"), cur, Q_FINE); edit[R_SUB] = 2;   // green tint; no recipe ships a non-zero sub today
+        List<Write> ws = writes(cur, edit, 0);
         assertTrue(ws.contains(w(0x010709d8, 2)), "green tint of Soft High-key: " + ws);
         assertTrue(ws.contains(w(ID_PE, Recipes.PE_HIGHKEY)));
     }
@@ -163,8 +165,8 @@ class ParamsWritesTest {
             assertEquals(0, dirtyRows(back, edit, storedSub(store, edit)), Recipes.ALL[i].name + " still dirty after storing");
         }
         // back at the factory look -- except the colour temperature on the dial, which an AWB recipe leaves as the
-        // last kelvin recipe set it (Classic Cinema, 5000K); the Factory recipe says "auto", not "5500K"
-        int[] expected = factoryRows(); expected[R_KELVIN] = 50;
+        // last kelvin recipe set it (Classic Cinema, 6000K); the Factory recipe says "auto", not "5500K"
+        int[] expected = factoryRows(); expected[R_KELVIN] = 60;
         assertArrayEquals(expected, load(store), "back at the factory look");
     }
 }

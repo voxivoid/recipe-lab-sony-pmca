@@ -78,8 +78,8 @@ mode**, photo and video, with the app closed. Turn it off and on, it is still th
 **[See every recipe on the same subject →](docs/SAMPLES.md)** — 77 frames, one scene, one exposure, straight out of
 the camera.
 
-Recipes marked **PE** in the app (Nostalgic Neg, Asteroid City, Fuji Pro 400H, Acros +R, Tri-X 1600, GR Retro,
-GR Hi-Contrast B&W, Sony SH, Polaroid) are built on a Picture Effect because, against the reference frames, its tone
+Recipes marked **PE** in the app (Acros +R, Tri-X 1600, GR Retro, GR Hi-Contrast B&W, Sony SH, Polaroid) are built on
+a Picture Effect because, against the reference frames, its tone
 curve gets closer than Creative Style can; everything else stays Creative Style on purpose.
 
 Not included, because the camera simply cannot do them: log profiles (S-Log, V-Log, Blackmagic Film, Cinelike D) and

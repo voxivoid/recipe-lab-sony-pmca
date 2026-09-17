@@ -76,7 +76,7 @@ class ParamsPreviewTest {
         Map<String, String> p = previewOf("Acros +G (green filter)", Q_FINE);
         assertEquals("-4", p.get("color-compensation-for-white-balance"));
         p = previewOf("Cinestill 50D (Blue Velvet)", Q_FINE);
-        assertEquals("-2", p.get("light-balance-for-white-balance"), "B2 is amber -2");
+        assertEquals("-1", p.get("light-balance-for-white-balance"), "B1 is amber -1");
     }
 
     @Test void anUnknownWhiteBalanceModeLeavesTheCamerasOwn() {
@@ -89,9 +89,9 @@ class ParamsPreviewTest {
         assertEquals("soft-high-key", p.get("picture-effect"));
         assertEquals("blue", p.get("pe-soft-high-key-effect"));
         assertEquals("3", p.get("exposure-compensation"));
-        p = previewOf("Fuji Pro 400H", Q_FINE);
-        assertEquals("green", p.get("pe-soft-high-key-effect"));
-        p = previewOf("Nostalgic Neg", Q_FINE);
+        int[] e = staged(recipe("Sony SH (soft high-key)"), factoryRows(), Q_FINE); e[R_SUB] = 2;   // no recipe uses a non-zero sub today
+        assertEquals("green", preview(e).get("pe-soft-high-key-effect"));
+        p = previewOf("GR Retro", Q_FINE);
         assertEquals("retro-photo", p.get("picture-effect"));
         assertFalse(p.containsKey("pe-soft-high-key-effect"));
         assertEquals("standard", p.get("color-mode"), "the style is still sent; the camera ignores it under an effect");

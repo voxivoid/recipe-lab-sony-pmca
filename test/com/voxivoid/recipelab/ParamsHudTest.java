@@ -30,10 +30,10 @@ class ParamsHudTest {
 
     @Test void metaLineAnnouncesAQualityChangeAndRawUnderAnEffect() {
         int[] cur = factoryRows(); cur[R_QUAL] = Q_RAW;
-        int[] e = staged(recipe("Nostalgic Neg"), cur, Q_RAW);
-        assertEquals("Picture Effect Retro (Creative Style ignored, JPEG only)  ·  WB auto  ·  EV +0.3  ·  QUALITY → JPG Fine (now RAW)", metaLine(cur, e, null));
+        int[] e = staged(recipe("GR Retro"), cur, Q_RAW);
+        assertEquals("Picture Effect Retro (Creative Style ignored, JPEG only)  ·  WB auto  ·  QUALITY → JPG Fine (now RAW)", metaLine(cur, e, null));
         e[R_QUAL] = Q_RAW;   // the user forced RAW back on
-        assertEquals("Picture Effect Retro (Creative Style ignored, JPEG only)  ·  WB auto  ·  EV +0.3  ·  RAW is on: effect ignored", metaLine(cur, e, null));
+        assertEquals("Picture Effect Retro (Creative Style ignored, JPEG only)  ·  WB auto  ·  RAW is on: effect ignored", metaLine(cur, e, null));
     }
 
     @Test void metaLineShowsAnUnknownWhiteBalanceModeAndThePreviewError() {
@@ -47,14 +47,14 @@ class ParamsHudTest {
         int[] e = staged(Recipes.ALL[i], cur, Q_FINE);
         assertEquals("CS  Kodak Portra 400   " + (i + 1) + " / 77   · preview", miniLine(i, cur, e, true));
         assertEquals("CS  Kodak Portra 400   " + (i + 1) + " / 77   · active", miniLine(i, cur, e, false));
-        i = indexOf("Nostalgic Neg"); cur[R_QUAL] = Q_RAW;
+        i = indexOf("GR Retro"); cur[R_QUAL] = Q_RAW;
         e = staged(Recipes.ALL[i], cur, Q_RAW);
-        assertEquals("PE  Nostalgic Neg   " + (i + 1) + " / 77   · preview   · quality → JPG Fine", miniLine(i, cur, e, true));
+        assertEquals("PE  GR Retro   " + (i + 1) + " / 77   · preview   · quality → JPG Fine", miniLine(i, cur, e, true));
     }
 
     @Test void qualityPromptExplainsWhyTheQualityMoves() {
         int[] cur = factoryRows(); cur[R_QUAL] = Q_RAW;
-        int[] e = staged(recipe("Nostalgic Neg"), cur, Q_RAW);
+        int[] e = staged(recipe("GR Retro"), cur, Q_RAW);
         assertArrayEquals(new String[] { "Quality: RAW  →  JPG Fine", "JPEG is needed to apply this recipe." }, qualityPrompt(cur, e));
         e = cur.clone(); e[R_QUAL] = Q_STD;
         assertArrayEquals(new String[] { "Quality: RAW  →  JPG Std", "Creative Style recipes use the Factory recipe's quality." }, qualityPrompt(cur, e));

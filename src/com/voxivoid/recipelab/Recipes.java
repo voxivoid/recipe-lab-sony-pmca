@@ -99,51 +99,51 @@ public class Recipes {
         new Recipe(SONY,  "Sony SH (soft high-key)",             LIGHT,   -2, -2,  0, 0, AUTO, 0,     1,  0,  5,  3, 6),
         // ---- Fujifilm simulations
         new Recipe(FSIM,  "Provia",                              STD,      1,  0,  0, 0, AUTO, 0,     0,  0,  0,  0, 6),
-        new Recipe(FSIM,  "Velvia",                              VIVID,    5,  1,  0, 1, AUTO, 0,     0,  0),
+        new Recipe(FSIM,  "Velvia",                              VIVID,    5,  2,  0, 1, AUTO, 0,     0,  0),
         new Recipe(FSIM,  "Astia",                               PORTRAIT, 0, -1,  0, 0, AUTO, 0,     1,  0,  0,  1, 6),
-        new Recipe(FSIM,  "Classic Chrome",                      NEUTRAL, -5,  2,  0, 0, AUTO, 0,    -1,  0,  0, -1, 6),
-        new Recipe(FSIM,  "Classic Negative",                    STD,     -3,  3,  1, 0, AUTO, 0,     0,  1,  0,  1, 6),
-        new Recipe(FSIM,  "Nostalgic Neg",                       STD,      0,  0,  0, 0, AUTO, 0,     2,  0,  4,  1, 6),   // Retro Photo: amber, faded
+        new Recipe(FSIM,  "Classic Chrome",                      NEUTRAL, -3,  2,  0, 0, AUTO, 0,     2,  0,  0, -1, 6),   // amber, not grey: the reference is warm
+        new Recipe(FSIM,  "Classic Negative",                    STD,     -3,  3,  1, 0, AUTO, 0,    -1,  1,  0,  0, 6),
+        new Recipe(FSIM,  "Nostalgic Neg",                       STD,      1,  0,  0, 0, AUTO, 0,     3,  0,  0,  0, 6),   // amber and saturated; Retro Photo washed it out
         new Recipe(FSIM,  "Reala Ace",                           STD,      0,  1,  0, 0, AUTO, 0,     0,  0),
         new Recipe(FSIM,  "Pro Neg Std",                         PORTRAIT,-2, -1,  0, 0, AUTO, 0,     0,  0),
         new Recipe(FSIM,  "Pro Neg Hi",                          PORTRAIT,-2,  1,  0, 0, AUTO, 0,     0,  0),
         new Recipe(FSIM,  "Eterna",                              NEUTRAL, -6, -2, -1, 0, AUTO, 0,     0,  0,  0, -1, 3),
-        new Recipe(FSIM,  "Eterna Bleach Bypass",                NEUTRAL, -9,  3,  0, 0, AUTO, 0,     0,  0,  0, -1, 6),
+        new Recipe(FSIM,  "Eterna Bleach Bypass",                NEUTRAL, -6,  3,  0, 0, AUTO, 0,     0,  0,  0, -1, 6),   // sat -8 and below is pure grey on this body
         new Recipe(FSIM,  "Acros",                               MONO,     0,  1,  1, 0, AUTO, 0,     0,  0),
         new Recipe(FSIM,  "Acros +Ye (yellow filter)",           MONO,     0,  1,  1, 0, K,    4000,  0,  0),
         new Recipe(FSIM,  "Acros +R (red filter)",               MONO,     0,  0,  0, 0, K,    2500,  0,  0,  7,  0, 6),   // HC Mono: deep blacks, dramatic sky
         new Recipe(FSIM,  "Acros +G (green filter)",             MONO,     0,  1,  1, 0, K,    5600,  0,  4),
         new Recipe(FSIM,  "Sepia",                               SEPIA,    0,  0,  0, 0, AUTO, 0,     0,  0),
         // ---- Fujifilm film stocks
-        new Recipe(FFILM, "Fuji Pro 400H",                       STD,      0,  0,  0, 0, AUTO, 0,    -1,  1,  5,  2, 6, 2),   // Soft High-key, green tint: airy mint pastel
-        new Recipe(FFILM, "Fuji Fortia 50",                      VIVID,    6,  2,  0, 1, AUTO, 0,     0, -1,  0, -1, 6),
+        new Recipe(FFILM, "Fuji Pro 400H",                       LIGHT,   -2, -2,  0, 0, AUTO, 0,    -1,  1,  0,  2, 6),   // cool pastel; the high-key green tint was a green wash
+        new Recipe(FFILM, "Fuji Fortia 50",                      VIVID,    4,  2,  0, 1, AUTO, 0,    -1,  0,  0, -1, 6),   // M1 on top of the matrix went magenta
         new Recipe(FFILM, "Fuji Superia 400",                    STD,      1,  1,  0, 0, AUTO, 0,     1,  1,  0,  1, 6),
         new Recipe(FFILM, "Fuji C200",                           STD,      0,  0,  0, 0, AUTO, 0,    -1,  1),
         new Recipe(FFILM, "Fuji Natura 1600",                    PORTRAIT,-2, -2,  0, 0, AUTO, 0,     1,  0,  0,  1, 6),
         // ---- Kodak
-        new Recipe(KODAK, "Kodak Portra 160",                    PORTRAIT,-2, -1,  0, 0, AUTO, 0,     1,  0,  0,  2, 6),
-        new Recipe(KODAK, "Kodak Portra 400",                    PORTRAIT,-1,  0,  0, 0, AUTO, 0,     2,  1,  0,  2, 6),
-        new Recipe(KODAK, "Kodak Portra 800",                    STD,     -1,  1,  0, 0, AUTO, 0,     2,  0,  0,  1, 6),
+        new Recipe(KODAK, "Kodak Portra 160",                    PORTRAIT,-3, -2,  0, 0, AUTO, 0,     1, -1,  0,  2, 6),   // warm pastel with a touch of magenta
+        new Recipe(KODAK, "Kodak Portra 400",                    PORTRAIT,-1, -1,  0, 0, AUTO, 0,     3,  1,  0,  2, 6),   // golden, soft
+        new Recipe(KODAK, "Kodak Portra 800",                    PORTRAIT,-2, -2,  0, 0, AUTO, 0,     1,  1,  0,  1, 6),   // matte, faded warm
         new Recipe(KODAK, "Kodak Gold 200",                      STD,      2,  1,  0, 0, AUTO, 0,     3,  1,  0,  1, 6),
-        new Recipe(KODAK, "Kodak Ultra Max 400",                 STD,      3,  1,  0, 0, AUTO, 0,     2,  0,  0,  1, 6),
+        new Recipe(KODAK, "Kodak Ultra Max 400",                 STD,      0,  0,  0, 0, AUTO, 0,     0,  1,  0,  1, 6),
         new Recipe(KODAK, "Kodak Color Plus 200",                STD,      1,  1,  0, 0, AUTO, 0,     2,  1,  0,  1, 6),
-        new Recipe(KODAK, "Kodak Ektar 100",                     VIVID,    3,  2,  1, 1, AUTO, 0,     1,  0,  0, -1, 6),
-        new Recipe(KODAK, "Kodak Ektachrome E100",               CLEAR,    2,  1,  0, 0, AUTO, 0,    -1,  0,  0, -1, 6),
-        new Recipe(KODAK, "Kodachrome 64",                       DEEP,     1,  2,  1, 0, AUTO, 0,     1, -1,  0, -1, 6),
+        new Recipe(KODAK, "Kodak Ektar 100",                     STD,      2,  1,  1, 0, AUTO, 0,     0,  0,  0, -1, 6),
+        new Recipe(KODAK, "Kodak Ektachrome E100",               CLEAR,    3,  1,  0, 0, AUTO, 0,    -1,  0,  0, -1, 6),
+        new Recipe(KODAK, "Kodachrome 64",                       DEEP,     3,  2,  1, 0, AUTO, 0,     0, -1,  0, -1, 6),
         new Recipe(KODAK, "Kodak Vision3 500T (daylight)",       NEUTRAL, -1,  0,  0, 0, K,    3200,  0,  0,  0,  1, 3),
-        new Recipe(KODAK, "Kodak Vision 200T (Asteroid City)",   STD,      0,  0,  0, 0, K,    4300,  1,  2,  4,  0, 6),   // Retro Photo + green/warm WB
+        new Recipe(KODAK, "Kodak Vision 200T (Asteroid City)",   NEUTRAL, -2, -3,  0, 0, K,    5000,  2,  3,  0,  1, 3),   // yellow-green pastel, teal sky; Retro Photo washed it out
         new Recipe(KODAK, "Kodak Tri-X 400",                     MONO,     0,  2,  2, 0, AUTO, 0,     0,  0,  0,  1, 6),
         new Recipe(KODAK, "Kodak T-Max",                         MONO,     0,  2,  3, 0, AUTO, 0,     0,  0,  0,  0, 6),
         new Recipe(KODAK, "Kodak Tri-X 1600 (pushed)",           MONO,     0,  0,  0, 0, AUTO, 0,     0,  0,  7,  1, 6),   // HC Mono
         // ---- Cine
-        new Recipe(CINE,  "Cinestill 50D (Blue Velvet)",         STD,     -1,  1,  0, 0, K,    5600, -2,  0),
-        new Recipe(CINE,  "Cinestill 800T",                      NEUTRAL, -2,  0,  0, 0, K,    3200,  0, -1,  0,  1, 6),
-        new Recipe(CINE,  "Classic Cinema",                      NEUTRAL, -4, -2, -1, 0, K,    5000,  0,  0,  0, -1, 3),
+        new Recipe(CINE,  "Cinestill 50D (Blue Velvet)",         STD,     -2, -1,  0, 0, K,    5500, -1, -1),   // faded, near-neutral, a touch cool and magenta
+        new Recipe(CINE,  "Cinestill 800T",                      NEUTRAL,  0,  0,  0, 0, K,    3200,  0, -1,  0,  1, 6),
+        new Recipe(CINE,  "Classic Cinema",                      STD,      0, -1,  0, 0, K,    6000,  2,  0,  0,  0, 3),   // golden and saturated, not muted
         new Recipe(CINE,  "Rec709 Video (flat-ish)",             NEUTRAL, -2, -2,  0, 0, AUTO, 0,     0,  0,  0,  0, 5),
         // ---- Ricoh GR image controls
         new Recipe(RICOH, "GR Positive Film",                    STD,      3,  2,  0, 0, AUTO, 0,     2,  0,  0, -1, 6),
         new Recipe(RICOH, "GR Negative Film",                    NEUTRAL, -2,  1,  0, 0, AUTO, 0,    -1,  1,  0,  1, 6),
-        new Recipe(RICOH, "GR Bleach Bypass",                    NEUTRAL, -8,  3,  0, 0, AUTO, 0,     0,  0),
+        new Recipe(RICOH, "GR Bleach Bypass",                    NEUTRAL, -6,  3,  0, 0, AUTO, 0,     0,  0),   // sat -8 and below is pure grey on this body
         new Recipe(RICOH, "GR Retro",                            STD,     -3, -1,  0, 0, AUTO, 0,     3, -1,  4,  0, 6),
         new Recipe(RICOH, "GR Cross Process",                    VIVID,    2,  2,  0, 0, AUTO, 0,    -2,  4),
         new Recipe(RICOH, "GR Hi-Contrast B&W",                  MONO,     0,  3,  1, 0, AUTO, 0,     0,  0,  7,  0, 6),

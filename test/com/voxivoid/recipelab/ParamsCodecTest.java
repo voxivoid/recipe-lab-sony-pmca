@@ -110,7 +110,7 @@ class ParamsCodecTest {
     }
 
     @Test void effectRecipesForceJpegOverARawBase() {
-        Recipes.Recipe cs = Fixtures.recipe("Velvia"), pe = Fixtures.recipe("Nostalgic Neg");
+        Recipes.Recipe cs = Fixtures.recipe("Velvia"), pe = Fixtures.recipe("GR Retro");
         for (int base = 0; base < 4; base++) assertEquals(base, recipeQuality(cs, base), "a Creative Style recipe keeps the Factory quality");
         assertEquals(Q_FINE, recipeQuality(pe, Q_RAW));
         assertEquals(Q_FINE, recipeQuality(pe, Q_RAWJPG));
@@ -119,7 +119,7 @@ class ParamsCodecTest {
     }
 
     @Test void onlyAFreeChoiceRedefinesTheFactoryQuality() {
-        Recipes.Recipe cs = Fixtures.recipe("Velvia"), pe = Fixtures.recipe("Nostalgic Neg");
+        Recipes.Recipe cs = Fixtures.recipe("Velvia"), pe = Fixtures.recipe("GR Retro");
         for (int q = 0; q < 4; q++) assertTrue(redefinesBaseQuality(cs, q));
         assertFalse(redefinesBaseQuality(pe, Q_RAW), "RAW under an effect is the camera's, not a choice");
         assertFalse(redefinesBaseQuality(pe, Q_RAWJPG));
