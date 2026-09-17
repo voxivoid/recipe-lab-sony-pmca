@@ -28,6 +28,7 @@ UNITS=(
   src/com/voxivoid/recipelab/Recipes.java
   src/com/voxivoid/recipelab/Params.java
   src/com/voxivoid/recipelab/Favourites.java
+  src/com/voxivoid/recipelab/DevTools.java
 )
 
 mkdir -p out/test

@@ -34,7 +34,7 @@ import static com.voxivoid.recipelab.Params.*;
  *
  * Keys: wheel / LEFT / RIGHT recipe · UP / DOWN parameter · top dial adjust · Fn brand browser · ENTER pick
  *       hold ENTER favourite (the centre button exists on every body; Fn / AEL / C1 do not — see issue #18)
- *       AEL / DISP overlay: full → pill → hidden · TRASH stage factory · C1 settings snapshot / diff (finds storage slots)
+ *       AEL / DISP overlay: full → pill → hidden · TRASH stage factory · C1 developer menu (settings snapshot / diff, sample run)
  *       SHUTTER photo · MENU exit
  *
  * This class holds the state and talks to the camera, the store and the views. What a value means, how the store
@@ -60,6 +60,9 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private PromptView prompt;
     private int promptSel = 0; private boolean promptOpen = false;
     private SharedPreferences prefs;
+    private MenuView menu;
+    private boolean menuOpen = false;
+    private int menuSel = 0, settleIdx = DevTools.SETTLE_DEFAULT;   // developer menu: highlighted row, chosen settle delay
     private HintBar hints;
     private LinearLayout chips;
     private final TextView[] chipLabel = new TextView[N], chipValue = new TextView[N];
@@ -69,6 +72,14 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private boolean enterHeld = false, enterLong = false;       // the centre button is down / has already fired its hold action
     private final Runnable enterHold = new Runnable() { public void run() { enterLong = true; toggleFavourite(); } };
     private List<Integer> favs = new ArrayList<Integer>();      // marked recipes, in marking order (Favourites decides, this holds)
+
+    // the sample run (developer menu): one frame per recipe, driven by the handler — stage, settle, shutter, next
+    private boolean running = false;
+    private int runFrame = 0, runReturnTo = 0;                  // frames shot so far = the next recipe index · the recipe to come back to
+    private StringBuilder runLog;                               // manifest lines, written when the run ends
+    private final Runnable runStage = new Runnable() { public void run() { sampleStage(); } };
+    private final Runnable runShoot = new Runnable() { public void run() { sampleShoot(); } };
+    private final Runnable runNext = new Runnable() { public void run() { cancelCapture(); resumePreview(); sampleStage(); } };
 
     private SurfaceHolder holder;
     private Object cameraEx; private Camera camera; private String origFlat;
@@ -88,6 +99,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         prefs = getPreferences(MODE_PRIVATE);
         recipe = Math.max(0, Math.min(Recipes.ALL.length - 1, prefs.getInt("recipe", 0)));
         favs = Favourites.decode(prefs.getString("favourites", ""));
+        settleIdx = DevTools.clampSettle(prefs.getInt("settle", DevTools.SETTLE_DEFAULT));
         panel = findViewById(R.id.panel);
         picker = (PickerView) findViewById(R.id.picker);
         chipScroll = (HorizontalScrollView) findViewById(R.id.chipscroll);
@@ -101,6 +113,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         mini = (TextView) findViewById(R.id.mini);
         toast = (TextView) findViewById(R.id.toast);
         prompt = (PromptView) findViewById(R.id.prompt);
+        menu = (MenuView) findViewById(R.id.menu);
         chips = (LinearLayout) findViewById(R.id.chips);
         buildChips();
         SurfaceView sv = (SurfaceView) findViewById(R.id.surface);
@@ -146,6 +159,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     @Override
     protected void onPause() {
         super.onPause();
+        stopRun(false);                                          // a run cannot outlive the camera it shoots with
+        closeMenu();
         handler.removeCallbacks(hideToast);
         handler.removeCallbacks(enterHold); enterHeld = false; enterLong = false;
         holder.removeCallback(this);
@@ -265,7 +280,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         showToast("Quality: " + Q_LABEL[edit[R_QUAL]] + (qualityPersistent() ? "  — ENTER to pick" : "  (live view only until the slot is known)"), 2500);
     }
 
-    // ------------------------------------------------------------ snapshot / diff of the whole settings store (Fn long-press)
+    // ------------------------------------------------------------ snapshot / diff of the whole settings store (developer menu)
     private File snapFile() { return new File(getFilesDir(), "snapshot.bin"); }
 
     private List<int[]> idList() {
@@ -285,7 +300,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
                 FileOutputStream o = new FileOutputStream(f);
                 for (int[] e : ids) { byte[] v; try { v = NativeBackup.read(e[0]); } catch (Throwable t) { v = new byte[0]; } o.write(v.length); o.write(v); }
                 o.close();
-                showToast("Snapshot of " + ids.size() + " settings taken. Change a menu setting, reopen, press Fn again.", 6000);
+                showToast("Snapshot of " + ids.size() + " settings taken. Change a menu setting, reopen, press C1 again.", 6000);
                 return;
             }
             FileInputStream in = new FileInputStream(f);
@@ -304,6 +319,123 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             showToast(text, 0);
         } catch (Throwable t) { showToast("snapshot error: " + t, 0); }
     }
+
+    // ------------------------------------------------------------ developer menu (C1) and the sample run
+    private void openMenu() {
+        if (running) return;
+        menuOpen = true; renderMenu();
+    }
+
+    private void renderMenu() {
+        boolean snapshotTaken = snapFile().exists();
+        String[] labels = new String[DevTools.ROWS], details = new String[DevTools.ROWS];
+        for (int i = 0; i < DevTools.ROWS; i++) { labels[i] = DevTools.rowLabel(i, snapshotTaken, settleIdx); details[i] = DevTools.rowDetail(i, snapshotTaken); }
+        menu.set(labels, details, menuSel);
+        menu.setVisibility(View.VISIBLE);
+    }
+
+    private void closeMenu() { menu.setVisibility(View.GONE); menuOpen = false; }
+
+    /** the centre button on a menu row: the tools close the menu and run, the delay row stays open and cycles */
+    private void pickMenuRow() {
+        switch (menuSel) {
+            case DevTools.ROW_SNAPSHOT: closeMenu(); snapshotOrDiff(); break;
+            case DevTools.ROW_SAMPLES: closeMenu(); startRun(); break;
+            case DevTools.ROW_SETTLE:
+                settleIdx = DevTools.nextSettle(settleIdx, +1);
+                prefs.edit().putInt("settle", settleIdx).commit();
+                renderMenu(); break;
+        }
+    }
+
+    private boolean menuKey(int sc) {
+        switch (sc) {
+            case K_UP: case K_LEFT: case K_WHEEL_CCW: case K_DIAL_CCW: menuSel = DevTools.nextRow(menuSel, -1); renderMenu(); return true;
+            case K_DOWN: case K_RIGHT: case K_WHEEL_CW: case K_DIAL_CW: menuSel = DevTools.nextRow(menuSel, +1); renderMenu(); return true;
+            case K_ENTER: pickMenuRow(); return true;
+            case K_MENU: case K_SK1: swallowMenuUp = true; closeMenu(); return true;
+            case K_C1: closeMenu(); return true;
+        }
+        return true;
+    }
+
+    /** every key is swallowed while the run walks the table, so nothing changes the recipe mid-run; MENU stops it */
+    private boolean runKey(int sc) {
+        if (sc == K_MENU || sc == K_SK1) { swallowMenuUp = true; stopRun(true); }
+        return true;
+    }
+
+    private int settleMs() { return DevTools.SETTLE_MS[DevTools.clampSettle(settleIdx)]; }
+
+    /** shoot one frame per recipe, in table order: the gallery of issue #17, and a preview-pipeline test */
+    private void startRun() {
+        if (camera == null || !previewOk) { showToast(DevTools.NO_PREVIEW, 5000); return; }
+        running = true; runFrame = 0; runReturnTo = recipe;
+        runLog = new StringBuilder(DevTools.manifestHeader(Recipes.ALL.length, settleMs())).append('\n');
+        handler.post(runStage);
+    }
+
+    /** apply the next recipe and give the preview pipeline the settle delay before the shutter */
+    private void sampleStage() {
+        if (!running) return;
+        if (runFrame >= Recipes.ALL.length) { endRun(DevTools.doneMessage(runFrame, Recipes.ALL.length)); return; }
+        recipe = runFrame;
+        stageRecipe();
+        edit[R_QUAL] = Q_FINE;                                  // a sample is only a sample as a JPEG with the look in it, whatever the user shoots
+        applyPreview(); render();
+        showToast(DevTools.progress(runFrame + 1, Recipes.ALL.length, Recipes.ALL[runFrame].name), 0);
+        handler.postDelayed(runShoot, settleMs());
+    }
+
+    /** fire the shutter, then let the capture finish before the next recipe is applied */
+    private void sampleShoot() {
+        if (!running) return;
+        try { camera.takePicture(null, null, null); }
+        catch (Throwable t) {
+            String msg = DevTools.shootFailed(runFrame + 1, runFrame, String.valueOf(t.getMessage()));
+            endRun(msg); return;
+        }
+        runLog.append(DevTools.manifestLine(runFrame + 1, runFrame)).append('\n');
+        runFrame++;
+        handler.postDelayed(runNext, DevTools.SHUTTER_MS);
+    }
+
+    /** MENU during the run, or the camera going away under it */
+    private void stopRun(boolean tell) {
+        if (!running) return;
+        endRun(tell ? DevTools.stoppedMessage(runFrame, Recipes.ALL.length) : null);
+    }
+
+    private void endRun(String msg) {
+        running = false;
+        handler.removeCallbacks(runStage); handler.removeCallbacks(runShoot); handler.removeCallbacks(runNext);
+        cancelCapture();
+        String failed = writeManifest();
+        recipe = runReturnTo; stageRecipe(); applyPreview();
+        if (msg != null) showToast(msg + failed, 0);
+        render();
+    }
+
+    /** the frame list of the run: which recipe each frame was shot with, in order — the camera names the files */
+    private String writeManifest() {
+        if (runLog == null || runFrame == 0) return "";
+        try {
+            java.io.FileWriter w = new java.io.FileWriter(new File(getFilesDir(), DevTools.MANIFEST), true);
+            try { w.write(runLog.toString()); } finally { w.close(); }
+        } catch (Throwable t) { return "  ·  " + DevTools.MANIFEST + " failed: " + t; }
+        finally { runLog = null; }
+        return "";
+    }
+
+    /** the shutter key's release, as the run and the key handler both need it */
+    private void cancelCapture() { try { if (cameraEx != null) cameraEx.getClass().getMethod("cancelTakePicture").invoke(cameraEx); } catch (Throwable t) {} }
+
+    /**
+     * Between two frames of a run: a capture leaves the preview stopped on a plain Android camera, and nothing is
+     * applied to a stopped preview. Whether this body needs it is a question for the camera — on one that restarts
+     * the preview itself the call is a no-op, and a HAL that objects to it throws in here rather than out there.
+     */
+    private void resumePreview() { try { if (camera != null) camera.startPreview(); } catch (Throwable t) {} }
 
     // ------------------------------------------------------------ favourites (app storage, not the camera store: lost on uninstall)
     private void saveFavourites() { prefs.edit().putString("favourites", Favourites.encode(favs)).commit(); }
@@ -448,7 +580,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             case K_LEFT: case K_RIGHT: if (browserCol == COL_RECIPES) { browserCol = COL_GROUPS; render(); } else enterRecipeColumn(); return true;
             case K_MENU: case K_SK1: swallowMenuUp = true; openBrowser(false); return true;
             case K_FN: case K_AEL: case K_DISP: openBrowser(false); return true;
-            case K_C1: snapshotOrDiff(); return true;
+            case K_C1: openMenu(); return true;
             case K_DELETE: case K_SK2: stageFactory(); return true;
             case K_S1: try { camera.autoFocus(null); } catch (Throwable t) {} return true;
             case K_S2: try { camera.takePicture(null, null, null); } catch (Throwable t) {} return true;
@@ -490,7 +622,9 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent e) {
+        if (running) return runKey(e.getScanCode());
         if (promptOpen) return promptKey(e.getScanCode());
+        if (menuOpen) return menuKey(e.getScanCode());
         if (e.getScanCode() == K_ENTER) { enterDown(); return true; }
         if (overlay == OV_BROWSER && e.getScanCode() != K_PLAY) return browserKey(e.getScanCode());
         switch (e.getScanCode()) {
@@ -516,7 +650,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             }
             case K_AEL: case K_DISP: overlay = (overlay + 1) % 3; render(); return true;   // full → pill → hidden; the browser is not in the cycle
             case K_FN: openBrowser(true); return true;
-            case K_C1: snapshotOrDiff(); return true;
+            case K_C1: openMenu(); return true;
             case K_DELETE: case K_SK2: stageFactory(); return true;
             case K_S1: try { camera.autoFocus(null); } catch (Throwable t) {} return true;
             case K_S2: try { camera.takePicture(null, null, null); } catch (Throwable t) {} return true;
@@ -530,12 +664,13 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     @Override
     public boolean onKeyUp(int keyCode, KeyEvent e) {
         if (promptOpen) { if (e.getScanCode() == K_MENU || e.getScanCode() == K_SK1) swallowMenuUp = false; return true; }
+        if (running) return true;                               // the release of whatever key started or stopped the run
         switch (e.getScanCode()) {
             case K_ENTER: enterUp(); return true;
             case K_FN: return true;
             case K_MENU: case K_SK1: if (swallowMenuUp) { swallowMenuUp = false; return true; } finish(); return true;
             case K_S1: try { camera.cancelAutoFocus(); } catch (Throwable t) {} return true;
-            case K_S2: try { cameraEx.getClass().getMethod("cancelTakePicture").invoke(cameraEx); } catch (Throwable t) {} return true;
+            case K_S2: cancelCapture(); return true;
             case K_UP: case K_DOWN: case K_LEFT: case K_RIGHT: case K_PLAY: case K_DISP:
             case K_DELETE: case K_SK2: case K_C1: case K_AEL: case K_WHEEL_CW: case K_WHEEL_CCW: case K_DIAL_CW: case K_DIAL_CCW: return true;
         }

@@ -10,6 +10,7 @@ see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 - [Source layout](#source-layout)
 - [Settings slots](#settings-slots)
+- [Developer menu](#developer-menu-c1)
 - [Exit rule](#exit-rule)
 - [Live preview](#live-preview)
 - [Developing on WSL](#developing-on-wsl)
@@ -32,8 +33,11 @@ src/com/voxivoid/recipelab/
   Recipes.java                 the 77 recipes, brands, GROUP_START / GROUP_COUNT, table navigation
   Favourites.java              the favourites list: stored by name in the app's preferences, and how the browser
                                walks the Favourites group — pure functions, no Android, covered by test/
-  res/raw/ids.txt              every settings entry of 16 bytes or less, used by the C1 snapshot/diff tool
+  DevTools.java                the developer menu rows and the sample run's delays, messages and manifest —
+                               pure functions, no Android, covered by test/
+  res/raw/ids.txt              every settings entry of 16 bytes or less, used by the snapshot/diff tool
   PickerView.java              Canvas-drawn brand browser (Favourites first, then the brands)
+  MenuView.java                Canvas-drawn modal list: the developer menu behind C1
   Legend.java                  Canvas-drawn key icons and the favourite star, fit-to-width (camera font has no symbol glyphs).
                                The legend names the keys a body may not have; the four-way and the wheel are left out
                                as self-evident, and a hold is the centre-button icon labelled "(hold)"
@@ -70,9 +74,23 @@ Found by disassembling the camera app's parameter registration in `libObj.so`):
 | Quality: file format | `0x01070013` (+ mirror `0x01070aa9`) | RAW = 1, RAW+JPEG = 2, JPEG = 0 (verified) |
 | Quality: JPEG level | `0x01070014` (+ mirror `0x01070aaa`) | Std = 0, Fine = 1 (verified) |
 
-## Snapshot / diff tool (C1)
+## Developer menu (C1)
 
-How the slots above were found, and how to find the next one. **C1** in the app runs `snapshotOrDiff()`, over every
+**C1** opens a modal list of the tools that are not part of using the app (`MenuView`, rows and strings in
+`DevTools`). Up / down or the wheel move, the centre button runs a row, MENU or C1 closes it:
+
+| row | what it does |
+|---|---|
+| **Settings snapshot** / **Settings diff** | the snapshot / diff tool below; the row's name says which half is next |
+| **Shoot samples — 77 recipes** | the sample run below |
+| **Settle delay — 1.2 s** | the delay the sample run waits after applying a recipe; the centre button cycles 0.8 / 1.2 / 2.0 / 3.0 / 5.0 s, kept in the app's preferences |
+
+C1 is missing on several supported bodies (issue #18), which is fine for a developer menu and would not be for
+anything in the app proper — see [Centre button hold](#centre-button-hold).
+
+### Snapshot / diff tool
+
+How the slots above were found, and how to find the next one. The row runs `snapshotOrDiff()`, over every
 id in `res/raw/ids.txt` (each settings entry of 16 bytes or less):
 
 1. **First press** writes `snapshot.bin` into `getFilesDir()` — the current value of every id.
@@ -84,7 +102,36 @@ id in `res/raw/ids.txt` (each settings entry of 16 bytes or less):
 Whatever shows up is the slot for the menu item you changed. Change one thing at a time or the diff is useless:
 the camera rewrites unrelated entries on its own, so a second change means guessing which id belongs to what.
 
-Note the toast still says "press Fn again" — the handler is on `K_C1`. The string is wrong, not the binding.
+### Sample run
+
+One frame per recipe, in table order — the capture half of issue #17. The run is a timed loop on the activity's
+`Handler`, not a thread:
+
+1. stage recipe *n* as a live preview, forcing **JPEG Fine** (a RAW frame carries no look, and a Picture Effect
+   needs JPEG at all); the store is never written, so a run changes nothing permanent
+2. wait the **settle delay** so the preview pipeline catches up
+3. `takePicture`, then `cancelTakePicture` and `startPreview` `DevTools.SHUTTER_MS` later — the shutter key's
+   press / release, automated
+4. next recipe, until the table ends
+
+While it runs, a sticky line counts the frames (`Shooting 12 / 77 · Velvia — MENU stops`) and **every key is
+swallowed** so nothing walks the table underneath it; **MENU** stops the run. The run also stops in `onPause` — it
+cannot outlive the camera it shoots with. When it ends, the recipe the user was on is staged again.
+
+The frames are identified by **order**: the camera names the files, and the run appends its own list to
+`samples.txt` in `getFilesDir()`, one line per frame —
+
+```
+# recipe-lab samples  ·  77 frames in recipe order  ·  settle 1200 ms  ·  frame|recipe|brand|values
+01|FACTORY (ST)|Sony|Standard  0/0
+02|Sony PT (portrait)|Sony|Portrait  0/0
+```
+
+**What the run cannot tell you.** Whether the settle delay is long enough is a property of the camera: too short and
+a frame still carries the previous recipe's look. Shoot a run, then store two or three of the same recipes by hand
+and shoot them again — if the frames differ, raise the delay in the menu and shoot again. Same for
+`DevTools.SHUTTER_MS` and the `startPreview` between frames: both are what a capture needs on *this* body, and
+neither a build nor `tools/test.sh` can say anything about them.
 
 ## Exit rule
 
@@ -251,11 +298,12 @@ tests pin it down:
 | `ParamsPreviewTest` | the `Camera.Parameters` the live preview sets, recipe by recipe |
 | `ParamsChipsTest` | chip visibility, stepping (wrap vs clamp, the effect → SUB / quality side effects), LEFT/RIGHT and UP/DOWN landing spots, chip text |
 | `ParamsHudTest` | the meta line, the minimal pill, the quality prompt |
-| `ParamsToolsTest` | the C1 tool's id list — including that `res/raw/ids.txt` is well formed and lists every slot the app writes — and its diff lines |
+| `ParamsToolsTest` | the snapshot tool's id list — including that `res/raw/ids.txt` is well formed and lists every slot the app writes — and its diff lines |
+| `DevToolsTest` | the developer menu's rows and settle delays, the sample run's progress / finish lines, and its manifest — a parsable line per recipe, in run order |
 | `FavouritesTest` | the favourites list — stored by name, unknown names dropped, marking order kept, toggle, the highlight after a removal — and the browser's group order with Favourites first |
 
 **What is not, and cannot be.** `MainActivity` (key dispatch, overlays, the camera and the JNI store), the
-Canvas views (`PickerView`, `PromptView`, `HintBar`, `Legend`) and `jni/jni.cpp` need a running camera or an
+Canvas views (`PickerView`, `PromptView`, `MenuView`, `HintBar`, `Legend`) and `jni/jni.cpp` need a running camera or an
 Android runtime; there is no Gradle and no Robolectric here, and a mock of `CameraEx` would prove nothing. Those
 stay on the [on-camera checklist](CONTRIBUTING.md#on-the-camera). Likewise the slot ids themselves: a
 test can show that the app writes `0x01070175 = 6`, not that the camera means B&W by it.

@@ -134,6 +134,14 @@
         android:layout_gravity="center"
         android:visibility="gone" />
 
+    <!-- developer menu (C1) -->
+    <com.voxivoid.recipelab.MenuView
+        android:id="@+id/menu"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:visibility="gone" />
+
     <!-- transient status -->
     <TextView
         android:id="@+id/toast"
