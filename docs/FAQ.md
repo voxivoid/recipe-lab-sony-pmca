@@ -104,9 +104,12 @@ not the same thing.
 
 ## Are there sample photos of each recipe?
 
-Not yet. Straight-out-of-camera frames for 77 recipes need one static scene shot 77 times, and it has not been done.
-Until then the app's live preview is the sample: turn the wheel and the image on the screen is what the camera will
-write.
+Yes — **[docs/SAMPLES.md](SAMPLES.md)**. All 77 recipes on one subject, in one light, at one fixed exposure
+(1/30, f/4.5, ISO 250), straight out of the camera and not edited, downscaled to 900 px so the page stays light.
+Nothing that touches colour was done to them.
+
+The scene has no skin tone, foliage or sky, so it judges the portrait-leaning recipes worst; for those the app's own
+live preview is still the better sample — turn the wheel and the image on the screen is what the camera will write.
 
 ## Something went wrong
 

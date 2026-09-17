@@ -7,6 +7,7 @@ just want to use the app on a camera.
 |---|---|
 | **[CONTRIBUTING.md](CONTRIBUTING.md)** | How to develop: branch model, commit format, PR flow, issues and milestones, and how to test a change on the camera. Start here. |
 | **[RELEASING.md](RELEASING.md)** | How to release: the create-release button, what decides the version number, hotfixes, and what to do when something goes wrong. |
+| **[SAMPLES.md](SAMPLES.md)** | Every recipe shot on the same subject at the same exposure, straight out of the camera — what the looks actually are, and which scene traits the frames do not cover. |
 | **[DEVELOPMENT.md](DEVELOPMENT.md)** | The reverse-engineering reference: source layout, the settings-store ID map, live-preview parameters, key scan codes, how to build, and the versioning formula. |
 
 `CLAUDE.md` stays in the repository root on purpose — it is configuration read by Claude
