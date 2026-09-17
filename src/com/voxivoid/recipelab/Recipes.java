@@ -101,7 +101,7 @@ public class Recipes {
         new Recipe(FSIM,  "Provia",                              STD,      1,  0,  0, 0, AUTO, 0,     0,  0,  0,  0, 6),
         new Recipe(FSIM,  "Velvia",                              VIVID,    5,  2,  0, 1, AUTO, 0,     0,  0),
         new Recipe(FSIM,  "Astia",                               PORTRAIT, 0, -1,  0, 0, AUTO, 0,     1,  0,  0,  1, 6),
-        new Recipe(FSIM,  "Classic Chrome",                      NEUTRAL, -3,  2,  0, 0, AUTO, 0,     2,  0,  0, -1, 6),   // amber, not grey: the reference is warm
+        new Recipe(FSIM,  "Classic Chrome",                      STD,     -1,  2,  0, 0, AUTO, 0,     3,  1,  0, -1, 6),   // golden with muted blues; Neutral -3 A2 came out grey-beige
         new Recipe(FSIM,  "Classic Negative",                    STD,     -3,  3,  1, 0, AUTO, 0,    -1,  1,  0,  0, 6),
         new Recipe(FSIM,  "Nostalgic Neg",                       STD,      1,  0,  0, 0, AUTO, 0,     3,  0,  0,  0, 6),   // amber and saturated; Retro Photo washed it out
         new Recipe(FSIM,  "Reala Ace",                           STD,      0,  1,  0, 0, AUTO, 0,     0,  0),
