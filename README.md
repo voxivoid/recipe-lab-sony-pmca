@@ -108,15 +108,15 @@ Failures are as useful as successes.
 | **A6500** | ILCE-6500 | ✅ | installs, stores, survives a power cycle — but the badge reads **PROTECTED** where the A6000 says ACTIVE |
 | **A5100** | ILCE-5100 | ✅ | works, and the wheel scrolls every recipe — but the body has no **Fn** or **AEL** button, so the brand list and the clean-preview toggle are out of reach |
 | **A7 II** | ILCE-7M2 | ✅ | reported working |
+| **A7** | ILCE-7 | ✅ | stores and survives a power cycle, firmware 3.20 — but the badge reads **PROTECTED** until the settings store is unlocked with OpenMemories-Tweak |
+| **NEX-5T** | NEX-5T | ✅ | oldest app-capable generation; installs, stores and survives a power cycle on firmware 1.00. An earlier report on app 1.0 said some menu labels read differently on this body — unconfirmed |
 | A6300 | ILCE-6300 | ❔ | same generation as the A6000; the most likely of these to behave identically |
 | A5000 | ILCE-5000 | ❔ | as with the A5100, expect no **Fn** or **AEL** button |
-| A7 | ILCE-7 | ❔ |  |
 | A7R | ILCE-7R | ❔ |  |
 | A7S | ILCE-7S | ❔ |  |
 | A7R II | ILCE-7RM2 | ❔ |  |
 | A7S II | ILCE-7SM2 | ❔ |  |
 | NEX-5R | NEX-5R | ❔ | oldest app-capable generation |
-| NEX-5T | NEX-5T | ❔ | oldest app-capable generation |
 | NEX-6 | NEX-6 | ❔ | menus differ a lot from the A6000 generation, so the settings are the least likely to sit in the same place |
 | A68 | ILCA-68 | ❔ | A-mount; not in the installer's device table either, so even the install is untested |
 | A77 II | ILCA-77M2 | ❔ | A-mount |
@@ -285,7 +285,7 @@ The common questions — RAW files, damage, LUTs, newer bodies — are in the **
 |---|---|
 | `No devices found` | USB Connection must be *Mass Storage*; card inserted; camera on and showing *USB Mode*; try another cable or port |
 | Stuck at `Waiting for camera to switch...` | Unplug, turn the camera off and on, reconnect, run again |
-| Badge says **PROTECTED** | The camera's settings store is write-protected. Install [OpenMemories-Tweak](https://github.com/ma1co/OpenMemories-Tweak), turn off *Backup protection*, try again |
+| Badge says **PROTECTED** | The camera's settings store is write-protected. Install [OpenMemories-Tweak](https://github.com/ma1co/OpenMemories-Tweak), open **Protection**, tick *Unlock protected settings* until it reads *Protection disabled*, then reopen Recipe Lab — the badge should read **PREVIEW**, and **ACTIVE** once you pick a recipe |
 | Look not applied after picking a recipe | Turn the camera off and on |
 | `no live preview: ...` in the panel | Something else is holding the camera; close and reopen the app |
 | Text shows `Â·` | Old build; install the APK from the [latest release](https://github.com/voxivoid/recipe-lab-sony-pmca/releases/latest) |
