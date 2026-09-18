@@ -330,6 +330,10 @@ License: MIT (this repository). OpenMemories-Platform: MIT, © 2017 ma1co.
 Thank you to the people funding this work. Sponsoring keeps the app maintained and pays for the cameras it has to be
 tested on.
 
+<!-- sponsors:begin -->
+
 - [Angel Lozano (@ailr16)](https://github.com/ailr16)
+
+<!-- sponsors:end -->
 
 Sponsor at [github.com/sponsors/voxivoid](https://github.com/sponsors/voxivoid) and your name goes here.
