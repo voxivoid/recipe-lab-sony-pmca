@@ -42,6 +42,7 @@
 - [FAQ](docs/FAQ.md)
 - [For developers](#for-developers)
 - [Credits](#credits)
+- [Sponsors](#sponsors)
 
 ---
 
@@ -323,3 +324,12 @@ reference frames on his site were the inspiration and the benchmark for many of 
 Ilford, Cinema…). The values in this app are re-derived for what the A6000 can store and are not his recipes.
 
 License: MIT (this repository). OpenMemories-Platform: MIT, © 2017 ma1co.
+
+## Sponsors
+
+Thank you to the people funding this work. Sponsoring keeps the app maintained and pays for the cameras it has to be
+tested on.
+
+- [Angel Lozano (@ailr16)](https://github.com/ailr16)
+
+Sponsor at [github.com/sponsors/voxivoid](https://github.com/sponsors/voxivoid) and your name goes here.
