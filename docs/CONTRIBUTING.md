@@ -167,3 +167,17 @@ Handy aliases:
 git config alias.releases 'log --first-parent --oneline main'
 git config alias.since-release '!git log $(git describe --tags --abbrev=0)..HEAD --no-merges --oneline'
 ```
+
+## Sponsors
+
+The sponsor list in `README.md` lives between `<!-- sponsors:begin -->` and `<!-- sponsors:end -->` and is
+generated — do not hand-edit it. The `sponsors` workflow runs `tools/update-sponsors.sh` daily (and on
+**Actions → sponsors → Run workflow**) and opens a `docs: update the sponsor list` PR when the list has
+moved; a run with nothing to change opens nothing. Merging it is a human's call, like any other PR.
+
+The script asks the API for **public** sponsors only, so a private sponsorship cannot reach the README.
+
+It needs a PAT in the `SPONSORS_TOKEN` repo secret with **`read:user`** (the Sponsors fields are invisible
+to `GITHUB_TOKEN`, which fails with `INSUFFICIENT_SCOPES`) and **`repo`** (so the PR it opens starts CI —
+a PR opened with `GITHUB_TOKEN` triggers no workflow run). Run it locally with
+`GH_TOKEN="$(gh auth token)" ./tools/update-sponsors.sh`, given a login that carries the same scope.
