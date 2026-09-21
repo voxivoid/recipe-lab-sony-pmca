@@ -105,16 +105,17 @@ Failures are as useful as successes.
 | camera | model code | status | comment |
 |---|---|---|---|
 | **A6000** | ILCE-6000 | ✅ | built and tested on it, firmware 3.21 |
-| **A6500** | ILCE-6500 | ✅ | installs, stores, survives a power cycle — but the badge reads **PROTECTED** where the A6000 says ACTIVE |
+| **A6500** | ILCE-6500 | ✅ | installs, stores, survives a power cycle |
 | **A5100** | ILCE-5100 | ✅ | works, and the wheel scrolls every recipe — but the body has no **Fn** or **AEL** button, so the brand list and the clean-preview toggle are out of reach |
 | **A7 II** | ILCE-7M2 | ✅ | reported working |
-| **A7** | ILCE-7 | ✅ | stores and survives a power cycle, firmware 3.20 — but the badge reads **PROTECTED** until the settings store is unlocked with OpenMemories-Tweak |
-| **NEX-5T** | NEX-5T | ✅ | oldest app-capable generation; installs, stores and survives a power cycle on firmware 1.00. An earlier report on app 1.0 said some menu labels read differently on this body — unconfirmed |
-| A6300 | ILCE-6300 | ❔ | same generation as the A6000; the most likely of these to behave identically |
+| **A7** | ILCE-7 | ✅ | stores and survives a power cycle, firmware 3.20 — reported after unlocking the settings store with OpenMemories-Tweak, though whether this body needs that is untested ([#19](https://github.com/voxivoid/recipe-lab-sony-pmca/issues/19)) |
+| **NEX-5T** | NEX-5T | ✅ | oldest app-capable generation; installs, stores and survives a power cycle on firmware 1.1, reported on app 1.0 — but that report also said the stored values did not all match, and named menu labels reading differently on this body, which is still unresolved ([#22](https://github.com/voxivoid/recipe-lab-sony-pmca/issues/22)) |
+| **A6300** | ILCE-6300 | ✅ | stores and survives a power cycle, firmware 2.01 |
+| **A7R** | ILCE-7R | ✅ | stores and survives a power cycle, firmware 3.2 |
+| **A7R II** | ILCE-7RM2 | ✅ | two reports, firmware 4.00 and 4.01 — stores and survives a power cycle |
+| **RX100 V** | DSC-RX100M5 | ✅ | stores and survives a power cycle, firmware 2.00 — the only confirmed Cyber-shot |
 | A5000 | ILCE-5000 | ❔ | as with the A5100, expect no **Fn** or **AEL** button |
-| A7R | ILCE-7R | ❔ |  |
 | A7S | ILCE-7S | ❔ |  |
-| A7R II | ILCE-7RM2 | ❔ |  |
 | A7S II | ILCE-7SM2 | ❔ |  |
 | NEX-5R | NEX-5R | ❔ | oldest app-capable generation |
 | NEX-6 | NEX-6 | ❔ | menus differ a lot from the A6000 generation, so the settings are the least likely to sit in the same place |
@@ -123,7 +124,6 @@ Failures are as useful as successes.
 | A99 II | ILCA-99M2 | ❔ | A-mount |
 | RX100 III | DSC-RX100M3 | ❔ |  |
 | RX100 IV | DSC-RX100M4 | ❔ |  |
-| RX100 V | DSC-RX100M5 | ❔ |  |
 | RX1R II | DSC-RX1RM2 | ❔ |  |
 | RX10 II | DSC-RX10M2 | ❔ |  |
 | RX10 III | DSC-RX10M3 | ❔ |  |
@@ -274,8 +274,9 @@ without the app. It is not permanent in the sense of damage. Undo it any time, t
   menu then shows the nearest value it can; if you touch that slider it snaps back to the normal range and the
   recipe loses that extra punch. Pick the recipe again in the app if that happens.
 - The preview inside the app is temporary; closing the app removes it. Only what you *picked* stays.
-- Built and tested on the A6000 with firmware 3.21. Other Sony bodies of the same generation probably keep these
-  settings in the same place, but nobody has checked — compare what the chips show with your menus before picking a recipe.
+- Built and tested on the A6000 with firmware 3.21. Several other bodies have been reported working — see
+  [Compatibility](#compatibility) — but on anything still marked ❔ there, compare what the chips show with your menus
+  before picking a recipe.
 
 ## Troubleshooting
 
