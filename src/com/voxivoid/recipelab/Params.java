@@ -4,8 +4,10 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * The parameter rows and everything about them that needs no camera: the settings-store slot of each row, how
@@ -164,6 +166,108 @@ final class Params {
             w.add(new Write(id, v));
         }
         return w;
+    }
+
+    // ------------------------------------------------------------ slots the camera may refuse
+    /**
+     * The attribute bit that marks a settings slot read-only. Backup protection decides whether a slot carrying it
+     * can be written: with protection on the camera answers {@code -BACKUP_ERROR_READ_ONLY}, with it off (the
+     * Protection tweak of OpenMemories-Tweak) the write goes through. A slot without the bit is writable either
+     * way, which is why the app tests the slots a recipe actually writes rather than probing protection itself —
+     * that probe answers for one unrelated read-only slot and says nothing about a recipe (issue #19).
+     */
+    static final int ATTR_READ_ONLY = 1;
+
+    /** whether a slot's attribute word says the camera may refuse a write to it */
+    static boolean slotLocked(int attr) { return (attr & ATTR_READ_ONLY) != 0; }
+
+    /** every slot the app can write: the rows, their mirrors and per-mode copies, and each effect's sub-slot */
+    static List<Integer> allSlots() {
+        Set<Integer> ids = new LinkedHashSet<Integer>();
+        for (int i = 1; i < N; i++) if (ROW_ID[i] > 0) ids.add(ROW_ID[i]);
+        ids.add(ID_WB_AB_AWB); ids.add(ID_WB_GM_AWB); ids.add(ID_WB_AB_K); ids.add(ID_WB_GM_K);
+        ids.add(ID_EV2); ids.add(ID_DRO_LVL);
+        ids.add(ID_QFMT); ids.add(ID_QJPG); ids.add(ID_QFMT2); ids.add(ID_QJPG2);
+        for (int pe = 0; pe < Recipes.PE_KEYS.length; pe++) { int sid = Recipes.subId(pe); if (sid != 0) ids.add(sid); }
+        return new ArrayList<Integer>(ids);
+    }
+
+    /** the row a slot belongs to, as a message names it; the hex id for a slot no row owns */
+    static String slotName(int id) {
+        switch (id) {
+            case ID_EV: case ID_EV2: return ROW_NAME[R_EV];
+            case ID_QFMT: case ID_QJPG: case ID_QFMT2: case ID_QJPG2: return ROW_NAME[R_QUAL];
+            case ID_WB_AB: case ID_WB_AB_AWB: case ID_WB_AB_K: return ROW_NAME[R_AB];
+            case ID_WB_GM: case ID_WB_GM_AWB: case ID_WB_GM_K: return ROW_NAME[R_GM];
+            case ID_DRO: case ID_DRO_LVL: return ROW_NAME[R_DRO];
+        }
+        for (int i = 1; i < N; i++) if (ROW_ID[i] > 0 && ROW_ID[i] == id) return ROW_NAME[i];
+        for (int pe = 0; pe < Recipes.PE_KEYS.length; pe++) { int sid = Recipes.subId(pe); if (sid != 0 && sid == id) return ROW_NAME[R_SUB] + " " + Recipes.PE_LABEL[pe]; }   // an effect with no sub-slot answers 0, which is no slot at all
+        return String.format("%08x", id);
+    }
+
+    /** the row names of a set of slots, each named once, in the order the slots come */
+    private static String slotNames(List<Integer> ids) {
+        Set<String> names = new LinkedHashSet<String>();
+        for (int id : ids) names.add(slotName(id));
+        StringBuilder s = new StringBuilder();
+        for (String n : names) { if (s.length() > 0) s.append(", "); s.append(n); }
+        return s.toString();
+    }
+
+    /**
+     * The slots of a pending write the camera holds read-only, given one attribute word per write ({@code -1}
+     * where the camera would not answer). A slot whose attribute cannot be read counts as writable: the write
+     * path reports a refusal properly, so a failed probe must not stop a recipe that would have gone in.
+     */
+    static List<Integer> lockedFrom(List<Write> ws, int[] attrs) {
+        List<Integer> locked = new ArrayList<Integer>();
+        for (int i = 0; i < ws.size(); i++) if (attrs[i] >= 0 && slotLocked(attrs[i])) locked.add(ws.get(i).id);
+        return locked;
+    }
+
+    /**
+     * The recipe was not written because the camera holds some of its slots read-only: which settings they are,
+     * and the one thing that changes it. Checked before the first write, so a locked slot cannot leave half a
+     * recipe in the store.
+     */
+    static String lockedMessage(List<Integer> ids) {
+        return "Not written — the camera holds " + (ids.size() == 1 ? "this setting" : "these settings") + " read-only: " + slotNames(ids)
+                + ". Unlock the settings store with OpenMemories-Tweak (Protection → Unlock protected settings), then pick the recipe again.";
+    }
+
+    /** the camera refused a write: which setting stopped it, and how much of the recipe went in before it did */
+    static String writeFailedMessage(int id, String error, int written) {
+        return "WRITE FAILED on " + slotName(id) + " (" + String.format("%08x", id) + "): " + error
+                + (written == 0 ? " — nothing was written" : " — " + written + " byte" + (written == 1 ? "" : "s") + " written before it stopped");
+    }
+
+    /**
+     * The verdict of the read-only check (developer menu): {@code attrs} holds one attribute word per slot of
+     * {@code ids}, or -1 where the camera would not answer. A body that reports nothing read-only here is a body
+     * on which no recipe can be refused, whatever backup protection says.
+     */
+    static String lockReport(List<Integer> ids, int[] attrs) {
+        List<Integer> locked = new ArrayList<Integer>();
+        int unreadable = 0;
+        for (int i = 0; i < ids.size(); i++) {
+            if (attrs[i] < 0) unreadable++;
+            else if (slotLocked(attrs[i])) locked.add(ids.get(i));
+        }
+        return ids.size() + " recipe slots checked  ·  "
+                + (locked.isEmpty() ? "none read-only" : locked.size() + " read-only: " + slotNames(locked))
+                + (unreadable == 0 ? "" : "  ·  " + unreadable + " would not answer");
+    }
+
+    /** the same check, one line per slot, as it is written to the file a compatibility report can quote */
+    static String lockLines(List<Integer> ids, int[] attrs) {
+        StringBuilder s = new StringBuilder();
+        for (int i = 0; i < ids.size(); i++) {
+            int id = ids.get(i);
+            s.append(String.format("%08x", id)).append(' ').append(slotName(id)).append(' ')
+             .append(attrs[i] < 0 ? "attr=?" : "attr=" + attrs[i] + (slotLocked(attrs[i]) ? " READ_ONLY" : "")).append('\n');
+        }
+        return s.toString();
     }
 
     /** stages a recipe over the current edit values (WB is left alone when the recipe says so); quality is the caller's */

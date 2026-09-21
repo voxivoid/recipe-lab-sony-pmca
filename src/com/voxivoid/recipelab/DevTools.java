@@ -14,7 +14,7 @@ final class DevTools {
     static final String TITLE = "DEV TOOLS";
 
     /** menu rows, in display order */
-    static final int ROW_SNAPSHOT = 0, ROW_SAMPLES = 1, ROW_SETTLE = 2, ROWS = 3;
+    static final int ROW_SNAPSHOT = 0, ROW_LOCKS = 1, ROW_SAMPLES = 2, ROW_SETTLE = 3, ROWS = 4;
 
     /**
      * Settle delays to pick from, in ms: how long the preview pipeline gets after a recipe is applied before the
@@ -40,6 +40,7 @@ final class DevTools {
     static String rowLabel(int row, boolean snapshotTaken, int settle) {
         switch (row) {
             case ROW_SNAPSHOT: return snapshotTaken ? "Settings diff" : "Settings snapshot";
+            case ROW_LOCKS: return "Read-only check — " + Params.allSlots().size() + " slots";
             case ROW_SAMPLES: return "Shoot samples — " + Recipes.ALL.length + " recipes";
             case ROW_SETTLE: return "Settle delay — " + settleLabel(settle);
             default: return "?" + row;
@@ -50,6 +51,7 @@ final class DevTools {
     static String rowDetail(int row, boolean snapshotTaken) {
         switch (row) {
             case ROW_SNAPSHOT: return snapshotTaken ? "Compare every settings id against the snapshot" : "Store the value of every settings id";
+            case ROW_LOCKS: return "Test every slot a recipe writes for the read-only flag";
             case ROW_SAMPLES: return "One JPEG per recipe, in table order — MENU stops the run";
             case ROW_SETTLE: return "Wait after applying a recipe before the shutter fires";
             default: return "";

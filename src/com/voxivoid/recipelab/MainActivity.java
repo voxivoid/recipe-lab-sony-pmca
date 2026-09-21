@@ -89,7 +89,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private int browserGroup = 0;                     // browser: the group the brand column is on — Favourites.GROUP or a brand
     private int lastChip = 0;                         // chip to return to when leaving the recipe line
     private final int[] cur = new int[N], edit = new int[N];
-    private boolean protectedStore = false, previewOk = false;
+    private boolean previewOk = false;
     private String previewErr = "";
 
     @Override
@@ -191,7 +191,6 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
                 if (id == QUALITY_SLOTS) { cur[i] = edit[i] = readQuality(); continue; }
                 cur[i] = edit[i] = Params.fromStore(id, NativeBackup.readByte(id));
             }
-            protectedStore = NativeBackup.isProtected();
         } catch (Throwable t) { showToast("Read failed: " + t.getMessage(), 0); }
     }
 
@@ -235,19 +234,35 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
 
     private void writeAll() { writeAll(false); }
 
+    /** the attribute of every slot a pending write touches; -1 where the camera would not answer */
+    private int[] attrsOf(List<Params.Write> ws) {
+        int[] attrs = new int[ws.size()];
+        for (int i = 0; i < attrs.length; i++) {
+            try { attrs[i] = NativeBackup.attr(ws.get(i).id); } catch (Throwable t) { attrs[i] = -1; }
+        }
+        return attrs;
+    }
+
     private void writeAll(boolean confirmed) {
         if (!confirmed && qualityChanges()) { openPrompt(); return; }
         if (!dirty()) { showToast("Already picked — nothing to write", 2500); return; }
-        String msg;
-        try {
-            int storedSub = storedSub();
-            int n = Params.dirtyRows(cur, edit, storedSub);
-            for (Params.Write w : Params.writes(cur, edit, storedSub)) NativeBackup.writeByte(w.id, w.value);
-            NativeBackup.sync();
-            msg = "Picked — " + n + " value" + (n == 1 ? "" : "s") + " written, power-cycle the camera to apply everywhere";
-        } catch (Throwable t) { msg = "WRITE FAILED: " + t.getMessage(); }
+        int storedSub = storedSub();
+        int n = Params.dirtyRows(cur, edit, storedSub);
+        List<Params.Write> ws = Params.writes(cur, edit, storedSub);
+        List<Integer> locked = Params.lockedFrom(ws, attrsOf(ws));   // the slots backup protection would refuse (issue #19)
+        if (!locked.isEmpty()) { showToast(Params.lockedMessage(locked), 0); return; }   // nothing written, so nothing half-applied
+
+        String msg = null;
+        int written = 0;
+        for (Params.Write w : ws) {
+            try { NativeBackup.writeByte(w.id, w.value); written++; }
+            catch (Throwable t) { msg = Params.writeFailedMessage(w.id, String.valueOf(t.getMessage()), written); break; }
+        }
+        if (written > 0) NativeBackup.sync();                    // Backup_sync_all is void: nothing to catch, nothing to report
+        boolean ok = msg == null;
+        if (ok) msg = "Picked — " + n + " value" + (n == 1 ? "" : "s") + " written, power-cycle the camera to apply everywhere";
         load(); stageRecipe();
-        showToast(msg, 5000); render();
+        showToast(msg, ok ? 5000 : 0); render();
     }
 
     // ------------------------------------------------------------ RAW vs Picture Effect prompt
@@ -320,6 +335,26 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         } catch (Throwable t) { showToast("snapshot error: " + t, 0); }
     }
 
+    // ------------------------------------------------------------ read-only check of the slots a recipe writes
+    /**
+     * Whether this body holds any slot a recipe writes read-only — the question the PROTECTED badge used to ask
+     * of one unrelated slot (issue #19). Every slot of {@link Params#allSlots()} is listed with its attribute in
+     * locks.txt, so a compatibility report can quote it.
+     */
+    private void lockCheck() {
+        List<Integer> ids = Params.allSlots();
+        int[] attrs = new int[ids.size()];
+        for (int i = 0; i < attrs.length; i++) {
+            try { attrs[i] = NativeBackup.attr(ids.get(i)); } catch (Throwable t) { attrs[i] = -1; }
+        }
+        String text = Params.lockReport(ids, attrs);
+        try {
+            java.io.FileWriter w = new java.io.FileWriter(new File(getFilesDir(), "locks.txt"), true);
+            try { w.write(text + "\n" + Params.lockLines(ids, attrs)); } finally { w.close(); }
+        } catch (Throwable t) { text += "  ·  locks.txt failed: " + t; }
+        showToast(text, 0);
+    }
+
     // ------------------------------------------------------------ developer menu (C1) and the sample run
     private void openMenu() {
         if (running) return;
@@ -340,6 +375,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private void pickMenuRow() {
         switch (menuSel) {
             case DevTools.ROW_SNAPSHOT: closeMenu(); snapshotOrDiff(); break;
+            case DevTools.ROW_LOCKS: closeMenu(); lockCheck(); break;
             case DevTools.ROW_SAMPLES: closeMenu(); startRun(); break;
             case DevTools.ROW_SETTLE:
                 settleIdx = DevTools.nextSettle(settleIdx, +1);
@@ -488,8 +524,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             tag.setText(edit[R_PE] != 0 ? "PE" : "CS");
             tag.setTextColor(edit[R_PE] != 0 ? ACCENT : 0xDDFFFFFF);
             fav.setVisibility(favs.contains(recipe) ? View.VISIBLE : View.GONE);
-            if (protectedStore) { badge.setText("PROTECTED"); badge.setBackgroundResource(R.drawable.badge_err); }
-            else if (dirty) { badge.setText("PREVIEW"); badge.setBackgroundResource(R.drawable.badge_warn); }
+            if (dirty) { badge.setText("PREVIEW"); badge.setBackgroundResource(R.drawable.badge_warn); }
             else { badge.setText("ACTIVE"); badge.setBackgroundResource(R.drawable.badge_ok); }
             meta.setText(Params.metaLine(cur, edit, previewOk ? null : previewErr));
             for (int i = 1; i < N; i++) {

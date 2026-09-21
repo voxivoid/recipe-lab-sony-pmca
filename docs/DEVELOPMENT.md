@@ -43,7 +43,7 @@ src/com/voxivoid/recipelab/
                                as self-evident, and a hold is the centre-button icon labelled "(hold)"
   StarView.java                the star next to the recipe name when it is a favourite
   HintBar.java                 legend view under the panel (uses Legend)
-  NativeBackup.java            JNI: read / write / attr / sync / isProtected
+  NativeBackup.java            JNI: read / write / attr / sync
 jni/jni.cpp                    Backup_read / Backup_write / Backup_sync_all via OpenMemories-Platform
 jni/platform/                  git submodule: ma1co/OpenMemories-Platform
 res/                           layout, shape drawables, launcher icon
@@ -82,6 +82,7 @@ Found by disassembling the camera app's parameter registration in `libObj.so`):
 | row | what it does |
 |---|---|
 | **Settings snapshot** / **Settings diff** | the snapshot / diff tool below; the row's name says which half is next |
+| **Read-only check — 26 slots** | the read-only check below: does this body flag any slot a recipe writes |
 | **Shoot samples — 77 recipes** | the sample run below |
 | **Settle delay — 1.2 s** | the delay the sample run waits after applying a recipe; the centre button cycles 0.8 / 1.2 / 2.0 / 3.0 / 5.0 s, kept in the app's preferences |
 
@@ -101,6 +102,32 @@ id in `res/raw/ids.txt` (each settings entry of 16 bytes or less):
 
 Whatever shows up is the slot for the menu item you changed. Change one thing at a time or the diff is useless:
 the camera rewrites unrelated entries on its own, so a second change means guessing which id belongs to what.
+
+### Read-only check
+
+Whether **backup protection** can stop a recipe on this body, which is the question the old `PROTECTED` badge
+got wrong ([#19](https://github.com/voxivoid/recipe-lab-sony-pmca/issues/19)).
+
+Protection is not a global write lock. Each settings slot carries attributes, and `BACKUP_ATTR_READ_ONLY`
+(`Params.ATTR_READ_ONLY`) is the one that matters: a slot with that bit is refused with
+`-BACKUP_ERROR_READ_ONLY` while protection is on and accepted once OpenMemories-Tweak has turned protection off.
+A slot **without** the bit is writable either way. The badge called `Backup_guess_protection()`, which writes one
+hardcoded read-only slot (`0x010d008f`) back over itself and reports whether that was refused — a true answer
+about that slot, and no answer at all about Creative Style, saturation or white balance.
+
+So the app asks per slot instead. The row reads `NativeBackup.attr(id)` for every entry of `Params.allSlots()` —
+the 26 slots any recipe can write — and reports `26 recipe slots checked · none read-only`, or names the rows
+that are flagged. The full list goes to `locks.txt` in `getFilesDir()`, one line per slot
+(`01070175 STYLE attr=0`), which is what a compatibility report should quote. A slot the camera will not answer
+for counts as writable: the write path reports a refusal properly, so a failed probe must not block a recipe.
+
+The same check runs before every write (`Params.lockedFrom`, over the slots that write would touch). When
+it finds one, nothing is written at all — a refusal half-way through would leave half a recipe in the store — and
+the message names the settings and the Protection tweak. If the camera refuses anyway,
+`Params.writeFailedMessage` names the slot that stopped it and how many bytes went in first.
+
+**Run it on a factory body with protection still on.** That is the measurement the removal rests on: if a body
+reports nothing read-only there, no recipe can ever be refused on it, whatever the protection flag says.
 
 ### Sample run
 

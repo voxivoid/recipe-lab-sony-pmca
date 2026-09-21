@@ -75,14 +75,3 @@ extern "C" JNIEXPORT void Java_com_voxivoid_recipelab_NativeBackup_sync(JNIEnv *
 {
     Backup_sync_all();
 }
-
-extern "C" JNIEXPORT jboolean Java_com_voxivoid_recipelab_NativeBackup_isProtected(JNIEnv *env, jclass clazz)
-{
-    jboolean r = JNI_TRUE;
-    try {
-        r = (jboolean) Backup_guess_protection();
-    } catch (const runtime_error &e) {
-        throw_native(env, e.what());
-    }
-    return r;
-}

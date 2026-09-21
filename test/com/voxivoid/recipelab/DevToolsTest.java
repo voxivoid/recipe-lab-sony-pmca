@@ -2,6 +2,7 @@ package com.voxivoid.recipelab;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
@@ -24,6 +25,11 @@ class DevToolsTest {
         assertEquals("Settings diff", DevTools.rowLabel(DevTools.ROW_SNAPSHOT, true, 0), "a snapshot is on disk, so the next press diffs against it");
     }
 
+    @Test void theReadOnlyRowCountsTheSlotsItWillTest() {
+        assertEquals("Read-only check — 26 slots", DevTools.rowLabel(DevTools.ROW_LOCKS, false, 0));
+        assertEquals(Params.allSlots().size(), 26, "the label counts the slots, so the slots are what it must count");
+    }
+
     @Test void theSampleRowNamesTheWholeTable() {
         assertEquals("Shoot samples — 77 recipes", DevTools.rowLabel(DevTools.ROW_SAMPLES, false, 0));
         assertEquals(77, Recipes.ALL.length, "the label counts the table, so the table is what it must count");
@@ -32,6 +38,15 @@ class DevToolsTest {
     @Test void theDelayRowShowsTheChosenDelay() {
         assertEquals("Settle delay — 0.8 s", DevTools.rowLabel(DevTools.ROW_SETTLE, false, 0));
         assertEquals("Settle delay — 1.2 s", DevTools.rowLabel(DevTools.ROW_SETTLE, false, 1));
+    }
+
+    @Test void oneTurnOfTheMenuVisitsEveryRowItDefines() {
+        // ROWS is what the menu can reach: a row defined past it is dead, and nothing else would say so
+        Set<Integer> visited = new HashSet<Integer>();
+        int r = DevTools.ROW_SNAPSHOT;
+        for (int i = 0; i < DevTools.ROWS; i++) { visited.add(r); r = DevTools.nextRow(r, +1); }
+        assertEquals(new HashSet<Integer>(Arrays.asList(DevTools.ROW_SNAPSHOT, DevTools.ROW_LOCKS, DevTools.ROW_SAMPLES, DevTools.ROW_SETTLE)), visited);
+        assertEquals(DevTools.ROW_SNAPSHOT, r, "and comes back to the first row");
     }
 
     @Test void rowsWrapInBothDirections() {

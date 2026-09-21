@@ -8,7 +8,6 @@ public class NativeBackup {
     public static native void write(int id, byte[] data) throws NativeException;
     public static native int attr(int id) throws NativeException;
     public static native void sync();
-    public static native boolean isProtected() throws NativeException;
 
     public static int readByte(int id) throws NativeException {
         byte[] b = read(id);

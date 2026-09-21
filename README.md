@@ -235,7 +235,6 @@ balance, EV and DRO are always there. The legend at the bottom of the screen fol
 |---|---|
 | **ACTIVE** | the camera already has these values |
 | **PREVIEW** | you are only looking; press **centre** to pick it |
-| **PROTECTED** | the camera is not accepting changes — see [Troubleshooting](#troubleshooting) |
 
 ## What it changes
 
@@ -286,7 +285,7 @@ The common questions — RAW files, damage, LUTs, newer bodies — are in the **
 |---|---|
 | `No devices found` | USB Connection must be *Mass Storage*; card inserted; camera on and showing *USB Mode*; try another cable or port |
 | Stuck at `Waiting for camera to switch...` | Unplug, turn the camera off and on, reconnect, run again |
-| Badge says **PROTECTED** | The camera's settings store is write-protected. Install [OpenMemories-Tweak](https://github.com/ma1co/OpenMemories-Tweak), open **Protection**, tick *Unlock protected settings* until it reads *Protection disabled*, then reopen Recipe Lab — the badge should read **PREVIEW**, and **ACTIVE** once you pick a recipe |
+| `Not written — the camera holds these settings read-only` or `WRITE FAILED` | The camera refused the recipe. Install [OpenMemories-Tweak](https://github.com/ma1co/OpenMemories-Tweak), open **Protection**, tick *Unlock protected settings* until it reads *Protection disabled*, then pick the recipe again |
 | Look not applied after picking a recipe | Turn the camera off and on |
 | `no live preview: ...` in the panel | Something else is holding the camera; close and reopen the app |
 | Text shows `Â·` | Old build; install the APK from the [latest release](https://github.com/voxivoid/recipe-lab-sony-pmca/releases/latest) |
