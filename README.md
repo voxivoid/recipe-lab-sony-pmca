@@ -113,7 +113,8 @@ Failures are as useful as successes.
 | **A6300** | ILCE-6300 | ✅ | stores and survives a power cycle, firmware 2.01 |
 | **A7R** | ILCE-7R | ✅ | stores and survives a power cycle, firmware 3.2 |
 | **A7R II** | ILCE-7RM2 | ✅ | two reports, firmware 4.00 and 4.01 — stores and survives a power cycle |
-| **RX100 V** | DSC-RX100M5 | ✅ | stores and survives a power cycle, firmware 2.00 — the only confirmed Cyber-shot |
+| **RX100 V** | DSC-RX100M5 | ✅ | stores and survives a power cycle, firmware 2.00 |
+| **HX60 / HX60V** | DSC-HX60 | ✅ | stores, survives a power cycle and the menus match, firmware 2.10, reported on app 1.1.0 — the only confirmed compact; the report says zoom and flash could not be used ([#42](https://github.com/voxivoid/recipe-lab-sony-pmca/issues/42)) |
 | A5000 | ILCE-5000 | ❔ | as with the A5100, expect no **Fn** or **AEL** button |
 | A7S | ILCE-7S | ❔ |  |
 | A7S II | ILCE-7SM2 | ❔ |  |
@@ -127,7 +128,6 @@ Failures are as useful as successes.
 | RX1R II | DSC-RX1RM2 | ❔ |  |
 | RX10 II | DSC-RX10M2 | ❔ |  |
 | RX10 III | DSC-RX10M3 | ❔ |  |
-| HX60 / HX60V | DSC-HX60 | ❔ | compact; no control wheel of the kind the app is driven with |
 | HX90 / HX90V | DSC-HX90 | ❔ | compact; no control wheel of the kind the app is driven with |
 | HX400 / HX400V | DSC-HX400 | ❔ | compact; no control wheel of the kind the app is driven with |
 | WX500 | DSC-WX500 | ❔ | compact; no control wheel of the kind the app is driven with |
