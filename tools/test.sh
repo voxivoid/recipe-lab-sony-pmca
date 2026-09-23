@@ -25,6 +25,8 @@ if [ -n "${JAVA_HOME:-}" ]; then JAVA="$JAVA_HOME/bin"; else JAVA="$(dirname "$(
 # reaches for android.* fails right here. New camera-free logic goes into one of these (or a new file listed here)
 # with a test next to it; MainActivity and the views stay out because they cannot run off the camera.
 UNITS=(
+  src/com/voxivoid/recipelab/CameraUi.java
+  src/com/voxivoid/recipelab/Zh.java
   src/com/voxivoid/recipelab/Recipes.java
   src/com/voxivoid/recipelab/Params.java
   src/com/voxivoid/recipelab/Favourites.java
@@ -58,4 +60,4 @@ FILTER=()
 [ -n "${1:-}" ] && FILTER=(--include-classname ".*$1.*")
 "$JAVA/java" -jar "$JUNIT_JAR" execute \
   --class-path "out/test/classes:out/test/test-classes" --scan-class-path \
-  --reports-dir out/test/reports --details=tree --disable-banner --fail-if-no-tests "${FILTER[@]}"
+  --reports-dir out/test/reports --details=tree --disable-banner --fail-if-no-tests ${FILTER[@]+"${FILTER[@]}"}

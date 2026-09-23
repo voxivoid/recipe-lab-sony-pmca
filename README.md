@@ -1,325 +1,196 @@
-<p align="center">
-  <img src="dist/icon-512.png" width="96" alt="Recipe Lab icon">
-</p>
+<p align="center"><img src="dist/icon-512.png" width="96" alt="Recipe Lab 图标"></p>
 
-<h1 align="center">Recipe Lab</h1>
+# Recipe Lab
 
-<p align="center">
-  Film simulations and camera looks for the <b>Sony A6000</b>, stored in the camera itself.<br>
-  <sub>
-    <img src="https://img.shields.io/github/v/release/voxivoid/recipe-lab-sony-pmca?label=version" alt="version"> ·
-    <a href="https://github.com/voxivoid/recipe-lab-sony-pmca/releases/latest/download/RecipeLab.apk">Download the app</a> ·
-    <a href="docs/SAMPLES.md">See all 77 recipes</a>
-  </sub>
-</p>
+在索尼 PlayMemories 相机上预览、选择胶片风格，并将参数保存到相机。内置 77 个配方，涵盖富士、柯达、理光 GR、徕卡等风格。
 
-<p align="center">
-  <a href="https://github.com/sponsors/voxivoid"><img
-    src="https://img.shields.io/badge/Sponsor_this_project-%E2%9D%A4-db61a2?logo=githubsponsors&logoColor=white&style=for-the-badge"
-    alt="Sponsor this project"></a>
-</p>
+这个分支为简体中文版，提供中文界面和 **A5100 中文操作说明**。A5100 专用适配增加可触摸的配方列表入口，将 MOVIE 键映射为原 AEL 的显示切换，并默认只显示配方小标签。内置精简中文字体，加载失败时回退系统字体。配方参数、相机设置地址和写入方式沿用上游；中文名仅用于显示。
 
-<p align="center">
-  <sub>
-    The app is free and stays free. Sponsoring pays for keeping it maintained, for building new features, and for
-    buying the cameras it has to be tested on — every body beyond the A6000 is one someone has to own.
-  </sub>
-</p>
+- [A5100 操作速查](docs/A5100.zh-CN.md)
+- [77 个配方名称对照](docs/RECIPES.zh-CN.md)
+- [配方样片](docs/SAMPLES.md)
+- [常见问题](docs/FAQ.zh-CN.md)
+- [英文原版 README](README.en.md)
+- [上游项目与发布页](https://github.com/voxivoid/recipe-lab-sony-pmca)
 
----
+## 先在 A5100 上试一次
 
-**Contents**
+1. 从相机的 `MENU → 应用程序 → 应用程序列表` 打开 **Recipe Lab**。
+2. 转动背面的拨轮，画面会跟着切换配方。此时「预览中」表示还没有保存。
+3. 启动默认显示配方小标签。按一次 MOVIE 键进入完整参数面板，按上键选中配方名称右侧「配方列表」，中央键打开，即可按品牌或收藏筛选；也可触摸按钮。
+4. 在主界面的配方名称行，**短按中央键保存**。如果弹出 JPEG 画质确认，选择「确认」才会写入。
+5. 看到保存成功提示后，按 MENU 退出，再关机、开机。然后用正常拍照模式检查效果。
 
-- [What it is](#what-it-is)
-- [The recipes](#the-recipes)
-- [Sample frames](docs/SAMPLES.md)
-- [Compatibility](#compatibility)
-- [Installing](#installing)
-- [Using it](#using-it)
-- [What it changes](#what-it-changes)
-- [Uninstalling](#uninstalling)
-- [Troubleshooting](#troubleshooting)
-- [FAQ](docs/FAQ.md)
-- [For developers](#for-developers)
-- [Credits](#credits)
+**长按中央键仍是原版的收藏操作，不会保存配方。** A5100 点击「配方列表」、其他机型按 Fn 可打开品牌列表；在列表中按中央键只选中并预览，回到主界面后再按一次中央键才会保存。
 
----
+## 它能做什么
 
-## What it is
+Recipe Lab 使用相机已有的创意风格、饱和度、对比度、锐度、白平衡、曝光补偿、照片效果和动态范围优化，以及一个隐藏的色彩矩阵开关，近似其他相机与胶片的色彩。
 
-Recipe Lab is a small app that runs on the Sony A6000 itself. It comes with 77 colour recipes that recreate the looks
-of other cameras — Fuji film simulations, Ricoh GR image controls, Leica, Hasselblad, Canon and Nikon colour, Sony's
-newer Creative Looks — and of classic film stocks from Kodak, Fuji, Cinestill, Agfa and Ilford.
+配方保存到相机设置后，设计上可在应用关闭后的拍照和视频中继续生效，并保留到下次开机。具体机型和模式的表现仍需实拍确认。
 
-You turn the wheel, watch the live image change, press a button. From then on the camera shoots that way in **every
-mode**, photo and video, with the app closed. Turn it off and on, it is still there.
+这些配方不是另一品牌的完整色彩科学，也不是 LUT。A6000 没有可供这个应用保存的自定义色调曲线，所以它做不到完整复制某种胶片或 Log 曲线。中文适配没有增加新的图像处理能力。
 
-> **Honest note.** The A6000 has no Picture Profile menu and cannot store tone curves. Every recipe is built only from
-> what this camera *can* keep: Creative Style, saturation, contrast, sharpness, white balance, exposure bias, Picture
-> Effect and one hidden colour setting Sony never exposed. So these are approximations of a look, not copies of another brand's colour science.
+## 配方分类
 
-## The recipes
-
-| brand | recipes |
+| 分类 | 包含内容 |
 |---|---|
-| **Sony** | Factory (ST), PT, NT, VV, VV2, FL, IN, SH |
-| **Fuji simulations** | Provia, Velvia, Astia, Classic Chrome, Classic Negative, Nostalgic Neg, Reala Ace, Pro Neg Std / Hi, Eterna, Eterna Bleach Bypass, Acros, Acros +Ye / +R / +G, Sepia |
-| **Fuji film** | Pro 400H, Fortia 50, Superia 400, C200, Natura 1600 |
-| **Kodak** | Portra 160 / 400 / 800, Gold 200, Ultra Max 400, Color Plus 200, Ektar 100, Ektachrome E100, Kodachrome 64, Vision3 500T, Vision 200T (Asteroid City), Tri-X 400, Tri-X 1600 (pushed), T-Max |
-| **Cine** | Cinestill 50D, Cinestill 800T, Classic Cinema, Rec709 Video |
-| **Ricoh GR** | Positive Film, Negative Film, Bleach Bypass, Retro, Cross Process, Hi-Contrast B&W, Hard Monotone, Soft Monotone |
-| **Leica** | Contemporary, Classic, Eternal, Monochrom |
-| **Hasselblad** | HNCS Natural |
-| **Canon / Nikon** | Canon Standard / Portrait / Faithful, Nikon Flat / Vivid |
-| **Panasonic / Olympus** | L.Monochrome D, L.ClassicNeo, Pop Art, Pale & Light |
-| **Other stocks** | Agfa Vista 200, Agfa Ultra 100, Polaroid / Instax |
-| **Ilford** | HP5, FP4, Delta 100, Delta 3200, Pan F 50 |
+| 索尼 | 标准 ST、人像 PT、中性 NT、鲜艳 VV、VV2、胶片 FL、拍立得 IN、柔和高调 SH |
+| 富士模拟 | Provia、Velvia、Astia、经典正片、经典负片、怀旧负片、Reala Ace、专业负片标准／高对比、Eterna、Eterna 跳漂、Acros 及黄／红／绿滤镜、棕褐色 |
+| 富士胶卷 | Pro 400H、Fortia 50、Superia 400、C200、Natura 1600 |
+| 柯达 | Portra 160／400／800、Gold 200、Ultra Max 400、Color Plus 200、Ektar 100、Ektachrome E100、Kodachrome 64、Vision3 500T、Vision 200T、Tri-X 400／1600、T-Max |
+| 电影 | Cinestill 50D／800T、经典电影、Rec709 低对比视频 |
+| 理光 GR | 正片、负片、跳漂、复古、交叉冲洗、高对比黑白、硬调黑白、柔调黑白 |
+| 徕卡 | 现代、经典、永恒、黑白 |
+| 哈苏 | HNCS 自然 |
+| 佳能／尼康 | 佳能标准／人像／忠实，尼康平淡／鲜艳 |
+| 松下／奥林巴斯 | L.Monochrome D、L.ClassicNeo、波普艺术、淡雅明亮 |
+| 其他胶卷 | 爱克发 Vista 200／Ultra 100，宝丽来／富士拍立得 |
+| 伊尔福 | HP5、FP4、Delta 100／3200、Pan F 50 |
 
-**[See every recipe on the same subject →](docs/SAMPLES.md)** — 77 frames, one scene, one exposure, straight out of
-the camera.
+界面标为「效果」（原文 PE）的配方采用照片效果，例如 Acros 红滤镜、Tri-X 1600、GR 复古、GR 高对比黑白、索尼 SH 和拍立得。标为「风格」（原文 CS）的配方采用创意风格。
 
-Recipes marked **PE** in the app (Acros +R, Tri-X 1600, GR Retro, GR Hi-Contrast B&W, Sony SH, Polaroid) are built on
-a Picture Effect because, against the reference frames, its tone
-curve gets closer than Creative Style can; everything else stays Creative Style on purpose.
+S-Log、V-Log、Blackmagic Film、Cinelike D，以及硒调色、蓝晒等染色黑白不在本应用能力范围内。
 
-Not included, because the camera simply cannot do them: log profiles (S-Log, V-Log, Blackmagic Film, Cinelike D) and
-tinted black & white (selenium, cyanotype). Sony's camcorder *Cinematone* gamma exists in the firmware but the A6000's
-camera layer neither lists nor accepts it, so that door is closed too.
+## A5100 的按键
 
-## Compatibility
+A5100 没有独立 Fn、AEL 和 C1。本版仅在识别为 ILCE-5100 / A5100 时启用以下替代入口；长按中央键仍为收藏，C1 开发工具未增加替代入口。
 
-Recipe Lab has no model check in it, and every Sony body that runs PlayMemories apps has the same settings store — so
-it should install and work beyond the A6000.
-
-The catch: the setting IDs were found on an A6000 and may sit elsewhere on another body, so a recipe could land in the
-wrong place. A camera gets a ✅ only once someone has stored a recipe on it and power-cycled the camera.
-
-Tried one? File a
-[compatibility report](https://github.com/voxivoid/recipe-lab-sony-pmca/issues/new?template=compatibility_report.yml).
-Failures are as useful as successes.
-
-### Cameras that run PlayMemories apps
-
-✅ someone has run it on that body · ❔ app-capable, nobody has reported back yet
-
-| camera | model code | status | comment |
-|---|---|---|---|
-| **A6000** | ILCE-6000 | ✅ | built and tested on it, firmware 3.21 |
-| **A6500** | ILCE-6500 | ✅ | installs, stores, survives a power cycle |
-| **A5100** | ILCE-5100 | ✅ | works, and the wheel scrolls every recipe — but the body has no **Fn** or **AEL** button, so the brand list and the clean-preview toggle are out of reach |
-| **A7 II** | ILCE-7M2 | ✅ | reported working |
-| **A7** | ILCE-7 | ✅ | stores and survives a power cycle, firmware 3.20 — reported after unlocking the settings store with OpenMemories-Tweak, though whether this body needs that is untested ([#19](https://github.com/voxivoid/recipe-lab-sony-pmca/issues/19)) |
-| **NEX-5T** | NEX-5T | ✅ | oldest app-capable generation; installs, stores and survives a power cycle on firmware 1.1, reported on app 1.0 — but that report also said the stored values did not all match, and named menu labels reading differently on this body, which is still unresolved ([#22](https://github.com/voxivoid/recipe-lab-sony-pmca/issues/22)) |
-| **A6300** | ILCE-6300 | ✅ | stores and survives a power cycle, firmware 2.01 |
-| **A7R** | ILCE-7R | ✅ | stores and survives a power cycle, firmware 3.2 |
-| **A7R II** | ILCE-7RM2 | ✅ | two reports, firmware 4.00 and 4.01 — stores and survives a power cycle |
-| **RX100 V** | DSC-RX100M5 | ✅ | stores and survives a power cycle, firmware 2.00 — the only confirmed Cyber-shot |
-| A5000 | ILCE-5000 | ❔ | as with the A5100, expect no **Fn** or **AEL** button |
-| A7S | ILCE-7S | ❔ |  |
-| A7S II | ILCE-7SM2 | ❔ |  |
-| NEX-5R | NEX-5R | ❔ | oldest app-capable generation |
-| NEX-6 | NEX-6 | ❔ | menus differ a lot from the A6000 generation, so the settings are the least likely to sit in the same place |
-| A68 | ILCA-68 | ❔ | A-mount; not in the installer's device table either, so even the install is untested |
-| A77 II | ILCA-77M2 | ❔ | A-mount |
-| A99 II | ILCA-99M2 | ❔ | A-mount |
-| RX100 III | DSC-RX100M3 | ❔ |  |
-| RX100 IV | DSC-RX100M4 | ❔ |  |
-| RX1R II | DSC-RX1RM2 | ❔ |  |
-| RX10 II | DSC-RX10M2 | ❔ |  |
-| RX10 III | DSC-RX10M3 | ❔ |  |
-| HX60 / HX60V | DSC-HX60 | ❔ | compact; no control wheel of the kind the app is driven with |
-| HX90 / HX90V | DSC-HX90 | ❔ | compact; no control wheel of the kind the app is driven with |
-| HX400 / HX400V | DSC-HX400 | ❔ | compact; no control wheel of the kind the app is driven with |
-| WX500 | DSC-WX500 | ❔ | compact; no control wheel of the kind the app is driven with |
-
-Two more are unclear: the **RX100 II** and the original **RX10** had Sony's app store, but are missing from the
-installer's device table, so even the install is untested.
-
-App-capable but pointless: the QX lens cameras (ILCE-QX1, DSC-QX10/QX30/QX100), with no screen or wheel to drive the
-app, and the Handycams and action cams, with no Creative Style to write.
-
-### Cameras that cannot run camera apps
-
-Sony's last app-capable bodies are the ones above, from late 2016 — the A6500 and the A99 II. Everything since has
-signed firmware and no `MENU → Application`, so nothing can be installed on it: not this app, not Sony's own store,
-which closed in 2021.
-
-| | |
+| 场景／按键 | 作用 |
 |---|---|
-| **E-mount, APS-C** | A6100, A6400, A6600, A6700, ZV-E10, ZV-E10 II, FX30 |
-| **E-mount, full frame** | A7 III, A7R III, A7R IV / IVA, A7R V, A7S III, A7C, A7C II, A7CR, A9, A9 II, A9 III, A1, A1 II, ZV-E1, FX3 |
-| **Cyber-shot** | RX100 VA, RX100 VI, RX100 VII, RX10 IV, RX0, RX0 II, HX99, ZV-1, ZV-1F, ZV-1 II |
+| 配方名称行：转拨轮或按左右 | 切换配方并实时预览 |
+| 配方名称行：短按中央键 | 保存当前参数；涉及画质变化时先确认 |
+| 配方名称行：长按中央键 | 收藏／取消收藏，保留原版行为 |
+| 名称行右侧「配方列表」 | 等同原 Fn，打开品牌与收藏列表 |
+| MOVIE 键 | 等同原 AEL：小标签 → 完整面板 → 隐藏 → 小标签；在列表中按下则返回 |
+| C1（A5100 无此键） | 打开开发工具 |
+| 主界面：上下 | 依次选择配方名称、参数行、配方列表（下键正向，上键反向） |
+| 参数行：左右 | 选择参数 |
+| 参数行：短按中央键 | 开始／结束编辑选中的参数 |
+| 编辑参数时：上下、左右或拨轮 | 改变数值；结束编辑后回到名称行，再按中央键保存 |
+| 未编辑参数时：拨轮 | 切换整个配方，会重置尚未保存的参数调整 |
+| 删除键／垃圾桶键 | 预览标准参数；还要按中央键保存才会写入 |
+| 半按／全按快门 | 对焦／拍照 |
+| MENU | 关闭当前列表、弹窗或编辑状态；在主界面退出应用 |
 
-…and everything released since. The menu is the test: no `MENU → Application` on your camera, no app — so reports of
-Recipe Lab running on an A6400 or similar are mistaken.
+收藏只保存在当前应用的数据中，关机不会丢失，卸载应用会删除。使用相同包名和签名升级时保留应用数据；卸载后再安装不会保留收藏。
 
-## Installing
+## 参数怎么看
 
-Takes about ten minutes, once. You need the camera, its USB cable, a memory card and a computer (Windows, Mac or
-Linux).
-
-**1. Get the installer tool.** It is called *Sony-PMCA-RE*, made by ma1co. It puts apps on Sony cameras the same way
-Sony's own app store did before it closed.
-
-- *Windows:* download `pmca-gui.exe` from the
-  [releases page](https://github.com/ma1co/Sony-PMCA-RE/releases). Nothing to install, just run it.
-- *macOS:* the same page has a macOS build, less tested than the Windows one. Close anything that holds USB devices —
-  Photos, Dropbox, Google Drive — or it takes the camera first.
-- *Linux, or if the binary misbehaves:* Python 3 and libusb, then in a terminal:
-
-  ```
-  git clone https://github.com/ma1co/Sony-PMCA-RE.git
-  cd Sony-PMCA-RE
-  pip install -r requirements.txt
-  ```
-
-**2. Download the app:** [`RecipeLab.apk`](https://github.com/voxivoid/recipe-lab-sony-pmca/releases/latest/download/RecipeLab.apk)
-— that link always serves the newest release, so it is the one to use. The
-[releases page](https://github.com/voxivoid/recipe-lab-sony-pmca/releases) has older versions and the
-version-stamped copies.
-
-**3. Prepare the camera.** Battery charged, memory card inside. In the camera menu go to
-`Setup (toolbox icon) → USB Connection` and choose **Mass Storage**. Turn the camera on and plug it into the computer.
-The camera screen should say *USB Mode*.
-
-**4. Install.**
-
-- *GUI:* open `pmca-gui.exe` → **Install app from file** → choose `RecipeLab.apk` → wait.
-- *Terminal,* from the Sony-PMCA-RE folder (Linux: put `sudo` in front):
-
-  ```
-  python pmca-console.py install -f RecipeLab.apk
-  ```
-
-The camera will flicker, go black and switch modes a couple of times on its own. That is normal — do not press
-anything. After about a minute the computer prints `Task completed successfully`. **Go by the computer.** The camera
-is usually left on its own `Application Download / Connecting via USB...` screen, which looks stuck and is not.
-
-**5. Unplug, then turn the camera off and on.** The app now lives under
-`MENU → Application → Application List → Recipe Lab`.
-
-## Using it
-
-Open **Recipe Lab** from the Application List. You get the live image with a panel at the bottom, then:
-
-| key | what it does |
+| 中文标签 | 含义 |
 |---|---|
-| **wheel** | scroll recipes, from anywhere — the live image changes at once, and that is what the camera will write |
-| **left / right**, **top dial** | scroll recipes too, but only on the recipe line; on the chip row they walk the chips |
-| **Fn** | open the brand list. **Favourites** first, then the brands, on the left; recipes on the right. Left / right switches column (the active one is amber), wheel or up / down scrolls, centre picks |
-| **centre** | pick the recipe you are looking at — the camera keeps it. A message confirms it |
-| **hold centre** | mark the recipe as a favourite, or unmark it. Works on the main screen and inside the brand list |
-| **AEL** | hide the panel — once for a small label, twice for nothing. The wheel still works |
-| **up / down** | move between the recipe line and the row of value chips |
-| **TRASH** | stage the factory look, then **centre** to pick it |
-| **shutter** | take a picture of what you are previewing |
-| **MENU** | leave the app |
+| 风格 | 相机的创意风格，如标准、鲜艳、人像、黑白 |
+| 饱和度／对比度／锐度 | 对应色彩浓淡、明暗差异和边缘锐化 |
+| 色彩矩阵 | 关闭或 PP3；PP3 在这里是隐藏色彩矩阵，并不代表开启完整照片配置文件 |
+| 照片效果／效果细项 | 例如复古、高对比黑白及其色调选项 |
+| 白平衡／色温 | 自动白平衡或指定 K 值 |
+| 琥珀-蓝 | A 为偏琥珀，B 为偏蓝 |
+| 绿-品红 | G 为偏绿，M 为偏品红 |
+| 曝光补偿 | 单位 EV，每步为 1/3 EV |
+| 动态范围 | DRO 关闭、自动或等级 |
+| 画质 | RAW、RAW+JPEG、JPEG 精细、JPEG 标准 |
 
-Then **turn the camera off and on**. The look is now the camera's default in every mode — P, A, S, M, movie — with
-the app closed, and the app reopens on that recipe.
+「预览中」表示当前参数与已保存值不同；「已保存」表示读回的参数一致。这两个标签不代替关机重启后的实拍检查。
 
-**Favourites.** Hold the **centre button** on a recipe and it joins the **Favourites** group at the top of the brand
-list, with a star next to its name; hold again to drop it. The group lists your picks in the order you marked them,
-and the brand list opens straight on it whenever the recipe you are on is one of them. The wheel on the main screen
-still walks all 77 — favourites shorten the list in the browser, not the scroll. The marks are kept by the app, not in
-the camera's settings, so they survive a power cycle but go with the app if you remove it.
+## 画质与 RAW
 
-**The chips.** In the chip row, **left / right** walks the chips, **centre** focuses one (it turns amber),
-**up / down** changes its value, **centre** leaves it. The wheel keeps changing recipes throughout. A recipe only shows the chips it uses: **CS** recipes show style,
-saturation, contrast, sharpness and matrix; **PE** recipes show the effect and its sub-setting. Quality, white
-balance, EV and DRO are always there. The legend at the bottom of the screen follows whatever you are doing.
+创意风格配方沿用标准配方的画质设定，可通过「画质」参数修改。照片效果配方需要 JPEG；相机在 RAW 或 RAW+JPEG 下可能忽略照片效果。因此写入会改变画质时，应用会先弹出确认。
 
-**The badge** next to the recipe name says where you stand:
+选择「取消」不会写入配方或保存新的画质。创意风格作用于 JPEG，RAW 文件仍保留原始数据；RAW+JPEG 可同时保留原始文件与带效果的 JPEG。
 
-| badge | meaning |
-|---|---|
-| **ACTIVE** | the camera already has these values |
-| **PREVIEW** | you are only looking; press **centre** to pick it |
+## 安装中文版
 
-## What it changes
+编译产物保持为仓库根目录的 `RecipeLab.apk`。应用显示名为 **Recipe Lab**，包名保持 `com.voxivoid.recipelab`。
 
-Only camera settings you could set by hand: Creative Style and its saturation, contrast and sharpness sliders, white
-balance and its fine-tune, exposure compensation, DRO, Picture Effect — plus one hidden switch for a richer colour
-matrix the camera has but never shows. No firmware is touched, nothing is unlocked.
+沿用上游 `build.sh`／`build.cmd`、版本生成规则及签名环境变量。使用项目签名的构建可以覆盖升级；自行构建若签名不同，必须先卸载已安装版本，卸载会清除应用收藏。本地密钥不得提交到 Git。
 
-**Picture Effect recipes** (marked **PE**) behave like the menu item does: the camera ignores Creative Style while one
-is on, and it only works with **Quality = JPEG** — set to RAW or RAW+JPEG, the camera drops the effect silently.
+安装使用 [Sony-PMCA-RE](https://github.com/ma1co/Sony-PMCA-RE)。准备充足电量、存储卡和可传数据的 USB 线。连接模式沿用已在你的电脑和相机上安装成功的方式；上游 README 推荐海量存储，但 USB 权限或设备占用错误不能单凭模式判断。
 
-**Quality** therefore follows you rather than being dictated by a recipe. The Factory recipe starts as whatever the
-camera is set to, and every Creative Style recipe uses that. Change it any time with the `QUALITY` chip. Only when a
-recipe needs JPEG and you are on RAW does the app ask:
-
-```
-Quality: RAW+JPG → JPG Fine — JPEG is needed to apply this recipe
+```sh
+python pmca-console.py install -f /完整路径/RecipeLab.apk
 ```
 
-*Cancel* changes nothing.
+安装期间屏幕可能闪烁或切换连接页面。以工具的成功结果为准，不要在写入途中拔线。完成后拔线，关机再开机，在应用程序列表打开中文版。
 
-## Uninstalling
+Windows 可使用 PMCA-GUI 的「Install app from file」。macOS 如果提示 USB 权限不足，需由本机用户在系统授权窗口授权；不要把管理员密码发到聊天里。
 
-**Is it permanent?** The look stays until you change it — on purpose, that is what makes it work in every mode
-without the app. It is not permanent in the sense of damage. Undo it any time, three ways:
+上游发布页提供的是上游原版，**不会包含这个本地分支的中文修改**。
 
-- In the app: **TRASH**, then the **centre button**, then turn the camera off and on.
-- In the menus: set Creative Style back to *Standard* 0 / 0 / 0 and White Balance to *Auto*.
-- Or use the camera's own `Setup → Setting Reset → Camera Settings Reset`.
+## 恢复与卸载
 
-**Removing the app.** `MENU → Application → Application Management → Manage and Remove → Recipe Lab`. This does
-**not** put the colour settings back, so undo the look first and remove the app after.
+想恢复本应用的标准色彩，按删除键预览「标准出厂 ST」，再按中央键保存，关机再开机。这会恢复配方表中的标准参数，**不是备份恢复，不会还原你安装前的所有个性化设置**。
 
-**Worth knowing:**
+也可以在相机菜单手动改回创意风格「标准」、白平衡「自动」等设置，或使用相机的「设置重置 → 相机设置重置」。重置范围以相机菜单说明为准。
 
-- Some recipes push saturation further than the menu slider goes (the menu allows ±3, the camera accepts more). The
-  menu then shows the nearest value it can; if you touch that slider it snaps back to the normal range and the
-  recipe loses that extra punch. Pick the recipe again in the app if that happens.
-- The preview inside the app is temporary; closing the app removes it. Only what you *picked* stays.
-- Built and tested on the A6000 with firmware 3.21. Several other bodies have been reported working — see
-  [Compatibility](#compatibility) — but on anything still marked ❔ there, compare what the chips show with your menus
-  before picking a recipe.
+卸载路径：`MENU → 应用程序 → 应用程序管理 → 管理和删除 → Recipe Lab`。卸载只删除应用及其收藏，已经写入相机的色彩参数仍会保留。需要恢复色彩时，应先恢复再卸载。
 
-## Troubleshooting
+部分配方的饱和度超过相机菜单常见的 ±3 范围。菜单可能只显示接近的值，手动操作菜单滑块会覆盖该参数；需要时重新保存配方。
 
-The common questions — RAW files, damage, LUTs, newer bodies — are in the **[FAQ](docs/FAQ.md)**.
+## 兼容性
 
-| what you see | what to do |
+下表来自克隆时上游的兼容性记录，不等于本次已对这些机型完成中文版验证。上游以写入并重启后仍生效作为兼容性依据；本分支提供 A5100 的 MOVIE 显示切换及配方列表入口，其他机型保留原按键行为。
+
+| 机型 | 型号 | 上游记录 |
+|---|---|---|
+| A6000 | ILCE-6000 | 已测试，固件 3.21 |
+| A6500 | ILCE-6500 | 安装、保存、重启保留均有报告 |
+| A5100 | ILCE-5100 | 已有可用报告；本分支增加 Fn／AEL 替代入口 |
+| A7 II | ILCE-7M2 | 已有可用报告 |
+| A7 | ILCE-7 | 固件 3.20 有保存及重启报告；报告者解锁过设置保护，是否必要尚未证实 |
+| NEX-5T | NEX-5T | 固件 1.1 有运行报告，但设置值不完全匹配的问题尚未解决 |
+| A6300 | ILCE-6300 | 固件 2.01 有保存及重启报告 |
+| A7R | ILCE-7R | 固件 3.2 有保存及重启报告 |
+| A7R II | ILCE-7RM2 | 固件 4.00／4.01 有保存及重启报告 |
+| RX100 V | DSC-RX100M5 | 固件 2.00 有保存及重启报告 |
+
+上游列为未确认的机型：A5000、A7S、A7S II、NEX-5R、NEX-6、A68、A77 II、A99 II、RX100 III／IV、RX1R II、RX10 II／III、HX60／HX60V、HX90／HX90V、HX400／HX400V、WX500。部分机型没有相同的拨轮或按键；RX100 II 和初代 RX10 的安装也未确认。完整原始表格见 [英文 README](README.en.md#compatibility)。
+
+A6100、A6400、A6600、A6700、A7 III 及后续相关机型、A9／A1、ZV／FX、RX100 VA／VI／VII、RX10 IV 等不具备这里依赖的 PlayMemories 应用环境。检查相机是否有「应用程序」菜单，不能仅凭相似型号判断支持。
+
+本应用的设置地址来自 A6000 逆向分析。其他机型可能在不同地址存储同一设置；尚未确认的机型应先核对参数，不要把编译通过当成机型验证。
+
+## 排查问题
+
+| 现象 | 处理 |
 |---|---|
-| `No devices found` | USB Connection must be *Mass Storage*; card inserted; camera on and showing *USB Mode*; try another cable or port |
-| Stuck at `Waiting for camera to switch...` | Unplug, turn the camera off and on, reconnect, run again |
-| `Not written — the camera holds these settings read-only` or `WRITE FAILED` | The camera refused the recipe. Install [OpenMemories-Tweak](https://github.com/ma1co/OpenMemories-Tweak), open **Protection**, tick *Unlock protected settings* until it reads *Protection disabled*, then pick the recipe again |
-| Look not applied after picking a recipe | Turn the camera off and on |
-| `no live preview: ...` in the panel | Something else is holding the camera; close and reopen the app |
-| Text shows `Â·` | Old build; install the APK from the [latest release](https://github.com/voxivoid/recipe-lab-sony-pmca/releases/latest) |
+| 找不到设备 | 确认相机开机、存储卡已插入、USB 线可传数据，检查设备是否被其他应用占用 |
+| USB Access denied | 当前进程没有接管 USB 的权限；先解决系统授权或占用，不要直接判断为连接模式错误 |
+| 一直等待相机切换 | 确认工具没有正在写入后，再重新连接和开机 |
+| 写入失败／只读 | 先看提示中具体是哪项失败。上游建议使用 OpenMemories-Tweak 的 Protection → Unlock protected settings；中文版不会自动替你解锁 |
+| 保存后效果未全面生效 | 退出应用，关机再开机，并核对画质和相机模式 |
+| 预览不可用 | 退出后重开应用，检查其他功能是否占用相机 |
+| 找不到品牌列表 | 切到完整面板，触摸名称右侧「配方列表」 |
+| 想切换面板显示 | A5100 按 MOVIE 键；从启动的小标签模式按一次即可进入完整面板 |
+| 中文变方框或文字被截断 | 已内置约 62 KiB 中文字体子集；若仍出现方框，请记录具体页面和文字 |
+| 无法覆盖原版 | 核对签名是否一致；签名不同需先卸载旧版，卸载会清除收藏 |
 
-## For developers
+## 从源码构建
 
-The reverse-engineering notes — source layout, the settings-store ID map, the exit rule, live-preview
-parameters, key scan codes and how to build — live in **[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)**.
+工程不使用 Gradle，使用 JDK 17、Android SDK Build Tools 30.0.3、android-28 平台文件和 **NDK r16b**。新 NDK 已不支持本工程所需的旧 armeabi／STL。
 
-To contribute, read **[docs/CONTRIBUTING.md](docs/CONTRIBUTING.md)** first: branch naming, commit format and the
-release flow are all enforced by CI.
+```sh
+git submodule update --init jni/platform
+export JAVA_HOME=/你的/JDK17/路径
+export ANDROID_SDK=/你的/Android/sdk
+export ANDROID_NDK=/你的/android-ndk-r16b
+./tools/test.sh
+./build.sh
+```
 
-## Credits
+这里只需初始化 `jni/platform`，Android 构建使用 NDK 自带 STL，不依赖其已失效的嵌套 SourceForge STLPort 仓库。Windows 对应 `build.cmd`。
 
-**Author:** [André Domingues (voxivoid)](https://github.com/voxivoid) — reverse engineering of the A6000 settings
-store (backup IDs, PP flag behaviour, colour-matrix measurement), the app, the recipes, the icon.
+构建会编译 Java 与原生库，并用 Android 2.3.7 支持的 v1 签名输出 APK。版本号仍来自 `AndroidManifest.xml`，本分支不手工另起发行版本。
 
-**Huge thanks to [ma1co](https://github.com/ma1co).** None of this would exist without his years of work reverse
-engineering Sony's PlayMemories camera platform:
+中文显示逻辑在 `Zh.java`，文字显示与宽度测量入口在 `Chinese.java`。通过 `Chinese.java` 从 assets 加载字体子集，失败时回退；`CameraUi.java` 集中定义 A5100 的专用行为。不增加长按快捷菜单。`Recipes.java`、`Params.java`、`Favourites.java` 中原有配方数值、相机参数和收藏标识保持不变。Canvas 的绘制和宽度测量使用同一套翻译，避免英文宽度套用到中文。
 
-- [Sony-PMCA-RE](https://github.com/ma1co/Sony-PMCA-RE) — the app-install channel, the updater shell used to dump
-  this camera's firmware and settings, and `fwtool`.
-- [OpenMemories-Platform](https://github.com/ma1co/OpenMemories-Platform) — the backup driver / OSAL bindings this
-  app links against (vendored here as a git submodule).
-- [OpenMemories-Tweak](https://github.com/ma1co/OpenMemories-Tweak) and
-  [OpenMemories-Framework](https://github.com/ma1co/OpenMemories-Framework) — reference for `Backup_read/write`,
-  the `ScalarInput` key codes and the `CameraEx` API.
-- The earlier nex-hack community research he built on and kept documented.
+开发细节见 [DEVELOPMENT.md](docs/DEVELOPMENT.md)，贡献规则见 [CONTRIBUTING.md](docs/CONTRIBUTING.md)，发布规则见 [RELEASING.md](docs/RELEASING.md)。这些上游技术参考保留英文，中文使用说明和常见问题由本分支提供。
 
-He figured out how these cameras work, documented it openly and licensed it permissively — this project just stands
-on that.
+## 作者与许可
 
-**Thanks also to [Veres Deni Alex](https://www.veresdenialex.com/).** His Sony film-simulation recipes and the side-by-side
-reference frames on his site were the inspiration and the benchmark for many of the looks here (Kodak, Fuji, Cinestill,
-Ilford, Cinema…). The values in this app are re-derived for what the A6000 can store and are not his recipes.
+原作者：[André Domingues（voxivoid）](https://github.com/voxivoid)。上游完成了 A6000 设置存储、色彩矩阵的逆向分析，以及应用、配方和图标。应用免费；[赞助上游](https://github.com/sponsors/voxivoid)可支持维护和实机测试。
 
-License: MIT (this repository). OpenMemories-Platform: MIT, © 2017 ma1co.
+感谢 [ma1co](https://github.com/ma1co) 提供 Sony-PMCA-RE、OpenMemories-Platform、OpenMemories-Tweak 和 OpenMemories-Framework，以及 nex-hack 社区的早期研究。
+
+[Veres Deni Alex](https://www.veresdenialex.com/) 的配方和对比样片提供了参考；本项目参数是针对 A6000 能力重新推导的，并非直接采用其配方。
+
+工程为 MIT 许可，OpenMemories-Platform 为 MIT 许可。内置 AOSP DroidSansFallback 字体子集（Apache 2.0），许可说明见 [licenses](docs/licenses/README.md) 中。

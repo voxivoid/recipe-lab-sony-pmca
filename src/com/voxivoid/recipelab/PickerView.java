@@ -28,6 +28,11 @@ public class PickerView extends View {
     private static final String[] BRAND_TEXT = { "recipes", "close" };
     private static final int[] RECIPE_ICONS = { Legend.ENTER, Legend.ENTER, Legend.FN };
     private static final String[] RECIPE_TEXT = { "pick", "fav (hold)", "close" };
+    private static final int[] A5100_BRAND_ICONS = { Legend.ENTER, Legend.MENU };
+    private static final int[] A5100_RECIPE_ICONS = { Legend.ENTER, Legend.ENTER, Legend.MENU };
+    private static final String[] A5100_RECIPE_TEXT = { "预览", "长按收藏", "返回" };
+    private boolean a5100;
+    public void setA5100(boolean value) { a5100 = value; invalidate(); }
     private final Paint outline = new Paint(Paint.ANTI_ALIAS_FLAG);
     private int selected = 0, column = 1, group = 0;              // column: 0 groups, 1 recipes · group: Favourites.GROUP or a brand
     private List<Integer> favs = new ArrayList<Integer>();
@@ -62,9 +67,9 @@ public class PickerView extends View {
         float top = pad + 12 * d, bottom = h - pad - 20 * d;    // header / footer reserved
         float sbW = 4 * d;                                      // scrollbar width
         head.setColor(column == 0 ? ACCENT : 0x99FFFFFF);
-        c.drawText("BRAND", pad, pad + 7 * d, head);
+        Chinese.draw(c, "BRAND", pad, pad + 7 * d, head);
         head.setColor(column == 1 ? ACCENT : 0x99FFFFFF);
-        c.drawText(Favourites.groupName(g).toUpperCase() + "  ·  " + count, colX + pad, pad + 7 * d, head);
+        Chinese.draw(c, Favourites.groupName(g).toUpperCase() + "  ·  " + count, colX + pad, pad + 7 * d, head);
         head.setColor(0x99FFFFFF);
         c.drawLine(colX, pad, colX, h - pad, rule);
         c.drawLine(pad, top + 3 * d, w - pad, top + 3 * d, rule);
@@ -84,10 +89,10 @@ public class PickerView extends View {
             item.setColor(active ? INK : on ? ACCENT : gi == Favourites.GROUP ? 0xFFF2B85C : 0xCCFFFFFF); item.setFakeBoldText(on);
             float tx = pad;
             if (gi == Favourites.GROUP) { star.setColor(active ? INK : ACCENT); Legend.star(c, pad + 5 * d, y + rowH / 2, 5.5f * d, star); tx += 14 * d; }
-            c.drawText(Favourites.groupName(gi), tx, y + rowH / 2 + item.getTextSize() * 0.36f, item);
+            Chinese.draw(c, Favourites.groupName(gi), tx, y + rowH / 2 + item.getTextSize() * 0.36f, item);
             small.setColor(active ? 0xAA1A1208 : 0x66FFFFFF);
             String n = String.valueOf(Favourites.groupCount(gi, favs));
-            c.drawText(n, gRight - 6 * d - small.measureText(n), y + rowH / 2 + small.getTextSize() * 0.36f, small);
+            Chinese.draw(c, n, gRight - 6 * d - Chinese.measure(small, n), y + rowH / 2 + small.getTextSize() * 0.36f, small);
             if (i == 0) c.drawLine(pad, y + rowH - d, gRight, y + rowH - d, rule);   // Favourites is set apart from the brands
         }
         item.setFakeBoldText(false);
@@ -97,9 +102,9 @@ public class PickerView extends View {
         float x = colX + pad;
         if (count == 0) {                                       // an empty Favourites group says so, and how to fill it
             item.setColor(0xCCFFFFFF);
-            c.drawText(Favourites.EMPTY_TITLE, x, listTop + 20 * d, item);
+            Chinese.draw(c, Favourites.EMPTY_TITLE, x, listTop + 20 * d, item);
             small.setColor(0x99FFFFFF);
-            c.drawText(Favourites.EMPTY_HINT, x, listTop + 36 * d, small);
+            Chinese.draw(c, Favourites.EMPTY_HINT, x, listTop + 36 * d, small);
         } else {
             float rh = 26 * d;
             int visible = Math.max(1, (int) (listH / rh));
@@ -114,9 +119,9 @@ public class PickerView extends View {
                 boolean on = idx == selected, active = on && column == 1;
                 if (on) { r.set(x - 4 * d, y, xr, y + rh); c.drawRoundRect(r, 3 * d, 3 * d, active ? sel : outline); }
                 item.setColor(active ? INK : on ? ACCENT : 0xFFFFFFFF); item.setFakeBoldText(on);
-                c.drawText(rc.name, x, y + 13 * d, item);
+                Chinese.draw(c, rc.name, x, y + 13 * d, item);
                 small.setColor(active ? 0xAA1A1208 : 0x80FFFFFF);
-                c.drawText(favGroup ? Recipes.GROUPS[rc.group] + "  ·  " + rc.summary() : rc.summary(), x, y + 22 * d, small);
+                Chinese.draw(c, favGroup ? Recipes.GROUPS[rc.group] + "  ·  " + rc.summary() : rc.summary(), x, y + 22 * d, small);
                 float tx = tag(c, rc.isEffect() ? "PE" : "CS", xr - 4 * d, y, active, active ? 0x331A1208 : (rc.isEffect() ? 0x55B8741A : 0x33FFFFFF), active ? INK : 0xCCFFFFFF);
                 if (!favGroup && favs.contains(idx)) { star.setColor(active ? INK : ACCENT); Legend.star(c, tx - 4 * d - 6 * d, y + 11 * d, 6 * d, star); }
             }
@@ -126,17 +131,17 @@ public class PickerView extends View {
 
         // ---- footer: icon legend
         c.drawLine(pad, h - pad - 16 * d, w - pad, h - pad - 16 * d, rule);
-        legend.draw(c, pad, h - pad - 6 * d, w - 2 * pad, column == 0 ? BRAND_ICONS : RECIPE_ICONS, column == 0 ? BRAND_TEXT : RECIPE_TEXT);
+        legend.draw(c, pad, h - pad - 6 * d, w - 2 * pad, column == 0 ? (a5100 ? A5100_BRAND_ICONS : BRAND_ICONS) : (a5100 ? A5100_RECIPE_ICONS : RECIPE_ICONS), column == 0 ? BRAND_TEXT : (a5100 ? A5100_RECIPE_TEXT : RECIPE_TEXT));
     }
 
     /** a small pill ending at {@code right} on the row at {@code y}; returns its left edge */
     private float tag(Canvas c, String text, float right, float y, boolean active, int bgColor, int textColor) {
-        float tw = head.measureText(text) + 8 * d, tx = right - tw;
+        float tw = Chinese.measure(head, text) + 8 * d, tx = right - tw;
         r.set(tx, y + 5 * d, tx + tw, y + 17 * d);
         tagBg.setColor(bgColor);
         c.drawRoundRect(r, 2 * d, 2 * d, tagBg);
         head.setColor(textColor);
-        c.drawText(text, tx + 4 * d, y + 14 * d, head);
+        Chinese.draw(c, text, tx + 4 * d, y + 14 * d, head);
         head.setColor(0x99FFFFFF);
         return tx;
     }

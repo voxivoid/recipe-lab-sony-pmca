@@ -22,7 +22,7 @@ mkdir out\gen out\classes out\dex out\apklib\lib\armeabi
 copy /Y out\libs\armeabi\librecipelab.so out\apklib\lib\armeabi\ >nul
 
 echo [1/7] aapt R.java
-"%BT%\aapt.exe" package -f -m -J out\gen -M AndroidManifest.xml -S res -I "%AJ%" || exit /b 1
+"%BT%\aapt.exe" package -f -m -J out\gen -M AndroidManifest.xml -S res -A assets -0 ttf -I "%AJ%" || exit /b 1
 echo [2/7] javac
 "%JAVA%\javac.exe" -encoding UTF-8 --release 8 -Xlint:-options -cp "%AJ%" -d out\classes out\gen\com\voxivoid\recipelab\R.java src\com\voxivoid\recipelab\*.java || exit /b 1
 echo [3/7] d8
@@ -32,7 +32,7 @@ for /r out\classes %%f in (*.class) do set CLASSES=!CLASSES! "%%f"
 "%JAVA%\java.exe" -cp "%BT%\lib\d8.jar" com.android.tools.r8.D8 --release --min-api 10 --lib "%AJ%" --output out\dex !CLASSES! || exit /b 1
 endlocal
 echo [4/7] aapt package + dex + native lib
-"%BT%\aapt.exe" package -f -M AndroidManifest.xml -S res -I "%AJ%" -F out\unaligned.apk || exit /b 1
+"%BT%\aapt.exe" package -f -M AndroidManifest.xml -S res -A assets -0 ttf -I "%AJ%" -F out\unaligned.apk || exit /b 1
 pushd out\dex
 "%BT%\aapt.exe" add ..\unaligned.apk classes.dex || exit /b 1
 popd

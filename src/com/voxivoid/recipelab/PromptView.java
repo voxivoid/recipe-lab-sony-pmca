@@ -41,8 +41,8 @@ public class PromptView extends View {
 
     @Override
     protected void onMeasure(int w, int hh) {
-        float wd = Math.max(title.measureText(titleText), body.measureText(bodyText)) + 40 * d;
-        float ow = 0; for (String o : options) ow += opt.measureText(o) + 36 * d;
+        float wd = Math.max(Chinese.measure(title, titleText), Chinese.measure(body, bodyText)) + 40 * d;
+        float ow = 0; for (String o : options) ow += Chinese.measure(opt, o) + 36 * d;
         wd = Math.max(wd, ow + 20 * d);
         wd = Math.min(wd, MeasureSpec.getSize(w));
         float h = 14 * d + 20 * d + 18 * d + 12 * d + 30 * d + 14 * d + (noteText != null ? 14 * d : 0) + legend.height() + 12 * d;
@@ -54,27 +54,27 @@ public class PromptView extends View {
         float w = getWidth(), h = getHeight(), pad = 16 * d;
         r.set(0, 0, w, h); c.drawRoundRect(r, 8 * d, 8 * d, bg); c.drawRoundRect(r, 8 * d, 8 * d, edge);
         float y = 14 * d + 15 * d;
-        c.drawText(titleText, pad, y, title); y += 18 * d;
-        c.drawText(bodyText, pad, y, body); y += 12 * d;
+        Chinese.draw(c, titleText, pad, y, title); y += 18 * d;
+        Chinese.draw(c, bodyText, pad, y, body); y += 12 * d;
 
         // option pills, centred
-        float total = 0; for (String o : options) total += opt.measureText(o) + 28 * d;
+        float total = 0; for (String o : options) total += Chinese.measure(opt, o) + 28 * d;
         total += (options.length - 1) * 8 * d;
         float x = (w - total) / 2, ph = 24 * d, py = y + 3 * d;
         for (int i = 0; i < options.length; i++) {
-            float pw = opt.measureText(options[i]) + 28 * d;
+            float pw = Chinese.measure(opt, options[i]) + 28 * d;
             r.set(x, py, x + pw, py + ph);
             pill.setColor(i == selected ? ACCENT : 0x33FFFFFF);
             c.drawRoundRect(r, 5 * d, 5 * d, pill);
             opt.setColor(i == selected ? INK : 0xFFFFFFFF);
-            c.drawText(options[i], x + pw / 2, py + ph / 2 - (opt.ascent() + opt.descent()) / 2, opt);
+            Chinese.draw(c, options[i], x + pw / 2, py + ph / 2 - (opt.ascent() + opt.descent()) / 2, opt);
             x += pw + 8 * d;
         }
         y = py + ph + 14 * d;
         if (noteText != null) {
             float ns = 10 * d, avail = w - 2 * pad;
-            while (note.measureText(noteText) > avail && ns > 7 * d) { ns -= 0.5f * d; note.setTextSize(ns); }
-            c.drawText(noteText, pad, y, note); note.setTextSize(10 * d); y += 14 * d;
+            while (Chinese.measure(note, noteText) > avail && ns > 7 * d) { ns -= 0.5f * d; note.setTextSize(ns); }
+            Chinese.draw(c, noteText, pad, y, note); note.setTextSize(10 * d); y += 14 * d;
         }
         legend.draw(c, pad, y + legend.height() / 2 - 2 * d, w - 2 * pad, LEGEND_ICONS, LEGEND_TEXT);
     }

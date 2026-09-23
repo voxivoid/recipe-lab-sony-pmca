@@ -10,7 +10,7 @@ import android.graphics.RectF;
  * Fits the available width: first squeezes the gaps between items, then scales icons and text down.
  */
 public class Legend {
-    public static final int WHEEL = 0, UPDOWN = 1, LEFTRIGHT = 2, DIAL = 3, ENTER = 4, AEL = 5, TRASH = 6, MENU = 7, C1 = 8, FN = 9;
+    public static final int WHEEL = 0, UPDOWN = 1, LEFTRIGHT = 2, DIAL = 3, ENTER = 4, AEL = 5, TRASH = 6, MENU = 7, C1 = 8, FN = 9, PLAY = 10, MOVIE = 11;
 
     private final Paint fill = new Paint(Paint.ANTI_ALIAS_FLAG), stroke = new Paint(Paint.ANTI_ALIAS_FLAG),
             text = new Paint(Paint.ANTI_ALIAS_FLAG), keyText = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -57,8 +57,8 @@ public class Legend {
         float s = 6 * d * scale, ty = cy - (text.ascent() + text.descent()) / 2f, x0 = x;
         for (int i = 0; i < icons.length; i++) {
             x += icon(c, icons[i], x, cy, s) + 4 * d * scale;
-            c.drawText(labels[i], x, ty, text);
-            x += text.measureText(labels[i]) + (i < icons.length - 1 ? gap : 0);
+            Chinese.draw(c, labels[i], x, ty, text);
+            x += Chinese.measure(text, labels[i]) + (i < icons.length - 1 ? gap : 0);
         }
         return x - x0;
     }
@@ -66,7 +66,7 @@ public class Legend {
     private float measure(float scale, float gap, int[] icons, String[] labels) {
         setScale(scale);
         float s = 6 * d * scale, w = 0;
-        for (int i = 0; i < icons.length; i++) w += icon(nowhere, icons[i], 0, 0, s) + 4 * d * scale + text.measureText(labels[i]) + (i < icons.length - 1 ? gap : 0);
+        for (int i = 0; i < icons.length; i++) w += icon(nowhere, icons[i], 0, 0, s) + 4 * d * scale + Chinese.measure(text, labels[i]) + (i < icons.length - 1 ? gap : 0);
         return w;
     }
 
@@ -83,7 +83,7 @@ public class Legend {
     private float keyLabel(Canvas c, float x, float cy, float s, float w, String label) {
         rect.set(x, cy - s * 0.8f, x + w, cy + s * 0.8f);
         c.drawRoundRect(rect, 2 * d, 2 * d, stroke);
-        c.drawText(label, x + w / 2, cy - (keyText.ascent() + keyText.descent()) / 2f, keyText);
+        Chinese.draw(c, label, x + w / 2, cy - (keyText.ascent() + keyText.descent()) / 2f, keyText);
         return w;
     }
 
@@ -132,6 +132,10 @@ public class Legend {
                 c.drawCircle(cx, cy, s * 0.4f, fill);
                 return 2 * s;
             }
+            case PLAY:
+                tri(c, x, cy - s * 0.8f, x + s * 1.5f, cy, x, cy + s * 0.8f);
+                return 1.5f * s;
+            case MOVIE: return keyLabel(c, x, cy, s, 4.0f * s, "MOVIE");
             case AEL: return keyLabel(c, x, cy, s, 2.6f * s, "AEL");
             case C1: return keyLabel(c, x, cy, s, 2.0f * s, "C1");
             case FN: return keyLabel(c, x, cy, s, 2.0f * s, "Fn");

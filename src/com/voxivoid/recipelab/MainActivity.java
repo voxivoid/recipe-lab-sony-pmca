@@ -44,13 +44,17 @@ import static com.voxivoid.recipelab.Params.*;
 public class MainActivity extends Activity implements SurfaceHolder.Callback {
     // ScalarInput scan codes
     private static final int K_UP = 103, K_DOWN = 108, K_LEFT = 105, K_RIGHT = 106, K_ENTER = 232, K_MENU = 514, K_SK1 = 229,
-            K_DELETE = 595, K_SK2 = 513, K_PLAY = 207, K_DISP = 608, K_FN = 520, K_AEL = 532, K_C1 = 622, K_S1 = 516, K_S2 = 518,
+            K_DELETE = 595, K_SK2 = 513, K_PLAY = 207, K_MOVIE = 515, K_DISP = 608, K_FN = 520, K_AEL = 532, K_C1 = 622, K_S1 = 516, K_S2 = 518,
             K_WHEEL_CW = 522, K_WHEEL_CCW = 523, K_DIAL_CW = 525, K_DIAL_CCW = 526;
 
     private static final int ACCENT = 0xFFF2B85C, INK = 0xFF1A1208, WHITE = 0xFFFFFFFF, DIM = 0x99FFFFFF;
     /** how long the centre button is held before it means "favourite" instead of "pick" */
     private static final long HOLD_MS = 600;
 
+    private boolean a5100;
+    private boolean browserSelected;
+    private int touchPanelBefore = -1;
+    private TextView browserButton;
     private View panel;
     private PickerView picker;
     private HorizontalScrollView chipScroll;
@@ -95,6 +99,9 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     @Override
     protected void onCreate(Bundle b) {
         super.onCreate(b);
+        Chinese.init(this);
+        a5100 = CameraUi.isA5100(cameraModel());
+        overlay = CameraUi.initialOverlay(a5100);
         setContentView(R.layout.main);
         prefs = getPreferences(MODE_PRIVATE);
         recipe = Math.max(0, Math.min(Recipes.ALL.length - 1, prefs.getInt("recipe", 0)));
@@ -115,10 +122,57 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         prompt = (PromptView) findViewById(R.id.prompt);
         menu = (MenuView) findViewById(R.id.menu);
         chips = (LinearLayout) findViewById(R.id.chips);
+        browserButton = (TextView) findViewById(R.id.browser_button);
+        Chinese.setText(browserButton, "配方列表");
+        browserButton.setVisibility(a5100 ? View.VISIBLE : View.GONE);
+        browserButton.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View view) {
+                if (CameraUi.canOpenBrowser(a5100, overlay, promptOpen, menuOpen, running)) openBrowser(true);
+            }
+        });
+        hints.setA5100(a5100);
+        picker.setA5100(a5100);
+        if (a5100) {
+            LinearLayout.LayoutParams titleParams = (LinearLayout.LayoutParams) name.getLayoutParams();
+            titleParams.width = 0; titleParams.weight = 1;
+            name.setLayoutParams(titleParams);
+            name.setEllipsize(android.text.TextUtils.TruncateAt.END);
+            findViewById(R.id.header_spacer).setVisibility(View.GONE);
+            count.setVisibility(View.GONE);
+        }
         buildChips();
         SurfaceView sv = (SurfaceView) findViewById(R.id.surface);
         holder = sv.getHolder();
         holder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
+    }
+
+    /** Sony cameras report Build.MODEL=ScalarA; the actual body name is in ScalarProperties. */
+    private String cameraModel() {
+        try {
+            Class<?> props = Class.forName("com.sony.scalar.sysutil.ScalarProperties");
+            Object value = props.getMethod("getString", String.class).invoke(null, "model.name");
+            if (value instanceof String && ((String) value).length() > 0) return (String) value;
+        } catch (Exception ignored) {}
+        return android.os.Build.MODEL;
+    }
+
+    /** Enable touch only during this A5100 activity; restore the user's setting on pause. */
+    private void enableTouch() {
+        if (!a5100 || touchPanelBefore >= 0) return;
+        try {
+            Class<?> settings = Class.forName("com.sony.scalar.sysutil.didep.Settings");
+            int before = ((Integer) settings.getMethod("getTouchPanelEnabled").invoke(null)).intValue();
+            if (before != 1 && Boolean.TRUE.equals(settings.getMethod("setTouchPanelEnabled", int.class).invoke(null, 1)))
+                touchPanelBefore = before;
+        } catch (Exception e) { android.util.Log.w("RecipeLab", "Touch panel setting unavailable", e); }
+    }
+    private void restoreTouch() {
+        if (touchPanelBefore < 0) return;
+        try {
+            Class<?> settings = Class.forName("com.sony.scalar.sysutil.didep.Settings");
+            settings.getMethod("setTouchPanelEnabled", int.class).invoke(null, touchPanelBefore);
+        } catch (Exception e) { android.util.Log.w("RecipeLab", "Could not restore touch panel setting", e); }
+        touchPanelBefore = -1;
     }
 
     private int dp(float v) { return (int) (v * getResources().getDisplayMetrics().density + 0.5f); }
@@ -132,7 +186,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
             lp.rightMargin = dp(5);
             c.setLayoutParams(lp);
-            TextView l = new TextView(this); l.setTextSize(9); l.setText(ROW_NAME[i]);
+            TextView l = new TextView(this); l.setTextSize(9); Chinese.setText(l, ROW_NAME[i]);
             TextView v = new TextView(this); v.setTextSize(13); v.setTypeface(Typeface.DEFAULT_BOLD); v.setSingleLine(true);
             c.addView(l); c.addView(v);
             chips.addView(c);
@@ -143,6 +197,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     @Override
     protected void onResume() {
         super.onResume();
+        enableTouch();
         load();
         try {
             Class<?> cx = Class.forName("com.sony.scalar.hardware.CameraEx");
@@ -159,6 +214,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     @Override
     protected void onPause() {
         super.onPause();
+        restoreTouch();
         stopRun(false);                                          // a run cannot outlive the camera it shoots with
         closeMenu();
         handler.removeCallbacks(hideToast);
@@ -504,7 +560,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
 
     // ------------------------------------------------------------ UI
     private void showToast(String msg, int ms) {
-        toast.setText(msg); toast.setVisibility(View.VISIBLE);
+        Chinese.setText(toast, msg); toast.setVisibility(View.VISIBLE);
         handler.removeCallbacks(hideToast);
         if (ms > 0) handler.postDelayed(hideToast, ms);
     }
@@ -514,26 +570,29 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         boolean dirty = dirty();
         String pos = (recipe + 1) + " / " + Recipes.ALL.length;
         String grp = Recipes.GROUPS[r.group].toUpperCase();
+        browserButton.setEnabled(CameraUi.canOpenBrowser(a5100, overlay, promptOpen, menuOpen, running));
         picker.setVisibility(overlay == OV_BROWSER ? View.VISIBLE : View.GONE);
         if (overlay == OV_BROWSER) { panel.setVisibility(View.GONE); mini.setVisibility(View.GONE); picker.set(recipe, browserCol, browserGroup, favs); return; }
         if (overlay == OV_FULL) {
             panel.setVisibility(View.VISIBLE); mini.setVisibility(View.GONE);
-            name.setText(r.name);
-            name.setTextColor(row == 0 ? ACCENT : WHITE);
-            count.setText(grp + "   " + pos);
-            tag.setText(edit[R_PE] != 0 ? "PE" : "CS");
+            Chinese.setText(name, r.name);
+            name.setTextColor(row == 0 && !browserSelected ? ACCENT : WHITE);
+            browserButton.setSelected(browserSelected);
+            browserButton.setTextColor(browserSelected ? INK : ACCENT);
+            Chinese.setText(count, grp + "   " + pos);
+            Chinese.setText(tag, edit[R_PE] != 0 ? "PE" : "CS");
             tag.setTextColor(edit[R_PE] != 0 ? ACCENT : 0xDDFFFFFF);
             fav.setVisibility(favs.contains(recipe) ? View.VISIBLE : View.GONE);
-            if (dirty) { badge.setText("PREVIEW"); badge.setBackgroundResource(R.drawable.badge_warn); }
-            else { badge.setText("ACTIVE"); badge.setBackgroundResource(R.drawable.badge_ok); }
-            meta.setText(Params.metaLine(cur, edit, previewOk ? null : previewErr));
+            if (dirty) { Chinese.setText(badge, "PREVIEW"); badge.setBackgroundResource(R.drawable.badge_warn); }
+            else { Chinese.setText(badge, "ACTIVE"); badge.setBackgroundResource(R.drawable.badge_ok); }
+            Chinese.setText(meta, (a5100 ? grp + "  " + pos + "  ·  " : "") + Params.metaLine(cur, edit, previewOk ? null : previewErr));
             for (int i = 1; i < N; i++) {
                 chip[i].setVisibility(rowVisible(i) ? View.VISIBLE : View.GONE);
-                boolean sel = i == row, ch = rowDirty(i), foc = sel && focus;
+                boolean sel = i == row && !browserSelected, ch = rowDirty(i), foc = sel && focus;
                 chip[i].setBackgroundResource(foc ? R.drawable.chip_sel : sel ? R.drawable.chip_hi : R.drawable.chip);
                 chipLabel[i].setTextColor(foc ? INK : sel ? ACCENT : DIM);
                 chipValue[i].setTextColor(foc ? INK : ch ? ACCENT : WHITE);
-                chipValue[i].setText(Params.fmt(i, edit[i], edit));
+                Chinese.setText(chipValue[i], Params.fmt(i, edit[i], edit));
             }
             if (row == 0) chipScroll.post(new Runnable() { public void run() { chipScroll.smoothScrollTo(0, 0); } });
             else {
@@ -543,10 +602,10 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
                     if (l < sx) chipScroll.smoothScrollTo(l - dp(8), 0); else if (rgt > sx + w) chipScroll.smoothScrollTo(rgt - w + dp(8), 0);
                 } });
             }
-            hints.setMode(row == 0 ? HintBar.RECIPE : focus ? HintBar.EDIT : HintBar.CHIPS);
+            hints.setMode(browserSelected ? HintBar.BROWSER : row == 0 ? HintBar.RECIPE : focus ? HintBar.EDIT : HintBar.CHIPS);
         } else if (overlay == OV_PILL) {
             panel.setVisibility(View.GONE); mini.setVisibility(View.VISIBLE);
-            mini.setText(Params.miniLine(recipe, cur, edit, dirty));
+            Chinese.setText(mini, Params.miniLine(recipe, cur, edit, dirty));
         } else {
             panel.setVisibility(View.GONE); mini.setVisibility(View.GONE);
         }
@@ -563,8 +622,16 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     /** LEFT/RIGHT inside the chip strip: next / previous visible chip, wrapping */
     private void moveChip(int dir) { row = Params.nextChip(row, dir, edit); lastChip = row; render(); }
 
-    /** UP/DOWN: switch between the recipe line and the chip strip */
-    private void toggleLine() {
+    /** UP/DOWN: choose the recipe, parameters, or (A5100 only) browser button. */
+    private void toggleLine(int direction) {
+        if (a5100) {
+            int target = CameraUi.nextTarget(browserSelected ? 2 : row == 0 ? 0 : 1, direction);
+            if (row != 0) lastChip = row;
+            browserSelected = target == 2;
+            row = target == 1 ? Params.enterChips(lastChip, edit) : 0;
+            render();
+            return;
+        }
         if (row == 0) row = Params.enterChips(lastChip, edit);
         else { lastChip = row; row = 0; }
         render();
@@ -583,7 +650,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     }
 
     private void openBrowser(boolean open) {
-        overlay = open ? OV_BROWSER : OV_FULL; row = 0; focus = false;
+        overlay = open ? OV_BROWSER : OV_FULL; row = 0; focus = false; browserSelected = false;
         browserGroup = Favourites.openingGroup(favs, recipe);
         browserCol = COL_RECIPES;
         render();
@@ -632,7 +699,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     }
 
     /** whether a hold on the centre button marks a favourite where the user is now */
-    private boolean holdMarksFavourite() { return Params.holdMarksFavourite(overlay, row, browserCol); }
+    private boolean holdMarksFavourite() { return !browserSelected && Params.holdMarksFavourite(overlay, row, browserCol); }
 
     /** the centre button pressed: the short action waits for the release, a hold becomes "favourite" */
     private void enterDown() {
@@ -647,6 +714,9 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         boolean held = enterHeld, fired = enterLong;
         enterHeld = false; enterLong = false;
         if (!held || fired) return;
+        if (browserSelected && CameraUi.canOpenBrowser(a5100, overlay, promptOpen, menuOpen, running)) {
+            openBrowser(true); return;
+        }
         switch (Params.enterAction(overlay, row, browserCol)) {
             case ENTER_BROWSER_COLUMN: enterRecipeColumn(); break;
             case ENTER_BROWSER_PICK: pickInBrowser(); break;
@@ -660,30 +730,34 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         if (running) return runKey(e.getScanCode());
         if (promptOpen) return promptKey(e.getScanCode());
         if (menuOpen) return menuKey(e.getScanCode());
-        if (e.getScanCode() == K_ENTER) { enterDown(); return true; }
-        if (overlay == OV_BROWSER && e.getScanCode() != K_PLAY) return browserKey(e.getScanCode());
-        switch (e.getScanCode()) {
+        int sc = CameraUi.key(a5100, e.getScanCode());
+        if (a5100 && sc == K_AEL && e.getRepeatCount() > 0) return true;
+        if (sc == K_ENTER) { enterDown(); return true; }
+        if (overlay == OV_BROWSER && sc != K_PLAY) return browserKey(sc);
+        if (browserSelected && overlay == OV_FULL &&
+                (sc == K_LEFT || sc == K_RIGHT || sc == K_WHEEL_CW || sc == K_WHEEL_CCW || sc == K_DIAL_CW || sc == K_DIAL_CCW)) return true;
+        switch (sc) {
             case K_LEFT: case K_RIGHT: {
-                int dir = e.getScanCode() == K_RIGHT ? +1 : -1;
+                int dir = sc == K_RIGHT ? +1 : -1;
                 if (focus) stepValue(dir); else if (Params.onRecipeLine(overlay, row)) nextRecipe(dir); else moveChip(dir);
                 return true;
             }
             case K_WHEEL_CW: case K_WHEEL_CCW: {
-                int dir = e.getScanCode() == K_WHEEL_CW ? +1 : -1;
+                int dir = sc == K_WHEEL_CW ? +1 : -1;
                 if (focus) stepValue(dir); else nextRecipe(dir);
                 return true;
             }
             case K_DIAL_CW: case K_DIAL_CCW: {
-                int dir = e.getScanCode() == K_DIAL_CW ? +1 : -1;
+                int dir = sc == K_DIAL_CW ? +1 : -1;
                 if (focus) stepValue(dir); else if (Params.onRecipeLine(overlay, row)) nextRecipe(dir); else moveChip(dir);
                 return true;
             }
             case K_UP: case K_DOWN: {
                 if (overlay != OV_FULL) return true;
-                if (focus) stepValue(e.getScanCode() == K_UP ? +1 : -1); else toggleLine();
+                if (focus) stepValue(sc == K_UP ? +1 : -1); else toggleLine(sc == K_DOWN ? 1 : -1);
                 return true;
             }
-            case K_AEL: case K_DISP: overlay = (overlay + 1) % 3; render(); return true;   // full → pill → hidden; the browser is not in the cycle
+            case K_AEL: case K_DISP: browserSelected = false; overlay = CameraUi.nextOverlay(a5100, overlay); render(); return true;   // the browser is not in the display cycle
             case K_FN: openBrowser(true); return true;
             case K_C1: openMenu(); return true;
             case K_DELETE: case K_SK2: stageFactory(); return true;
@@ -698,6 +772,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
 
     @Override
     public boolean onKeyUp(int keyCode, KeyEvent e) {
+        if (a5100 && e.getScanCode() == K_MOVIE) return true;
         if (promptOpen) { if (e.getScanCode() == K_MENU || e.getScanCode() == K_SK1) swallowMenuUp = false; return true; }
         if (running) return true;                               // the release of whatever key started or stopped the run
         switch (e.getScanCode()) {

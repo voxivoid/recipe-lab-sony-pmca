@@ -1,32 +1,18 @@
-# Documentation
+# 工程文档
 
-Guidelines for working on Recipe Lab. The [main README](../README.md) is for people who
-just want to use the app on a camera.
+使用相机请从[中文 README](../README.md)和[A5100 操作速查](A5100.zh-CN.md)开始。
 
-| | |
+| 文档 | 内容 |
 |---|---|
-| **[CONTRIBUTING.md](CONTRIBUTING.md)** | How to develop: branch model, commit format, PR flow, issues and milestones, and how to test a change on the camera. Start here. |
-| **[RELEASING.md](RELEASING.md)** | How to release: the create-release button, what decides the version number, hotfixes, and what to do when something goes wrong. |
-| **[SAMPLES.md](SAMPLES.md)** | Every recipe shot on the same subject at the same exposure, straight out of the camera — what the looks actually are, and which scene traits the frames do not cover. |
-| **[DEVELOPMENT.md](DEVELOPMENT.md)** | The reverse-engineering reference: source layout, the settings-store ID map, live-preview parameters, key scan codes, how to build, and the versioning formula. |
+| [A5100 操作速查](A5100.zh-CN.md) | 按键、预览、保存和恢复标准参数 |
+| [配方中文对照](RECIPES.zh-CN.md) | 全部 77 个配方的原名与中文显示名 |
+| [常见问题](FAQ.zh-CN.md) | RAW、JPEG、保存、自定义配方与相机兼容性 |
+| [样片](SAMPLES.md) | 同一场景拍摄的配方对比 |
+| [开发说明](DEVELOPMENT.md) | 上游英文参考：设置地址、构建、预览参数和测试 |
+| [贡献说明](CONTRIBUTING.md) | 上游英文参考：分支、提交与 PR 规则 |
+| [发布说明](RELEASING.md) | 上游英文参考：自动版本计算与发布流程 |
+| [字体许可](licenses/README.md) | 第一版曾用字体的来源和授权（当前已移除） |
 
-`CLAUDE.md` stays in the repository root on purpose — it is configuration read by Claude
-Code from the working directory, not documentation, so moving it here would stop it being
-picked up.
+开发分支从 `main` 切出，PR 合并采用 squash。提交类型决定上游版本：`fix:` 为补丁，`feat:` 为次版本，带 `!` 的不兼容变更为主版本，`docs:` 和 `chore:` 不触发发行。此处改动需要合入上游后才会随上游构建发布。
 
-## The short version
-
-```
-branch off main  ──▶  PR  ──▶  squash merge
-                       │
-                       └── the PR title IS the commit, and
-                           decides the next version number
-
-push to main  ──▶  dev-build  ──▶  rolling `dev` prerelease APK
-
-create-release (manual)  ──▶  semantic-release on main
-                              version, build, tag main's tip, publish
-```
-
-Nobody picks a version number: `fix:` makes a patch, `feat:` a minor, `!` a major, and
-`chore:`/`docs:` release nothing at all.
+根目录 `CLAUDE.md` 是给代码代理读取的工程规则，保留原位置。[英文文档索引](README.en.md)也一并保留。

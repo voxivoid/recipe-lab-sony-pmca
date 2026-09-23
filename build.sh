@@ -59,7 +59,7 @@ sed -e "s/android:versionCode=\"[^\"]*\"/android:versionCode=\"$VERSION_CODE\"/"
     AndroidManifest.xml > "$MANIFEST"
 
 echo "[1/7] aapt R.java"
-"$BT/aapt" package -f -m -J out/gen -M "$MANIFEST" -S res -I "$AJ"
+"$BT/aapt" package -f -m -J out/gen -M "$MANIFEST" -S res -A assets -0 ttf -I "$AJ"
 echo "[2/7] javac"
 "$JAVA/javac" -encoding UTF-8 --release 8 -Xlint:-options -cp "$AJ" -d out/classes \
   out/gen/com/voxivoid/recipelab/R.java src/com/voxivoid/recipelab/*.java
@@ -68,7 +68,7 @@ find out/classes -name '*.class' > out/classes.txt
 "$JAVA/java" -cp "$BT/lib/d8.jar" com.android.tools.r8.D8 --release --min-api 10 \
   --lib "$AJ" --output out/dex "@out/classes.txt"
 echo "[4/7] aapt package + dex + native lib"
-"$BT/aapt" package -f -M "$MANIFEST" -S res -I "$AJ" -F out/unaligned.apk
+"$BT/aapt" package -f -M "$MANIFEST" -S res -A assets -0 ttf -I "$AJ" -F out/unaligned.apk
 ( cd out/dex   && "$BT/aapt" add ../unaligned.apk classes.dex )
 ( cd out/apklib && "$BT/aapt" add ../unaligned.apk lib/armeabi/librecipelab.so )
 echo "[5/7] zipalign"

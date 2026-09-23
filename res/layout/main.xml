@@ -64,13 +64,30 @@
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="6dp"
                 android:visibility="gone" />
-            <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
+            <View android:id="@+id/header_spacer" android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
             <TextView
                 android:id="@+id/count"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textSize="12sp"
                 android:textColor="#B3FFFFFF" />
+            <TextView
+                android:id="@+id/browser_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="8dp"
+                android:minWidth="62dp"
+                android:minHeight="36dp"
+                android:gravity="center"
+                android:paddingLeft="8dp"
+                android:paddingRight="8dp"
+                android:singleLine="true"
+                android:textSize="13sp"
+                android:textColor="#FFF2B85C"
+                android:background="@drawable/browser_button"
+                android:clickable="true"
+                android:focusable="false"
+                android:visibility="gone" />
         </LinearLayout>
 
         <TextView
