@@ -35,6 +35,7 @@
 - [Sample frames](docs/SAMPLES.md)
 - [Compatibility](#compatibility)
 - [Installing](#installing)
+- [Languages](#languages)
 - [Using it](#using-it)
 - [What it changes](#what-it-changes)
 - [Uninstalling](#uninstalling)
@@ -197,6 +198,24 @@ is usually left on its own `Application Download / Connecting via USB...` screen
 
 **5. Unplug, then turn the camera off and on.** The app now lives under
 `MENU → Application → Application List → Recipe Lab`.
+
+## Languages
+
+Recipe Lab follows the camera's system language automatically, with English as the fallback:
+
+- English
+- 简体中文（中国大陆）
+- 中国台湾（繁体）
+- 中国香港（繁体，首版复用中国台湾译文）
+
+Chinese recipe names are shown first, with the original English name underneath. Recipe identifiers and saved
+favourites remain language-independent. Small regional font subsets are bundled for older camera firmware.
+
+To contribute another language, see [the localization guide](docs/LOCALIZATION.md) for the resource contract,
+translation checks, and font-generation instructions.
+
+The guide also includes [user-supplied NEX-5R screen captures and current limitations](docs/LOCALIZATION.md#initial-device-report).
+Installation and basic use have been reported on that body; NEX-specific key mapping and overlay usability are not yet addressed.
 
 ## Using it
 
