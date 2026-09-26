@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="group_favourites">Favourites</string>
+    <string name="group_sony">Sony</string>
+    <string name="group_fuji_sim">Fuji Sim</string>
+    <string name="group_fuji_film">Fuji Film</string>
+    <string name="group_kodak">Kodak</string>
+    <string name="group_cine">Cine</string>
+    <string name="group_ricoh_gr">Ricoh GR</string>
+    <string name="group_leica">Leica</string>
+    <string name="group_hasselblad">Hasselblad</string>
+    <string name="group_canon_nikon">Canon / Nikon</string>
+    <string name="group_pana_olympus">Pana / Olympus</string>
+    <string name="group_other_stocks">Other Stocks</string>
+    <string name="group_ilford">Ilford</string>
+
+    <string name="row_recipe">RECIPE</string>
+    <string name="row_style">STYLE</string>
+    <string name="row_saturation">SAT</string>
+    <string name="row_contrast">CON</string>
+    <string name="row_sharpness">SHARP</string>
+    <string name="row_matrix">MATRIX</string>
+    <string name="row_effect">EFFECT</string>
+    <string name="row_sub">SUB</string>
+    <string name="row_white_balance">WB</string>
+    <string name="row_kelvin">KELVIN</string>
+    <string name="row_amber_blue">A-B</string>
+    <string name="row_green_magenta">G-M</string>
+    <string name="row_ev">EV</string>
+    <string name="row_dro">DRO</string>
+    <string name="row_quality">QUALITY</string>
+
+    <string name="style_standard">Standard</string>
+    <string name="style_vivid">Vivid</string>
+    <string name="style_neutral">Neutral</string>
+    <string name="style_portrait">Portrait</string>
+    <string name="style_landscape">Landscape</string>
+    <string name="style_bw">B&amp;W</string>
+    <string name="style_clear">Clear</string>
+    <string name="style_deep">Deep</string>
+    <string name="style_light">Light</string>
+    <string name="style_sunset">Sunset</string>
+    <string name="style_night">Night</string>
+    <string name="style_autumn">Autumn</string>
+    <string name="style_sepia">Sepia</string>
+
+    <string name="effect_off">Off</string>
+    <string name="effect_toy">Toy Camera</string>
+    <string name="effect_pop">Pop Color</string>
+    <string name="effect_poster">Posterization</string>
+    <string name="effect_retro">Retro Photo</string>
+    <string name="effect_high_key">Soft High-key</string>
+    <string name="effect_partial_color">Partial Color</string>
+    <string name="effect_high_contrast_mono">High-contrast Mono</string>
+    <string name="effect_soft_focus">Soft Focus</string>
+    <string name="effect_hdr_art">HDR Painting</string>
+    <string name="effect_rich_mono">Rich-tone Mono</string>
+    <string name="effect_miniature">Miniature</string>
+    <string name="effect_illustration">Illustration</string>
+    <string name="effect_watercolor">Watercolor</string>
+
+    <string name="sub_blue">Blue</string>
+    <string name="sub_pink">Pink</string>
+    <string name="sub_green">Green</string>
+    <string name="sub_normal">Normal</string>
+    <string name="sub_cool">Cool</string>
+    <string name="sub_warm">Warm</string>
+    <string name="sub_magenta">Magenta</string>
+    <string name="sub_red">Red</string>
+    <string name="sub_yellow">Yellow</string>
+    <string name="sub_posterization_color">Color</string>
+    <string name="sub_posterization_bw">B&amp;W</string>
+
+    <string name="quality_raw">RAW</string>
+    <string name="quality_raw_jpeg">RAW+JPEG</string>
+    <string name="quality_jpeg_fine">JPEG Fine</string>
+    <string name="quality_jpeg_standard">JPEG Standard</string>
+    <string name="value_auto">Auto</string>
+    <string name="value_off">Off</string>
+    <string name="value_kelvin">Kelvin</string>
+    <string name="value_level">Lv%1$d</string>
+    <string name="value_seconds">%1$s s</string>
+
+    <string name="state_preview">PREVIEW</string>
+    <string name="state_active">ACTIVE</string>
+    <string name="mini_line">%1$s  %2$s   %3$d / %4$d   · %5$s</string>
+    <string name="mini_quality">quality → %1$s</string>
+    <string name="meta_picture_effect">Picture Effect %1$s</string>
+    <string name="meta_effect_note">(Creative Style ignored, JPEG only)</string>
+    <string name="meta_white_balance">WB %1$s</string>
+    <string name="meta_pp3_matrix">PP3 matrix</string>
+    <string name="meta_ev">EV %1$s</string>
+    <string name="meta_dro">DRO %1$s</string>
+    <string name="meta_quality_change">QUALITY → %1$s (now %2$s)</string>
+    <string name="meta_raw_effect_ignored">RAW is on: effect ignored</string>
+    <string name="meta_no_preview">no live preview: %1$s</string>
+
+    <string name="quality_prompt_title">Quality: %1$s → %2$s</string>
+    <string name="quality_prompt_effect">JPEG is needed to apply this recipe.</string>
+    <string name="quality_prompt_style">Creative Style recipes use the Factory recipe\'s quality.</string>
+    <string name="quality_slot_note">quality slot not located yet — live view only</string>
+    <string name="button_accept">Accept</string>
+    <string name="button_cancel">Cancel</string>
+
+    <string name="locked_one">Not written — the camera holds this setting read-only: %1$s.</string>
+    <string name="locked_many">Not written — the camera holds these settings read-only: %1$s.</string>
+    <string name="unlock_hint">Unlock the settings store with OpenMemories-Tweak (Protection → Unlock protected settings), then pick the recipe again.</string>
+    <string name="write_failed_none">WRITE FAILED on %1$s (%2$s): %3$s — nothing was written</string>
+    <string name="write_failed_some">WRITE FAILED on %1$s (%2$s): %3$s — %4$d bytes written before it stopped</string>
+    <string name="lock_report_none">%1$d recipe slots checked · none read-only</string>
+    <string name="lock_report_some">%1$d recipe slots checked · %2$d read-only: %3$s</string>
+    <string name="lock_report_unreadable"> · %1$d would not answer</string>
+
+    <string name="favourite_added">%1$s added to Favourites</string>
+    <string name="favourite_removed">%1$s removed from Favourites</string>
+    <string name="favourite_empty_title">No favourites yet</string>
+    <string name="favourite_empty_hint">Hold the centre button on a recipe to keep it here</string>
+    <string name="picker_brand">BRAND</string>
+
+    <string name="action_recipes">recipes</string>
+    <string name="action_close">close</string>
+    <string name="action_pick">pick</string>
+    <string name="action_favourite_hold">fav (hold)</string>
+    <string name="action_move">move</string>
+    <string name="action_select">select</string>
+    <string name="action_confirm">confirm</string>
+    <string name="action_cancel">cancel</string>
+    <string name="action_browse">browse</string>
+    <string name="action_factory">factory</string>
+    <string name="action_hide">hide</string>
+    <string name="action_exit">exit</string>
+    <string name="action_edit">edit</string>
+    <string name="action_done">done</string>
+
+    <string name="status_read_failed">Read failed: %1$s</string>
+    <string name="status_already_picked">Already picked — nothing to write</string>
+    <string name="status_picked">Picked — %1$d values written; power-cycle the camera to apply everywhere</string>
+    <string name="status_not_picked">Not picked</string>
+    <string name="status_quality_pick">Quality: %1$s — ENTER to pick</string>
+    <string name="status_quality_live">Quality: %1$s (live view only until the slot is known)</string>
+    <string name="status_snapshot_taken">Snapshot of %1$d settings taken. Change a menu setting, reopen, press C1 again.</string>
+    <string name="status_diff_changed">%1$d changed  %2$s</string>
+    <string name="status_snapshot_error">snapshot error: %1$s</string>
+    <string name="status_locks_file_failed">locks.txt failed: %1$s</string>
+    <string name="status_manifest_failed">%1$s failed: %2$s</string>
+    <string name="status_recipe_previewed">%1$s previewed — ENTER to pick</string>
+    <string name="status_factory_staged">Factory values staged — ENTER to pick</string>
+
+    <string name="dev_title">DEV TOOLS</string>
+    <string name="dev_settings_snapshot">Settings snapshot</string>
+    <string name="dev_settings_diff">Settings diff</string>
+    <string name="dev_read_only_check">Read-only check — %1$d slots</string>
+    <string name="dev_shoot_samples">Shoot samples — %1$d recipes</string>
+    <string name="dev_settle_delay">Settle delay — %1$s</string>
+    <string name="dev_snapshot_store">Store the value of every settings id</string>
+    <string name="dev_snapshot_compare">Compare every settings id against the snapshot</string>
+    <string name="dev_locks_detail">Test every slot a recipe writes for the read-only flag</string>
+    <string name="dev_samples_detail">One JPEG per recipe, in table order — MENU stops the run</string>
+    <string name="dev_settle_detail">Wait after applying a recipe before the shutter fires</string>
+    <string name="dev_no_preview">No live preview — the sample run needs the camera</string>
+    <string name="dev_progress">Shooting %1$d / %2$d · %3$s — MENU stops</string>
+    <string name="dev_done">Samples done — %1$d of %2$d frames shot, listed in %3$s</string>
+    <string name="dev_stopped_none">Sample run stopped before the first frame</string>
+    <string name="dev_stopped">Sample run stopped — %1$d of %2$d frames shot, listed in %3$s</string>
+    <string name="dev_shoot_failed">Shutter failed on frame %1$d: %2$s — %3$d frames shot, listed in %4$s</string>
+</resources>

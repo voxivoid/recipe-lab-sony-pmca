@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.RectF;
+import android.graphics.Typeface;
 import android.util.AttributeSet;
 import android.view.View;
 
@@ -24,10 +25,11 @@ public class PickerView extends View {
     private final RectF r = new RectF();
     private final float d;
     private final Legend legend;
+    private final UiText ui;
     private static final int[] BRAND_ICONS = { Legend.ENTER, Legend.FN };
-    private static final String[] BRAND_TEXT = { "recipes", "close" };
+    private final String[] brandText;
     private static final int[] RECIPE_ICONS = { Legend.ENTER, Legend.ENTER, Legend.FN };
-    private static final String[] RECIPE_TEXT = { "pick", "fav (hold)", "close" };
+    private final String[] recipeText;
     private final Paint outline = new Paint(Paint.ANTI_ALIAS_FLAG);
     private int selected = 0, column = 1, group = 0;              // column: 0 groups, 1 recipes · group: Favourites.GROUP or a brand
     private List<Integer> favs = new ArrayList<Integer>();
@@ -36,6 +38,11 @@ public class PickerView extends View {
         super(c, a);
         d = c.getResources().getDisplayMetrics().density;
         legend = new Legend(d);
+        Typeface typeface = UiTypeface.load(c);
+        legend.setTypeface(typeface);
+        ui = new UiText(new AndroidTextCatalog(c));
+        brandText = new String[] { ui.text("action_recipes"), ui.text("action_close") };
+        recipeText = new String[] { ui.text("action_pick"), ui.text("action_favourite_hold"), ui.text("action_close") };
         bg.setColor(0xF0101010);
         edge.setColor(0x66F2B85C); edge.setStyle(Paint.Style.STROKE); edge.setStrokeWidth(d);
         sel.setColor(ACCENT);
@@ -43,6 +50,7 @@ public class PickerView extends View {
         head.setColor(0x99FFFFFF); head.setTextSize(9 * d); head.setFakeBoldText(true);
         item.setColor(0xFFFFFFFF); item.setTextSize(13 * d);
         small.setColor(0x99FFFFFF); small.setTextSize(10 * d);
+        head.setTypeface(typeface); item.setTypeface(typeface); small.setTypeface(typeface);
         rule.setColor(0x33FFFFFF);
         track.setColor(0x26FFFFFF); thumb.setColor(0xCCF2B85C);
     }
@@ -62,9 +70,9 @@ public class PickerView extends View {
         float top = pad + 12 * d, bottom = h - pad - 20 * d;    // header / footer reserved
         float sbW = 4 * d;                                      // scrollbar width
         head.setColor(column == 0 ? ACCENT : 0x99FFFFFF);
-        c.drawText("BRAND", pad, pad + 7 * d, head);
+        c.drawText(ui.text("picker_brand"), pad, pad + 7 * d, head);
         head.setColor(column == 1 ? ACCENT : 0x99FFFFFF);
-        c.drawText(Favourites.groupName(g).toUpperCase() + "  ·  " + count, colX + pad, pad + 7 * d, head);
+        c.drawText(ui.groupName(g).toUpperCase() + "  ·  " + count, colX + pad, pad + 7 * d, head);
         head.setColor(0x99FFFFFF);
         c.drawLine(colX, pad, colX, h - pad, rule);
         c.drawLine(pad, top + 3 * d, w - pad, top + 3 * d, rule);
@@ -84,7 +92,7 @@ public class PickerView extends View {
             item.setColor(active ? INK : on ? ACCENT : gi == Favourites.GROUP ? 0xFFF2B85C : 0xCCFFFFFF); item.setFakeBoldText(on);
             float tx = pad;
             if (gi == Favourites.GROUP) { star.setColor(active ? INK : ACCENT); Legend.star(c, pad + 5 * d, y + rowH / 2, 5.5f * d, star); tx += 14 * d; }
-            c.drawText(Favourites.groupName(gi), tx, y + rowH / 2 + item.getTextSize() * 0.36f, item);
+            c.drawText(ui.groupName(gi), tx, y + rowH / 2 + item.getTextSize() * 0.36f, item);
             small.setColor(active ? 0xAA1A1208 : 0x66FFFFFF);
             String n = String.valueOf(Favourites.groupCount(gi, favs));
             c.drawText(n, gRight - 6 * d - small.measureText(n), y + rowH / 2 + small.getTextSize() * 0.36f, small);
@@ -97,9 +105,9 @@ public class PickerView extends View {
         float x = colX + pad;
         if (count == 0) {                                       // an empty Favourites group says so, and how to fill it
             item.setColor(0xCCFFFFFF);
-            c.drawText(Favourites.EMPTY_TITLE, x, listTop + 20 * d, item);
+            c.drawText(ui.text("favourite_empty_title"), x, listTop + 20 * d, item);
             small.setColor(0x99FFFFFF);
-            c.drawText(Favourites.EMPTY_HINT, x, listTop + 36 * d, small);
+            c.drawText(ui.text("favourite_empty_hint"), x, listTop + 36 * d, small);
         } else {
             float rh = 26 * d;
             int visible = Math.max(1, (int) (listH / rh));
@@ -114,9 +122,12 @@ public class PickerView extends View {
                 boolean on = idx == selected, active = on && column == 1;
                 if (on) { r.set(x - 4 * d, y, xr, y + rh); c.drawRoundRect(r, 3 * d, 3 * d, active ? sel : outline); }
                 item.setColor(active ? INK : on ? ACCENT : 0xFFFFFFFF); item.setFakeBoldText(on);
-                c.drawText(rc.name, x, y + 13 * d, item);
+                c.drawText(ui.recipeName(rc), x, y + 13 * d, item);
                 small.setColor(active ? 0xAA1A1208 : 0x80FFFFFF);
-                c.drawText(favGroup ? Recipes.GROUPS[rc.group] + "  ·  " + rc.summary() : rc.summary(), x, y + 22 * d, small);
+                String detail = ui.recipeSummary(rc), original = ui.recipeOriginalName(rc);
+                if (original != null) detail = original + "  ·  " + detail;
+                if (favGroup) detail = ui.groupName(rc.group) + "  ·  " + detail;
+                c.drawText(detail, x, y + 22 * d, small);
                 float tx = tag(c, rc.isEffect() ? "PE" : "CS", xr - 4 * d, y, active, active ? 0x331A1208 : (rc.isEffect() ? 0x55B8741A : 0x33FFFFFF), active ? INK : 0xCCFFFFFF);
                 if (!favGroup && favs.contains(idx)) { star.setColor(active ? INK : ACCENT); Legend.star(c, tx - 4 * d - 6 * d, y + 11 * d, 6 * d, star); }
             }
@@ -126,7 +137,7 @@ public class PickerView extends View {
 
         // ---- footer: icon legend
         c.drawLine(pad, h - pad - 16 * d, w - pad, h - pad - 16 * d, rule);
-        legend.draw(c, pad, h - pad - 6 * d, w - 2 * pad, column == 0 ? BRAND_ICONS : RECIPE_ICONS, column == 0 ? BRAND_TEXT : RECIPE_TEXT);
+        legend.draw(c, pad, h - pad - 6 * d, w - 2 * pad, column == 0 ? BRAND_ICONS : RECIPE_ICONS, column == 0 ? brandText : recipeText);
     }
 
     /** a small pill ending at {@code right} on the row at {@code y}; returns its left edge */

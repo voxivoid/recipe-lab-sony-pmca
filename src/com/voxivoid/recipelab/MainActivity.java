@@ -55,7 +55,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private PickerView picker;
     private HorizontalScrollView chipScroll;
     private boolean swallowMenuUp = false;
-    private TextView name, badge, tag, count, meta, mini, toast;
+    private TextView name, nameOriginal, badge, tag, count, meta, mini, toast;
     private StarView fav;
     private PromptView prompt;
     private int promptSel = 0; private boolean promptOpen = false;
@@ -91,11 +91,13 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private final int[] cur = new int[N], edit = new int[N];
     private boolean previewOk = false;
     private String previewErr = "";
+    private UiText ui;
 
     @Override
     protected void onCreate(Bundle b) {
         super.onCreate(b);
         setContentView(R.layout.main);
+        ui = new UiText(new AndroidTextCatalog(this));
         prefs = getPreferences(MODE_PRIVATE);
         recipe = Math.max(0, Math.min(Recipes.ALL.length - 1, prefs.getInt("recipe", 0)));
         favs = Favourites.decode(prefs.getString("favourites", ""));
@@ -104,6 +106,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         picker = (PickerView) findViewById(R.id.picker);
         chipScroll = (HorizontalScrollView) findViewById(R.id.chipscroll);
         name = (TextView) findViewById(R.id.name);
+        nameOriginal = (TextView) findViewById(R.id.name_original);
         badge = (TextView) findViewById(R.id.badge);
         tag = (TextView) findViewById(R.id.tag);
         fav = (StarView) findViewById(R.id.fav);
@@ -116,6 +119,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         menu = (MenuView) findViewById(R.id.menu);
         chips = (LinearLayout) findViewById(R.id.chips);
         buildChips();
+        UiTypeface.apply(findViewById(android.R.id.content), UiTypeface.load(this));
         SurfaceView sv = (SurfaceView) findViewById(R.id.surface);
         holder = sv.getHolder();
         holder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
@@ -132,7 +136,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
             lp.rightMargin = dp(5);
             c.setLayoutParams(lp);
-            TextView l = new TextView(this); l.setTextSize(9); l.setText(ROW_NAME[i]);
+            TextView l = new TextView(this); l.setTextSize(9); l.setText(ui.rowName(i));
             TextView v = new TextView(this); v.setTextSize(13); v.setTypeface(Typeface.DEFAULT_BOLD); v.setSingleLine(true);
             c.addView(l); c.addView(v);
             chips.addView(c);
@@ -191,7 +195,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
                 if (id == QUALITY_SLOTS) { cur[i] = edit[i] = readQuality(); continue; }
                 cur[i] = edit[i] = Params.fromStore(id, NativeBackup.readByte(id));
             }
-        } catch (Throwable t) { showToast("Read failed: " + t.getMessage(), 0); }
+        } catch (Throwable t) { showToast(ui.text("status_read_failed", String.valueOf(t.getMessage())), 0); }
     }
 
     private void stageRecipe() {
@@ -245,34 +249,33 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
 
     private void writeAll(boolean confirmed) {
         if (!confirmed && qualityChanges()) { openPrompt(); return; }
-        if (!dirty()) { showToast("Already picked — nothing to write", 2500); return; }
+        if (!dirty()) { showToast(ui.text("status_already_picked"), 2500); return; }
         int storedSub = storedSub();
         int n = Params.dirtyRows(cur, edit, storedSub);
         List<Params.Write> ws = Params.writes(cur, edit, storedSub);
         List<Integer> locked = Params.lockedFrom(ws, attrsOf(ws));   // the slots backup protection would refuse (issue #19)
-        if (!locked.isEmpty()) { showToast(Params.lockedMessage(locked), 0); return; }   // nothing written, so nothing half-applied
+        if (!locked.isEmpty()) { showToast(ui.lockedMessage(locked), 0); return; }   // nothing written, so nothing half-applied
 
         String msg = null;
         int written = 0;
         for (Params.Write w : ws) {
             try { NativeBackup.writeByte(w.id, w.value); written++; }
-            catch (Throwable t) { msg = Params.writeFailedMessage(w.id, String.valueOf(t.getMessage()), written); break; }
+            catch (Throwable t) { msg = ui.writeFailedMessage(w.id, String.valueOf(t.getMessage()), written); break; }
         }
         if (written > 0) NativeBackup.sync();                    // Backup_sync_all is void: nothing to catch, nothing to report
         boolean ok = msg == null;
-        if (ok) msg = "Picked — " + n + " value" + (n == 1 ? "" : "s") + " written, power-cycle the camera to apply everywhere";
+        if (ok) msg = ui.text("status_picked", n);
         load(); stageRecipe();
         showToast(msg, ok ? 5000 : 0); render();
     }
 
     // ------------------------------------------------------------ RAW vs Picture Effect prompt
-    private static final String[] PROMPT_OPTS = { "Accept", "Cancel" };
-
     private void openPrompt() { promptOpen = true; promptSel = 0; renderPrompt(); }
 
     private void renderPrompt() {
-        String[] q = Params.qualityPrompt(cur, edit);
-        prompt.set(q[0], q[1], PROMPT_OPTS, promptSel, qualityPersistent() ? null : "quality slot not located yet — live view only");
+        String[] q = ui.qualityPrompt(cur, edit);
+        String[] options = { ui.text("button_accept"), ui.text("button_cancel") };
+        prompt.set(q[0], q[1], options, promptSel, qualityPersistent() ? null : ui.text("quality_slot_note"));
         prompt.setVisibility(View.VISIBLE);
     }
 
@@ -283,7 +286,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             case K_LEFT: case K_WHEEL_CCW: case K_DIAL_CCW: case K_RIGHT: case K_WHEEL_CW: case K_DIAL_CW: promptSel ^= 1; renderPrompt(); return true;
             case K_ENTER:
                 closePrompt();
-                if (promptSel == 0) writeAll(true); else showToast("Not picked", 2000);   // cancel: recipe stays previewed only
+                if (promptSel == 0) writeAll(true); else showToast(ui.text("status_not_picked"), 2000);   // cancel: recipe stays previewed only
                 render(); return true;
             case K_MENU: case K_SK1: swallowMenuUp = true; closePrompt(); render(); return true;
         }
@@ -292,7 +295,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
 
     private void cycleQuality() {
         edit[R_QUAL] = (edit[R_QUAL] + 1) % 4; qualityChanged(); applyPreview(); render();
-        showToast("Quality: " + Q_LABEL[edit[R_QUAL]] + (qualityPersistent() ? "  — ENTER to pick" : "  (live view only until the slot is known)"), 2500);
+        showToast(ui.text(qualityPersistent() ? "status_quality_pick" : "status_quality_live", ui.qualityLabel(edit[R_QUAL])), 2500);
     }
 
     // ------------------------------------------------------------ snapshot / diff of the whole settings store (developer menu)
@@ -315,7 +318,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
                 FileOutputStream o = new FileOutputStream(f);
                 for (int[] e : ids) { byte[] v; try { v = NativeBackup.read(e[0]); } catch (Throwable t) { v = new byte[0]; } o.write(v.length); o.write(v); }
                 o.close();
-                showToast("Snapshot of " + ids.size() + " settings taken. Change a menu setting, reopen, press C1 again.", 6000);
+                showToast(ui.text("status_snapshot_taken", ids.size()), 6000);
                 return;
             }
             FileInputStream in = new FileInputStream(f);
@@ -329,10 +332,10 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
                 }
             }
             in.close(); f.delete();
-            String text = changed + " changed  " + sb;
-            java.io.FileWriter w = new java.io.FileWriter(new File(getFilesDir(), "diff.txt"), true); w.write(text + "\n"); w.close();
-            showToast(text, 0);
-        } catch (Throwable t) { showToast("snapshot error: " + t, 0); }
+            String diagnostic = changed + " changed  " + sb;
+            java.io.FileWriter w = new java.io.FileWriter(new File(getFilesDir(), "diff.txt"), true); w.write(diagnostic + "\n"); w.close();
+            showToast(ui.text("status_diff_changed", changed, sb.toString()), 0);
+        } catch (Throwable t) { showToast(ui.text("status_snapshot_error", String.valueOf(t)), 0); }
     }
 
     // ------------------------------------------------------------ read-only check of the slots a recipe writes
@@ -347,11 +350,11 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         for (int i = 0; i < attrs.length; i++) {
             try { attrs[i] = NativeBackup.attr(ids.get(i)); } catch (Throwable t) { attrs[i] = -1; }
         }
-        String text = Params.lockReport(ids, attrs);
+        String text = ui.lockReport(ids, attrs);
         try {
             java.io.FileWriter w = new java.io.FileWriter(new File(getFilesDir(), "locks.txt"), true);
-            try { w.write(text + "\n" + Params.lockLines(ids, attrs)); } finally { w.close(); }
-        } catch (Throwable t) { text += "  ·  locks.txt failed: " + t; }
+            try { w.write(Params.lockReport(ids, attrs) + "\n" + Params.lockLines(ids, attrs)); } finally { w.close(); }
+        } catch (Throwable t) { text += "  ·  " + ui.text("status_locks_file_failed", String.valueOf(t)); }
         showToast(text, 0);
     }
 
@@ -364,7 +367,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private void renderMenu() {
         boolean snapshotTaken = snapFile().exists();
         String[] labels = new String[DevTools.ROWS], details = new String[DevTools.ROWS];
-        for (int i = 0; i < DevTools.ROWS; i++) { labels[i] = DevTools.rowLabel(i, snapshotTaken, settleIdx); details[i] = DevTools.rowDetail(i, snapshotTaken); }
+        for (int i = 0; i < DevTools.ROWS; i++) { labels[i] = ui.devRowLabel(i, snapshotTaken, settleIdx); details[i] = ui.devRowDetail(i, snapshotTaken); }
         menu.set(labels, details, menuSel);
         menu.setVisibility(View.VISIBLE);
     }
@@ -405,7 +408,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
 
     /** shoot one frame per recipe, in table order: the gallery of issue #17, and a preview-pipeline test */
     private void startRun() {
-        if (camera == null || !previewOk) { showToast(DevTools.NO_PREVIEW, 5000); return; }
+        if (camera == null || !previewOk) { showToast(ui.text("dev_no_preview"), 5000); return; }
         running = true; runFrame = 0; runReturnTo = recipe;
         runLog = new StringBuilder(DevTools.manifestHeader(Recipes.ALL.length, settleMs())).append('\n');
         handler.post(runStage);
@@ -414,12 +417,12 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     /** apply the next recipe and give the preview pipeline the settle delay before the shutter */
     private void sampleStage() {
         if (!running) return;
-        if (runFrame >= Recipes.ALL.length) { endRun(DevTools.doneMessage(runFrame, Recipes.ALL.length)); return; }
+        if (runFrame >= Recipes.ALL.length) { endRun(ui.devDoneMessage(runFrame, Recipes.ALL.length)); return; }
         recipe = runFrame;
         stageRecipe();
         edit[R_QUAL] = Q_FINE;                                  // a sample is only a sample as a JPEG with the look in it, whatever the user shoots
         applyPreview(); render();
-        showToast(DevTools.progress(runFrame + 1, Recipes.ALL.length, Recipes.ALL[runFrame].name), 0);
+        showToast(ui.devProgress(runFrame + 1, Recipes.ALL.length, Recipes.ALL[runFrame]), 0);
         handler.postDelayed(runShoot, settleMs());
     }
 
@@ -428,7 +431,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         if (!running) return;
         try { camera.takePicture(null, null, null); }
         catch (Throwable t) {
-            String msg = DevTools.shootFailed(runFrame + 1, runFrame, String.valueOf(t.getMessage()));
+            String msg = ui.devShootFailed(runFrame + 1, runFrame, String.valueOf(t.getMessage()));
             endRun(msg); return;
         }
         runLog.append(DevTools.manifestLine(runFrame + 1, runFrame)).append('\n');
@@ -439,7 +442,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     /** MENU during the run, or the camera going away under it */
     private void stopRun(boolean tell) {
         if (!running) return;
-        endRun(tell ? DevTools.stoppedMessage(runFrame, Recipes.ALL.length) : null);
+        endRun(tell ? ui.devStoppedMessage(runFrame, Recipes.ALL.length) : null);
     }
 
     private void endRun(String msg) {
@@ -458,7 +461,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         try {
             java.io.FileWriter w = new java.io.FileWriter(new File(getFilesDir(), DevTools.MANIFEST), true);
             try { w.write(runLog.toString()); } finally { w.close(); }
-        } catch (Throwable t) { return "  ·  " + DevTools.MANIFEST + " failed: " + t; }
+        } catch (Throwable t) { return "  ·  " + ui.text("status_manifest_failed", DevTools.MANIFEST, String.valueOf(t)); }
         finally { runLog = null; }
         return "";
     }
@@ -481,7 +484,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         int pos = favs.indexOf(recipe);
         boolean on = Favourites.toggle(favs, recipe);
         saveFavourites();
-        showToast(Favourites.toggleMessage(Recipes.ALL[recipe].name, on), 2500);
+        showToast(ui.favouriteMessage(Recipes.ALL[recipe], on), 2500);
         if (overlay == OV_BROWSER && browserGroup == Favourites.GROUP && !on) {
             // unmarked inside the Favourites list: the highlight moves to a neighbour, or back to the brand column when the list is empty
             int next = Favourites.afterRemoval(favs, pos);
@@ -513,27 +516,30 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         Recipes.Recipe r = Recipes.ALL[recipe];
         boolean dirty = dirty();
         String pos = (recipe + 1) + " / " + Recipes.ALL.length;
-        String grp = Recipes.GROUPS[r.group].toUpperCase();
+        String grp = ui.groupName(r.group).toUpperCase();
         picker.setVisibility(overlay == OV_BROWSER ? View.VISIBLE : View.GONE);
         if (overlay == OV_BROWSER) { panel.setVisibility(View.GONE); mini.setVisibility(View.GONE); picker.set(recipe, browserCol, browserGroup, favs); return; }
         if (overlay == OV_FULL) {
             panel.setVisibility(View.VISIBLE); mini.setVisibility(View.GONE);
-            name.setText(r.name);
+            name.setText(ui.recipeName(r));
             name.setTextColor(row == 0 ? ACCENT : WHITE);
+            String original = ui.recipeOriginalName(r);
+            nameOriginal.setText(original);
+            nameOriginal.setVisibility(original == null ? View.GONE : View.VISIBLE);
             count.setText(grp + "   " + pos);
             tag.setText(edit[R_PE] != 0 ? "PE" : "CS");
             tag.setTextColor(edit[R_PE] != 0 ? ACCENT : 0xDDFFFFFF);
             fav.setVisibility(favs.contains(recipe) ? View.VISIBLE : View.GONE);
-            if (dirty) { badge.setText("PREVIEW"); badge.setBackgroundResource(R.drawable.badge_warn); }
-            else { badge.setText("ACTIVE"); badge.setBackgroundResource(R.drawable.badge_ok); }
-            meta.setText(Params.metaLine(cur, edit, previewOk ? null : previewErr));
+            if (dirty) { badge.setText(ui.text("state_preview")); badge.setBackgroundResource(R.drawable.badge_warn); }
+            else { badge.setText(ui.text("state_active")); badge.setBackgroundResource(R.drawable.badge_ok); }
+            meta.setText(ui.metaLine(cur, edit, previewOk ? null : previewErr));
             for (int i = 1; i < N; i++) {
                 chip[i].setVisibility(rowVisible(i) ? View.VISIBLE : View.GONE);
                 boolean sel = i == row, ch = rowDirty(i), foc = sel && focus;
                 chip[i].setBackgroundResource(foc ? R.drawable.chip_sel : sel ? R.drawable.chip_hi : R.drawable.chip);
                 chipLabel[i].setTextColor(foc ? INK : sel ? ACCENT : DIM);
                 chipValue[i].setTextColor(foc ? INK : ch ? ACCENT : WHITE);
-                chipValue[i].setText(Params.fmt(i, edit[i], edit));
+                chipValue[i].setText(ui.value(i, edit[i], edit));
             }
             if (row == 0) chipScroll.post(new Runnable() { public void run() { chipScroll.smoothScrollTo(0, 0); } });
             else {
@@ -546,7 +552,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             hints.setMode(row == 0 ? HintBar.RECIPE : focus ? HintBar.EDIT : HintBar.CHIPS);
         } else if (overlay == OV_PILL) {
             panel.setVisibility(View.GONE); mini.setVisibility(View.VISIBLE);
-            mini.setText(Params.miniLine(recipe, cur, edit, dirty));
+            mini.setText(ui.miniLine(recipe, cur, edit, dirty));
         } else {
             panel.setVisibility(View.GONE); mini.setVisibility(View.GONE);
         }
@@ -597,16 +603,16 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
 
     /** the recipe column is not reachable while the Favourites list is empty */
     private boolean enterRecipeColumn() {
-        if (!Favourites.hasRecipes(browserGroup, favs)) { showToast(Favourites.EMPTY_HINT, 3000); return false; }
+        if (!Favourites.hasRecipes(browserGroup, favs)) { showToast(ui.text("favourite_empty_hint"), 3000); return false; }
         browserCol = COL_RECIPES; render(); return true;
     }
 
     /** the centre button on a recipe in the browser: close it, leaving that recipe previewed */
     private void pickInBrowser() {
-        openBrowser(false); showToast(Recipes.ALL[recipe].name + " previewed — ENTER to pick", 3000);
+        openBrowser(false); showToast(ui.text("status_recipe_previewed", ui.recipeName(Recipes.ALL[recipe])), 3000);
     }
 
-    private void stageFactory() { recipe = 0; stageRecipe(); applyPreview(); showToast("Factory values staged — ENTER to pick", 3000); render(); }
+    private void stageFactory() { recipe = 0; stageRecipe(); applyPreview(); showToast(ui.text("status_factory_staged"), 3000); render(); }
 
     private boolean browserKey(int sc) {
         switch (sc) {

@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.RectF;
+import android.graphics.Typeface;
 import android.util.AttributeSet;
 import android.view.View;
 
@@ -11,13 +12,13 @@ import android.view.View;
 public class PromptView extends View {
     private static final int ACCENT = 0xFFF2B85C, INK = 0xFF1A1208;
     private static final int[] LEGEND_ICONS = { Legend.ENTER, Legend.MENU };
-    private static final String[] LEGEND_TEXT = { "confirm", "cancel" };
 
     private final Paint bg = new Paint(Paint.ANTI_ALIAS_FLAG), edge = new Paint(Paint.ANTI_ALIAS_FLAG), title = new Paint(Paint.ANTI_ALIAS_FLAG),
             body = new Paint(Paint.ANTI_ALIAS_FLAG), opt = new Paint(Paint.ANTI_ALIAS_FLAG), pill = new Paint(Paint.ANTI_ALIAS_FLAG), note = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final RectF r = new RectF();
     private final Legend legend;
     private final float d;
+    private final String[] legendText;
     private String titleText = "", bodyText = "", noteText = null;
     private String[] options = new String[0];
     private int selected = 0;
@@ -26,12 +27,17 @@ public class PromptView extends View {
         super(c, a);
         d = c.getResources().getDisplayMetrics().density;
         legend = new Legend(d);
+        Typeface typeface = UiTypeface.load(c);
+        legend.setTypeface(typeface);
+        UiText ui = new UiText(new AndroidTextCatalog(c));
+        legendText = new String[] { ui.text("action_confirm"), ui.text("action_cancel") };
         bg.setColor(0xF0141414);
         edge.setColor(0x88F2B85C); edge.setStyle(Paint.Style.STROKE); edge.setStrokeWidth(d);
         title.setColor(0xFFFFFFFF); title.setTextSize(15 * d); title.setFakeBoldText(true);
         body.setColor(0xCCFFFFFF); body.setTextSize(12 * d);
         opt.setTextSize(13 * d); opt.setFakeBoldText(true); opt.setTextAlign(Paint.Align.CENTER);
         note.setColor(0x88FFFFFF); note.setTextSize(10 * d);
+        title.setTypeface(typeface); body.setTypeface(typeface); opt.setTypeface(typeface); note.setTypeface(typeface);
     }
 
     public void set(String titleText, String bodyText, String[] options, int selected, String noteText) {
@@ -76,6 +82,6 @@ public class PromptView extends View {
             while (note.measureText(noteText) > avail && ns > 7 * d) { ns -= 0.5f * d; note.setTextSize(ns); }
             c.drawText(noteText, pad, y, note); note.setTextSize(10 * d); y += 14 * d;
         }
-        legend.draw(c, pad, y + legend.height() / 2 - 2 * d, w - 2 * pad, LEGEND_ICONS, LEGEND_TEXT);
+        legend.draw(c, pad, y + legend.height() / 2 - 2 * d, w - 2 * pad, LEGEND_ICONS, legendText);
     }
 }

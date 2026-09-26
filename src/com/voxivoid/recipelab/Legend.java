@@ -4,6 +4,7 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.RectF;
+import android.graphics.Typeface;
 
 /**
  * Key legend drawn with Canvas (camera firmware font has no arrow / symbol glyphs).
@@ -25,6 +26,11 @@ public class Legend {
         stroke.setColor(0xCCFFFFFF); stroke.setStyle(Paint.Style.STROKE);
         text.setColor(0x99FFFFFF);
         keyText.setColor(0xCCFFFFFF); keyText.setTextAlign(Paint.Align.CENTER); keyText.setFakeBoldText(true);
+    }
+
+    public void setTypeface(Typeface typeface) {
+        text.setTypeface(typeface);
+        keyText.setTypeface(typeface);
     }
 
     private static final Path STAR = new Path();

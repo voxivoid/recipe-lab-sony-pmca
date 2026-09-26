@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="group_favourites">收藏</string>
+    <string name="group_sony">索尼</string>
+    <string name="group_fuji_sim">富士模拟</string>
+    <string name="group_fuji_film">富士胶片</string>
+    <string name="group_kodak">柯达</string>
+    <string name="group_cine">电影</string>
+    <string name="group_ricoh_gr">理光 GR</string>
+    <string name="group_leica">徕卡</string>
+    <string name="group_hasselblad">哈苏</string>
+    <string name="group_canon_nikon">佳能 / 尼康</string>
+    <string name="group_pana_olympus">松下 / 奥林巴斯</string>
+    <string name="group_other_stocks">其他胶片</string>
+    <string name="group_ilford">伊尔福</string>
+
+    <string name="row_recipe">配方</string>
+    <string name="row_style">风格</string>
+    <string name="row_saturation">饱和度</string>
+    <string name="row_contrast">对比度</string>
+    <string name="row_sharpness">锐度</string>
+    <string name="row_matrix">矩阵</string>
+    <string name="row_effect">效果</string>
+    <string name="row_sub">子选项</string>
+    <string name="row_white_balance">白平衡</string>
+    <string name="row_kelvin">色温</string>
+    <string name="row_amber_blue">琥珀-蓝</string>
+    <string name="row_green_magenta">绿-洋红</string>
+    <string name="row_ev">曝光补偿</string>
+    <string name="row_dro">DRO</string>
+    <string name="row_quality">画质</string>
+
+    <string name="style_standard">标准</string>
+    <string name="style_vivid">鲜艳</string>
+    <string name="style_neutral">中性</string>
+    <string name="style_portrait">人像</string>
+    <string name="style_landscape">风景</string>
+    <string name="style_bw">黑白</string>
+    <string name="style_clear">清澈</string>
+    <string name="style_deep">浓郁</string>
+    <string name="style_light">淡雅</string>
+    <string name="style_sunset">黄昏</string>
+    <string name="style_night">夜景</string>
+    <string name="style_autumn">秋叶</string>
+    <string name="style_sepia">棕褐色</string>
+
+    <string name="effect_off">关闭</string>
+    <string name="effect_toy">玩具相机</string>
+    <string name="effect_pop">流行色彩</string>
+    <string name="effect_poster">色调分离</string>
+    <string name="effect_retro">复古照片</string>
+    <string name="effect_high_key">柔和高调</string>
+    <string name="effect_partial_color">局部彩色</string>
+    <string name="effect_high_contrast_mono">高对比度黑白</string>
+    <string name="effect_soft_focus">柔焦</string>
+    <string name="effect_hdr_art">HDR 绘画</string>
+    <string name="effect_rich_mono">丰富色调黑白</string>
+    <string name="effect_miniature">微缩景观</string>
+    <string name="effect_illustration">插图</string>
+    <string name="effect_watercolor">水彩画</string>
+
+    <string name="sub_blue">蓝色</string>
+    <string name="sub_pink">粉色</string>
+    <string name="sub_green">绿色</string>
+    <string name="sub_normal">标准</string>
+    <string name="sub_cool">冷色</string>
+    <string name="sub_warm">暖色</string>
+    <string name="sub_magenta">洋红</string>
+    <string name="sub_red">红色</string>
+    <string name="sub_yellow">黄色</string>
+    <string name="sub_posterization_color">彩色</string>
+    <string name="sub_posterization_bw">黑白</string>
+
+    <string name="quality_raw">RAW</string>
+    <string name="quality_raw_jpeg">RAW+JPEG</string>
+    <string name="quality_jpeg_fine">JPEG 精细</string>
+    <string name="quality_jpeg_standard">JPEG 标准</string>
+    <string name="value_auto">自动</string>
+    <string name="value_off">关闭</string>
+    <string name="value_kelvin">色温</string>
+    <string name="value_level">等级 %1$d</string>
+    <string name="value_seconds">%1$s 秒</string>
+
+    <string name="state_preview">预览</string>
+    <string name="state_active">已启用</string>
+    <string name="mini_line">%1$s  %2$s   %3$d / %4$d   · %5$s</string>
+    <string name="mini_quality">画质 → %1$s</string>
+    <string name="meta_picture_effect">照片效果 %1$s</string>
+    <string name="meta_effect_note">（忽略创意风格，仅 JPEG）</string>
+    <string name="meta_white_balance">白平衡 %1$s</string>
+    <string name="meta_pp3_matrix">PP3 矩阵</string>
+    <string name="meta_ev">曝光补偿 %1$s</string>
+    <string name="meta_dro">DRO %1$s</string>
+    <string name="meta_quality_change">画质 → %1$s（当前 %2$s）</string>
+    <string name="meta_raw_effect_ignored">RAW 已开启：照片效果不会生效</string>
+    <string name="meta_no_preview">无实时预览：%1$s</string>
+
+    <string name="quality_prompt_title">画质：%1$s → %2$s</string>
+    <string name="quality_prompt_effect">应用此配方需要 JPEG。</string>
+    <string name="quality_prompt_style">创意风格配方沿用出厂配方的画质。</string>
+    <string name="quality_slot_note">尚未定位画质槽位——仅实时预览</string>
+    <string name="button_accept">接受</string>
+    <string name="button_cancel">取消</string>
+
+    <string name="locked_one">未写入——相机将此设置设为只读：%1$s。</string>
+    <string name="locked_many">未写入——相机将这些设置设为只读：%1$s。</string>
+    <string name="unlock_hint">请使用 OpenMemories-Tweak（Protection → Unlock protected settings）解锁设置存储，然后重新选择配方。</string>
+    <string name="write_failed_none">写入 %1$s（%2$s）失败：%3$s——尚未写入任何内容</string>
+    <string name="write_failed_some">写入 %1$s（%2$s）失败：%3$s——停止前已写入 %4$d 字节</string>
+    <string name="lock_report_none">已检查 %1$d 个配方槽位 · 没有只读项</string>
+    <string name="lock_report_some">已检查 %1$d 个配方槽位 · %2$d 个只读：%3$s</string>
+    <string name="lock_report_unreadable"> · %1$d 个无响应</string>
+
+    <string name="favourite_added">%1$s 已加入收藏</string>
+    <string name="favourite_removed">%1$s 已从收藏移除</string>
+    <string name="favourite_empty_title">还没有收藏</string>
+    <string name="favourite_empty_hint">在配方上长按中央键即可收藏</string>
+    <string name="picker_brand">分类</string>
+
+    <string name="action_recipes">配方</string>
+    <string name="action_close">关闭</string>
+    <string name="action_pick">选用</string>
+    <string name="action_favourite_hold">收藏（长按）</string>
+    <string name="action_move">移动</string>
+    <string name="action_select">选择</string>
+    <string name="action_confirm">确认</string>
+    <string name="action_cancel">取消</string>
+    <string name="action_browse">浏览</string>
+    <string name="action_factory">出厂</string>
+    <string name="action_hide">隐藏</string>
+    <string name="action_exit">退出</string>
+    <string name="action_edit">编辑</string>
+    <string name="action_done">完成</string>
+
+    <string name="status_read_failed">读取失败：%1$s</string>
+    <string name="status_already_picked">已经选用——无需写入</string>
+    <string name="status_picked">已选用——写入 %1$d 项；重启相机后将全面生效</string>
+    <string name="status_not_picked">未选用</string>
+    <string name="status_quality_pick">画质：%1$s——按 ENTER 选用</string>
+    <string name="status_quality_live">画质：%1$s（定位槽位前仅实时预览）</string>
+    <string name="status_snapshot_taken">已保存 %1$d 项设置的快照。更改一项菜单设置，重新打开应用，再按 C1。</string>
+    <string name="status_diff_changed">%1$d 项有变化  %2$s</string>
+    <string name="status_snapshot_error">快照错误：%1$s</string>
+    <string name="status_locks_file_failed">写入 locks.txt 失败：%1$s</string>
+    <string name="status_manifest_failed">写入 %1$s 失败：%2$s</string>
+    <string name="status_recipe_previewed">已预览 %1$s——按 ENTER 选用</string>
+    <string name="status_factory_staged">已载入出厂值——按 ENTER 选用</string>
+
+    <string name="dev_title">开发工具</string>
+    <string name="dev_settings_snapshot">设置快照</string>
+    <string name="dev_settings_diff">设置差异</string>
+    <string name="dev_read_only_check">只读检查——%1$d 个槽位</string>
+    <string name="dev_shoot_samples">拍摄样片——%1$d 个配方</string>
+    <string name="dev_settle_delay">稳定延时——%1$s</string>
+    <string name="dev_snapshot_store">保存每个设置 ID 的当前值</string>
+    <string name="dev_snapshot_compare">将每个设置 ID 与快照比较</string>
+    <string name="dev_locks_detail">检查配方会写入的每个槽位是否只读</string>
+    <string name="dev_samples_detail">按表格顺序为每个配方拍摄一张 JPEG——MENU 停止</string>
+    <string name="dev_settle_detail">应用配方后等待一段时间再触发快门</string>
+    <string name="dev_no_preview">没有实时预览——样片拍摄需要相机</string>
+    <string name="dev_progress">正在拍摄 %1$d / %2$d · %3$s——MENU 停止</string>
+    <string name="dev_done">样片完成——已拍摄 %1$d / %2$d 张，清单位于 %3$s</string>
+    <string name="dev_stopped_none">样片拍摄在第一张之前停止</string>
+    <string name="dev_stopped">样片拍摄已停止——已拍摄 %1$d / %2$d 张，清单位于 %3$s</string>
+    <string name="dev_shoot_failed">第 %1$d 张触发快门失败：%2$s——已拍摄 %3$d 张，清单位于 %4$s</string>
+</resources>

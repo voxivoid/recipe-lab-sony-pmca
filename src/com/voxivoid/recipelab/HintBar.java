@@ -12,17 +12,19 @@ public class HintBar extends View {
         { Legend.FN, Legend.ENTER, Legend.ENTER, Legend.TRASH, Legend.AEL, Legend.MENU },
         { Legend.ENTER, Legend.FN, Legend.TRASH, Legend.AEL, Legend.MENU },
         { Legend.ENTER } };
-    private static final String[][] TEXT = {
-        { "browse", "pick", "fav (hold)", "factory", "hide", "exit" },
-        { "edit", "browse", "factory", "hide", "exit" },
-        { "done" } };
-
     private final Legend legend;
+    private final String[][] text;
     private int mode = RECIPE;
 
     public HintBar(Context c, AttributeSet a) {
         super(c, a);
         legend = new Legend(c.getResources().getDisplayMetrics().density);
+        legend.setTypeface(UiTypeface.load(c));
+        UiText ui = new UiText(new AndroidTextCatalog(c));
+        text = new String[][] {
+            { ui.text("action_browse"), ui.text("action_pick"), ui.text("action_favourite_hold"), ui.text("action_factory"), ui.text("action_hide"), ui.text("action_exit") },
+            { ui.text("action_edit"), ui.text("action_browse"), ui.text("action_factory"), ui.text("action_hide"), ui.text("action_exit") },
+            { ui.text("action_done") } };
     }
 
     public void setMode(int m) { if (mode != m) { mode = m; invalidate(); } }
@@ -32,6 +34,6 @@ public class HintBar extends View {
 
     @Override
     protected void onDraw(Canvas c) {
-        legend.draw(c, 0, getHeight() / 2f, getWidth(), ICONS[mode], TEXT[mode]);
+        legend.draw(c, 0, getHeight() / 2f, getWidth(), ICONS[mode], text[mode]);
     }
 }
