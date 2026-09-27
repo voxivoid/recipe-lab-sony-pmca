@@ -9,9 +9,9 @@ import org.junit.jupiter.api.Test;
 
 /** The keys (issue #18): the press / hold gesture, the trash-hold guard, and a legend that only names keys the body has. */
 class KeysTest {
-    private static final Keys.Caps NONE = new Keys.Caps(false, false), BOTH = new Keys.Caps(true, true);
+    private static final Keys.Caps NONE = new Keys.Caps(false), FN = new Keys.Caps(true);
     private static final int[] EVERY_MODE = { Keys.H_RECIPE, Keys.H_CHIPS, Keys.H_EDIT, Keys.H_BRANDS, Keys.H_RECIPES,
-            Keys.H_MENU_TOP, Keys.H_MENU_SUB, Keys.H_PAGE, Keys.H_LOGGER };
+            Keys.H_MENU_TOP, Keys.H_MENU_SUB, Keys.H_PAGE, Keys.H_LOGGER, Keys.H_MENU_TOP_VALUE, Keys.H_MENU_SUB_VALUE };
 
     // ---- press / hold
     @Test void aPressReleasedBeforeTheHoldIsShort() {
@@ -75,7 +75,7 @@ class KeysTest {
     }
 
     @Test void everyRowIsWellFormed() {
-        for (Keys.Caps caps : new Keys.Caps[] { Keys.Caps.UNKNOWN, NONE, BOTH }) {
+        for (Keys.Caps caps : new Keys.Caps[] { Keys.Caps.UNKNOWN, NONE, FN }) {
             for (int mode : EVERY_MODE) {
                 Keys.Hints h = Keys.hints(mode, caps);
                 assertEquals(h.icons.length, h.alts.length, "mode " + mode);
@@ -86,66 +86,72 @@ class KeysTest {
         }
     }
 
-    @Test void anUnknownOrBareBodyIsNeverShownFnOrAel() {
+    @Test void anUnknownOrBareBodyIsNeverShownFn() {
         for (Keys.Caps caps : new Keys.Caps[] { Keys.Caps.UNKNOWN, NONE }) {
+            for (int mode : EVERY_MODE) assertFalse(iconsOf(Keys.hints(mode, caps)).contains(Keys.I_FN), "mode " + mode);
+        }
+    }
+
+    @Test void theMainPanelNamesEveryFunctionOnUniversalKeysWithExitLast() {
+        for (int mode : new int[] { Keys.H_RECIPE, Keys.H_CHIPS }) {
+            for (Keys.Caps caps : new Keys.Caps[] { NONE, FN }) {
+                Keys.Hints h = Keys.hints(mode, caps);
+                List<String> labels = Arrays.asList(h.labels);
+                for (String f : new String[] { "hide", "menu (hold)", "exit" }) assertTrue(labels.contains(f), mode + ": " + f);
+                assertEquals(Keys.I_TRASH, h.icons[labels.indexOf("hide")]);
+                assertEquals(Keys.I_NONE, h.alts[labels.indexOf("hide")], "trash alone hides: AEL is not bound");
+                assertEquals(Keys.I_MENU, h.icons[labels.indexOf("menu (hold)")]);
+                assertEquals("exit", h.labels[h.labels.length - 1], mode + ": exit sits at the right end");
+                assertEquals(Keys.I_MENU, h.icons[h.icons.length - 1]);
+            }
+        }
+        List<String> recipe = Arrays.asList(Keys.hints(Keys.H_RECIPE, NONE).labels);
+        assertTrue(recipe.contains("pick"));
+        assertTrue(recipe.contains("fav (hold)"));
+    }
+
+    @Test void theResetHoldIsNeverHinted() {
+        // it asks before it writes, and a hint would invite it; the app menu names it instead
+        for (Keys.Caps caps : new Keys.Caps[] { Keys.Caps.UNKNOWN, FN }) {
             for (int mode : EVERY_MODE) {
-                List<Integer> icons = iconsOf(Keys.hints(mode, caps));
-                assertFalse(icons.contains(Keys.I_FN), "mode " + mode);
-                assertFalse(icons.contains(Keys.I_AEL), "mode " + mode);
+                for (String l : Keys.hints(mode, caps).labels) {
+                    assertFalse(l.contains("factory"), "mode " + mode + ": " + l);
+                    assertFalse(l.contains("reset"), "mode " + mode + ": " + l);
+                }
             }
         }
     }
 
-    @Test void aelOnlyEverSitsNextToTrash() {
-        for (int mode : EVERY_MODE) {
-            Keys.Hints h = Keys.hints(mode, BOTH);
-            for (int i = 0; i < h.icons.length; i++) {
-                assertNotEquals(Keys.I_AEL, h.icons[i], "mode " + mode + ": AEL is never an item of its own");
-                if (h.alts[i] == Keys.I_AEL) assertEquals(Keys.I_TRASH, h.icons[i], "mode " + mode);
-            }
+    @Test void fnJoinsTheLegendJustBeforeExitWhenTheBodyHasIt() {
+        for (int mode : new int[] { Keys.H_RECIPE, Keys.H_CHIPS }) {
+            Keys.Hints h = Keys.hints(mode, FN);
+            List<String> labels = Arrays.asList(h.labels);
+            assertEquals(Keys.I_FN, h.icons[labels.indexOf("browse")]);
+            assertEquals(labels.size() - 2, labels.indexOf("browse"), mode + ": browse, then exit");
+            assertFalse(Arrays.asList(Keys.hints(mode, NONE).labels).contains("browse"), "browse is in the app menu without Fn");
         }
     }
 
-    @Test void theMainPanelNamesEveryFunctionOnUniversalKeys() {
-        Keys.Hints h = Keys.hints(Keys.H_RECIPE, Keys.Caps.UNKNOWN);
-        List<String> labels = Arrays.asList(h.labels);
-        for (String f : new String[] { "pick", "fav (hold)", "hide", "factory (hold)", "menu (hold)", "exit" }) assertTrue(labels.contains(f), f);
-        assertEquals(Keys.I_TRASH, h.icons[labels.indexOf("hide")]);
-        assertEquals(Keys.I_TRASH, h.icons[labels.indexOf("factory (hold)")]);
-        assertEquals(Keys.I_MENU, h.icons[labels.indexOf("menu (hold)")]);
-        assertEquals(Keys.I_MENU, h.icons[labels.indexOf("exit")]);
-    }
-
-    @Test void fnAndAelJoinTheLegendWhenTheBodyHasThem() {
-        Keys.Hints h = Keys.hints(Keys.H_RECIPE, BOTH);
-        List<String> labels = Arrays.asList(h.labels);
-        assertEquals(Keys.I_FN, h.icons[labels.indexOf("browse")]);
-        assertEquals(Keys.I_AEL, h.alts[labels.indexOf("hide")]);
-        assertFalse(Arrays.asList(Keys.hints(Keys.H_RECIPE, NONE).labels).contains("browse"), "browse is in the app menu without Fn");
-    }
-
-    @Test void theChipRowGetsTheSameShortcutsAsTheRecipeLine() {
-        Keys.Hints bare = Keys.hints(Keys.H_CHIPS, NONE), full = Keys.hints(Keys.H_CHIPS, BOTH);
-        List<String> labels = Arrays.asList(full.labels);
-        assertEquals(Keys.I_TRASH, full.icons[labels.indexOf("hide")]);
-        assertEquals(Keys.I_AEL, full.alts[labels.indexOf("hide")], "AEL beside trash on the chip row too");
-        assertEquals(Keys.I_FN, full.icons[labels.indexOf("browse")]);
-        assertEquals(Keys.I_NONE, bare.alts[Arrays.asList(bare.labels).indexOf("hide")]);
-        assertFalse(Arrays.asList(bare.labels).contains("browse"));
-    }
-
-    @Test void menuLegendsSayWhereMenuGoes() {
+    @Test void menuLegendsSayWhereMenuGoesAndWhenLeftRightChangeAValue() {
         List<String> top = Arrays.asList(Keys.hints(Keys.H_MENU_TOP, NONE).labels), sub = Arrays.asList(Keys.hints(Keys.H_MENU_SUB, NONE).labels);
         assertTrue(top.contains("close"), "MENU closes the app menu");
         assertTrue(sub.contains("back"), "MENU goes back from the developer menu to the app menu");
         assertFalse(sub.contains("close"));
+        assertFalse(top.contains("change"), "no value on the row, nothing for left / right to change");
+        for (int mode : new int[] { Keys.H_MENU_TOP_VALUE, Keys.H_MENU_SUB_VALUE }) {
+            Keys.Hints h = Keys.hints(mode, NONE);
+            int change = Arrays.asList(h.labels).indexOf("change");
+            assertEquals(Keys.I_LEFTRIGHT, h.icons[change], "mode " + mode);
+        }
+        assertTrue(Arrays.asList(Keys.hints(Keys.H_MENU_TOP_VALUE, NONE).labels).contains("close"));
+        assertTrue(Arrays.asList(Keys.hints(Keys.H_MENU_SUB_VALUE, NONE).labels).contains("back"));
         assertEquals(Arrays.asList("back"), Arrays.asList(Keys.hints(Keys.H_PAGE, NONE).labels));
         assertEquals(Arrays.asList("exit (hold)"), Arrays.asList(Keys.hints(Keys.H_LOGGER, NONE).labels), "a short MENU is logged, not obeyed");
     }
 
     @Test void theBrowserClosesOnMenuWithFnBesideItWhenPresent() {
         for (int mode : new int[] { Keys.H_BRANDS, Keys.H_RECIPES }) {
-            Keys.Hints bare = Keys.hints(mode, NONE), full = Keys.hints(mode, BOTH);
+            Keys.Hints bare = Keys.hints(mode, NONE), full = Keys.hints(mode, FN);
             int close = Arrays.asList(bare.labels).indexOf("close");
             assertEquals(Keys.I_MENU, bare.icons[close]);
             assertEquals(Keys.I_NONE, bare.alts[close]);
@@ -153,35 +159,9 @@ class KeysTest {
         }
     }
 
-    // ---- the Controls page
-    private static List<String> keysOf(String[][] rows) {
-        List<String> out = new ArrayList<String>();
-        for (String[] r : rows) { assertEquals(2, r.length); assertFalse(r[1].isEmpty(), r[0]); out.add(r[0]); }
-        return out;
-    }
-
-    @Test void controlsListTheUniversalKeysFirstOnEveryBody() {
-        List<String> bare = keysOf(Keys.controls(Keys.Caps.UNKNOWN));
-        assertEquals(Arrays.asList("wheel", "left / right", "up / down", "centre", "centre, hold", "trash", "trash, hold",
-                "MENU, hold", "MENU", "shutter"), bare);
-        List<String> full = keysOf(Keys.controls(BOTH));
-        assertEquals(bare, full.subList(0, bare.size()), "the shortcuts come after the universal keys");
-        assertEquals(Arrays.asList("Fn", "AEL"), full.subList(bare.size(), full.size()));
-    }
-
-    @Test void controlsNeverNameAKeyTheBodyLacksOrOneThatIsNotBound() {
-        for (Keys.Caps caps : new Keys.Caps[] { Keys.Caps.UNKNOWN, NONE, new Keys.Caps(true, null), new Keys.Caps(null, true) }) {
-            List<String> keys = keysOf(Keys.controls(caps));
-            assertEquals(caps.hasFn(), keys.contains("Fn"));
-            assertEquals(caps.hasAel(), keys.contains("AEL"));
-            assertFalse(keys.contains("C1"));
-            assertFalse(keys.contains("DISP"));
-        }
-    }
-
     // ---- scan codes
     @Test void theGesturesKeysAreOneShotAndTheWalkingKeysAreNot() {
-        for (int k : new int[] { Keys.K_ENTER, Keys.K_MENU, Keys.K_SK1, Keys.K_DELETE, Keys.K_SK2, Keys.K_FN, Keys.K_AEL }) assertTrue(Keys.oneShot(k), "" + k);
+        for (int k : new int[] { Keys.K_ENTER, Keys.K_MENU, Keys.K_SK1, Keys.K_DELETE, Keys.K_SK2, Keys.K_FN }) assertTrue(Keys.oneShot(k), "" + k);
         for (int k : new int[] { Keys.K_UP, Keys.K_DOWN, Keys.K_LEFT, Keys.K_RIGHT, Keys.K_WHEEL_CW, Keys.K_DIAL_CCW }) assertFalse(Keys.oneShot(k), "" + k);
     }
 

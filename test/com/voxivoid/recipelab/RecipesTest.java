@@ -39,11 +39,13 @@ class RecipesTest {
             assertEquals(end, Recipes.GROUP_START[g] + Recipes.GROUP_COUNT[g], Recipes.GROUPS[g] + " is not contiguous");
             total += Recipes.GROUP_COUNT[g];
         }
-        assertEquals(Recipes.ALL.length, total);
+        assertEquals(Recipes.LISTED, total, "every recipe but the factory look is listed");
+        assertEquals(Recipes.ALL.length - 1, Recipes.LISTED);
+        assertEquals(1, Recipes.GROUP_START[Recipes.ALL[Recipes.FACTORY].group], "Sony's list starts after the factory look");
     }
 
     @Test void theFirstRecipeIsTheFactoryLook() {
-        Recipes.Recipe f = Recipes.ALL[0];   // TRASH stages recipe 0 as "factory"
+        Recipes.Recipe f = Recipes.ALL[Recipes.FACTORY];   // what Reset settings stores
         assertTrue(f.name.startsWith("FACTORY"), f.name);
         assertEquals(Recipes.STD, f.style);
         assertEquals(0, f.sat); assertEquals(0, f.con); assertEquals(0, f.sharp); assertEquals(0, f.matrix);
@@ -201,18 +203,44 @@ class RecipesTest {
         assertEquals("Pop", r.summary());
     }
 
-    @Test void nextWrapsOverTheWholeTable() {
+    @Test void nextWrapsOverTheListAndSkipsTheFactoryLook() {
         int last = Recipes.ALL.length - 1;
-        assertEquals(1, Recipes.next(0, +1));
-        assertEquals(0, Recipes.next(last, +1));
-        assertEquals(last, Recipes.next(0, -1));
+        assertEquals(2, Recipes.next(1, +1));
+        assertEquals(1, Recipes.next(last, +1), "wraps past the end onto the first listed recipe, not the factory look");
+        assertEquals(last, Recipes.next(1, -1), "and back the other way");
+        for (int i = 0; i < Recipes.ALL.length; i++) {
+            assertNotEquals(Recipes.FACTORY, Recipes.next(i, +1), "from " + i);
+            assertNotEquals(Recipes.FACTORY, Recipes.next(i, -1), "from " + i);
+        }
+    }
+
+    @Test void fromTheFactoryLookTheWheelEntersTheList() {
+        assertEquals(1, Recipes.next(Recipes.FACTORY, +1));
+        assertEquals(Recipes.ALL.length - 1, Recipes.next(Recipes.FACTORY, -1));
+        int sony = Recipes.ALL[Recipes.FACTORY].group, start = Recipes.GROUP_START[sony], n = Recipes.GROUP_COUNT[sony];
+        assertEquals(start, Recipes.nextInGroup(Recipes.FACTORY, +1));
+        assertEquals(start + n - 1, Recipes.nextInGroup(Recipes.FACTORY, -1));
+    }
+
+    @Test void oneTurnOfTheWheelVisitsEveryListedRecipeOnce() {
+        java.util.Set<Integer> seen = new java.util.HashSet<Integer>();
+        int i = 1;
+        for (int k = 0; k < Recipes.LISTED; k++) { assertTrue(seen.add(i), "visited twice: " + i); i = Recipes.next(i, +1); }
+        assertEquals(1, i);
+        assertEquals(Recipes.LISTED, seen.size());
+    }
+
+    @Test void thePanelCountsTheListAndNamesTheFactoryLook() {
+        assertEquals("1 / 76", Recipes.position(1));
+        assertEquals("76 / 76", Recipes.position(Recipes.ALL.length - 1));
+        assertEquals("factory", Recipes.position(Recipes.FACTORY));
     }
 
     @Test void nextGroupStartLandsOnTheFirstRecipeOfTheNeighbouringBrand() {
         int sony = 0, lastBrand = Recipes.GROUPS.length - 1;
         assertEquals(Recipes.GROUP_START[1], Recipes.nextGroupStart(Recipes.GROUP_START[sony] + 3, +1));
         assertEquals(Recipes.GROUP_START[lastBrand], Recipes.nextGroupStart(sony, -1));
-        assertEquals(0, Recipes.nextGroupStart(Recipes.GROUP_START[lastBrand] + 1, +1));
+        assertEquals(1, Recipes.nextGroupStart(Recipes.GROUP_START[lastBrand] + 1, +1), "Sony's first listed recipe, past the factory look");
     }
 
     @Test void nextInGroupWrapsInsideTheBrand() {

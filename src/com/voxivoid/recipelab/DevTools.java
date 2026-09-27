@@ -11,13 +11,13 @@ package com.voxivoid.recipelab;
 final class DevTools {
     private DevTools() {}
 
-    static final String APP_TITLE = "RECIPE LAB", TITLE = "DEV TOOLS", CONTROLS_TITLE = "CONTROLS", ABOUT_TITLE = "ABOUT";
+    static final String APP_TITLE = "RECIPE LAB", TITLE = "DEV TOOLS", ABOUT_TITLE = "ABOUT";
 
     /** the two menu levels: the app menu a MENU hold opens, and the developer menu under it */
     static final int LEVEL_APP = 0, LEVEL_DEV = 1;
 
     /** app menu rows, in display order */
-    static final int APP_BROWSE = 0, APP_PANEL = 1, APP_FACTORY = 2, APP_CONTROLS = 3, APP_ABOUT = 4, APP_DEV = 5, APP_ROWS = 6;
+    static final int APP_BROWSE = 0, APP_PANEL = 1, APP_RESET = 2, APP_ABOUT = 3, APP_DEV = 4, APP_ROWS = 5;
 
     /** developer menu rows, in display order */
     static final int ROW_SNAPSHOT = 0, ROW_LOCKS = 1, ROW_SAMPLES = 2, ROW_SETTLE = 3, ROW_KEYS = 4, ROWS = 5;
@@ -45,13 +45,12 @@ final class DevTools {
     /** the row above / below on a level, wrapping */
     static int nextRow(int level, int row, int dir) { int n = rows(level); return (row + n + dir) % n; }
 
-    /** an app menu row's title; the panel row says which way it will go from where the panel is now */
-    static String appLabel(int row, int overlay) {
+    /** an app menu row's title */
+    static String appLabel(int row) {
         switch (row) {
             case APP_BROWSE: return "Browse recipes";
-            case APP_PANEL: return overlay == Params.OV_HIDDEN ? "Show panel" : "Hide panel";
-            case APP_FACTORY: return "Factory settings";
-            case APP_CONTROLS: return "Controls";
+            case APP_PANEL: return "Panel visibility";
+            case APP_RESET: return "Reset settings";
             case APP_ABOUT: return "About";
             case APP_DEV: return "Developer  >";
             default: return "?" + row;
@@ -59,28 +58,56 @@ final class DevTools {
     }
 
     /** the line under an app menu row's title */
-    static String appDetail(int row, int overlay) {
+    static String appDetail(int row) {
         switch (row) {
             case APP_BROWSE: return "Brands and favourites";
-            case APP_PANEL: return overlay == Params.OV_FULL ? "Full panel to a small label" : overlay == Params.OV_PILL ? "Small label to nothing" : "Back to the full panel";
-            case APP_FACTORY: return "Store the camera's factory look now";
-            case APP_CONTROLS: return "What every key does on this camera";
-            case APP_ABOUT: return "Version, camera, keys found";
+            case APP_PANEL: return "What stays over the live image — left / right to change";
+            case APP_RESET: return "Back to the camera's factory look";
+            case APP_ABOUT: return "Version, camera, platform";
             case APP_DEV: return "Settings snapshot, read-only check, samples, key logger";
             default: return "";
         }
     }
 
+    /**
+     * The value an app menu row shows at its right edge, which left / right change in place; null for a row that has
+     * none. Panel visibility shows the panel state: Full, Label (the pill) or Hidden.
+     */
+    static String appValue(int row, int overlay) { return row == APP_PANEL ? panelLabel(overlay) : null; }
+
+    /** a panel state as the menu names it */
+    static String panelLabel(int overlay) {
+        switch (overlay) {
+            case Params.OV_FULL: return "Full";
+            case Params.OV_PILL: return "Label";
+            case Params.OV_HIDDEN: return "Hidden";
+            default: return "?";
+        }
+    }
+
+    /** the panel state left / right lands on: full → label → hidden, wrapping; the browser is never one of them */
+    static int nextPanel(int overlay, int dir) {
+        int o = overlay >= Params.OV_FULL && overlay <= Params.OV_HIDDEN ? overlay : Params.OV_FULL;
+        return (o + 3 + dir) % 3;
+    }
+
     /** the About page: {name, value}. The version comes from the installed package at runtime, never from here. */
-    static String[][] about(String version, String model, String platform, String keysFound) {
+    static String[][] about(String version, String model, String platform) {
         return new String[][] {
             { "version", orUnknown(version) },
             { "camera", orUnknown(model) },
             { "platform", orUnknown(platform) },
-            { "keys", keysFound },
             { "source", "github.com/voxivoid/recipe-lab-sony-pmca" },
         };
     }
+
+    // ------------------------------------------------------------ the reset question (hold trash, or Reset settings)
+    /** the question asked before the factory look is stored: it replaces whatever the camera has now */
+    static final String RESET_TITLE = "Reset to factory settings?",
+            RESET_BODY = "Stores Standard 0 / 0 / 0, auto white balance, no effect, in place of the current look";
+    /** the answers; Cancel is the one highlighted when the question opens, so a stray centre press changes nothing */
+    static final String[] RESET_OPTIONS = { "Reset", "Cancel" };
+    static final int RESET_DEFAULT = 1;
 
     /**
      * What the key probe found, as one line: "has Fn AEL C1  ·  lacks DISP  ·  unknown ZOOM_T". {@code has} lines up
@@ -104,7 +131,7 @@ final class DevTools {
 
     // ------------------------------------------------------------ the key logger
     /** how many events the logger keeps on screen, newest first */
-    static final int LOG_LINES = 6;
+    static final int LOG_LINES = 10;
     /** the file the logger appends to in the app's files dir */
     static final String KEY_LOG = "keys.txt";
 
@@ -131,7 +158,7 @@ final class DevTools {
             case ROW_SNAPSHOT: return snapshotTaken ? "Settings diff" : "Settings snapshot";
             case ROW_LOCKS: return "Read-only check — " + Params.allSlots().size() + " slots";
             case ROW_SAMPLES: return "Shoot samples — " + Recipes.ALL.length + " recipes";
-            case ROW_SETTLE: return "Settle delay — " + settleLabel(settle);
+            case ROW_SETTLE: return "Settle delay";
             case ROW_KEYS: return "Key logger";
             default: return "?" + row;
         }
@@ -143,11 +170,14 @@ final class DevTools {
             case ROW_SNAPSHOT: return snapshotTaken ? "Compare every settings id against the snapshot" : "Store the value of every settings id";
             case ROW_LOCKS: return "Test every slot a recipe writes for the read-only flag";
             case ROW_SAMPLES: return "One JPEG per recipe, in table order — MENU stops the run";
-            case ROW_SETTLE: return "Wait after applying a recipe before the shutter fires";
+            case ROW_SETTLE: return "Wait after applying a recipe before the shutter fires — left / right to change";
             case ROW_KEYS: return "Show every key's scan code — hold MENU to leave";
             default: return "";
         }
     }
+
+    /** the value a developer menu row shows at its right edge, which left / right change in place; null for none */
+    static String rowValue(int row, int settle) { return row == ROW_SETTLE ? settleLabel(settle) : null; }
 
     // ------------------------------------------------------------ the settle delay
     /** a stored delay index brought back into the table */

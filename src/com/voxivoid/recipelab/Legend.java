@@ -11,7 +11,7 @@ import android.graphics.RectF;
  */
 public class Legend {
     public static final int WHEEL = Keys.I_WHEEL, UPDOWN = Keys.I_UPDOWN, LEFTRIGHT = Keys.I_LEFTRIGHT, DIAL = Keys.I_DIAL,
-            ENTER = Keys.I_ENTER, AEL = Keys.I_AEL, TRASH = Keys.I_TRASH, MENU = Keys.I_MENU, FN = Keys.I_FN;
+            ENTER = Keys.I_ENTER, TRASH = Keys.I_TRASH, MENU = Keys.I_MENU, FN = Keys.I_FN;
 
     private final Paint fill = new Paint(Paint.ANTI_ALIAS_FLAG), stroke = new Paint(Paint.ANTI_ALIAS_FLAG),
             text = new Paint(Paint.ANTI_ALIAS_FLAG), keyText = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -46,7 +46,7 @@ public class Legend {
     /** natural height for a legend row at scale 1 */
     public float height() { return 16 * d; }
 
-    /** draws a legend row built by {@link Keys#hints}: a shortcut icon, where there is one, goes before its key as "AEL / trash" */
+    /** draws a legend row built by {@link Keys#hints}: a shortcut icon, where there is one, goes before its key as "Fn / MENU" */
     public float draw(Canvas c, float x, float cy, float width, Keys.Hints h) { return draw(c, x, cy, width, h.icons, h.alts, h.labels); }
 
     /** draws icons+labels starting at x, vertically centred on cy, within width; returns the width actually used */
@@ -150,7 +150,6 @@ public class Legend {
                 c.drawCircle(cx, cy, s * 0.4f, fill);
                 return 2 * s;
             }
-            case AEL: return keyLabel(c, x, cy, s, 2.6f * s, "AEL");
             case FN: return keyLabel(c, x, cy, s, 2.0f * s, "Fn");
             case TRASH: {                                          // bin: lid + body
                 float w = 1.6f * s, cx = x + w / 2, top = cy - s * 0.9f, bot = cy + s * 0.9f, u = d * k;

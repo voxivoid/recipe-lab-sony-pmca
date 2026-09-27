@@ -33,10 +33,10 @@ import static com.voxivoid.recipelab.Params.*;
  *
  * Preview = runtime camera parameters. ENTER picks the recipe: writes its bytes + sync → power-cycle applies it everywhere.
  *
- * Keys (issue #18 — every function on keys every body has; Fn and AEL are shortcuts where they exist, see {@link Keys}):
+ * Keys (issue #18 — every function on keys every body has; Fn is a shortcut where it exists, see {@link Keys}):
  *       wheel / LEFT / RIGHT recipe · UP / DOWN parameter · top dial adjust · ENTER pick · hold ENTER favourite
- *       TRASH overlay: full → pill → hidden · hold TRASH store factory · hold MENU app menu (browse, panel, factory,
- *       controls, about, developer) · SHUTTER photo · MENU exit · Fn brand browser · AEL overlay
+ *       TRASH overlay: full → pill → hidden · hold TRASH reset (asks first) · hold MENU app menu (browse, reset,
+ *       about, developer) · SHUTTER photo · MENU exit · Fn brand browser
  *
  * This class holds the state and talks to the camera, the store and the views. What a value means, how the store
  * encodes it, what the preview sets and where a key press lands is decided in {@link Params}, {@link Keys} and
@@ -52,13 +52,13 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private TextView name, badge, tag, count, meta, mini, toast;
     private StarView fav;
     private PromptView prompt;
-    private int promptSel = 0; private boolean promptOpen = false;
+    private int promptSel = 0; private boolean promptOpen = false, promptReset = false;   // promptReset: the reset question, not the quality one
     private SharedPreferences prefs;
     private MenuView menu;
     private boolean menuOpen = false;
     private int menuLevel = DevTools.LEVEL_APP, menuPage = PAGE_ROWS;   // which menu, and whether it shows rows or a read-only page
     private int menuSel = 0, settleIdx = DevTools.SETTLE_DEFAULT;   // menu: highlighted row · developer menu: chosen settle delay
-    private static final int PAGE_ROWS = 0, PAGE_CONTROLS = 1, PAGE_ABOUT = 2;
+    private static final int PAGE_ROWS = 0, PAGE_ABOUT = 1;
     private Keys.Caps caps = Keys.Caps.UNKNOWN;                 // the shortcut keys this body reports (KeyProbe)
     private HintBar hints;
     private LinearLayout chips;
@@ -278,14 +278,20 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         showToast(msg, ok ? 5000 : 0); render();
     }
 
-    // ------------------------------------------------------------ RAW vs Picture Effect prompt
+    // ------------------------------------------------------------ the two questions: RAW vs Picture Effect, and reset to factory
     private static final String[] PROMPT_OPTS = { "Accept", "Cancel" };
 
-    private void openPrompt() { promptOpen = true; promptSel = 0; renderPrompt(); }
+    private void openPrompt() { promptOpen = true; promptReset = false; promptSel = 0; renderPrompt(); }
+
+    /** hold trash, or Reset settings in the app menu: ask before the factory look replaces the current one */
+    private void askReset() { promptOpen = true; promptReset = true; promptSel = DevTools.RESET_DEFAULT; renderPrompt(); }
 
     private void renderPrompt() {
-        String[] q = Params.qualityPrompt(cur, edit);
-        prompt.set(q[0], q[1], PROMPT_OPTS, promptSel, qualityPersistent() ? null : "quality slot not located yet — live view only");
+        if (promptReset) prompt.set(DevTools.RESET_TITLE, DevTools.RESET_BODY, DevTools.RESET_OPTIONS, promptSel, null);
+        else {
+            String[] q = Params.qualityPrompt(cur, edit);
+            prompt.set(q[0], q[1], PROMPT_OPTS, promptSel, qualityPersistent() ? null : "quality slot not located yet — live view only");
+        }
         prompt.setVisibility(View.VISIBLE);
     }
 
@@ -296,6 +302,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             case K_LEFT: case K_WHEEL_CCW: case K_DIAL_CCW: case K_RIGHT: case K_WHEEL_CW: case K_DIAL_CW: promptSel ^= 1; renderPrompt(); return true;
             case K_ENTER:
                 closePrompt();
+                if (promptReset) { if (promptSel == 0) storeFactory(); else showToast("Not reset", 2000); render(); return true; }
                 if (promptSel == 0) writeAll(true); else showToast("Not picked", 2000);   // cancel: recipe stays previewed only
                 render(); return true;
             case K_MENU: case K_SK1: swallowMenuUp = true; closePrompt(); render(); return true;
@@ -375,18 +382,20 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     }
 
     private void renderMenu() {
-        if (menuPage == PAGE_CONTROLS) menu.setPage(DevTools.CONTROLS_TITLE, Keys.controls(caps), Keys.hints(Keys.H_PAGE, caps));
-        else if (menuPage == PAGE_ABOUT) menu.setPage(DevTools.ABOUT_TITLE, DevTools.about(versionName(), KeyProbe.prop("model.name"),
-                KeyProbe.prop("version.platform"), keysFound()), Keys.hints(Keys.H_PAGE, caps));
+        if (menuPage == PAGE_ABOUT) menu.setPage(DevTools.ABOUT_TITLE, DevTools.about(versionName(), KeyProbe.prop("model.name"),
+                KeyProbe.prop("version.platform")), Keys.hints(Keys.H_PAGE, caps));
         else {
             int n = DevTools.rows(menuLevel);
             boolean app = menuLevel == DevTools.LEVEL_APP, snapshotTaken = !app && snapFile().exists();
-            String[] labels = new String[n], details = new String[n];
+            String[] labels = new String[n], details = new String[n], values = new String[n];
             for (int i = 0; i < n; i++) {
-                labels[i] = app ? DevTools.appLabel(i, overlay) : DevTools.rowLabel(i, snapshotTaken, settleIdx);
-                details[i] = app ? DevTools.appDetail(i, overlay) : DevTools.rowDetail(i, snapshotTaken);
+                labels[i] = app ? DevTools.appLabel(i) : DevTools.rowLabel(i, snapshotTaken, settleIdx);
+                details[i] = app ? DevTools.appDetail(i) : DevTools.rowDetail(i, snapshotTaken);
+                values[i] = app ? DevTools.appValue(i, overlay) : DevTools.rowValue(i, settleIdx);
             }
-            menu.set(app ? DevTools.APP_TITLE : DevTools.TITLE, labels, details, menuSel, Keys.hints(app ? Keys.H_MENU_TOP : Keys.H_MENU_SUB, caps));
+            boolean value = values[menuSel] != null;
+            int legend = app ? (value ? Keys.H_MENU_TOP_VALUE : Keys.H_MENU_TOP) : (value ? Keys.H_MENU_SUB_VALUE : Keys.H_MENU_SUB);
+            menu.set(app ? DevTools.APP_TITLE : DevTools.TITLE, labels, details, values, menuSel, Keys.hints(legend, caps));
         }
         menu.setVisibility(View.VISIBLE);
     }
@@ -398,7 +407,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         try { return getPackageManager().getPackageInfo(getPackageName(), 0).versionName; } catch (Throwable t) { return null; }
     }
 
-    /** what the key probe says about every key it is asked about, for About and the key logger */
+    /** what the key probe says about every key it is asked about, for the key logger */
     private String keysFound() {
         Boolean[] has = new Boolean[KeyProbe.REPORTED.length];
         for (int i = 0; i < has.length; i++) has[i] = KeyProbe.has(KeyProbe.REPORTED[i]);
@@ -410,9 +419,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         if (menuLevel == DevTools.LEVEL_APP) {
             switch (menuSel) {
                 case DevTools.APP_BROWSE: closeMenu(); openBrowser(true); break;
-                case DevTools.APP_PANEL: closeMenu(); cycleOverlay(); break;
-                case DevTools.APP_FACTORY: closeMenu(); storeFactory(); break;
-                case DevTools.APP_CONTROLS: menuPage = PAGE_CONTROLS; renderMenu(); break;
+                case DevTools.APP_PANEL: stepMenuValue(+1); break;
+                case DevTools.APP_RESET: closeMenu(); askReset(); break;
                 case DevTools.APP_ABOUT: menuPage = PAGE_ABOUT; renderMenu(); break;
                 case DevTools.APP_DEV: menuLevel = DevTools.LEVEL_DEV; menuSel = 0; renderMenu(); break;
             }
@@ -423,12 +431,20 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             case DevTools.ROW_SNAPSHOT: closeMenu(); snapshotOrDiff(); break;
             case DevTools.ROW_LOCKS: closeMenu(); lockCheck(); break;
             case DevTools.ROW_SAMPLES: closeMenu(); startRun(); break;
-            case DevTools.ROW_SETTLE:
-                settleIdx = DevTools.nextSettle(settleIdx, +1);
-                prefs.edit().putInt("settle", settleIdx).commit();
-                renderMenu(); break;
+            case DevTools.ROW_SETTLE: stepMenuValue(+1); break;
             case DevTools.ROW_KEYS: closeMenu(); startLogger(); break;
         }
+    }
+
+    /** left / right on a row that has a value: change it in place, the menu stays open; false when the row has none */
+    private boolean stepMenuValue(int dir) {
+        if (menuLevel == DevTools.LEVEL_APP && menuSel == DevTools.APP_PANEL) overlay = DevTools.nextPanel(overlay, dir);
+        else if (menuLevel == DevTools.LEVEL_DEV && menuSel == DevTools.ROW_SETTLE) {
+            settleIdx = DevTools.nextSettle(settleIdx, dir);
+            prefs.edit().putInt("settle", settleIdx).commit();
+        } else return false;
+        renderMenu(); render();
+        return true;
     }
 
     /** keys while a menu is up: MENU goes back a level (a page back to its menu, the developer menu back to the app menu), then closes */
@@ -439,8 +455,10 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             return true;
         }
         switch (sc) {
-            case K_UP: case K_LEFT: case K_WHEEL_CCW: case K_DIAL_CCW: menuSel = DevTools.nextRow(menuLevel, menuSel, -1); renderMenu(); return true;
-            case K_DOWN: case K_RIGHT: case K_WHEEL_CW: case K_DIAL_CW: menuSel = DevTools.nextRow(menuLevel, menuSel, +1); renderMenu(); return true;
+            case K_UP: case K_WHEEL_CCW: menuSel = DevTools.nextRow(menuLevel, menuSel, -1); renderMenu(); return true;
+            case K_DOWN: case K_WHEEL_CW: menuSel = DevTools.nextRow(menuLevel, menuSel, +1); renderMenu(); return true;
+            case K_LEFT: case K_DIAL_CCW: stepMenuValue(-1); return true;       // only rows with a value take left / right
+            case K_RIGHT: case K_DIAL_CW: stepMenuValue(+1); return true;
             case K_ENTER: pickMenuRow(); return true;
             case K_MENU: case K_SK1:
                 swallowMenuUp = true;
@@ -611,7 +629,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private void render() {
         Recipes.Recipe r = Recipes.ALL[recipe];
         boolean dirty = dirty();
-        String pos = (recipe + 1) + " / " + Recipes.ALL.length;
+        String pos = Recipes.position(recipe);
         String grp = Recipes.GROUPS[r.group].toUpperCase();
         picker.setVisibility(overlay == OV_BROWSER ? View.VISIBLE : View.GONE);
         if (overlay == OV_BROWSER) { panel.setVisibility(View.GONE); mini.setVisibility(View.GONE); picker.set(recipe, browserCol, browserGroup, favs); return; }
@@ -685,6 +703,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         overlay = open ? OV_BROWSER : OV_FULL; row = 0; focus = false;
         browserGroup = Favourites.openingGroup(favs, recipe);
         browserCol = COL_RECIPES;
+        if (open && recipe == Recipes.FACTORY) { recipe = Favourites.landing(browserGroup, favs); stageRecipe(); applyPreview(); }   // the list has no factory look to highlight
         render();
     }
 
@@ -705,14 +724,14 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         openBrowser(false); showToast(Recipes.ALL[recipe].name + " previewed — ENTER to pick", 3000);
     }
 
-    /** trash held, or Factory settings in the app menu: the factory recipe, stored straight away — the same store as a centre press */
+    /** the reset question answered Reset: the factory look, stored — the same store as a centre press */
     private void storeFactory() {
         overlay = OV_FULL; row = 0; focus = false;
-        recipe = 0; stageRecipe(); applyPreview(); render();
+        recipe = Recipes.FACTORY; stageRecipe(); applyPreview(); render();
         writeAll();
     }
 
-    /** trash / AEL: full panel → pill → hidden → full; the browser is not in the cycle */
+    /** trash: full panel → pill → hidden → full; the browser is not in the cycle */
     private void cycleOverlay() { overlay = (overlay + 1) % 3; render(); }
 
     /** MENU held past HOLD_MS: the app menu, or out of the key logger; its release is swallowed either way */
@@ -723,12 +742,13 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         if (!running && !promptOpen && !menuOpen && menuHoldArms(overlay, focus)) openMenu(DevTools.LEVEL_APP);
     }
 
-    /** trash held past HOLD_MS: store factory — only when the key is known to be still down (Keys.trashHoldActs) */
+    /** trash held past HOLD_MS: ask to reset — only when the key is known to be still down (Keys.trashHoldActs) */
     private void trashHoldFired() {
         if (trash.fire() != Keys.Hold.HOLD) return;
         if (!trashHoldActs(KeyProbe.isDown(trashScan), trashUpSeen)) { trash.reset(); return; }   // cannot tell a hold from a lost key-up
         if (running || promptOpen || menuOpen) return;
-        storeFactory();
+        overlay = OV_FULL; render();                                // the press hid the panel; the question is about what it shows
+        askReset();
     }
 
     private boolean browserKey(int sc) {
@@ -737,7 +757,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             case K_DOWN: case K_WHEEL_CW: case K_DIAL_CW: if (browserCol == COL_GROUPS) nextGroup(+1); else nextInGroup(+1); return true;
             case K_LEFT: case K_RIGHT: if (browserCol == COL_RECIPES) { browserCol = COL_GROUPS; render(); } else enterRecipeColumn(); return true;
             case K_MENU: case K_SK1: swallowMenuUp = true; openBrowser(false); return true;
-            case K_FN: case K_AEL: openBrowser(false); return true;
+            case K_FN: openBrowser(false); return true;
             case K_DELETE: case K_SK2: openBrowser(false); armTrash(sc); return true;
             case K_S1: try { camera.autoFocus(null); } catch (Throwable t) {} return true;
             case K_S2: try { camera.takePicture(null, null, null); } catch (Throwable t) {} return true;
@@ -759,7 +779,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     /** the centre button pressed: the short action waits for the release, a hold becomes "favourite" */
     private void enterDown(int repeat) {
         if (enter.down(repeat) != Keys.Hold.ARM) return;          // key repeat while held
-        if (holdMarksFavourite()) handler.postDelayed(enterHold, HOLD_MS);
+        if (holdMarksFavourite() && Favourites.markable(recipe)) handler.postDelayed(enterHold, HOLD_MS);
     }
 
     /** the centre button released before the hold fired: what ENTER used to do on the press */
@@ -784,14 +804,14 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     public boolean onKeyDown(int keyCode, KeyEvent e) {
         int sc = e.getScanCode();
         if (logging) return logKey(e, true);
-        if (e.getRepeatCount() > 0 && oneShot(sc)) return true;  // held Fn / AEL / trash / MENU / centre act once
+        if (e.getRepeatCount() > 0 && oneShot(sc)) return true;  // held Fn / trash / MENU / centre act once
         if (isMenu(sc) && menuKeyHold.isDown()) return true;     // still the press that opened the menu: not a second press
         if (isTrash(sc) && trash.isDown()) return true;          // still the press that hid the panel
         if (running) return runKey(sc);
         if (promptOpen) return promptKey(sc);
         if (menuOpen) return menuKey(sc);
         if (sc == K_ENTER) { enterDown(e.getRepeatCount()); return true; }
-        if (sc == K_C1 || sc == K_DISP) return true;             // not bound on any screen (issue #18)
+        if (sc == K_AEL || sc == K_C1 || sc == K_DISP) return true;   // not bound on any screen (issue #18)
         if (overlay == OV_BROWSER && sc != K_PLAY) return browserKey(sc);
         switch (sc) {
             case K_LEFT: case K_RIGHT: {
@@ -814,7 +834,6 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
                 if (focus) stepValue(e.getScanCode() == K_UP ? +1 : -1); else toggleLine();
                 return true;
             }
-            case K_AEL: cycleOverlay(); return true;
             case K_FN: openBrowser(true); return true;
             case K_DELETE: case K_SK2: cycleOverlay(); armTrash(sc); return true;
             case K_S1: try { camera.autoFocus(null); } catch (Throwable t) {} return true;

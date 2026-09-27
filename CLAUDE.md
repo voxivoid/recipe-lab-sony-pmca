@@ -1,6 +1,6 @@
 # Recipe Lab — agent rules
 
-A PlayMemories (PMCA) camera app for the Sony A6000: 77 film-look recipes written straight into the
+A PlayMemories (PMCA) camera app for the Sony A6000: 76 film-look recipes, plus a factory reset, written straight into the
 camera's settings store. Native lib (ndk-build, NDK r16b) + Java, no Gradle.
 
 Read [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) and [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) before changing anything.
@@ -76,8 +76,8 @@ Closes #123
   test**, never into `MainActivity`. All of them are compiled there **without** `android.jar`, so an `android.*` import
   in any of them breaks the job.
 - **Every function needs a route on keys every body has** (wheel, four-way, centre, MENU, shutter, TRASH). A new
-  function becomes a row of the app menu (hold MENU), not a new key. Fn and AEL are shortcuts only; C1 and DISP are not
-  bound (issue #18). The legend names a shortcut only when `KeyProbe` reports the key — never a per-model table.
+  function becomes a row of the app menu (hold MENU), not a new key. Fn is the one shortcut; AEL, C1 and DISP are not
+  bound (issue #18). The legend names Fn only when `KeyProbe` reports the key — never a per-model table.
 
 ## What CI cannot check
 

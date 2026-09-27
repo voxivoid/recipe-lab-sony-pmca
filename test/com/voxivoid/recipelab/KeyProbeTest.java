@@ -25,9 +25,7 @@ class KeyProbeTest {
     @Test void withoutTheCameraTheCapsAreUnknownSoOnlyUniversalKeysAreNamed() {
         Keys.Caps caps = KeyProbe.caps();
         assertNull(caps.fn);
-        assertNull(caps.ael);
         assertFalse(caps.hasFn());
-        assertFalse(caps.hasAel());
     }
 
     @Test void theReportedKeysIncludeEveryShortcutAndTheUnboundOnes() {

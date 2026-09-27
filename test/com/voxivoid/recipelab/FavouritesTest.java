@@ -128,10 +128,19 @@ class FavouritesTest {
         assertEquals(-1, Favourites.positionIn(3, Recipes.GROUP_START[0], f), "a recipe of another brand");
     }
 
-    @Test void everyRecipeCanBeMarkedAndReadBack() {
+    @Test void everyListedRecipeCanBeMarkedAndReadBack() {
         List<Integer> all = new ArrayList<Integer>();
-        for (int i = 0; i < Recipes.ALL.length; i++) all.add(i);
+        for (int i = 1; i < Recipes.ALL.length; i++) all.add(i);
         assertEquals(all, Favourites.decode(Favourites.encode(all)));
-        assertEquals(Arrays.asList(Recipes.ALL.length - 1, 0), Favourites.decode(Favourites.encode(Arrays.asList(Recipes.ALL.length - 1, 0))));
+        assertEquals(Arrays.asList(Recipes.ALL.length - 1, 1), Favourites.decode(Favourites.encode(Arrays.asList(Recipes.ALL.length - 1, 1))));
+    }
+
+    @Test void theFactoryLookIsNeverAFavourite() {
+        List<Integer> favs = new ArrayList<Integer>();
+        assertFalse(Favourites.markable(Recipes.FACTORY));
+        assertFalse(Favourites.toggle(favs, Recipes.FACTORY), "only Reset settings reaches it, so it has no place in a list");
+        assertTrue(favs.isEmpty());
+        assertEquals(Arrays.asList(3), Favourites.decode(Recipes.ALL[Recipes.FACTORY].name + "|" + Recipes.ALL[3].name),
+                "a mark stored by an older build is dropped on load");
     }
 }

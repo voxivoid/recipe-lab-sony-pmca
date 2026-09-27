@@ -4,13 +4,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * The keys (issue #18): the scan codes the app reads, the press / hold gesture, and the legend and Controls page
- * built for the keys this body actually has.
+ * The keys (issue #18): the scan codes the app reads, the press / hold gesture, and the legend built for the keys this
+ * body actually has.
  *
- * Every function has a route on keys every PlayMemories body has — wheel, four-way, centre, MENU, trash, shutter. Fn
- * and AEL are one-press shortcuts on top, and the legend names them only where {@link KeyProbe} reports them; C1 and
- * DISP are not bound at all (MENU hold → Developer replaces C1, and a DISP that arrives as 608 on a wheel-top body
- * would steal wheel-up). No android.* import may appear in this class (tools/test.sh).
+ * Every function has a route on keys every PlayMemories body has — wheel, four-way, centre, MENU, trash, shutter. Fn is
+ * the one shortcut on top, and the legend names it only where {@link KeyProbe} reports it. AEL, C1 and DISP are not
+ * bound at all: trash hides the panel on every body, MENU hold → Developer replaces C1, and a DISP that arrives as 608
+ * on a wheel-top body would steal wheel-up. No android.* import may appear in this class (tools/test.sh).
  */
 final class Keys {
     private Keys() {}
@@ -43,11 +43,11 @@ final class Keys {
 
     /**
      * Keys whose press does one thing, once: a key-repeat of these is dropped, or holding Fn would open and then close
-     * the list, and holding AEL would spin the panel. The four-way and the dials keep their repeat — held, they walk.
+     * the list, and holding trash would spin the panel. The four-way and the dials keep their repeat — held, they walk.
      */
     static boolean oneShot(int scan) {
         switch (scan) {
-            case K_ENTER: case K_MENU: case K_SK1: case K_DELETE: case K_SK2: case K_FN: case K_AEL: return true;
+            case K_ENTER: case K_MENU: case K_SK1: case K_DELETE: case K_SK2: case K_FN: return true;
             default: return false;
         }
     }
@@ -94,31 +94,30 @@ final class Keys {
     }
 
     /**
-     * Whether a trash hold that has fired may store factory. It may only when the key is known to be still down: the
-     * probe says so, or — the probe unavailable — this body has shown it delivers a trash key-up, so the up would have
-     * cancelled the timer. Without either, a quick press to hide could not be told from a hold, and every hide would
-     * overwrite the look.
+     * Whether a trash hold that has fired may ask to reset. It may only when the key is known to be still down: the probe
+     * says so, or — the probe unavailable — this body has shown it delivers a trash key-up, so the up would have
+     * cancelled the timer. Without either, a quick press to hide could not be told from a hold, and every hide would pop
+     * the reset question.
      */
     static boolean trashHoldActs(Boolean probeDown, boolean upSeen) { return probeDown != null ? probeDown : upSeen; }
 
     // ------------------------------------------------------------ what the body has
-    /** the shortcut keys the legend may name, as the probe reports them: TRUE present, FALSE absent, null unknown */
+    /** the shortcut key the legend may name, as the probe reports it: TRUE present, FALSE absent, null unknown */
     static final class Caps {
-        static final Caps UNKNOWN = new Caps(null, null);
-        final Boolean fn, ael;
-        Caps(Boolean fn, Boolean ael) { this.fn = fn; this.ael = ael; }
+        static final Caps UNKNOWN = new Caps(null);
+        final Boolean fn;
+        Caps(Boolean fn) { this.fn = fn; }
         boolean hasFn() { return Boolean.TRUE.equals(fn); }
-        boolean hasAel() { return Boolean.TRUE.equals(ael); }
     }
 
     // ------------------------------------------------------------ the legend
     /** legend icon ids; {@link Legend} draws them */
-    static final int I_NONE = -1, I_WHEEL = 0, I_UPDOWN = 1, I_LEFTRIGHT = 2, I_DIAL = 3, I_ENTER = 4, I_AEL = 5, I_TRASH = 6,
+    static final int I_NONE = -1, I_WHEEL = 0, I_UPDOWN = 1, I_LEFTRIGHT = 2, I_DIAL = 3, I_ENTER = 4, I_TRASH = 6,
             I_MENU = 7, I_FN = 9;
 
-    /** the legend rows: the main panel's three, the browser's two columns, and the menu's */
+    /** the legend rows: the main panel's three, the browser's two columns, and the menu's — *_VALUE on a row left / right change */
     static final int H_RECIPE = 0, H_CHIPS = 1, H_EDIT = 2, H_BRANDS = 3, H_RECIPES = 4, H_MENU_TOP = 5, H_MENU_SUB = 6,
-            H_PAGE = 7, H_LOGGER = 8;
+            H_PAGE = 7, H_LOGGER = 8, H_MENU_TOP_VALUE = 9, H_MENU_SUB_VALUE = 10;
 
     /** one legend row: per item an icon, an optional shortcut icon drawn before it (I_NONE for none), and a label */
     static final class Hints {
@@ -141,58 +140,37 @@ final class Keys {
     }
 
     /**
-     * The legend for a screen, for this body. Universal keys carry every function; a shortcut key appears only when the
-     * probe reports it, and only next to the universal key that does the same thing — never on its own, so a body that
-     * lacks it (or a probe that failed) still reads a complete legend.
+     * The legend for a screen, for this body. Universal keys carry every function; Fn appears only when the probe
+     * reports it — as "browse", which is also in the app menu, or beside MENU where both close the list — so a body that
+     * lacks it (or a probe that failed) still reads a complete legend. Exit is always the last item. Reset (hold trash)
+     * is left out on purpose: it asks before it writes, and a hint would invite it.
      */
     static Hints hints(int mode, Caps caps) {
-        int ael = caps.hasAel() ? I_AEL : I_NONE, fn = caps.hasFn() ? I_FN : I_NONE;
+        int fn = caps.hasFn() ? I_FN : I_NONE;
         switch (mode) {
             case H_RECIPE: {
-                Row r = new Row().add(I_ENTER, "pick").add(I_ENTER, "fav (hold)").add(I_TRASH, ael, "hide")
-                        .add(I_TRASH, "factory (hold)").add(I_MENU, "menu (hold)").add(I_MENU, "exit");
+                Row r = new Row().add(I_ENTER, "pick").add(I_ENTER, "fav (hold)").add(I_TRASH, "hide").add(I_MENU, "menu (hold)");
                 if (caps.hasFn()) r.add(I_FN, "browse");
-                return r.done();
+                return r.add(I_MENU, "exit").done();
             }
             case H_CHIPS: {
-                Row r = new Row().add(I_ENTER, "edit").add(I_TRASH, ael, "hide").add(I_TRASH, "factory (hold)")
-                        .add(I_MENU, "menu (hold)").add(I_MENU, "exit");
+                Row r = new Row().add(I_ENTER, "edit").add(I_TRASH, "hide").add(I_MENU, "menu (hold)");
                 if (caps.hasFn()) r.add(I_FN, "browse");
-                return r.done();
+                return r.add(I_MENU, "exit").done();
             }
             case H_EDIT: return new Row().add(I_ENTER, "done").done();
             case H_BRANDS: return new Row().add(I_ENTER, "recipes").add(I_MENU, fn, "close").done();
             case H_RECIPES: return new Row().add(I_ENTER, "pick").add(I_ENTER, "fav (hold)").add(I_MENU, fn, "close").done();
             case H_MENU_TOP: return new Row().add(I_UPDOWN, "move").add(I_ENTER, "select").add(I_MENU, "close").done();
             case H_MENU_SUB: return new Row().add(I_UPDOWN, "move").add(I_ENTER, "select").add(I_MENU, "back").done();
+            case H_MENU_TOP_VALUE: return new Row().add(I_UPDOWN, "move").add(I_LEFTRIGHT, "change").add(I_MENU, "close").done();
+            case H_MENU_SUB_VALUE: return new Row().add(I_UPDOWN, "move").add(I_LEFTRIGHT, "change").add(I_MENU, "back").done();
             case H_PAGE: return new Row().add(I_MENU, "back").done();
             case H_LOGGER: return new Row().add(I_MENU, "exit (hold)").done();
             default: return new Row().done();
         }
     }
 
-    // ------------------------------------------------------------ the Controls page of the app menu
-    /**
-     * Every key this body has and what it does, universal keys first: {key, what it does}. Fn and AEL are listed
-     * only where the probe reports them, so the page never names a button the body lacks.
-     */
-    static String[][] controls(Caps caps) {
-        List<String[]> rows = new ArrayList<String[]>();
-        rows.add(new String[] { "wheel", "next recipe" });
-        rows.add(new String[] { "left / right", "next recipe, or move between values" });
-        rows.add(new String[] { "up / down", "between the recipe and its values" });
-        rows.add(new String[] { "centre", "store the recipe, or edit a value" });
-        rows.add(new String[] { "centre, hold", "mark / unmark a favourite" });
-        rows.add(new String[] { "trash", "hide the panel: full, label, nothing" });
-        rows.add(new String[] { "trash, hold", "store the factory settings" });
-        rows.add(new String[] { "MENU, hold", "this menu: browse, factory, about" });
-        rows.add(new String[] { "MENU", "exit" });
-        rows.add(new String[] { "shutter", "focus and shoot" });
-        if (caps.hasFn()) rows.add(new String[] { "Fn", "browse the recipes" });
-        if (caps.hasAel()) rows.add(new String[] { "AEL", "hide the panel" });
-        return rows.toArray(new String[rows.size()][]);
-    }
-
     /** shown once, on the first launch of a build with these keys */
-    static final String NOTICE = "Hold MENU for the menu  ·  trash hides the panel  ·  hold trash for factory";
+    static final String NOTICE = "Hold MENU for the menu  ·  trash hides the panel  ·  hold trash to reset";
 }

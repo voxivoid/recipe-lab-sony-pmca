@@ -134,12 +134,11 @@
         android:layout_gravity="center"
         android:visibility="gone" />
 
-    <!-- app menu (hold MENU), developer menu, Controls / About / key logger pages -->
+    <!-- app menu (hold MENU), developer menu, About / key logger pages: full screen -->
     <com.voxivoid.recipelab.MenuView
         android:id="@+id/menu"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
         android:visibility="gone" />
 
     <!-- transient status -->

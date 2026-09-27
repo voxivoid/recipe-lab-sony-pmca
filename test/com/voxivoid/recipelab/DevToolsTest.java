@@ -35,11 +35,6 @@ class DevToolsTest {
         assertEquals(77, Recipes.ALL.length, "the label counts the table, so the table is what it must count");
     }
 
-    @Test void theDelayRowShowsTheChosenDelay() {
-        assertEquals("Settle delay — 0.8 s", DevTools.rowLabel(DevTools.ROW_SETTLE, false, 0));
-        assertEquals("Settle delay — 1.2 s", DevTools.rowLabel(DevTools.ROW_SETTLE, false, 1));
-    }
-
     @Test void oneTurnOfTheMenuVisitsEveryRowItDefines() {
         // ROWS is what the menu can reach: a row defined past it is dead, and nothing else would say so
         Set<Integer> visited = new HashSet<Integer>();
@@ -61,36 +56,48 @@ class DevToolsTest {
     }
 
     // ---- the app menu
-    @Test void theAppMenuHasEveryFunctionThatHasNoKeyOnSomeBodies() {
+    @Test void theAppMenuHasTheFunctionsThatHaveNoKeyOnSomeBodies() {
         assertEquals(DevTools.APP_ROWS, DevTools.rows(DevTools.LEVEL_APP));
         assertEquals(DevTools.ROWS, DevTools.rows(DevTools.LEVEL_DEV));
-        assertEquals("Browse recipes", DevTools.appLabel(DevTools.APP_BROWSE, Params.OV_FULL));
-        assertEquals("Factory settings", DevTools.appLabel(DevTools.APP_FACTORY, Params.OV_FULL));
-        assertEquals("Controls", DevTools.appLabel(DevTools.APP_CONTROLS, Params.OV_FULL));
-        assertEquals("About", DevTools.appLabel(DevTools.APP_ABOUT, Params.OV_FULL));
-        assertTrue(DevTools.appLabel(DevTools.APP_DEV, Params.OV_FULL).startsWith("Developer"));
+        String[] labels = new String[DevTools.APP_ROWS];
+        for (int r = 0; r < DevTools.APP_ROWS; r++) labels[r] = DevTools.appLabel(r);
+        assertEquals(Arrays.asList("Browse recipes", "Panel visibility", "Reset settings", "About", "Developer  >"), Arrays.asList(labels));
         assertEquals(DevTools.APP_BROWSE, 0, "the menu opens on Browse, so a body without Fn is one press from the list");
     }
 
-    @Test void everyAppRowHasALabelAndADetailLineInEveryPanelState() {
-        for (int r = 0; r < DevTools.APP_ROWS; r++) {
-            for (int ov : new int[] { Params.OV_FULL, Params.OV_PILL, Params.OV_HIDDEN }) {
-                assertFalse(DevTools.appLabel(r, ov).startsWith("?"), "row " + r);
-                assertFalse(DevTools.appDetail(r, ov).isEmpty(), "row " + r);
-            }
-        }
+    @Test void everyAppRowHasADetailLine() {
+        for (int r = 0; r < DevTools.APP_ROWS; r++) assertFalse(DevTools.appDetail(r).isEmpty(), "row " + r);
     }
 
-    @Test void thePanelRowSaysWhichWayItWillGo() {
-        assertEquals("Hide panel", DevTools.appLabel(DevTools.APP_PANEL, Params.OV_FULL));
-        assertEquals("Hide panel", DevTools.appLabel(DevTools.APP_PANEL, Params.OV_PILL), "the pill hides the rest of the way");
-        assertEquals("Show panel", DevTools.appLabel(DevTools.APP_PANEL, Params.OV_HIDDEN));
+    @Test void onlyThePanelRowHasAValueAndItNamesThePanelState() {
+        assertEquals("Full", DevTools.appValue(DevTools.APP_PANEL, Params.OV_FULL));
+        assertEquals("Label", DevTools.appValue(DevTools.APP_PANEL, Params.OV_PILL));
+        assertEquals("Hidden", DevTools.appValue(DevTools.APP_PANEL, Params.OV_HIDDEN));
+        for (int r = 0; r < DevTools.APP_ROWS; r++) if (r != DevTools.APP_PANEL) assertNull(DevTools.appValue(r, Params.OV_FULL), "row " + r);
+        assertTrue(DevTools.appDetail(DevTools.APP_PANEL).contains("left / right"), "the row says how to change it");
     }
 
-    @Test void thePanelRowsDetailSaysWhatTheNextStepDoes() {
-        assertEquals("Full panel to a small label", DevTools.appDetail(DevTools.APP_PANEL, Params.OV_FULL));
-        assertEquals("Small label to nothing", DevTools.appDetail(DevTools.APP_PANEL, Params.OV_PILL));
-        assertEquals("Back to the full panel", DevTools.appDetail(DevTools.APP_PANEL, Params.OV_HIDDEN));
+    @Test void leftRightWalkThePanelStatesAndWrap() {
+        assertEquals(Params.OV_PILL, DevTools.nextPanel(Params.OV_FULL, +1));
+        assertEquals(Params.OV_HIDDEN, DevTools.nextPanel(Params.OV_PILL, +1));
+        assertEquals(Params.OV_FULL, DevTools.nextPanel(Params.OV_HIDDEN, +1));
+        assertEquals(Params.OV_HIDDEN, DevTools.nextPanel(Params.OV_FULL, -1));
+        assertEquals(Params.OV_PILL, DevTools.nextPanel(Params.OV_BROWSER, +1), "never lands on the browser; from it, starts at full");
+    }
+
+    @Test void theSettleRowShowsItsDelayAsAValue() {
+        assertEquals("Settle delay", DevTools.rowLabel(DevTools.ROW_SETTLE, false, 1));
+        assertEquals("1.2 s", DevTools.rowValue(DevTools.ROW_SETTLE, 1));
+        assertEquals("0.8 s", DevTools.rowValue(DevTools.ROW_SETTLE, 0));
+        for (int r = 0; r < DevTools.ROWS; r++) if (r != DevTools.ROW_SETTLE) assertNull(DevTools.rowValue(r, 1), "row " + r);
+    }
+
+    // ---- the reset question
+    @Test void theResetQuestionAsksAndDefaultsToCancel() {
+        assertTrue(DevTools.RESET_TITLE.endsWith("?"), DevTools.RESET_TITLE);
+        assertEquals("Reset", DevTools.RESET_OPTIONS[0], "option 0 is the one that writes");
+        assertEquals("Cancel", DevTools.RESET_OPTIONS[DevTools.RESET_DEFAULT], "a stray centre press cancels");
+        assertFalse(DevTools.RESET_BODY.isEmpty());
     }
 
     @Test void oneTurnOfTheAppMenuVisitsEveryRowAndWraps() {
@@ -103,13 +110,14 @@ class DevToolsTest {
     }
 
     // ---- About
-    @Test void aboutShowsTheVersionItIsGivenAndSaysUnknownForWhatTheCameraWouldNotTell() {
-        String[][] a = DevTools.about("9.8.7", null, "", "has Fn");
-        assertEquals("9.8.7", a[0][1]);
-        assertEquals("unknown", a[1][1], "no model from the camera");
-        assertEquals("unknown", a[2][1], "an empty platform string");
-        assertEquals("has Fn", a[3][1]);
-        for (String[] line : a) assertEquals(2, line.length);
+    @Test void aboutShowsVersionCameraPlatformAndSource() {
+        String[][] a = DevTools.about("9.8.7", null, "");
+        assertEquals(4, a.length);
+        assertEquals("version", a[0][0]); assertEquals("9.8.7", a[0][1]);
+        assertEquals("camera", a[1][0]); assertEquals("unknown", a[1][1], "no model from the camera");
+        assertEquals("platform", a[2][0]); assertEquals("unknown", a[2][1], "an empty platform string");
+        assertEquals("source", a[3][0]);
+        assertEquals("ILCE-6000", DevTools.about(null, "ILCE-6000", "2.4")[1][1]);
     }
 
     @Test void theKeysLineSortsPresentAbsentAndUnknown() {

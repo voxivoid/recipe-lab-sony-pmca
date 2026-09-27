@@ -163,12 +163,11 @@ body:
         - label: Centre button — stores the recipe (badge turns ACTIVE)
         - label: Centre button, held — marks a favourite
         - label: Trash — hides the panel
-        - label: Trash, held — stores the factory values
+        - label: Trash, held — asks to reset to the factory look
         - label: MENU, held — opens the app menu
         - label: MENU — leaves the app
         - label: Shutter — focuses and takes a picture
         - label: Fn — opens the brand list
-        - label: AEL — hides the panel
   - type: textarea
     id: controls
     attributes:

@@ -9,7 +9,7 @@
   <sub>
     <img src="https://img.shields.io/github/v/release/voxivoid/recipe-lab-sony-pmca?label=version" alt="version"> ·
     <a href="https://github.com/voxivoid/recipe-lab-sony-pmca/releases/latest/download/RecipeLab.apk">Download the app</a> ·
-    <a href="docs/SAMPLES.md">See all 77 recipes</a>
+    <a href="docs/SAMPLES.md">See every recipe</a>
   </sub>
 </p>
 
@@ -47,7 +47,7 @@
 
 ## What it is
 
-Recipe Lab is a small app that runs on the Sony A6000 itself. It comes with 77 colour recipes that recreate the looks
+Recipe Lab is a small app that runs on the Sony A6000 itself. It comes with 76 colour recipes that recreate the looks
 of other cameras — Fuji film simulations, Ricoh GR image controls, Leica, Hasselblad, Canon and Nikon colour, Sony's
 newer Creative Looks — and of classic film stocks from Kodak, Fuji, Cinestill, Agfa and Ilford.
 
@@ -62,7 +62,7 @@ mode**, photo and video, with the app closed. Turn it off and on, it is still th
 
 | brand | recipes |
 |---|---|
-| **Sony** | Factory (ST), PT, NT, VV, VV2, FL, IN, SH |
+| **Sony** | PT, NT, VV, VV2, FL, IN, SH — plus the factory look, under **Reset settings** |
 | **Fuji simulations** | Provia, Velvia, Astia, Classic Chrome, Classic Negative, Nostalgic Neg, Reala Ace, Pro Neg Std / Hi, Eterna, Eterna Bleach Bypass, Acros, Acros +Ye / +R / +G, Sepia |
 | **Fuji film** | Pro 400H, Fortia 50, Superia 400, C200, Natura 1600 |
 | **Kodak** | Portra 160 / 400 / 800, Gold 200, Ultra Max 400, Color Plus 200, Ektar 100, Ektachrome E100, Kodachrome 64, Vision3 500T, Vision 200T (Asteroid City), Tri-X 400, Tri-X 1600 (pushed), T-Max |
@@ -106,7 +106,7 @@ Failures are as useful as successes.
 |---|---|---|---|
 | **A6000** | ILCE-6000 | ✅ | built and tested on it, firmware 3.21 |
 | **A6500** | ILCE-6500 | ✅ | installs, stores, survives a power cycle |
-| **A5100** | ILCE-5100 | ✅ | works, and the wheel scrolls every recipe. The body has no **Fn** or **AEL** button: the brand list is under **hold MENU → Browse recipes**, and **TRASH** (the **? / Delete** button) hides the panel — not yet confirmed on this body ([#18](https://github.com/voxivoid/recipe-lab-sony-pmca/issues/18)) |
+| **A5100** | ILCE-5100 | ✅ | works, and the wheel scrolls every recipe. The body has no **Fn** button: the brand list is under **hold MENU → Browse recipes**, and **TRASH** (the **? / Delete** button) hides the panel — not yet confirmed on this body ([#18](https://github.com/voxivoid/recipe-lab-sony-pmca/issues/18)) |
 | **A7 II** | ILCE-7M2 | ✅ | reported working |
 | **A7** | ILCE-7 | ✅ | two reports, both firmware 3.20 — stores and survives a power cycle. The first reporter had unlocked the settings store with OpenMemories-Tweak; the second did not need to ([#51](https://github.com/voxivoid/recipe-lab-sony-pmca/issues/51)) |
 | **NEX-5T** | NEX-5T | ✅ | oldest app-capable generation; installs, stores and survives a power cycle on firmware 1.1, reported on app 1.0 — but that report also said the stored values did not all match, and named menu labels reading differently on this body, which is still unresolved ([#22](https://github.com/voxivoid/recipe-lab-sony-pmca/issues/22)) |
@@ -118,7 +118,7 @@ Failures are as useful as successes.
 | **A7S II** | ILCE-7SM2 | ✅ | two reports on firmware 3.01, and they disagree. One stored a recipe that survived a power cycle, on an unofficial Chinese build of 1.3.1 ([#52](https://github.com/voxivoid/recipe-lab-sony-pmca/issues/52)). The other got the app's stored confirmation but lost the look once the app closed, and the image stabiliser misbehaved with a manual lens while the app was open ([#48](https://github.com/voxivoid/recipe-lab-sony-pmca/issues/48)). Both say the **AEL** button does nothing. If a look vanishes on this body, check that Picture Profile is Off (see [Troubleshooting](#troubleshooting)) |
 | **RX100 III** | DSC-RX100M3 | ✅ | stores and survives a power cycle, firmware 2.0 ([#47](https://github.com/voxivoid/recipe-lab-sony-pmca/issues/47)) |
 | **RX1R II** | DSC-RX1RM2 | ✅ | stores and survives a power cycle, firmware 1.0 ([#53](https://github.com/voxivoid/recipe-lab-sony-pmca/issues/53)) |
-| A5000 | ILCE-5000 | ❔ | as with the A5100, expect no **Fn** or **AEL** button — the brand list is under **hold MENU**, and **TRASH** hides the panel |
+| A5000 | ILCE-5000 | ❔ | as with the A5100, expect no **Fn** button — the brand list is under **hold MENU**, and **TRASH** hides the panel |
 | A7S | ILCE-7S | ❔ |  |
 | NEX-5R | NEX-5R | ❔ | oldest app-capable generation |
 | NEX-6 | NEX-6 | ❔ | menus differ a lot from the A6000 generation, so the settings are the least likely to sit in the same place |
@@ -210,22 +210,25 @@ Open **Recipe Lab** from the Application List. You get the live image with a pan
 | **hold centre** | mark the recipe as a favourite, or unmark it. Works on the main screen and inside the brand list |
 | **up / down** | move between the recipe line and the row of value chips |
 | **TRASH** | hide the panel — once for a small label, twice for nothing, a third time to bring it back. The wheel still works |
-| **hold TRASH** | pick the factory look straight away |
-| **hold MENU** | open the menu: browse recipes, hide the panel, factory settings, the controls of your camera, about |
+| **hold TRASH** | reset to the factory look — the app asks first |
+| **hold MENU** | open the menu: browse recipes, panel visibility, reset settings, about |
 | **shutter** | take a picture of what you are previewing |
 | **MENU** | leave the app |
 | **Fn** *(if your camera has one)* | open the brand list — the same as **hold MENU → Browse recipes** |
-| **AEL** *(if your camera has one)* | hide the panel, as **TRASH** does |
 
-Every function works on keys every camera has; **Fn** and **AEL** are shortcuts on the bodies that have them, and the
-legend at the bottom of the screen only names them when the camera reports them. **C1** and **DISP** do nothing in the
-app.
+Every function works on keys every camera has; **Fn** is a shortcut on the bodies that have it, and the legend at the
+bottom of the screen only names it when the camera reports it. **AEL**, **C1** and **DISP** do nothing in the app.
 
-**The menu.** Hold **MENU** for a moment and a menu opens over the live image; a short press still leaves the app.
-**Browse recipes** opens the brand list: **Favourites** first, then the brands, on the left; recipes on the right. Left
-/ right switches column (the active one is amber), wheel or up / down scrolls, centre picks. **Controls** lists what
-every key does on your camera. **About** shows the version, the camera model and which keys the app found.
-**Developer** holds tools for testing and for compatibility reports. **MENU** goes back.
+**The menu.** Hold **MENU** for a moment and the menu fills the screen; a short press still leaves the app. Up / down
+or the wheel move, centre picks, **MENU** goes back.
+
+- **Browse recipes** opens the brand list: **Favourites** first, then the brands, on the left; recipes on the right.
+  Left / right switches column (the active one is amber), wheel or up / down scrolls, centre picks.
+- **Panel visibility** — *Full*, *Label* or *Hidden* — changes with left / right, right there in the menu.
+- **Reset settings** puts the camera back on its factory look, after asking. The factory look is not in the recipe
+  list; this is the way to it.
+- **About** shows the app version, the camera model, its platform version and where the source lives.
+- **Developer** holds tools for testing and for compatibility reports.
 
 Then **turn the camera off and on**. The look is now the camera's default in every mode — P, A, S, M, movie — with
 the app closed, and the app reopens on that recipe.
@@ -233,7 +236,7 @@ the app closed, and the app reopens on that recipe.
 **Favourites.** Hold the **centre button** on a recipe and it joins the **Favourites** group at the top of the brand
 list, with a star next to its name; hold again to drop it. The group lists your picks in the order you marked them,
 and the brand list opens straight on it whenever the recipe you are on is one of them. The wheel on the main screen
-still walks all 77 — favourites shorten the list in the browser, not the scroll. The marks are kept by the app, not in
+still walks all 76 — favourites shorten the list in the browser, not the scroll. The marks are kept by the app, not in
 the camera's settings, so they survive a power cycle but go with the app if you remove it.
 
 **The chips.** In the chip row, **left / right** walks the chips, **centre** focuses one (it turns amber),
@@ -272,7 +275,7 @@ Quality: RAW+JPG → JPG Fine — JPEG is needed to apply this recipe
 **Is it permanent?** The look stays until you change it — on purpose, that is what makes it work in every mode
 without the app. It is not permanent in the sense of damage. Undo it any time, three ways:
 
-- In the app: **hold TRASH** (or **hold MENU → Factory settings**), then turn the camera off and on.
+- In the app: **hold TRASH** (or **hold MENU → Reset settings**), confirm, then turn the camera off and on.
 - In the menus: set Creative Style back to *Standard* 0 / 0 / 0 and White Balance to *Auto*.
 - Or use the camera's own `Setup → Setting Reset → Camera Settings Reset`.
 

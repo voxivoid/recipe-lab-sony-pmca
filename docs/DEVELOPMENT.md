@@ -31,23 +31,25 @@ src/com/voxivoid/recipelab/
   MainActivity.java            UI state, key handling, the camera (CameraEx via reflection), store + sync
   Params.java                  the parameter rows: slot ids, store encodings, preview parameters, chip
                                navigation, HUD strings — pure functions, no Android, covered by test/
-  Recipes.java                 the 77 recipes, brands, GROUP_START / GROUP_COUNT, table navigation
+  Recipes.java                 the 77-entry table (76 recipes + the factory look, FACTORY, which only Reset settings
+                               reaches), brands, GROUP_START / GROUP_COUNT, list navigation that skips FACTORY
   Favourites.java              the favourites list: stored by name in the app's preferences, and how the browser
                                walks the Favourites group — pure functions, no Android, covered by test/
   DevTools.java                the app menu and developer menu rows, the About and key-logger lines, and the sample
                                run's delays, messages and manifest — pure functions, no Android, covered by test/
-  Keys.java                    scan codes, the press / hold gesture, the trash-hold guard, and the legend and
-                               Controls page for the keys a body has — pure functions, no Android, covered by test/
+  Keys.java                    scan codes, the press / hold gesture, the trash-hold guard, and the legend for the
+                               keys a body has — pure functions, no Android, covered by test/
   KeyProbe.java                asks the camera which keys it has and which model it is (Sony classes by reflection);
                                every answer is null off the camera — no Android, covered by test/
   res/raw/ids.txt              every settings entry of 16 bytes or less, used by the snapshot/diff tool
   PickerView.java              Canvas-drawn brand browser (Favourites first, then the brands)
-  MenuView.java                Canvas-drawn modal list: the app menu, the developer menu, and read-only pages
-                               (Controls, About, the key logger)
+  MenuView.java                Canvas-drawn full-screen list: the app menu, the developer menu (rows, some with a
+                               value left / right change in place, between drawn arrows), and read-only pages
+                               (About, the key logger)
   Legend.java                  Canvas-drawn key icons and the favourite star, fit-to-width (camera font has no symbol glyphs).
                                Draws what Keys.hints builds: the four-way and the wheel are left out as self-evident,
-                               a hold is its key's icon labelled "(hold)", and a shortcut the body has sits before
-                               the universal key it duplicates ("AEL / trash hide")
+                               a hold is its key's icon labelled "(hold)", and Fn, where the body has it, sits before
+                               MENU when both close the list ("Fn / MENU close")
   StarView.java                the star next to the recipe name when it is a favourite
   HintBar.java                 legend view under the panel (uses Legend)
   NativeBackup.java            JNI: read / write / attr / sync
@@ -84,18 +86,20 @@ Found by disassembling the camera app's parameter registration in `libObj.so`):
 
 ## App menu and developer menu
 
-**Holding MENU** (600 ms) on the live screen opens the app menu (`MenuView`, rows and strings in `DevTools`). Up /
+**Holding MENU** (600 ms) on the live screen opens the app menu, full screen (`MenuView`, rows and strings in `DevTools`). Up /
 down or the wheel move, the centre button runs a row, a short MENU goes back a level and then closes it. It opens on
 **Browse recipes**, so a body without Fn is hold MENU → centre away from the brand list:
 
 | row | what it does |
 |---|---|
 | **Browse recipes** | the brand list, as Fn opens it |
-| **Hide panel** / **Show panel** | one step of full → pill → hidden → full, as trash and AEL do |
-| **Factory settings** | stages recipe 0 and stores it (`writeAll`, so the quality prompt still asks when it must) |
-| **Controls** | a read-only page, `Keys.controls`: every key and what it does, Fn / AEL only where the probe reports them |
-| **About** | the installed version (from `PackageManager` — never a string in the source, `tools/check-version.sh`), `model.name`, `version.platform`, and what the key probe found |
+| **Panel visibility** | a value — *Full* / *Label* / *Hidden* — that left / right (or the top dial) step through in place, wrapping, with the menu left open; centre steps forward. The same states trash cycles |
+| **Reset settings** | asks `DevTools.RESET_TITLE` (Cancel highlighted), then stages `Recipes.FACTORY` and stores it (`writeAll`, so the quality prompt still asks when it must). The only way to the factory look besides holding trash: it is not in the list |
+| **About** | the installed version (from `PackageManager` — never a string in the source, `tools/check-version.sh`), `model.name`, `version.platform`, and the source URL |
 | **Developer >** | the developer menu below |
+
+A row with a value (`DevTools.appValue` / `rowValue`) draws it at its right edge between two arrows, and the legend
+swaps "select" for "change" while such a row is highlighted.
 
 The **developer menu** holds the tools that are not part of using the app:
 
@@ -104,7 +108,7 @@ The **developer menu** holds the tools that are not part of using the app:
 | **Settings snapshot** / **Settings diff** | the snapshot / diff tool below; the row's name says which half is next |
 | **Read-only check — 26 slots** | the read-only check below: does this body flag any slot a recipe writes |
 | **Shoot samples — 77 recipes** | the sample run below |
-| **Settle delay — 1.2 s** | the delay the sample run waits after applying a recipe; the centre button cycles 0.8 / 1.2 / 2.0 / 3.0 / 5.0 s, kept in the app's preferences |
+| **Settle delay** | a value — the delay the sample run waits after applying a recipe; left / right step through 0.8 / 1.2 / 2.0 / 3.0 / 5.0 s in place (centre steps forward), kept in the app's preferences |
 | **Key logger** | every key event on screen, newest first, and appended to `keys.txt` in `getFilesDir()`: scan code, down / up, repeat count, Sony's logic code; the header is the model, the platform and what the probe found. Nothing else happens while it runs; **hold MENU** leaves |
 
 New functions go in as app menu rows, not on new keys — see [Keys on every body](#keys-on-every-body).
@@ -193,54 +197,55 @@ Goes through `Camera.Parameters`: `color-mode`, `saturation`, `contrast`, `sharp
 `color-compensation-for-white-balance`, `rgb-matrix` (Q10, 1.0 = 1024) + `rgb-matrix-mode`, `picture-effect`,
 `exposure-compensation` (1/3 EV steps), `dro-mode` + `dro-level`.
 **Key scan codes** (all in `Keys`, Sony's `ScalarInput` names): wheel 522 / 523, top dial 525 / 526, four-way 103 /
-108 / 105 / 106, centre 232, MENU 514 (SK1 229 on the NEX bodies), trash 595 (SK2 513), shutter 516 / 518, Fn 520,
-AEL 532. Read but not bound: C1 622, DISP 608, PLAY 207 (swallowed), MOVIE 515 and the zoom lever 610 / 611 (passed on).
+108 / 105 / 106, centre 232, MENU 514 (SK1 229 on the NEX bodies), trash 595 (SK2 513), shutter 516 / 518, Fn 520.
+Read but not bound: AEL 532, C1 622, DISP 608, PLAY 207 (all swallowed), MOVIE 515 and the zoom lever 610 / 611 (passed on).
 
 ## Keys on every body
 
 Issue #18. The A6000 has Fn, AEL and C1; the A5100 and A5000 have none of them, the A7S II's AEL did nothing in both
 reports, and the compacts differ again. So every function has a route on keys **every** body has — wheel, four-way,
-centre, MENU, trash, shutter — and Fn / AEL are one-press shortcuts on top:
+centre, MENU, trash, shutter — and Fn is the one shortcut on top:
 
 | function | every body | shortcut |
 |---|---|---|
 | store the recipe | centre | — |
 | favourite | hold centre | — |
 | brand list | hold MENU → Browse recipes | Fn |
-| hide the panel | trash | AEL |
-| store factory | hold trash, or hold MENU → Factory settings | — |
+| hide the panel | trash, or hold MENU → Panel visibility | — |
+| reset to factory | hold trash, or hold MENU → Reset settings — both ask first | — |
 | developer tools | hold MENU → Developer | — |
 | exit | MENU | — |
 
-**Unbound on purpose.** C1 only ever opened the developer menu, which the app menu now reaches. DISP is dropped because
+**Unbound on purpose.** Trash hides the panel on every body, so AEL — missing on the A5100 / A5000, dead on the A7S II —
+adds nothing. C1 only ever opened the developer menu, which the app menu now reaches. DISP is dropped because
 of what it might be on a body where it is printed on the wheel's top (A6000, A5100, A7 bodies): there the press arrives
 as `K_UP` — chip navigation works on the A6000 — but a body that sent 608 for it would have its wheel-up hide the panel
-or close the list. Both are swallowed on every screen and shown by the key logger.
+or close the list. All three are swallowed on every screen and shown by the key logger.
 
 **Holds.** Three keys have a press and a hold (`Keys.Hold`, `HOLD_MS` 600 ms): centre (pick / favourite), MENU (exit /
-app menu) and trash (hide / store factory). The hold is timed with a `Handler.postDelayed` armed on the press and
+app menu) and trash (hide / ask to reset). The hold is timed with a `Handler.postDelayed` armed on the press and
 cancelled on the release, so it does not depend on the firmware delivering key-repeat events. Centre and MENU run their
 press action on the **release**; a hold that has fired swallows the release. Trash hides on the **press** — instant, and
-it needs no release — so a hold hides and then shows the full panel with factory stored. Holds are cleared in `onPause`,
+it needs no release — so a hold hides, then brings the full panel back under the reset question. The question
+defaults to Cancel, and the legend never names the hold: it is there for whoever needs it, not as an invitation. Holds are cleared in `onPause`,
 and the release bookkeeping runs whatever is on screen, so a release that lands on a prompt does not leave a key stuck.
 
 **The trash hold and a lost release.** A timer cannot tell a quick press from a hold if the release never arrives, and
-then every hide would store factory. So a fired trash hold only acts when the key is known to be still down
+then every hide would pop the reset question. So a fired trash hold only acts when the key is known to be still down
 (`Keys.trashHoldActs`): `ScalarInput.getKeyStatus(scan).status` says so, or — the probe unavailable — a trash key-up has
 already been seen this session. Otherwise it does nothing.
 
-**Repeat.** A key-repeat (`getRepeatCount() > 0`) of centre, MENU, trash, Fn or AEL is dropped, so a held Fn no longer
+**Repeat.** A key-repeat (`getRepeatCount() > 0`) of centre, MENU, trash or Fn is dropped, so a held Fn no longer
 opens and then closes the list; the four-way and the dials keep theirs.
 
 **Which keys a body has.** `KeyProbe` asks `com.sony.scalar.sysutil.ScalarInput.getKeyStatus(scan).valid` by reflection,
-once per key — how Sony's own app framework counts dials and gates the zoom lever. The legend names Fn or AEL only when
-it reads 1, and only next to the universal key that does the same thing; when the call is missing or throws, the legend
-names the universal keys alone. There is no per-model table: nobody can keep one verified. Model and platform come from
+once per key — how Sony's own app framework counts dials and gates the zoom lever. The legend names Fn only when it
+reads 1; when the call is missing or throws, the legend names the universal keys alone. There is no per-model table: nobody can keep one verified. Model and platform come from
 `ScalarProperties.getString("model.name" / "version.platform")` — `Build.MODEL` is `ScalarA` on every body — and are
 only shown, never branched on. None of this has been checked on a camera yet; the key logger is how it will be.
 
-**Not done yet, until the logger has codes to show:** still review on PLAY (#43), a MOVIE 515 alias for hide, the A7
-II AF/MF–AEL lever codes (589 / 638), what to do with the zoom lever and flash (HX60, #42), and swapping the top dial's
+**Not done yet, until the logger has codes to show:** still review on PLAY (#43), the A7 II AF/MF–AEL lever codes
+(589 / 638), what to do with the zoom lever and flash (HX60, #42), and swapping the top dial's
 direction on the platform-1 NEX bodies, which Sony's framework does.
 
 On the first launch of a build with these keys a toast says where things went (`Keys.NOTICE`, once, pref
@@ -382,7 +387,7 @@ tests pin it down:
 
 | | |
 |---|---|
-| `RecipesTest` | the table itself — 77 recipes, group order, every value inside its row's range, kelvin in whole hundreds, sub-parameters that exist for the effect; labels, `summary()`, wrap-around navigation |
+| `RecipesTest` | the table itself — 77 entries (76 listed + the factory look, which navigation skips), group order, every value inside its row's range, kelvin in whole hundreds, sub-parameters that exist for the effect; labels, `summary()`, wrap-around navigation |
 | `ParamsCodecTest` | how the store encodes each row (DRO bytes, PP3 for the matrix, magenta-positive G-M, the quality pair, signed vs unsigned slots) and how it reads back |
 | `ParamsWritesTest` | which bytes ENTER writes for a recipe — golden lists for a few, and every recipe stored over a factory camera, then on top of each other, read back through the same decoder |
 | `ParamsPreviewTest` | the `Camera.Parameters` the live preview sets, recipe by recipe |
@@ -390,7 +395,7 @@ tests pin it down:
 | `ParamsHudTest` | the meta line, the minimal pill, the quality prompt |
 | `ParamsToolsTest` | the snapshot tool's id list — including that `res/raw/ids.txt` is well formed and lists every slot the app writes — and its diff lines |
 | `DevToolsTest` | the app menu and developer menu rows, About and the key logger's lines, settle delays, the sample run's progress / finish lines, and its manifest — a parsable line per recipe, in run order |
-| `KeysTest` | the press / hold gesture, the trash-hold guard, and that the legend and Controls page never name a key the body lacks — every function on a universal key, Fn / AEL only when reported |
+| `KeysTest` | the press / hold gesture, the trash-hold guard, and that the legend never names a key the body lacks — every function on a universal key, Fn only when reported, exit last, the reset hold never hinted |
 | `KeyProbeTest` | that the key probe answers "unknown" off the camera instead of throwing |
 | `KeyProbeCameraTest` | the key probe against test doubles of Sony's `ScalarInput`, `KeyStatus` and `ScalarProperties` (`test/com/sony/scalar/sysutil/`, shaped like the OpenMemories-Framework stubs): the reflection finds the real signatures, only `valid == 1` is a key, only `status == 1` is a press. The doubles throw for anything a test did not set up, which is how the "off the camera" answers stay null |
 | `FavouritesTest` | the favourites list — stored by name, unknown names dropped, marking order kept, toggle, the highlight after a removal — and the browser's group order with Favourites first |

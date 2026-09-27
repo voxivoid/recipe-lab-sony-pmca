@@ -60,8 +60,8 @@ final class KeyProbe {
         } catch (Throwable t) { return null; }
     }
 
-    /** the shortcut keys the legend may name, from {@link #has} */
-    static Keys.Caps caps() { return new Keys.Caps(has(Keys.K_FN), has(Keys.K_AEL)); }
+    /** the shortcut key the legend may name, from {@link #has} */
+    static Keys.Caps caps() { return new Keys.Caps(has(Keys.K_FN)); }
 
     private static Integer statusField(int scan, String field) {
         try {

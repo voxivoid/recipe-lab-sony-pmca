@@ -25,13 +25,13 @@ final class Favourites {
     static final String EMPTY_TITLE = "No favourites yet", EMPTY_HINT = "Hold the centre button on a recipe to keep it here";
 
     // ------------------------------------------------------------ storage
-    /** the stored string -> recipe indexes in marking order; unknown names and repeats are dropped */
+    /** the stored string -> recipe indexes in marking order; unknown names, repeats and the factory look are dropped */
     static List<Integer> decode(String stored) {
         List<Integer> favs = new ArrayList<Integer>();
         if (stored == null || stored.isEmpty()) return favs;
         for (String name : stored.split("\\" + SEP)) {
             int i = indexOf(name);
-            if (i >= 0 && !favs.contains(i)) favs.add(i);
+            if (i >= 0 && markable(i) && !favs.contains(i)) favs.add(i);
         }
         return favs;
     }
@@ -49,8 +49,12 @@ final class Favourites {
     }
 
     // ------------------------------------------------------------ marking
+    /** whether a recipe can be a favourite: every listed one, not the factory look, which only Reset settings reaches */
+    static boolean markable(int recipe) { return recipe != Recipes.FACTORY; }
+
     /** marks an unmarked recipe (at the end) or unmarks a marked one; returns whether it is a favourite now */
     static boolean toggle(List<Integer> favs, int recipe) {
+        if (!markable(recipe)) return false;
         int pos = favs.indexOf(recipe);
         if (pos >= 0) { favs.remove(pos); return false; }
         favs.add(recipe);
