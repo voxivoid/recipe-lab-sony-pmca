@@ -94,12 +94,12 @@ final class Keys {
     }
 
     /**
-     * Whether a trash hold that has fired may ask to reset. It may only when the key is known to be still down: the probe
-     * says so, or — the probe unavailable — this body has shown it delivers a trash key-up, so the up would have
-     * cancelled the timer. Without either, a quick press to hide could not be told from a hold, and every hide would pop
-     * the reset question.
+     * Whether a trash hold that has fired is a hold. Trash hides on its release, so a release cancels the timer and a
+     * fired timer normally means the key is still down. The exception is a body that loses the release: when the camera
+     * says the key is already up, the press was a short one and hides instead. When the camera would not say, it is a
+     * hold — the worst case is the reset question, which defaults to Cancel.
      */
-    static boolean trashHoldActs(Boolean probeDown, boolean upSeen) { return probeDown != null ? probeDown : upSeen; }
+    static boolean trashHoldActs(Boolean probeDown) { return probeDown == null || probeDown; }
 
     // ------------------------------------------------------------ what the body has
     /** the shortcut key the legend may name, as the probe reports it: TRUE present, FALSE absent, null unknown */

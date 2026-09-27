@@ -72,7 +72,6 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private final Runnable menuHold = new Runnable() { public void run() { menuHoldFired(); } };
     private final Runnable trashHold = new Runnable() { public void run() { trashHoldFired(); } };
     private int trashScan = K_DELETE;                           // which of trash / SK2 the held press came from
-    private boolean trashUpSeen = false;                        // this body has delivered a trash key-up (Keys.trashHoldActs)
     // the key logger (developer menu): every key event on screen and into keys.txt, until MENU is held
     private boolean logging = false;
     private final List<String[]> logLines = new ArrayList<String[]>();
@@ -743,13 +742,19 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         if (!running && !promptOpen && !menuOpen && menuHoldArms(overlay, focus)) openMenu(DevTools.LEVEL_APP);
     }
 
-    /** trash held past HOLD_MS: ask to reset — only when the key is known to be still down (Keys.trashHoldActs) */
+    /** trash held past HOLD_MS: ask to reset — unless the camera says the key is already up, and its release got lost */
     private void trashHoldFired() {
         if (trash.fire() != Keys.Hold.HOLD) return;
-        if (!trashHoldActs(KeyProbe.isDown(trashScan), trashUpSeen)) { trash.reset(); return; }   // cannot tell a hold from a lost key-up
-        if (running || promptOpen || menuOpen) return;
-        overlay = OV_FULL; render();                                // the press hid the panel; the question is about what it shows
+        if (running || promptOpen || menuOpen) { trash.reset(); return; }
+        if (!trashHoldActs(KeyProbe.isDown(trashScan))) { trash.reset(); trashPress(); return; }   // a press whose release never came
+        if (overlay == OV_BROWSER) openBrowser(false);
         askReset();
+    }
+
+    /** trash pressed and released before the hold: close the brand list, or step the panel full → label → hidden → full */
+    private void trashPress() {
+        if (running || promptOpen || menuOpen) return;
+        if (overlay == OV_BROWSER) openBrowser(false); else cycleOverlay();
     }
 
     private boolean browserKey(int sc) {
@@ -759,7 +764,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             case K_LEFT: case K_RIGHT: if (browserCol == COL_RECIPES) { browserCol = COL_GROUPS; render(); } else enterRecipeColumn(); return true;
             case K_MENU: case K_SK1: swallowMenuUp = true; openBrowser(false); return true;
             case K_FN: openBrowser(false); return true;
-            case K_DELETE: case K_SK2: openBrowser(false); armTrash(sc); return true;
+            case K_DELETE: case K_SK2: armTrash(sc); return true;       // closes the list on the release; a hold asks to reset
             case K_S1: try { camera.autoFocus(null); } catch (Throwable t) {} return true;
             case K_S2: try { camera.takePicture(null, null, null); } catch (Throwable t) {} return true;
         }
@@ -795,7 +800,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         }
     }
 
-    /** trash pressed: its press action has run; a hold past HOLD_MS stores factory */
+    /** trash pressed: nothing happens yet — the release hides the panel, a hold past HOLD_MS asks to reset */
     private void armTrash(int sc) {
         trashScan = sc;
         if (trash.down(0) == Keys.Hold.ARM) handler.postDelayed(trashHold, HOLD_MS);
@@ -836,7 +841,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
                 return true;
             }
             case K_FN: openBrowser(true); return true;
-            case K_DELETE: case K_SK2: cycleOverlay(); armTrash(sc); return true;
+            case K_DELETE: case K_SK2: armTrash(sc); return true;       // hides on the release; a hold asks to reset
             case K_S1: try { camera.autoFocus(null); } catch (Throwable t) {} return true;
             case K_S2: try { camera.takePicture(null, null, null); } catch (Throwable t) {} return true;
             case K_MENU: case K_SK1:
@@ -854,7 +859,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         int sc = e.getScanCode();
         if (logging) return logKey(e, false);
         // the hold bookkeeping runs on every release, whatever is on screen, or a lost release would block the next press
-        if (isTrash(sc)) { trashUpSeen = true; handler.removeCallbacks(trashHold); trash.up(); }
+        if (isTrash(sc)) { handler.removeCallbacks(trashHold); if (trash.up() == Keys.Hold.SHORT) trashPress(); }
         if (isMenu(sc)) { handler.removeCallbacks(menuHold); menuKeyHold.up(); }
         if (sc == K_ENTER && (promptOpen || running)) { handler.removeCallbacks(enterHold); enter.reset(); }
         if (promptOpen) { if (isMenu(sc)) swallowMenuUp = false; return true; }

@@ -7,7 +7,10 @@ import android.graphics.RectF;
 import android.util.AttributeSet;
 import android.view.View;
 
-/** Modal question: title, one explanation line, option pills, icon legend. Canvas-drawn. */
+import java.util.ArrayList;
+import java.util.List;
+
+/** Modal question: title and explanation (word-wrapped to the box), option pills, icon legend. Canvas-drawn. */
 public class PromptView extends View {
     private static final int ACCENT = 0xFFF2B85C, INK = 0xFF1A1208;
     private static final int[] LEGEND_ICONS = { Legend.ENTER, Legend.MENU };
@@ -21,6 +24,7 @@ public class PromptView extends View {
     private String titleText = "", bodyText = "", noteText = null;
     private String[] options = new String[0];
     private int selected = 0;
+    private final List<String> titleLines = new ArrayList<String>(), bodyLines = new ArrayList<String>();
 
     public PromptView(Context c, AttributeSet a) {
         super(c, a);
@@ -36,17 +40,35 @@ public class PromptView extends View {
 
     public void set(String titleText, String bodyText, String[] options, int selected, String noteText) {
         this.titleText = titleText; this.bodyText = bodyText; this.options = options; this.selected = selected; this.noteText = noteText;
-        invalidate();
+        requestLayout(); invalidate();                          // a different question needs a different box
     }
+
+    private float titleStep() { return 19 * d; }
+    private float bodyStep() { return 15 * d; }
 
     @Override
     protected void onMeasure(int w, int hh) {
-        float wd = Math.max(title.measureText(titleText), body.measureText(bodyText)) + 40 * d;
+        float max = Math.min(MeasureSpec.getSize(w) - 32 * d, 360 * d), pad = 16 * d;
+        float wd = Math.max(title.measureText(titleText), body.measureText(bodyText)) + 2 * pad;
         float ow = 0; for (String o : options) ow += opt.measureText(o) + 36 * d;
-        wd = Math.max(wd, ow + 20 * d);
-        wd = Math.min(wd, MeasureSpec.getSize(w));
-        float h = 14 * d + 20 * d + 18 * d + 12 * d + 30 * d + 14 * d + (noteText != null ? 14 * d : 0) + legend.height() + 12 * d;
+        wd = Math.min(Math.max(wd, ow + 20 * d), max);
+        wrap(titleText, title, wd - 2 * pad, titleLines);
+        wrap(bodyText, body, wd - 2 * pad, bodyLines);
+        float h = 14 * d + titleLines.size() * titleStep() + bodyLines.size() * bodyStep() + 12 * d + 30 * d + 14 * d
+                + (noteText != null ? 14 * d : 0) + legend.height() + 12 * d;
         setMeasuredDimension((int) wd, (int) h);
+    }
+
+    /** breaks {@code text} into lines no wider than {@code width} at spaces; a single word wider than that keeps its line */
+    private static void wrap(String text, Paint p, float width, List<String> out) {
+        out.clear();
+        String line = "";
+        for (String word : text.split(" ")) {
+            if (word.isEmpty()) continue;
+            String next = line.isEmpty() ? word : line + " " + word;
+            if (!line.isEmpty() && p.measureText(next) > width) { out.add(line); line = word; } else line = next;
+        }
+        if (!line.isEmpty() || out.isEmpty()) out.add(line);
     }
 
     @Override
@@ -54,8 +76,10 @@ public class PromptView extends View {
         float w = getWidth(), h = getHeight(), pad = 16 * d;
         r.set(0, 0, w, h); c.drawRoundRect(r, 8 * d, 8 * d, bg); c.drawRoundRect(r, 8 * d, 8 * d, edge);
         float y = 14 * d + 15 * d;
-        c.drawText(titleText, pad, y, title); y += 18 * d;
-        c.drawText(bodyText, pad, y, body); y += 12 * d;
+        for (String l : titleLines) { c.drawText(l, pad, y, title); y += titleStep(); }
+        y -= titleStep() - 18 * d;                              // the gap under the title, as before
+        for (String l : bodyLines) { c.drawText(l, pad, y, body); y += bodyStep(); }
+        y -= bodyStep() - 12 * d;
 
         // option pills, centred
         float total = 0; for (String o : options) total += opt.measureText(o) + 28 * d;

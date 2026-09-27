@@ -225,15 +225,16 @@ or close the list. All three are swallowed on every screen and shown by the key 
 **Holds.** Three keys have a press and a hold (`Keys.Hold`, `HOLD_MS` 600 ms): centre (pick / favourite), MENU (exit /
 app menu) and trash (hide / ask to reset). The hold is timed with a `Handler.postDelayed` armed on the press and
 cancelled on the release, so it does not depend on the firmware delivering key-repeat events. Centre and MENU run their
-press action on the **release**; a hold that has fired swallows the release. Trash hides on the **press** — instant, and
-it needs no release — so a hold hides, then brings the full panel back under the reset question. The question
-defaults to Cancel, and the legend never names the hold: it is there for whoever needs it, not as an invitation. Holds are cleared in `onPause`,
-and the release bookkeeping runs whatever is on screen, so a release that lands on a prompt does not leave a key stuck.
+press action on the **release**; a hold that has fired swallows the release. Trash too: it hides the panel (or closes
+the brand list) on the release, and a hold brings up the reset question instead, so holding it never touches the panel.
+The question defaults to Cancel, and the legend never names the hold: it is there for whoever needs it, not as an
+invitation. Holds are cleared in `onPause`, and the release bookkeeping runs whatever is on screen, so a release that
+lands on a prompt does not leave a key stuck.
 
-**The trash hold and a lost release.** A timer cannot tell a quick press from a hold if the release never arrives, and
-then every hide would pop the reset question. So a fired trash hold only acts when the key is known to be still down
-(`Keys.trashHoldActs`): `ScalarInput.getKeyStatus(scan).status` says so, or — the probe unavailable — a trash key-up has
-already been seen this session. Otherwise it does nothing.
+**The trash hold and a lost release.** A fired timer means the key is still down — the release would have cancelled it
+— except on a body that loses the release. So when `ScalarInput.getKeyStatus(scan).status` says the key is already up,
+the fired hold counts as a press and hides (`Keys.trashHoldActs`); when the camera will not say, it is a hold, and the
+worst case is a question that defaults to Cancel.
 
 **Repeat.** A key-repeat (`getRepeatCount() > 0`) of centre, MENU, trash or Fn is dropped, so a held Fn no longer
 opens and then closes the list; the four-way and the dials keep theirs.

@@ -56,15 +56,14 @@ class KeysTest {
         assertEquals(Keys.Hold.ARM, h.down(0), "the next press is a press again");
     }
 
-    // ---- the trash hold may only store factory when the key is known to be down
+    // ---- a fired trash timer is a hold, unless the camera says the key is already up
     @Test void theProbeDecidesWhenItCanAnswer() {
-        assertTrue(Keys.trashHoldActs(true, false), "still down per the camera: a hold, even before any key-up was seen");
-        assertFalse(Keys.trashHoldActs(false, true), "released per the camera: the key-up got lost, this was a press");
+        assertTrue(Keys.trashHoldActs(true), "still down per the camera: a hold");
+        assertFalse(Keys.trashHoldActs(false), "released per the camera: the key-up got lost, this was a press");
     }
 
-    @Test void withoutTheProbeOnlyABodyThatDeliversKeyUpsGetsTheHold() {
-        assertFalse(Keys.trashHoldActs(null, false), "no key-up ever seen: a quick press to hide cannot be told from a hold");
-        assertTrue(Keys.trashHoldActs(null, true), "a key-up has arrived before, so one would have cancelled the timer");
+    @Test void withoutTheProbeAFiredTimerIsAHold() {
+        assertTrue(Keys.trashHoldActs(null), "the release would have cancelled the timer; the worst case is a question defaulting to Cancel");
     }
 
     // ---- the legend
