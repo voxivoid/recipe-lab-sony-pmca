@@ -371,6 +371,13 @@ final class Params {
         return overlay == OV_BROWSER ? browserCol == COL_RECIPES : onRecipeLine(overlay, row);
     }
 
+    /**
+     * Whether a hold on MENU opens the app menu where the user is (issue #18). It does on the live screen — full panel,
+     * pill or hidden — but not with a chip focused, where MENU unfocuses, nor in the browser, where MENU closes it; in
+     * both of those MENU acts on the press, so there is no release left for a hold to wait on.
+     */
+    static boolean menuHoldArms(int overlay, boolean focus) { return overlay != OV_BROWSER && !focus; }
+
     /** what the centre button does when it is released before the hold fires */
     static int enterAction(int overlay, int row, int browserCol) {
         if (overlay == OV_BROWSER) return browserCol == COL_GROUPS ? ENTER_BROWSER_COLUMN : ENTER_BROWSER_PICK;

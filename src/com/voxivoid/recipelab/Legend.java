@@ -10,7 +10,8 @@ import android.graphics.RectF;
  * Fits the available width: first squeezes the gaps between items, then scales icons and text down.
  */
 public class Legend {
-    public static final int WHEEL = 0, UPDOWN = 1, LEFTRIGHT = 2, DIAL = 3, ENTER = 4, AEL = 5, TRASH = 6, MENU = 7, C1 = 8, FN = 9;
+    public static final int WHEEL = Keys.I_WHEEL, UPDOWN = Keys.I_UPDOWN, LEFTRIGHT = Keys.I_LEFTRIGHT, DIAL = Keys.I_DIAL,
+            ENTER = Keys.I_ENTER, AEL = Keys.I_AEL, TRASH = Keys.I_TRASH, MENU = Keys.I_MENU, FN = Keys.I_FN;
 
     private final Paint fill = new Paint(Paint.ANTI_ALIAS_FLAG), stroke = new Paint(Paint.ANTI_ALIAS_FLAG),
             text = new Paint(Paint.ANTI_ALIAS_FLAG), keyText = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -45,29 +46,46 @@ public class Legend {
     /** natural height for a legend row at scale 1 */
     public float height() { return 16 * d; }
 
+    /** draws a legend row built by {@link Keys#hints}: a shortcut icon, where there is one, goes before its key as "AEL / trash" */
+    public float draw(Canvas c, float x, float cy, float width, Keys.Hints h) { return draw(c, x, cy, width, h.icons, h.alts, h.labels); }
+
     /** draws icons+labels starting at x, vertically centred on cy, within width; returns the width actually used */
-    public float draw(Canvas c, float x, float cy, float width, int[] icons, String[] labels) {
+    public float draw(Canvas c, float x, float cy, float width, int[] icons, String[] labels) { return draw(c, x, cy, width, icons, null, labels); }
+
+    private float draw(Canvas c, float x, float cy, float width, int[] icons, int[] alts, String[] labels) {
         float scale = 1f, gap = 14 * d, minGap = 5 * d;
-        float need = measure(scale, minGap, icons, labels);
+        float need = measure(scale, minGap, icons, alts, labels);
         if (need > width) scale = Math.max(0.6f, width / need);          // shrink everything, gaps stay minimal
-        float used = measure(scale, minGap, icons, labels);
+        float used = measure(scale, minGap, icons, alts, labels);
         if (used < width) gap = Math.min(14 * d, minGap + (width - used) / Math.max(1, icons.length - 1));
         else gap = minGap;
         setScale(scale);
         float s = 6 * d * scale, ty = cy - (text.ascent() + text.descent()) / 2f, x0 = x;
         for (int i = 0; i < icons.length; i++) {
-            x += icon(c, icons[i], x, cy, s) + 4 * d * scale;
+            x += keys(c, icons[i], alts == null ? Keys.I_NONE : alts[i], x, cy, s, ty, scale) + 4 * d * scale;
             c.drawText(labels[i], x, ty, text);
             x += text.measureText(labels[i]) + (i < icons.length - 1 ? gap : 0);
         }
         return x - x0;
     }
 
-    private float measure(float scale, float gap, int[] icons, String[] labels) {
+    private float measure(float scale, float gap, int[] icons, int[] alts, String[] labels) {
         setScale(scale);
         float s = 6 * d * scale, w = 0;
-        for (int i = 0; i < icons.length; i++) w += icon(nowhere, icons[i], 0, 0, s) + 4 * d * scale + text.measureText(labels[i]) + (i < icons.length - 1 ? gap : 0);
+        for (int i = 0; i < icons.length; i++)
+            w += keys(nowhere, icons[i], alts == null ? Keys.I_NONE : alts[i], 0, 0, s, 0, scale) + 4 * d * scale + text.measureText(labels[i]) + (i < icons.length - 1 ? gap : 0);
         return w;
+    }
+
+    /** the key icon of one item, with its shortcut icon and a slash before it when it has one; returns the width */
+    private float keys(Canvas c, int icon, int alt, float x, float cy, float s, float ty, float scale) {
+        if (alt == Keys.I_NONE) return icon(c, icon, x, cy, s);
+        float x0 = x;
+        x += icon(c, alt, x, cy, s) + 2 * d * scale;
+        c.drawText("/", x, ty, text);
+        x += text.measureText("/") + 2 * d * scale;
+        x += icon(c, icon, x, cy, s);
+        return x - x0;
     }
 
     private void setScale(float k) {
@@ -133,7 +151,6 @@ public class Legend {
                 return 2 * s;
             }
             case AEL: return keyLabel(c, x, cy, s, 2.6f * s, "AEL");
-            case C1: return keyLabel(c, x, cy, s, 2.0f * s, "C1");
             case FN: return keyLabel(c, x, cy, s, 2.0f * s, "Fn");
             case TRASH: {                                          // bin: lid + body
                 float w = 1.6f * s, cx = x + w / 2, top = cy - s * 0.9f, bot = cy + s * 0.9f, u = d * k;

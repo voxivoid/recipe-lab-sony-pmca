@@ -24,10 +24,7 @@ public class PickerView extends View {
     private final RectF r = new RectF();
     private final float d;
     private final Legend legend;
-    private static final int[] BRAND_ICONS = { Legend.ENTER, Legend.FN };
-    private static final String[] BRAND_TEXT = { "recipes", "close" };
-    private static final int[] RECIPE_ICONS = { Legend.ENTER, Legend.ENTER, Legend.FN };
-    private static final String[] RECIPE_TEXT = { "pick", "fav (hold)", "close" };
+    private Keys.Caps caps = Keys.Caps.UNKNOWN;
     private final Paint outline = new Paint(Paint.ANTI_ALIAS_FLAG);
     private int selected = 0, column = 1, group = 0;              // column: 0 groups, 1 recipes · group: Favourites.GROUP or a brand
     private List<Integer> favs = new ArrayList<Integer>();
@@ -46,6 +43,9 @@ public class PickerView extends View {
         rule.setColor(0x33FFFFFF);
         track.setColor(0x26FFFFFF); thumb.setColor(0xCCF2B85C);
     }
+
+    /** what the key probe found; until it is set only the universal keys are named */
+    public void setCaps(Keys.Caps k) { caps = k; invalidate(); }
 
     /** the highlighted recipe, the active column, the group the left column is on, and the favourites in marking order */
     public void set(int recipe, int col, int grp, List<Integer> favourites) { selected = recipe; column = col; group = grp; favs = favourites; invalidate(); }
@@ -126,7 +126,7 @@ public class PickerView extends View {
 
         // ---- footer: icon legend
         c.drawLine(pad, h - pad - 16 * d, w - pad, h - pad - 16 * d, rule);
-        legend.draw(c, pad, h - pad - 6 * d, w - 2 * pad, column == 0 ? BRAND_ICONS : RECIPE_ICONS, column == 0 ? BRAND_TEXT : RECIPE_TEXT);
+        legend.draw(c, pad, h - pad - 6 * d, w - 2 * pad, Keys.hints(column == 0 ? Keys.H_BRANDS : Keys.H_RECIPES, caps));
     }
 
     /** a small pill ending at {@code right} on the row at {@code y}; returns its left edge */

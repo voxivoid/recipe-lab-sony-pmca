@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Unit tests: the CI gate `test`, and how to run them locally.
 #
-# Compiles the camera-free classes (Recipes, Params) against a plain JDK -- no SDK, no NDK, no android.jar --
+# Compiles the camera-free classes (the UNITS below) against a plain JDK -- no SDK, no NDK, no android.jar --
 # then everything under test/, and runs it with the JUnit console launcher. The launcher is one jar, fetched
 # from Maven Central into out/test/ on first use and checked against the SHA-256 pinned below.
 #
@@ -29,6 +29,8 @@ UNITS=(
   src/com/voxivoid/recipelab/Params.java
   src/com/voxivoid/recipelab/Favourites.java
   src/com/voxivoid/recipelab/DevTools.java
+  src/com/voxivoid/recipelab/Keys.java
+  src/com/voxivoid/recipelab/KeyProbe.java
 )
 
 mkdir -p out/test

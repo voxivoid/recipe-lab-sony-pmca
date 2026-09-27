@@ -19,9 +19,9 @@ body:
     attributes:
       label: What should it do instead?
       description: >
-        If it involves camera controls, say which key or dial. On an A6000 the app has the wheel, top dial, four-way,
-        centre, Fn, C1, AEL, trash and MENU — but not every PlayMemories body has all of those (an A5100 has no Fn and
-        no AEL), so anything that hangs off one of those keys needs a route that works without it.
+        If it involves camera controls, say which key or dial. Every function has to work on the keys every
+        PlayMemories body has — wheel, four-way, centre, MENU, trash and shutter; an A5100 has no Fn, AEL or C1 — so
+        a new function usually becomes a row of the app menu (hold MENU) rather than a key of its own.
     validations: { required: true }
   - type: dropdown
     id: scope

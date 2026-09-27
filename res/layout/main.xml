@@ -134,7 +134,7 @@
         android:layout_gravity="center"
         android:visibility="gone" />
 
-    <!-- developer menu (C1) -->
+    <!-- app menu (hold MENU), developer menu, Controls / About / key logger pages -->
     <com.voxivoid.recipelab.MenuView
         android:id="@+id/menu"
         android:layout_width="wrap_content"

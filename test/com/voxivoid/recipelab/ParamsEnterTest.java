@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
 
-/** The centre button: what a short press does, and where a hold marks a favourite instead. */
+/** The centre button: what a short press does, and where a hold marks a favourite instead; and where a MENU hold opens the app menu. */
 class ParamsEnterTest {
 
     @Test void theChipStripOnlyTakesTheKeysUnderTheFullPanel() {
@@ -57,5 +57,16 @@ class ParamsEnterTest {
                 }
             }
         }
+    }
+
+    @Test void aMenuHoldOpensTheAppMenuFromTheLiveScreen() {
+        assertTrue(menuHoldArms(OV_FULL, false));
+        assertTrue(menuHoldArms(OV_PILL, false));
+        assertTrue(menuHoldArms(OV_HIDDEN, false), "hidden is where a body without AEL most needs the way back");
+    }
+
+    @Test void aMenuHoldDoesNotArmWhereMenuActsOnThePress() {
+        assertFalse(menuHoldArms(OV_FULL, true), "MENU unfocuses the chip");
+        assertFalse(menuHoldArms(OV_BROWSER, false), "MENU closes the browser");
     }
 }
