@@ -122,12 +122,17 @@ class KeysTest {
         }
     }
 
-    @Test void fnJoinsTheLegendJustBeforeExitWhenTheBodyHasIt() {
+    @Test void theRecipeLineReadsPickBrowseFavMenuHideExit() {
+        assertEquals(Arrays.asList("pick", "browse", "fav (hold)", "menu (hold)", "hide", "exit"), Arrays.asList(Keys.hints(Keys.H_RECIPE, FN).labels));
+        assertEquals(Arrays.asList("pick", "fav (hold)", "menu (hold)", "hide", "exit"), Arrays.asList(Keys.hints(Keys.H_RECIPE, NONE).labels),
+                "without Fn, browse is in the app menu, and the rest keep their order");
+        assertEquals(Arrays.asList("edit", "browse", "menu (hold)", "hide", "exit"), Arrays.asList(Keys.hints(Keys.H_CHIPS, FN).labels));
+    }
+
+    @Test void fnJoinsTheLegendWhenTheBodyHasIt() {
         for (int mode : new int[] { Keys.H_RECIPE, Keys.H_CHIPS }) {
             Keys.Hints h = Keys.hints(mode, FN);
-            List<String> labels = Arrays.asList(h.labels);
-            assertEquals(Keys.I_FN, h.icons[labels.indexOf("browse")]);
-            assertEquals(labels.size() - 2, labels.indexOf("browse"), mode + ": browse, then exit");
+            assertEquals(Keys.I_FN, h.icons[Arrays.asList(h.labels).indexOf("browse")]);
             assertFalse(Arrays.asList(Keys.hints(mode, NONE).labels).contains("browse"), "browse is in the app menu without Fn");
         }
     }

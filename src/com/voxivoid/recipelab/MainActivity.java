@@ -455,10 +455,11 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             return true;
         }
         switch (sc) {
-            case K_UP: case K_WHEEL_CCW: menuSel = DevTools.nextRow(menuLevel, menuSel, -1); renderMenu(); return true;
-            case K_DOWN: case K_WHEEL_CW: menuSel = DevTools.nextRow(menuLevel, menuSel, +1); renderMenu(); return true;
-            case K_LEFT: case K_DIAL_CCW: stepMenuValue(-1); return true;       // only rows with a value take left / right
-            case K_RIGHT: case K_DIAL_CW: stepMenuValue(+1); return true;
+            // the dial moves rows like the wheel: on the A5100 the control wheel itself arrives as the dial (525 / 526)
+            case K_UP: case K_WHEEL_CCW: case K_DIAL_CCW: menuSel = DevTools.nextRow(menuLevel, menuSel, -1); renderMenu(); return true;
+            case K_DOWN: case K_WHEEL_CW: case K_DIAL_CW: menuSel = DevTools.nextRow(menuLevel, menuSel, +1); renderMenu(); return true;
+            case K_LEFT: stepMenuValue(-1); return true;                         // only rows with a value take left / right
+            case K_RIGHT: stepMenuValue(+1); return true;
             case K_ENTER: pickMenuRow(); return true;
             case K_MENU: case K_SK1:
                 swallowMenuUp = true;

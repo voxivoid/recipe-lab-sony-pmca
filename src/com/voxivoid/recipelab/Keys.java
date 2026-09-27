@@ -142,21 +142,21 @@ final class Keys {
     /**
      * The legend for a screen, for this body. Universal keys carry every function; Fn appears only when the probe
      * reports it — as "browse", which is also in the app menu, or beside MENU where both close the list — so a body that
-     * lacks it (or a probe that failed) still reads a complete legend. Exit is always the last item. Reset (hold trash)
-     * is left out on purpose: it asks before it writes, and a hint would invite it.
+     * lacks it (or a probe that failed) still reads a complete legend. The order is fixed: pick, browse, fav, menu, hide,
+     * exit. Reset (hold trash) is left out on purpose: it asks before it writes, and a hint would invite it.
      */
     static Hints hints(int mode, Caps caps) {
         int fn = caps.hasFn() ? I_FN : I_NONE;
         switch (mode) {
             case H_RECIPE: {
-                Row r = new Row().add(I_ENTER, "pick").add(I_ENTER, "fav (hold)").add(I_TRASH, "hide").add(I_MENU, "menu (hold)");
+                Row r = new Row().add(I_ENTER, "pick");
                 if (caps.hasFn()) r.add(I_FN, "browse");
-                return r.add(I_MENU, "exit").done();
+                return r.add(I_ENTER, "fav (hold)").add(I_MENU, "menu (hold)").add(I_TRASH, "hide").add(I_MENU, "exit").done();
             }
             case H_CHIPS: {
-                Row r = new Row().add(I_ENTER, "edit").add(I_TRASH, "hide").add(I_MENU, "menu (hold)");
+                Row r = new Row().add(I_ENTER, "edit");
                 if (caps.hasFn()) r.add(I_FN, "browse");
-                return r.add(I_MENU, "exit").done();
+                return r.add(I_MENU, "menu (hold)").add(I_TRASH, "hide").add(I_MENU, "exit").done();
             }
             case H_EDIT: return new Row().add(I_ENTER, "done").done();
             case H_BRANDS: return new Row().add(I_ENTER, "recipes").add(I_MENU, fn, "close").done();

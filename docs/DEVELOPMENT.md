@@ -93,7 +93,7 @@ down or the wheel move, the centre button runs a row, a short MENU goes back a l
 | row | what it does |
 |---|---|
 | **Browse recipes** | the brand list, as Fn opens it |
-| **Panel visibility** | a value — *Full* / *Label* / *Hidden* — that left / right (or the top dial) step through in place, wrapping, with the menu left open; centre steps forward. The same states trash cycles |
+| **Panel visibility** | a value — *Full* / *Label* / *Hidden* — that left / right step through in place, wrapping, with the menu left open; centre steps forward. The same states trash cycles |
 | **Reset settings** | asks `DevTools.RESET_TITLE` (Cancel highlighted), then stages `Recipes.FACTORY` and stores it (`writeAll`, so the quality prompt still asks when it must). The only way to the factory look besides holding trash: it is not in the list |
 | **About** | the installed version (from `PackageManager` — never a string in the source, `tools/check-version.sh`), `model.name`, `version.platform`, and the source URL |
 | **Developer >** | the developer menu below |
@@ -395,7 +395,7 @@ tests pin it down:
 | `ParamsHudTest` | the meta line, the minimal pill, the quality prompt |
 | `ParamsToolsTest` | the snapshot tool's id list — including that `res/raw/ids.txt` is well formed and lists every slot the app writes — and its diff lines |
 | `DevToolsTest` | the app menu and developer menu rows, About and the key logger's lines, settle delays, the sample run's progress / finish lines, and its manifest — a parsable line per recipe, in run order |
-| `KeysTest` | the press / hold gesture, the trash-hold guard, and that the legend never names a key the body lacks — every function on a universal key, Fn only when reported, exit last, the reset hold never hinted |
+| `KeysTest` | the press / hold gesture, the trash-hold guard, and that the legend never names a key the body lacks — every function on a universal key, Fn only when reported, the order pick · browse · fav · menu · hide · exit, the reset hold never hinted |
 | `KeyProbeTest` | that the key probe answers "unknown" off the camera instead of throwing |
 | `KeyProbeCameraTest` | the key probe against test doubles of Sony's `ScalarInput`, `KeyStatus` and `ScalarProperties` (`test/com/sony/scalar/sysutil/`, shaped like the OpenMemories-Framework stubs): the reflection finds the real signatures, only `valid == 1` is a key, only `status == 1` is a press. The doubles throw for anything a test did not set up, which is how the "off the camera" answers stay null |
 | `FavouritesTest` | the favourites list — stored by name, unknown names dropped, marking order kept, toggle, the highlight after a removal — and the browser's group order with Favourites first |
