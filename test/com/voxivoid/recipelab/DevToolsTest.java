@@ -87,6 +87,12 @@ class DevToolsTest {
         assertEquals("Show panel", DevTools.appLabel(DevTools.APP_PANEL, Params.OV_HIDDEN));
     }
 
+    @Test void thePanelRowsDetailSaysWhatTheNextStepDoes() {
+        assertEquals("Full panel to a small label", DevTools.appDetail(DevTools.APP_PANEL, Params.OV_FULL));
+        assertEquals("Small label to nothing", DevTools.appDetail(DevTools.APP_PANEL, Params.OV_PILL));
+        assertEquals("Back to the full panel", DevTools.appDetail(DevTools.APP_PANEL, Params.OV_HIDDEN));
+    }
+
     @Test void oneTurnOfTheAppMenuVisitsEveryRowAndWraps() {
         Set<Integer> visited = new HashSet<Integer>();
         int r = DevTools.APP_BROWSE;
@@ -111,6 +117,8 @@ class DevToolsTest {
         assertEquals("has FN C1  ·  lacks AEL  ·  unknown ZOOM_T", DevTools.keysFound(scans, new Boolean[] { true, false, true, null }));
         assertEquals("has FN AEL", DevTools.keysFound(new int[] { Keys.K_FN, Keys.K_AEL }, new Boolean[] { true, true }));
         assertEquals("the camera would not say", DevTools.keysFound(scans, new Boolean[4]), "a probe that failed says so, not an empty line");
+        assertEquals("lacks FN AEL", DevTools.keysFound(new int[] { Keys.K_FN, Keys.K_AEL }, new Boolean[] { false, false }),
+                "a body that answers with only absent keys did answer (an A5100 without Fn and AEL)");
     }
 
     // ---- the key logger

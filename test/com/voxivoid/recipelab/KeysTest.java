@@ -124,6 +124,25 @@ class KeysTest {
         assertFalse(Arrays.asList(Keys.hints(Keys.H_RECIPE, NONE).labels).contains("browse"), "browse is in the app menu without Fn");
     }
 
+    @Test void theChipRowGetsTheSameShortcutsAsTheRecipeLine() {
+        Keys.Hints bare = Keys.hints(Keys.H_CHIPS, NONE), full = Keys.hints(Keys.H_CHIPS, BOTH);
+        List<String> labels = Arrays.asList(full.labels);
+        assertEquals(Keys.I_TRASH, full.icons[labels.indexOf("hide")]);
+        assertEquals(Keys.I_AEL, full.alts[labels.indexOf("hide")], "AEL beside trash on the chip row too");
+        assertEquals(Keys.I_FN, full.icons[labels.indexOf("browse")]);
+        assertEquals(Keys.I_NONE, bare.alts[Arrays.asList(bare.labels).indexOf("hide")]);
+        assertFalse(Arrays.asList(bare.labels).contains("browse"));
+    }
+
+    @Test void menuLegendsSayWhereMenuGoes() {
+        List<String> top = Arrays.asList(Keys.hints(Keys.H_MENU_TOP, NONE).labels), sub = Arrays.asList(Keys.hints(Keys.H_MENU_SUB, NONE).labels);
+        assertTrue(top.contains("close"), "MENU closes the app menu");
+        assertTrue(sub.contains("back"), "MENU goes back from the developer menu to the app menu");
+        assertFalse(sub.contains("close"));
+        assertEquals(Arrays.asList("back"), Arrays.asList(Keys.hints(Keys.H_PAGE, NONE).labels));
+        assertEquals(Arrays.asList("exit (hold)"), Arrays.asList(Keys.hints(Keys.H_LOGGER, NONE).labels), "a short MENU is logged, not obeyed");
+    }
+
     @Test void theBrowserClosesOnMenuWithFnBesideItWhenPresent() {
         for (int mode : new int[] { Keys.H_BRANDS, Keys.H_RECIPES }) {
             Keys.Hints bare = Keys.hints(mode, NONE), full = Keys.hints(mode, BOTH);

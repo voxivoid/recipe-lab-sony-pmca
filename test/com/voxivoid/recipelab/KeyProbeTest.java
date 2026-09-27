@@ -4,7 +4,10 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
 
-/** The key probe off the camera: no Sony classes, so every answer is "unknown" and nothing throws. */
+/**
+ * The key probe off the camera: every Sony call fails (the test doubles in test/com/sony/scalar/sysutil throw for
+ * anything not set up, as a missing class or firmware call would), so every answer is "unknown" and nothing throws.
+ */
 class KeyProbeTest {
 
     @Test void withoutTheCameraEveryKeyIsUnknown() {

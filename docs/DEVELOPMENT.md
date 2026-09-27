@@ -55,6 +55,7 @@ jni/jni.cpp                    Backup_read / Backup_write / Backup_sync_all via 
 jni/platform/                  git submodule: ma1co/OpenMemories-Platform
 res/                           layout, shape drawables, launcher icon
 test/com/voxivoid/recipelab/   JUnit tests for the camera-free classes (see Unit tests)
+test/com/sony/scalar/sysutil/  test doubles of the Sony classes KeyProbe reflects on
 build.sh                       the build: ndk-build, aapt, javac, d8, zipalign, apksigner
 build.cmd                      the same seven steps on Windows
 tools/                         version computation, bumping, the unit tests, and the CI gates
@@ -391,6 +392,7 @@ tests pin it down:
 | `DevToolsTest` | the app menu and developer menu rows, About and the key logger's lines, settle delays, the sample run's progress / finish lines, and its manifest — a parsable line per recipe, in run order |
 | `KeysTest` | the press / hold gesture, the trash-hold guard, and that the legend and Controls page never name a key the body lacks — every function on a universal key, Fn / AEL only when reported |
 | `KeyProbeTest` | that the key probe answers "unknown" off the camera instead of throwing |
+| `KeyProbeCameraTest` | the key probe against test doubles of Sony's `ScalarInput`, `KeyStatus` and `ScalarProperties` (`test/com/sony/scalar/sysutil/`, shaped like the OpenMemories-Framework stubs): the reflection finds the real signatures, only `valid == 1` is a key, only `status == 1` is a press. The doubles throw for anything a test did not set up, which is how the "off the camera" answers stay null |
 | `FavouritesTest` | the favourites list — stored by name, unknown names dropped, marking order kept, toggle, the highlight after a removal — and the browser's group order with Favourites first |
 
 **What is not, and cannot be.** `MainActivity` (key dispatch, overlays, the camera and the JNI store), the
