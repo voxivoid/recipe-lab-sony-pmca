@@ -1,7 +1,7 @@
 name: Compatibility report
 description: Tell us how Recipe Lab behaved on your PlayMemories camera
 labels: ["type: docs", "status: needs-triage"]
-title: "compat: <camera model>"
+title: "compat: "
 body:
   - type: markdown
     attributes:
@@ -12,10 +12,14 @@ body:
         from ❔ to ✅, or adds a body the table does not list yet.
 
         **A report that it failed is as useful as one that it worked.** Please file it either way.
+
+        Put your camera's name after `compat: ` in the title, e.g. `compat: A5100`. The questions below follow the
+        order you will do things in, so keep the camera at hand while you fill them in.
   - type: input
     id: camera
     attributes:
       label: Camera body
+      description: The name, and the model code printed on the base of the camera.
       placeholder: "Sony A5100 (ILCE-5100)"
     validations: { required: true }
   - type: input
@@ -29,7 +33,30 @@ body:
     id: version
     attributes:
       label: Recipe Lab version
-      placeholder: "1.1.0 / dev"
+      description: >-
+        The number of the release you downloaded, from the
+        [releases page](https://github.com/voxivoid/recipe-lab-sony-pmca/releases). The `RecipeLab.apk` link in the
+        README always serves the newest one. For any other build, give the name it came with.
+      placeholder: "1.3.1"
+    validations: { required: true }
+  - type: dropdown
+    id: build
+    attributes:
+      label: Where did that build come from?
+      description: Reports from other builds are welcome, but they are kept apart from the official ones.
+      options:
+        - "This repository — a release"
+        - "This repository — the dev pre-release"
+        - "Somewhere else — a fork, or a translated build such as -cn or -l10n"
+    validations: { required: true }
+  - type: dropdown
+    id: install
+    attributes:
+      label: How did you install it?
+      options:
+        - PMCA-GUI
+        - Sony-PMCA-RE command line (pmca-console.py)
+        - Other
     validations: { required: true }
   - type: dropdown
     id: installed
@@ -41,14 +68,68 @@ body:
         - "No — the camera has no Application menu"
     validations: { required: true }
   - type: dropdown
+    id: tweak
+    attributes:
+      label: Did you unlock protected settings with OpenMemories-Tweak?
+      description: Its **Protection** page, *Unlock protected settings*. Some bodies refuse to store a recipe until it is ticked.
+      options:
+        - "No — it was not needed"
+        - "Yes — the app would not store a recipe until I did"
+        - "Yes — it was already unlocked before I tried Recipe Lab"
+        - "Not sure"
+    validations: { required: true }
+  - type: dropdown
+    id: pictureprofile
+    attributes:
+      label: What was Picture Profile set to before you stored a recipe?
+      description: >-
+        MENU → Picture Profile. The A6000 has no such menu, but many other bodies do. While a profile runs, the camera
+        ignores Creative Style, so a stored look can seem to vanish once the app closes.
+      options:
+        - "My camera has no Picture Profile menu"
+        - "Off"
+        - "A profile was on — which one is in Anything else"
+        - "Did not check"
+    validations: { required: true }
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Where was the mode dial?
+      description: >-
+        The auto modes choose Creative Style themselves, and MR (Memory Recall) reloads saved settings at power-on,
+        so either can hide a stored look.
+      options:
+        - "P, A, S or M"
+        - "Intelligent Auto or Superior Auto"
+        - "MR (Memory Recall)"
+        - "Movie"
+        - "Scene, Sweep Panorama or another mode"
+        - "My camera has no mode dial"
+    validations: { required: true }
+  - type: input
+    id: recipe
+    attributes:
+      label: Which recipe did you store?
+      description: The name in the app's panel. If its MATRIX chip read *PP3*, say so.
+      placeholder: "Velvia (MATRIX PP3)"
+  - type: dropdown
     id: stored
     attributes:
       label: Did storing a recipe work?
-      description: Pick a recipe, press the centre button, and see what the app says.
+      description: Pick a recipe, press the centre button, and see what the app says. The badge should read ACTIVE.
       options:
         - "Yes — the app confirmed it was stored"
         - "No — the app reported an error"
         - "Did not get that far"
+    validations: { required: true }
+  - type: dropdown
+    id: exit
+    attributes:
+      label: How did you leave the app?
+      options:
+        - "MENU"
+        - "The power switch, with the app still open"
+        - "Something else — say what in Anything else"
     validations: { required: true }
   - type: dropdown
     id: powercycle
@@ -70,17 +151,40 @@ body:
         - "No — something else changed, or a value landed in the wrong place"
         - "Not checked"
     validations: { required: true }
+  - type: checkboxes
+    id: keys
+    attributes:
+      label: Which keys did what the app says?
+      description: >-
+        Tick each one that worked. Leave a box empty when your camera has no such button, or when pressing it did
+        nothing or did something else. Then say which in the next question.
+      options:
+        - label: Control wheel, turned — scrolls through the recipes
+        - label: Centre button — stores the recipe (badge turns ACTIVE)
+        - label: Centre button, held — marks a favourite
+        - label: Fn — opens the brand list
+        - label: AEL — hides the panel
+        - label: DISP — hides the panel
+        - label: Trash — stages the factory values
+        - label: C1 — opens the developer menu
+        - label: MENU — leaves the app
+        - label: Shutter — focuses and takes a picture
   - type: textarea
     id: controls
     attributes:
       label: Which controls were missing or behaved differently?
-      description: Some bodies have no Fn or AEL button, a different wheel, or a different menu layout. Say what you could not reach.
-      placeholder: "No Fn button, so the brand list never opened. The wheel scrolled recipes fine."
+      description: >-
+        For each box you left empty: does your camera have that button, and what happened when you pressed it —
+        nothing, or a camera function such as playback, recording or zoom? Mention any lever the button sits in and
+        where it was set, and any button of yours the app ignores.
+      placeholder: "No Fn button. AEL did nothing — its AF/MF–AEL lever was on AF/MF. The zoom lever did nothing inside the app."
   - type: textarea
     id: notes
     attributes:
       label: Anything else
-      description: Badge text, messages shown in the app panel (verbatim), screenshots or photos of the camera screen.
+      description: >-
+        Badge text and messages shown in the app panel (verbatim), and the Picture Profile in use. Photos of the
+        camera screen help most: MENU → Creative Style and MENU → Picture Profile after the power cycle.
   - type: checkboxes
     id: ack
     attributes:
