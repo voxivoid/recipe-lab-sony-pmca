@@ -31,8 +31,7 @@ Installing an app is the mechanism Sony itself shipped: the camera has an app me
 same way Sony's app store did before it closed. No firmware is replaced, nothing is unlocked, no "jailbreak".
 
 Recipe Lab then writes only values the menus can already write — Creative Style and its sliders, white balance,
-exposure bias, Picture Effect, DRO, Quality — plus one hidden colour-matrix switch the camera has but never lists.
-Any of it can be undone from the camera's own
+exposure bias, Picture Effect, DRO, Quality. Any of it can be undone from the camera's own
 [`Setup → Setting Reset → Camera Settings Reset`](../README.md#uninstalling).
 
 The honest caveat is **other bodies**. The setting IDs were reverse engineered on an A6000, and the same value can

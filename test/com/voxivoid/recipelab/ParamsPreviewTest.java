@@ -22,7 +22,7 @@ class ParamsPreviewTest {
         assertEquals("0", p.get("contrast"));
         assertEquals("0", p.get("sharpness"));
         assertEquals("false", p.get("rgb-matrix-mode"));
-        assertFalse(p.containsKey("rgb-matrix"), "the matrix is only sent when it is on");
+        assertFalse(p.containsKey("rgb-matrix"));
         assertEquals("auto", p.get("whitebalance"));
         assertFalse(p.containsKey("color-temperture-white-balance"));
         assertEquals("0", p.get("light-balance-for-white-balance"));
@@ -59,10 +59,12 @@ class ParamsPreviewTest {
         assertEquals("-3", p.get("sharpness"));
     }
 
-    @Test void theMatrixIsThePp3MeasurementInQ10() {
-        Map<String, String> p = previewOf("Velvia", Q_FINE);
-        assertEquals("true", p.get("rgb-matrix-mode"));
-        assertEquals("1331,-307,-51,-205,1331,-123,-20,-461,1485", p.get("rgb-matrix"));
+    @Test void noRecipeTurnsTheColourMatrixOn() {
+        for (Recipes.Recipe r : Recipes.ALL) {
+            Map<String, String> p = previewOf(r.name, Q_FINE);
+            assertEquals("false", p.get("rgb-matrix-mode"), r.name);
+            assertFalse(p.containsKey("rgb-matrix"), r.name);
+        }
     }
 
     @Test void colourTemperatureWhiteBalance() {

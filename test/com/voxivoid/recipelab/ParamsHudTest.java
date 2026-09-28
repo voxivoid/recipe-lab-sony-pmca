@@ -15,7 +15,7 @@ class ParamsHudTest {
         int[] e = staged(recipe("Kodak Portra 400"), cur, Q_FINE);
         assertEquals("Portrait  ·  WB auto  ·  EV +0.7", metaLine(cur, e, null));
         e = staged(recipe("Velvia"), cur, Q_FINE);
-        assertEquals("Vivid  ·  WB auto  ·  PP3 matrix", metaLine(cur, e, null));
+        assertEquals("Vivid  ·  WB auto", metaLine(cur, e, null));
         e = staged(recipe("Kodak Vision3 500T (daylight)"), cur, Q_FINE);
         assertEquals("Neutral  ·  WB 3200K  ·  EV +0.3  ·  DRO Lv3", metaLine(cur, e, null));
     }

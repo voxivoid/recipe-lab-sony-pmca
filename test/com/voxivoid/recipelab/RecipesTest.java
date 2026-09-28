@@ -48,7 +48,7 @@ class RecipesTest {
         Recipes.Recipe f = Recipes.ALL[Recipes.FACTORY];   // what Reset settings stores
         assertTrue(f.name.startsWith("FACTORY"), f.name);
         assertEquals(Recipes.STD, f.style);
-        assertEquals(0, f.sat); assertEquals(0, f.con); assertEquals(0, f.sharp); assertEquals(0, f.matrix);
+        assertEquals(0, f.sat); assertEquals(0, f.con); assertEquals(0, f.sharp);
         assertEquals(Params.WB_AUTO, f.wbMode); assertEquals(0, f.ab); assertEquals(0, f.gm);
         assertEquals(0, f.pe); assertEquals(0, f.ev); assertEquals(Recipes.DRO_AUTO, f.dro); assertEquals(0, f.sub);
         assertFalse(f.isEffect());
@@ -61,7 +61,6 @@ class RecipesTest {
             assertRange(n, "sat", r.sat, Params.R_SAT);
             assertRange(n, "con", r.con, Params.R_CON);
             assertRange(n, "sharp", r.sharp, Params.R_SHARP);
-            assertRange(n, "matrix", r.matrix, Params.R_MTX);
             assertRange(n, "pe", r.pe, Params.R_PE);
             assertRange(n, "ev", r.ev, Params.R_EV);
             assertRange(n, "dro", r.dro, Params.R_DRO);
@@ -192,7 +191,7 @@ class RecipesTest {
     @Test void summaryReadsLikeTheBrowserLine() {
         assertEquals("Standard  0/0", Recipes.ALL[0].summary());
         assertEquals("Neutral  -3/-1  A1", recipe("Sony FL (film-like)").summary());
-        assertEquals("Vivid  +3/+2  MTX", recipe("Velvia").summary());
+        assertEquals("Vivid  +3/+2", recipe("Velvia").summary());
         assertEquals("B&W  0/+1  4000K", recipe("Acros +Ye (yellow filter)").summary());
         assertEquals("B&W  0/+1  5600K  G4", recipe("Acros +G (green filter)").summary());
         assertEquals("Standard  -2/-1  5500K  B1  M1", recipe("Cinestill 50D (Blue Velvet)").summary());
@@ -206,9 +205,6 @@ class RecipesTest {
         assertEquals("High-key blue  +1.0  A1", recipe("Sony SH (soft high-key)").summary());
         assertEquals("Retro  A3  M1", recipe("GR Retro").summary());
         assertEquals("HC mono  2500K", recipe("Acros +R (red filter)").summary());
-        // a matrix is meaningless under an effect and stays out of the line
-        Recipes.Recipe r = new Recipes.Recipe(0, "x", Recipes.STD, 0, 0, 0, 1, Params.WB_AUTO, 0, 0, 0, Recipes.PE_POP, 0, Recipes.DRO_AUTO);
-        assertEquals("Pop", r.summary());
     }
 
     @Test void nextWrapsOverTheListAndSkipsTheFactoryLook() {

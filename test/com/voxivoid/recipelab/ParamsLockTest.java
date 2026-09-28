@@ -79,7 +79,7 @@ class ParamsLockTest {
         assertEquals("A-B", slotName(ID_WB_AB_K));
         assertEquals("G-M", slotName(ID_WB_GM_AWB));
         assertEquals("DRO", slotName(ID_DRO_LVL));
-        assertEquals("MATRIX", slotName(ID_PP_NO));
+        assertEquals("PP", slotName(ID_PP_NO));
         assertEquals("WB", slotName(ID_WB_MODE));
         assertEquals("KELVIN", slotName(ID_WB_TEMP));
         assertEquals("EFFECT", slotName(ID_PE));

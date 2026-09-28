@@ -11,10 +11,11 @@ class ParamsChipsTest {
 
     @Test void creativeStyleChipsHideUnderAnEffect() {
         int[] e = factoryRows();
-        for (int r : new int[] { R_STYLE, R_SAT, R_CON, R_SHARP, R_MTX }) assertTrue(rowVisible(r, e), ROW_NAME[r]);
+        for (int r : new int[] { R_STYLE, R_SAT, R_CON, R_SHARP }) assertTrue(rowVisible(r, e), ROW_NAME[r]);
+        assertFalse(rowVisible(R_PP, e), "the Picture Profile row has no chip");
         assertFalse(rowVisible(R_SUB, e));
         e[R_PE] = Recipes.PE_RETRO;
-        for (int r : new int[] { R_STYLE, R_SAT, R_CON, R_SHARP, R_MTX }) assertFalse(rowVisible(r, e), ROW_NAME[r]);
+        for (int r : new int[] { R_STYLE, R_SAT, R_CON, R_SHARP }) assertFalse(rowVisible(r, e), ROW_NAME[r]);
         assertFalse(rowVisible(R_SUB, e), "Retro has no sub-parameter");
         e[R_PE] = Recipes.PE_TOY;
         assertTrue(rowVisible(R_SUB, e));
@@ -29,7 +30,7 @@ class ParamsChipsTest {
     }
 
     @Test void choicesWrapNumbersClamp() {
-        for (int r : new int[] { R_STYLE, R_MTX, R_PE, R_SUB, R_QUAL, R_DRO, R_WBMODE }) assertTrue(isChoice(r), ROW_NAME[r]);
+        for (int r : new int[] { R_STYLE, R_PE, R_SUB, R_QUAL, R_DRO, R_WBMODE }) assertTrue(isChoice(r), ROW_NAME[r]);
         for (int r : new int[] { R_SAT, R_CON, R_SHARP, R_KELVIN, R_AB, R_GM, R_EV }) assertFalse(isChoice(r), ROW_NAME[r]);
 
         int[] e = factoryRows();
@@ -135,8 +136,8 @@ class ParamsChipsTest {
         assertEquals("+3", fmt(R_SAT, 3, e));
         assertEquals("-2", fmt(R_CON, -2, e));
         assertEquals("0", fmt(R_SHARP, 0, e));
-        assertEquals("off", fmt(R_MTX, 0, e));
-        assertEquals("PP3", fmt(R_MTX, 1, e));
+        assertEquals("off", fmt(R_PP, 0, e));
+        assertEquals("on", fmt(R_PP, 1, e));
         assertEquals("auto", fmt(R_WBMODE, WB_AUTO, e));
         assertEquals("kelvin", fmt(R_WBMODE, WB_KELVIN, e));
         assertEquals("3", fmt(R_WBMODE, 3, e));

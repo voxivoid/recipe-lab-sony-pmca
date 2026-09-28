@@ -36,9 +36,16 @@ class ParamsWritesTest {
                 writesFromFactory("Kodak Portra 400", Q_FINE));
     }
 
-    @Test void velviaWritesPictureProfileThreeForTheMatrix() {
-        assertEquals(Arrays.asList(w(ID_STYLE, Recipes.VIVID), w(ID_SAT, 3), w(ID_CON, 2), w(ID_PP_NO, 3)),
+    @Test void velviaLeavesThePictureProfileAlone() {
+        assertEquals(Arrays.asList(w(ID_STYLE, Recipes.VIVID), w(ID_SAT, 3), w(ID_CON, 2)),
                 writesFromFactory("Velvia", Q_FINE));
+    }
+
+    @Test void anyRecipeSwitchesOffAPictureProfileLeftOn() {
+        // older matrix recipes stored PP3; on bodies with a Picture Profile menu it overrides Creative Style (#38)
+        int[] cur = factoryRows(); cur[R_PP] = 1;
+        int[] edit = staged(Fixtures.recipe("FACTORY (ST)"), cur, Q_FINE);
+        assertEquals(Arrays.asList(w(ID_PP_NO, 0)), writes(cur, edit, 0));
     }
 
     @Test void eternaWritesBothDroBytes() {
@@ -120,7 +127,7 @@ class ParamsWritesTest {
     @Test void stagingLeavesWhiteBalanceAloneWhenTheRecipeSaysSo() {
         int[] edit = factoryRows();
         edit[R_WBMODE] = WB_KELVIN; edit[R_KELVIN] = 32;
-        Params.stage(new Recipes.Recipe(0, "wb as is", Recipes.VIVID, 1, 0, 0, 0, 0, 0, 0, 0), edit);
+        Params.stage(new Recipes.Recipe(0, "wb as is", Recipes.VIVID, 1, 0, 0, 0, 0, 0, 0), edit);
         assertEquals(WB_KELVIN, edit[R_WBMODE]);
         assertEquals(32, edit[R_KELVIN]);
         assertEquals(Recipes.VIVID, edit[R_STYLE]);

@@ -42,12 +42,10 @@ class ParamsCodecTest {
         for (int dro = 0; dro <= Recipes.DRO_AUTO; dro++) assertEquals(dro, droFromStore(droMainToStore(dro)), "DRO " + dro + " round trip");
     }
 
-    @Test void matrixIsPictureProfileThree() {
-        assertEquals(0, matrixToStore(0));
-        assertEquals(3, matrixToStore(1));
-        assertEquals(0, matrixFromStore(0));
-        assertEquals(1, matrixFromStore(3));
-        assertEquals(1, matrixFromStore(7), "any profile reads as the alternate matrix");
+    @Test void anyPictureProfileReadsAsOn() {
+        assertEquals(0, ppFromStore(0));
+        assertEquals(1, ppFromStore(3));
+        assertEquals(1, ppFromStore(7));
     }
 
     @Test void greenMagentaIsStoredMagentaPositive() {

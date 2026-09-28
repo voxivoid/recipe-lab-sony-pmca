@@ -644,7 +644,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             if (dirty) { badge.setText("PREVIEW"); badge.setBackgroundResource(R.drawable.badge_warn); }
             else { badge.setText("ACTIVE"); badge.setBackgroundResource(R.drawable.badge_ok); }
             meta.setText(Params.metaLine(cur, edit, previewOk ? null : previewErr));
-            for (int i = 1; i < N; i++) {
+            for (int i : ORDER) {
                 chip[i].setVisibility(rowVisible(i) ? View.VISIBLE : View.GONE);
                 boolean sel = i == row, ch = rowDirty(i), foc = sel && focus;
                 chip[i].setBackgroundResource(foc ? R.drawable.chip_sel : sel ? R.drawable.chip_hi : R.drawable.chip);

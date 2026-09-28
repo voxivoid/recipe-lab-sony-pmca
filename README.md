@@ -241,7 +241,7 @@ the camera's settings, so they survive a power cycle but go with the app if you 
 
 **The chips.** In the chip row, **left / right** walks the chips, **centre** focuses one (it turns amber),
 **up / down** changes its value, **centre** leaves it. The wheel keeps changing recipes throughout. A recipe only shows the chips it uses: **CS** recipes show style,
-saturation, contrast, sharpness and matrix; **PE** recipes show the effect and its sub-setting. Quality, white
+saturation, contrast and sharpness; **PE** recipes show the effect and its sub-setting. Quality, white
 balance, EV and DRO are always there. The legend at the bottom of the screen follows whatever you are doing.
 
 **The badge** next to the recipe name says where you stand:
@@ -254,8 +254,7 @@ balance, EV and DRO are always there. The legend at the bottom of the screen fol
 ## What it changes
 
 Only camera settings you could set by hand: Creative Style and its saturation, contrast and sharpness sliders, white
-balance and its fine-tune, exposure compensation, DRO, Picture Effect — plus one hidden switch for a richer colour
-matrix the camera has but never shows. No firmware is touched, nothing is unlocked.
+balance and its fine-tune, exposure compensation, DRO, Picture Effect. No firmware is touched, nothing is unlocked.
 
 **Picture Effect recipes** (marked **PE**) behave like the menu item does: the camera ignores Creative Style while one
 is on, and it only works with **Quality = JPEG** — set to RAW or RAW+JPEG, the camera drops the effect silently.
@@ -299,7 +298,7 @@ The common questions — RAW files, damage, LUTs, newer bodies — are in the **
 | Stuck at `Waiting for camera to switch...` | Unplug, turn the camera off and on, reconnect, run again |
 | `Not written — the camera holds these settings read-only` or `WRITE FAILED` | The camera refused the recipe. Install [OpenMemories-Tweak](https://github.com/ma1co/OpenMemories-Tweak), open **Protection**, tick *Unlock protected settings* until it reads *Protection disabled*, then pick the recipe again |
 | Look not applied after picking a recipe | Turn the camera off and on |
-| Look right in the app, gone once you leave it | If your camera has a **Picture Profile** menu (the A6000 does not), set `MENU → Picture Profile` to *Off* and pick the recipe again. While a Picture Profile runs, the camera ignores Creative Style and its sliders. A recipe whose MATRIX chip reads *PP3* can itself switch PP3 on, on these bodies ([#38](https://github.com/voxivoid/recipe-lab-sony-pmca/issues/38)) |
+| Look right in the app, gone once you leave it | If your camera has a **Picture Profile** menu (the A6000 does not), set `MENU → Picture Profile` to *Off* and pick the recipe again. While a Picture Profile runs, the camera ignores Creative Style and its sliders. Older recipes that used the colour matrix could switch PP3 on themselves on these bodies ([#38](https://github.com/voxivoid/recipe-lab-sony-pmca/issues/38)); picking any recipe now switches it off |
 | `no live preview: ...` in the panel | Something else is holding the camera; close and reopen the app |
 | Text shows `Â·` | Old build; install the APK from the [latest release](https://github.com/voxivoid/recipe-lab-sony-pmca/releases/latest) |
 

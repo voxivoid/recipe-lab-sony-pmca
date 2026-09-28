@@ -42,16 +42,16 @@ final class Params {
     static final int[] Q_FMT_CODE = { 1, 2, 0, 0 }, Q_JPG_CODE = { 1, 1, 1, 0 };   // verified: format raw=1 rawjpeg=2 jpeg=0 · jpeg std=0 fine=1
 
     // ---- rows
-    static final int R_RECIPE = 0, R_STYLE = 1, R_SAT = 2, R_CON = 3, R_SHARP = 4, R_MTX = 5, R_PE = 6, R_SUB = 7, R_WBMODE = 8, R_KELVIN = 9, R_AB = 10, R_GM = 11, R_EV = 12, R_DRO = 13, R_QUAL = 14;
+    static final int R_RECIPE = 0, R_STYLE = 1, R_SAT = 2, R_CON = 3, R_SHARP = 4, R_PP = 5, R_PE = 6, R_SUB = 7, R_WBMODE = 8, R_KELVIN = 9, R_AB = 10, R_GM = 11, R_EV = 12, R_DRO = 13, R_QUAL = 14;
     /** ROW_ID markers for rows without a fixed slot */
     static final int NO_SLOT = 0, SUB_SLOT = -1 /* depends on the staged effect */, QUALITY_SLOTS = -2 /* two slots, each mirrored */;
-    static final String[] ROW_NAME = { "RECIPE", "STYLE", "SAT", "CON", "SHARP", "MATRIX", "EFFECT", "SUB", "WB", "KELVIN", "A-B", "G-M", "EV", "DRO", "QUALITY" };
+    static final String[] ROW_NAME = { "RECIPE", "STYLE", "SAT", "CON", "SHARP", "PP", "EFFECT", "SUB", "WB", "KELVIN", "A-B", "G-M", "EV", "DRO", "QUALITY" };
     static final int[] ROW_ID = { NO_SLOT, ID_STYLE, ID_SAT, ID_CON, ID_SHARP, ID_PP_NO, ID_PE, SUB_SLOT, ID_WB_MODE, ID_WB_TEMP, ID_WB_AB, ID_WB_GM, ID_EV, ID_DRO, QUALITY_SLOTS };
     static final int[] ROW_MIN = { 0, 1, -3, -3, -3, 0, 0, 0, 0, 25, -7, -7, -15, 0, 0 };
     static final int[] ROW_MAX = { 0, 14, 3, 3, 3, 1, 13, 4, 20, 99, 7, 7, 15, 6, 3 };
     static final int N = ROW_ID.length;
     /** chip display / navigation order (quality first) */
-    static final int[] ORDER = { R_QUAL, R_STYLE, R_SAT, R_CON, R_SHARP, R_MTX, R_PE, R_SUB, R_WBMODE, R_KELVIN, R_AB, R_GM, R_EV, R_DRO };
+    static final int[] ORDER = { R_QUAL, R_STYLE, R_SAT, R_CON, R_SHARP, R_PE, R_SUB, R_WBMODE, R_KELVIN, R_AB, R_GM, R_EV, R_DRO };   // R_PP has no chip
     /** the overlay MainActivity is in: the full panel, the pill, nothing, or the browser */
     static final int OV_FULL = 0, OV_PILL = 1, OV_HIDDEN = 2, OV_BROWSER = 3;
     /** the browser's two columns */
@@ -60,8 +60,6 @@ final class Params {
     static final int ENTER_PICK = 0, ENTER_FOCUS = 1, ENTER_BROWSER_COLUMN = 2, ENTER_BROWSER_PICK = 3;
     /** WB modes as stored: 1 auto, 14 colour temperature */
     static final int WB_AUTO = 1, WB_KELVIN = 14;
-    // PP3 colour matrix measured on this body, Q10 fixed point (1.0 = 1024)
-    static final String PP3_MATRIX = "1331,-307,-51,-205,1331,-123,-20,-461,1485";
 
     // ------------------------------------------------------------ slots
     /** settings slot for a row; SUB depends on which effect is staged (0 when it has none) */
@@ -80,10 +78,11 @@ final class Params {
     static int droMainToStore(int dro) { return dro == 0 ? 0 : dro == Recipes.DRO_AUTO ? 1 : dro + 1; }
     /** the level byte: 1 for off and auto, Lv n = n + 1 */
     static int droLevelToStore(int dro) { return (dro >= 1 && dro <= 5) ? dro + 1 : 1; }
-    /** Picture Profile number -> matrix row: any profile counts as the alternate matrix */
-    static int matrixFromStore(int ppNo) { return ppNo == 0 ? 0 : 1; }
-    /** matrix row -> Picture Profile number: PP3 is the alternate colour matrix on this body */
-    static int matrixToStore(int matrix) { return matrix == 0 ? 0 : 3; }
+    /**
+     * Picture Profile number -> PP row: 1 while any profile is on. The row has no chip; a staged recipe always
+     * sets it to 0, so picking any recipe switches off the PP3 that older matrix recipes left behind (issue #38).
+     */
+    static int ppFromStore(int ppNo) { return ppNo == 0 ? 0 : 1; }
     /** the store counts magenta positive, the app counts green positive */
     static int gmFromStore(int b) { return -b; }
     static int gmToStore(int gm) { return -gm; }
@@ -95,7 +94,7 @@ final class Params {
     static int fromStore(int id, int b) {
         if (id == ID_DRO) return droFromStore(b & 0xff);
         int v = unsignedSlot(id) ? b & 0xff : (byte) b;
-        if (id == ID_PP_NO) return matrixFromStore(v);
+        if (id == ID_PP_NO) return ppFromStore(v);
         if (id == ID_WB_GM) return gmFromStore(v);
         return v;
     }
@@ -158,7 +157,6 @@ final class Params {
                 continue;
             }
             int id = slot(i, edit[R_PE]);
-            if (id == ID_PP_NO) v = matrixToStore(v);
             if (id == ID_EV) { w.add(new Write(ID_EV, v)); w.add(new Write(ID_EV2, v)); continue; }
             if (id == ID_WB_AB) { w.add(new Write(ID_WB_AB, v)); w.add(new Write(abSlot(edit[R_WBMODE]), v)); continue; }
             if (id == ID_WB_GM) { w.add(new Write(ID_WB_GM, gmToStore(v))); w.add(new Write(gmSlot(edit[R_WBMODE]), gmToStore(v))); continue; }
@@ -272,7 +270,7 @@ final class Params {
 
     /** stages a recipe over the current edit values (WB is left alone when the recipe says so); quality is the caller's */
     static void stage(Recipes.Recipe r, int[] edit) {
-        edit[R_STYLE] = r.style; edit[R_SAT] = r.sat; edit[R_CON] = r.con; edit[R_SHARP] = r.sharp; edit[R_MTX] = r.matrix;
+        edit[R_STYLE] = r.style; edit[R_SAT] = r.sat; edit[R_CON] = r.con; edit[R_SHARP] = r.sharp; edit[R_PP] = 0;
         if (r.wbMode != 0) { edit[R_WBMODE] = r.wbMode; if (r.wbMode == WB_KELVIN) edit[R_KELVIN] = r.kelvin / 100; }
         edit[R_AB] = r.ab; edit[R_GM] = r.gm;
         edit[R_PE] = r.pe; edit[R_EV] = r.ev; edit[R_DRO] = r.dro; edit[R_SUB] = r.sub;
@@ -289,7 +287,7 @@ final class Params {
         p.put("saturation", String.valueOf(clamp(edit[R_SAT], -3, 3)));   // the preview takes more, the store does not
         p.put("contrast", String.valueOf(clamp(edit[R_CON], -3, 3)));
         p.put("sharpness", String.valueOf(clamp(edit[R_SHARP], -3, 3)));
-        if (edit[R_MTX] == 1) { p.put("rgb-matrix", PP3_MATRIX); p.put("rgb-matrix-mode", "true"); } else p.put("rgb-matrix-mode", "false");
+        p.put("rgb-matrix-mode", "false");
         if (edit[R_WBMODE] == WB_KELVIN) { p.put("whitebalance", "color-temp"); p.put("color-temperture-white-balance", String.valueOf(edit[R_KELVIN] * 100)); }
         else if (edit[R_WBMODE] == WB_AUTO) p.put("whitebalance", "auto");
         p.put("light-balance-for-white-balance", String.valueOf(edit[R_AB]));
@@ -311,7 +309,8 @@ final class Params {
     static boolean rowVisible(int row, int[] edit) {
         boolean pe = edit[R_PE] != 0;
         switch (row) {
-            case R_STYLE: case R_SAT: case R_CON: case R_SHARP: case R_MTX: return !pe;
+            case R_STYLE: case R_SAT: case R_CON: case R_SHARP: return !pe;
+            case R_PP: return false;
             case R_SUB: return pe && Recipes.subId(edit[R_PE]) != 0;
             case R_KELVIN: return edit[R_WBMODE] == WB_KELVIN;
             default: return true;
@@ -319,7 +318,7 @@ final class Params {
     }
 
     /** enumerated rows (names, not numbers) scroll endlessly */
-    static boolean isChoice(int row) { return row == R_STYLE || row == R_MTX || row == R_PE || row == R_SUB || row == R_QUAL || row == R_DRO || row == R_WBMODE; }
+    static boolean isChoice(int row) { return row == R_STYLE || row == R_PE || row == R_SUB || row == R_QUAL || row == R_DRO || row == R_WBMODE; }
 
     /**
      * One step on the focused chip: choices wrap, numbers clamp, WB toggles auto/kelvin, SUB cycles the staged
@@ -389,7 +388,7 @@ final class Params {
     static String fmt(int row, int v, int[] edit) {
         switch (row) {
             case R_STYLE: return Recipes.styleLabel(v);
-            case R_MTX: return v == 0 ? "off" : "PP3";
+            case R_PP: return v == 0 ? "off" : "on";
             case R_WBMODE: return v == WB_AUTO ? "auto" : v == WB_KELVIN ? "kelvin" : String.valueOf(v);
             case R_KELVIN: return edit[R_WBMODE] == WB_KELVIN ? (v * 100) + "K" : "-";
             case R_AB: return v == 0 ? "0" : (v > 0 ? "A" + v : "B" + (-v));
@@ -412,7 +411,6 @@ final class Params {
             m.append(" (Creative Style ignored, JPEG only)");
         } else m.append(Recipes.styleLabel(edit[R_STYLE]));
         m.append("  ·  WB ").append(edit[R_WBMODE] == WB_KELVIN ? (edit[R_KELVIN] * 100) + "K" : edit[R_WBMODE] == WB_AUTO ? "auto" : "mode " + edit[R_WBMODE]);
-        if (edit[R_MTX] == 1 && edit[R_PE] == 0) m.append("  ·  PP3 matrix");
         if (edit[R_EV] != 0) m.append("  ·  EV ").append(Recipes.evLabel(edit[R_EV]));
         if (edit[R_DRO] != Recipes.DRO_AUTO) m.append("  ·  DRO ").append(Recipes.droLabel(edit[R_DRO]));
         if (edit[R_QUAL] != cur[R_QUAL]) m.append("  ·  QUALITY → ").append(Q_LABEL[edit[R_QUAL]]).append(" (now ").append(Q_LABEL[cur[R_QUAL]]).append(")");

@@ -73,7 +73,7 @@ Found by disassembling the camera app's parameter registration in `libObj.so`):
 | Contrast | `0x01070178` | signed byte |
 | Saturation | `0x01070187` | signed byte, keep it in -3..+3 (see [Adding recipes](#adding-recipes)) |
 | Sharpness | `0x0107018a` | signed byte |
-| Picture Profile no. | `0x0107031c` | 0 off, 3 = alternate colour matrix (no gamma on this body) |
+| Picture Profile no. | `0x0107031c` | 0 off. No chip: every staged recipe writes 0, clearing the PP3 that the old matrix recipes stored (#38). PP3's alternate matrix did not hold on the A6000, so the app no longer uses it |
 | WB mode | `0x01070019` | 1 auto, 14 colour temperature |
 | WB Kelvin | `0x01070018` | Kelvin / 100 |
 | WB A-B / G-M | `0x01070017` / `0x01070016` + per-mode copies: AWB `0x0107067f` / `0x0107067e`, colour temp `0x01070683` / `0x01070682` | signed, magenta positive (menu G1 = 0xff). The camera applies the per-mode copy (verified end-to-end) |
@@ -194,7 +194,7 @@ otherwise a freshly stored recipe would be undone the moment the app closes.
 
 Goes through `Camera.Parameters`: `color-mode`, `saturation`, `contrast`, `sharpness`,
 `whitebalance`, `color-temperture-white-balance`, `light-balance-for-white-balance`,
-`color-compensation-for-white-balance`, `rgb-matrix` (Q10, 1.0 = 1024) + `rgb-matrix-mode`, `picture-effect`,
+`color-compensation-for-white-balance`, `rgb-matrix-mode` (always `false`), `picture-effect`,
 `exposure-compensation` (1/3 EV steps), `dro-mode` + `dro-level`.
 **Key scan codes** (all in `Keys`, Sony's `ScalarInput` names): wheel 522 / 523, top dial 525 / 526, four-way 103 /
 108 / 105 / 106, centre 232, MENU 514 (SK1 229 on the NEX bodies), trash 595 (SK2 513), shutter 516 / 518, Fn 520.
@@ -389,7 +389,7 @@ tests pin it down:
 | | |
 |---|---|
 | `RecipesTest` | the table itself — 77 entries (76 listed + the factory look, which navigation skips), group order, every value inside its row's range, kelvin in whole hundreds, sub-parameters that exist for the effect; labels, `summary()`, wrap-around navigation |
-| `ParamsCodecTest` | how the store encodes each row (DRO bytes, PP3 for the matrix, magenta-positive G-M, the quality pair, signed vs unsigned slots) and how it reads back |
+| `ParamsCodecTest` | how the store encodes each row (DRO bytes, any Picture Profile reading as on, magenta-positive G-M, the quality pair, signed vs unsigned slots) and how it reads back |
 | `ParamsWritesTest` | which bytes ENTER writes for a recipe — golden lists for a few, and every recipe stored over a factory camera, then on top of each other, read back through the same decoder |
 | `ParamsPreviewTest` | the `Camera.Parameters` the live preview sets, recipe by recipe |
 | `ParamsChipsTest` | chip visibility, stepping (wrap vs clamp, the effect → SUB / quality side effects), LEFT/RIGHT and UP/DOWN landing spots, chip text |
@@ -469,7 +469,7 @@ a block of recipes.
 look beyond the menu range looks right inside the app, but the camera does not keep it: after the app exits the menu
 reads a stored Vivid `+5` back as `+1` and a Neutral `-4` as `-1`, and the look goes with it. `Params.ROW_MIN` /
 `ROW_MAX` stop the editor at ±3, the preview clamps to it, and `RecipesTest` fails any recipe outside it. For more
-punch reach for the PP3 matrix (~+45% chroma) or contrast; for less, Neutral at `-3` with DRO off.
+punch reach for Vivid and contrast; for less, Neutral at `-3` with DRO off.
 
 **Colour-temperature recipes cannot be judged indoors.** A fixed kelvin renders relative to the light in the room,
 not to the recipe's intent: 5600K under warm indoor light comes out amber, and 3200K comes out nearly neutral.
