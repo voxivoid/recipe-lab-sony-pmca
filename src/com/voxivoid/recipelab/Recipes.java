@@ -6,7 +6,7 @@ package com.voxivoid.recipelab;
  * so log profiles (S-Log, V-Log, Blackmagic Film) and tinted monochromes (selenium, cyanotype) are not included.
  *
  * style   : Creative Style (stored enum verified on camera: 1 standard, 2 vivid, 3 neutral, 6 mono, 14 sepia; 13 is some style we have not identified, 4..12 still guessed from the runtime list order)
- * sat/con/sharp : Creative Style adjustments (menu range -3..+3; beyond = experimental, camera core accepts sat ±16)
+ * sat/con/sharp : Creative Style adjustments (-3..+3: the live preview takes more, but the store keeps only the menu range)
  * matrix  : 1 = PP3 alternate colour matrix (~+45% chroma, blue/green cross-talk)
  * wbMode  : 0 = leave WB as is · 1 = auto · 14 = colour temperature (kelvin)
  * ab / gm : WB fine tune  amber(+)/blue(-)  green(+)/magenta(-)  (-7..+7)
@@ -94,12 +94,12 @@ public class Recipes {
         new Recipe(SONY,  "Sony NT (neutral)",                   NEUTRAL,  0,  0,  0, 0, AUTO, 0,     0,  0),
         new Recipe(SONY,  "Sony VV (vivid)",                     VIVID,    0,  0,  0, 0, AUTO, 0,     0,  0),
         new Recipe(SONY,  "Sony VV2",                            VIVID,    2,  1,  0, 1, AUTO, 0,     0,  0),
-        new Recipe(SONY,  "Sony FL (film-like)",                 NEUTRAL, -4, -1,  0, 0, AUTO, 0,     1,  0),
-        new Recipe(SONY,  "Sony IN (instant)",                   NEUTRAL, -4, -3,  0, 0, AUTO, 0,     0, -1),   // -6 is already grey on this body
+        new Recipe(SONY,  "Sony FL (film-like)",                 NEUTRAL, -3, -1,  0, 0, AUTO, 0,     1,  0),
+        new Recipe(SONY,  "Sony IN (instant)",                   NEUTRAL, -3, -3,  0, 0, AUTO, 0,     0, -1),
         new Recipe(SONY,  "Sony SH (soft high-key)",             LIGHT,   -2, -2,  0, 0, AUTO, 0,     1,  0,  5,  3, 6),
         // ---- Fujifilm simulations
         new Recipe(FSIM,  "Provia",                              STD,      1,  0,  0, 0, AUTO, 0,     0,  0,  0,  0, 6),
-        new Recipe(FSIM,  "Velvia",                              VIVID,    5,  2,  0, 1, AUTO, 0,     0,  0),
+        new Recipe(FSIM,  "Velvia",                              VIVID,    3,  2,  0, 1, AUTO, 0,     0,  0),
         new Recipe(FSIM,  "Astia",                               PORTRAIT, 0, -1,  0, 0, AUTO, 0,     1,  0,  0,  1, 6),
         new Recipe(FSIM,  "Classic Chrome",                      STD,     -1,  2,  0, 0, AUTO, 0,     3,  1,  0, -1, 6),   // golden with muted blues; Neutral -3 A2 came out grey-beige
         new Recipe(FSIM,  "Classic Negative",                    STD,     -3,  3,  1, 0, AUTO, 0,    -1,  1,  0,  0, 6),
@@ -107,8 +107,8 @@ public class Recipes {
         new Recipe(FSIM,  "Reala Ace",                           STD,      0,  1,  0, 0, AUTO, 0,     0,  0),
         new Recipe(FSIM,  "Pro Neg Std",                         PORTRAIT,-2, -1,  0, 0, AUTO, 0,     0,  0),
         new Recipe(FSIM,  "Pro Neg Hi",                          PORTRAIT,-2,  1,  0, 0, AUTO, 0,     0,  0),
-        new Recipe(FSIM,  "Eterna",                              NEUTRAL, -4, -2, -1, 0, AUTO, 0,     0,  0,  0, -1, 3),   // -6 is already grey on this body
-        new Recipe(FSIM,  "Eterna Bleach Bypass",                NEUTRAL, -6,  3,  0, 0, AUTO, 0,     0,  0,  0, -1, 6),   // sat -8 and below is pure grey on this body
+        new Recipe(FSIM,  "Eterna",                              NEUTRAL, -3, -2, -1, 0, AUTO, 0,     0,  0,  0, -1, 3),
+        new Recipe(FSIM,  "Eterna Bleach Bypass",                NEUTRAL, -3,  3,  0, 0, AUTO, 0,     0,  0,  0, -1, DRO_OFF),   // the store keeps sat -3 at most, so DRO off carries the rest
         new Recipe(FSIM,  "Acros",                               MONO,     0,  1,  1, 0, AUTO, 0,     0,  0),
         new Recipe(FSIM,  "Acros +Ye (yellow filter)",           MONO,     0,  1,  1, 0, K,    4000,  0,  0),
         new Recipe(FSIM,  "Acros +R (red filter)",               MONO,     0,  0,  0, 0, K,    2500,  0,  0,  7,  0, 6),   // HC Mono: deep blacks, dramatic sky
@@ -116,7 +116,7 @@ public class Recipes {
         new Recipe(FSIM,  "Sepia",                               SEPIA,    0,  0,  0, 0, AUTO, 0,     0,  0),
         // ---- Fujifilm film stocks
         new Recipe(FFILM, "Fuji Pro 400H",                       LIGHT,   -2, -2,  0, 0, AUTO, 0,    -1,  1,  0,  2, 6),   // cool pastel; the high-key green tint was a green wash
-        new Recipe(FFILM, "Fuji Fortia 50",                      VIVID,    4,  2,  0, 1, AUTO, 0,    -1,  0,  0, -1, 6),   // M1 on top of the matrix went magenta
+        new Recipe(FFILM, "Fuji Fortia 50",                      VIVID,    3,  2,  0, 1, AUTO, 0,    -1,  0,  0, -1, 6),   // M1 on top of the matrix went magenta
         new Recipe(FFILM, "Fuji Superia 400",                    STD,      1,  1,  0, 0, AUTO, 0,     1,  1,  0,  1, 6),
         new Recipe(FFILM, "Fuji C200",                           STD,      0,  0,  0, 0, AUTO, 0,    -1,  1),
         new Recipe(FFILM, "Fuji Natura 1600",                    PORTRAIT,-2, -2,  0, 0, AUTO, 0,     1,  0,  0,  1, 6),
@@ -143,7 +143,7 @@ public class Recipes {
         // ---- Ricoh GR image controls
         new Recipe(RICOH, "GR Positive Film",                    STD,      3,  2,  0, 0, AUTO, 0,     2,  0,  0, -1, 6),
         new Recipe(RICOH, "GR Negative Film",                    NEUTRAL, -2,  1,  0, 0, AUTO, 0,    -1,  1,  0,  1, 6),
-        new Recipe(RICOH, "GR Bleach Bypass",                    NEUTRAL, -6,  3,  0, 0, AUTO, 0,     0,  0),   // sat -8 and below is pure grey on this body
+        new Recipe(RICOH, "GR Bleach Bypass",                    NEUTRAL, -3,  3,  1, 0, AUTO, 0,     0,  0,  0,  0, DRO_OFF),   // the store keeps sat -3 at most, so DRO off carries the rest
         new Recipe(RICOH, "GR Retro",                            STD,     -3, -1,  0, 0, AUTO, 0,     3, -1,  4,  0, 6),
         new Recipe(RICOH, "GR Cross Process",                    VIVID,    2,  2,  0, 0, AUTO, 0,    -2,  4),
         new Recipe(RICOH, "GR Hi-Contrast B&W",                  MONO,     0,  3,  1, 0, AUTO, 0,     0,  0,  7,  0, 6),
@@ -165,11 +165,11 @@ public class Recipes {
         // ---- Panasonic / Olympus
         new Recipe(PANOLY,"Pana L.Monochrome D",                 MONO,     0,  3,  1, 0, AUTO, 0,     0,  0),
         new Recipe(PANOLY,"Pana L.ClassicNeo",                   NEUTRAL, -3, -1,  0, 0, AUTO, 0,     2,  0,  0,  1, 6),
-        new Recipe(PANOLY,"Olympus Pop Art",                     VIVID,    8,  2,  0, 1, AUTO, 0,     0,  0),
+        new Recipe(PANOLY,"Olympus Pop Art",                     VIVID,    3,  3,  0, 1, AUTO, 0,     0,  0),
         new Recipe(PANOLY,"Olympus Pale & Light",                LIGHT,   -3, -2,  0, 0, AUTO, 0,     0,  0,  0,  2, 6),
         // ---- Other stocks
         new Recipe(OTHER, "Agfa Vista 200",                      STD,      2,  1,  0, 0, AUTO, 0,     2, -1,  0,  1, 6),
-        new Recipe(OTHER, "Agfa Ultra 100",                      VIVID,    6,  1,  0, 1, AUTO, 0,     0,  0),
+        new Recipe(OTHER, "Agfa Ultra 100",                      VIVID,    3,  1,  0, 1, AUTO, 0,     0,  0),
         new Recipe(OTHER, "Polaroid / Instax",                   STD,     -3, -2,  0, 0, AUTO, 0,     1, -2,  4,  1, 6),
         // ---- Ilford
         new Recipe(ILFORD,"Ilford HP5",                          MONO,     0,  1,  0, 0, AUTO, 0,     0,  0,  0,  1, 6),

@@ -37,12 +37,12 @@ class ParamsWritesTest {
     }
 
     @Test void velviaWritesPictureProfileThreeForTheMatrix() {
-        assertEquals(Arrays.asList(w(ID_STYLE, Recipes.VIVID), w(ID_SAT, 5), w(ID_CON, 2), w(ID_PP_NO, 3)),
+        assertEquals(Arrays.asList(w(ID_STYLE, Recipes.VIVID), w(ID_SAT, 3), w(ID_CON, 2), w(ID_PP_NO, 3)),
                 writesFromFactory("Velvia", Q_FINE));
     }
 
     @Test void eternaWritesBothDroBytes() {
-        assertEquals(Arrays.asList(w(ID_STYLE, Recipes.NEUTRAL), w(ID_SAT, -4), w(ID_CON, -2), w(ID_SHARP, -1),
+        assertEquals(Arrays.asList(w(ID_STYLE, Recipes.NEUTRAL), w(ID_SAT, -3), w(ID_CON, -2), w(ID_SHARP, -1),
                 w(ID_EV, -1), w(ID_EV2, -1), w(ID_DRO, 4), w(ID_DRO_LVL, 4)),
                 writesFromFactory("Eterna", Q_FINE));
     }

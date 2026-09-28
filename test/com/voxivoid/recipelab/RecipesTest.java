@@ -83,6 +83,14 @@ class RecipesTest {
                 recipe + ": " + what + " = " + v + " outside " + Params.ROW_MIN[row] + ".." + Params.ROW_MAX[row]);
     }
 
+    @Test void adjustmentRowsStopAtTheMenuRange() {
+        // beyond ±3 the live preview shows the look, but the camera rewrites the stored value on exit (+5 read back +1)
+        for (int row : new int[] { Params.R_SAT, Params.R_CON, Params.R_SHARP }) {
+            assertEquals(-3, Params.ROW_MIN[row], Params.ROW_NAME[row]);
+            assertEquals(3, Params.ROW_MAX[row], Params.ROW_NAME[row]);
+        }
+    }
+
     @Test void styleTablesLineUpWithTheStoredEnum() {
         assertEquals(15, Recipes.STYLE_NAMES.length);
         assertEquals(Recipes.STYLE_NAMES.length, Recipes.STYLE_LABEL.length);
@@ -183,12 +191,12 @@ class RecipesTest {
 
     @Test void summaryReadsLikeTheBrowserLine() {
         assertEquals("Standard  0/0", Recipes.ALL[0].summary());
-        assertEquals("Neutral  -4/-1  A1", recipe("Sony FL (film-like)").summary());
-        assertEquals("Vivid  +5/+2  MTX", recipe("Velvia").summary());
+        assertEquals("Neutral  -3/-1  A1", recipe("Sony FL (film-like)").summary());
+        assertEquals("Vivid  +3/+2  MTX", recipe("Velvia").summary());
         assertEquals("B&W  0/+1  4000K", recipe("Acros +Ye (yellow filter)").summary());
         assertEquals("B&W  0/+1  5600K  G4", recipe("Acros +G (green filter)").summary());
         assertEquals("Standard  -2/-1  5500K  B1  M1", recipe("Cinestill 50D (Blue Velvet)").summary());
-        assertEquals("Neutral  -4/-2  -0.3  DRO Lv3", recipe("Eterna").summary());
+        assertEquals("Neutral  -3/-2  -0.3  DRO Lv3", recipe("Eterna").summary());
         assertEquals("Neutral  -2/-2  DRO Lv5", recipe("Rec709 Video (flat-ish)").summary());
         assertEquals("Portrait  -1/-1  +0.7  A3  G1", recipe("Kodak Portra 400").summary());
         assertEquals("Neutral  -1/0  +0.3  DRO Lv3  3200K", recipe("Kodak Vision3 500T (daylight)").summary());

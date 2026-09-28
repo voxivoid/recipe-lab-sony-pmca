@@ -284,9 +284,6 @@ without the app. It is not permanent in the sense of damage. Undo it any time, t
 
 **Worth knowing:**
 
-- Some recipes push saturation further than the menu slider goes (the menu allows ±3, the camera accepts more). The
-  menu then shows the nearest value it can; if you touch that slider it snaps back to the normal range and the
-  recipe loses that extra punch. Pick the recipe again in the app if that happens.
 - The preview inside the app is temporary; closing the app removes it. Only what you *picked* stays.
 - Built and tested on the A6000 with firmware 3.21. Several other bodies have been reported working — see
   [Compatibility](#compatibility) — but on anything still marked ❔ there, compare what the chips show with your menus

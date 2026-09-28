@@ -24,6 +24,11 @@ in daylight, not from this page.
 Values are read as in the app: *style  sat/con*, then the extras — `MTX` alternate colour matrix, `±EV`, `DRO`,
 kelvin, `A`/`B` amber-blue and `G`/`M` green-magenta fine tune. Effect recipes show the effect name instead of a style.
 
+**Nine frames predate the ±3 limit.** Sony FL, Sony IN, Velvia, Eterna, Eterna Bleach Bypass, Fortia 50,
+GR Bleach Bypass, Olympus Pop Art and Agfa Ultra 100 were shot with a saturation beyond ±3, which the preview showed
+but the camera does not keep once the app exits. The values under them are the ones shot; the recipes now stay
+within ±3 and those frames need re-shooting.
+
 ---
 
 **Brands**

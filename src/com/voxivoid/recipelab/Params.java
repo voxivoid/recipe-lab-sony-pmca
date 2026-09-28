@@ -47,8 +47,8 @@ final class Params {
     static final int NO_SLOT = 0, SUB_SLOT = -1 /* depends on the staged effect */, QUALITY_SLOTS = -2 /* two slots, each mirrored */;
     static final String[] ROW_NAME = { "RECIPE", "STYLE", "SAT", "CON", "SHARP", "MATRIX", "EFFECT", "SUB", "WB", "KELVIN", "A-B", "G-M", "EV", "DRO", "QUALITY" };
     static final int[] ROW_ID = { NO_SLOT, ID_STYLE, ID_SAT, ID_CON, ID_SHARP, ID_PP_NO, ID_PE, SUB_SLOT, ID_WB_MODE, ID_WB_TEMP, ID_WB_AB, ID_WB_GM, ID_EV, ID_DRO, QUALITY_SLOTS };
-    static final int[] ROW_MIN = { 0, 1, -16, -8, -8, 0, 0, 0, 0, 25, -7, -7, -15, 0, 0 };
-    static final int[] ROW_MAX = { 0, 14, 16, 8, 8, 1, 13, 4, 20, 99, 7, 7, 15, 6, 3 };
+    static final int[] ROW_MIN = { 0, 1, -3, -3, -3, 0, 0, 0, 0, 25, -7, -7, -15, 0, 0 };
+    static final int[] ROW_MAX = { 0, 14, 3, 3, 3, 1, 13, 4, 20, 99, 7, 7, 15, 6, 3 };
     static final int N = ROW_ID.length;
     /** chip display / navigation order (quality first) */
     static final int[] ORDER = { R_QUAL, R_STYLE, R_SAT, R_CON, R_SHARP, R_MTX, R_PE, R_SUB, R_WBMODE, R_KELVIN, R_AB, R_GM, R_EV, R_DRO };
@@ -286,7 +286,7 @@ final class Params {
         Map<String, String> p = new LinkedHashMap<String, String>();
         int st = edit[R_STYLE];
         p.put("color-mode", Recipes.styleKnown(st) ? Recipes.STYLE_NAMES[st] : "standard");
-        p.put("saturation", String.valueOf(edit[R_SAT]));
+        p.put("saturation", String.valueOf(clamp(edit[R_SAT], -3, 3)));   // the preview takes more, the store does not
         p.put("contrast", String.valueOf(clamp(edit[R_CON], -3, 3)));
         p.put("sharpness", String.valueOf(clamp(edit[R_SHARP], -3, 3)));
         if (edit[R_MTX] == 1) { p.put("rgb-matrix", PP3_MATRIX); p.put("rgb-matrix-mode", "true"); } else p.put("rgb-matrix-mode", "false");

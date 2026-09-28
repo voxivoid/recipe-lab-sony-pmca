@@ -71,7 +71,7 @@ Found by disassembling the camera app's parameter registration in `libObj.so`):
 |---|---|---|
 | Creative Style | `0x01070175` | index in the runtime `color-mode-values` list (verified by menu diff: 1 standard, 2 vivid, 3 neutral, 6 mono, **14 sepia**). 13 is a style the menu never selected for us, so `Recipes.STYLE_NAMES[13]` is `null` and the chip skips it; 4..12 are still guessed from the runtime list order and each needs its own menu diff |
 | Contrast | `0x01070178` | signed byte |
-| Saturation | `0x01070187` | signed byte, core accepts ±16 |
+| Saturation | `0x01070187` | signed byte, keep it in -3..+3 (see [Adding recipes](#adding-recipes)) |
 | Sharpness | `0x0107018a` | signed byte |
 | Picture Profile no. | `0x0107031c` | 0 off, 3 = alternate colour matrix (no gamma on this body) |
 | WB mode | `0x01070019` | 1 auto, 14 colour temperature |
@@ -465,10 +465,11 @@ A build never mutates the checked-in manifest; it writes `out/AndroidManifest.xm
 Adding a recipe is one line in `Recipes.java` inside its brand block. Adding a brand is a new entry in `GROUPS` plus
 a block of recipes.
 
-**Saturation is steep on this body.** The menu shows ±3 but the core takes ±16, and the sample frames put numbers on
-it: against the Factory look, `sat -4` keeps about half the chroma, `-6` is close to grey, `-8` and below is grey
-(measured chroma 0). A "muted" look is -2 to -4; -6 is a monochrome with a tint. Positive values are gentler:
-`+5` with the PP3 matrix roughly doubles the chroma.
+**Saturation, contrast and sharpness stop at ±3.** The live preview takes more (saturation to ±16), which is why a
+look beyond the menu range looks right inside the app, but the camera does not keep it: after the app exits the menu
+reads a stored Vivid `+5` back as `+1` and a Neutral `-4` as `-1`, and the look goes with it. `Params.ROW_MIN` /
+`ROW_MAX` stop the editor at ±3, the preview clamps to it, and `RecipesTest` fails any recipe outside it. For more
+punch reach for the PP3 matrix (~+45% chroma) or contrast; for less, Neutral at `-3` with DRO off.
 
 **Colour-temperature recipes cannot be judged indoors.** A fixed kelvin renders relative to the light in the room,
 not to the recipe's intent: 5600K under warm indoor light comes out amber, and 3200K comes out nearly neutral.

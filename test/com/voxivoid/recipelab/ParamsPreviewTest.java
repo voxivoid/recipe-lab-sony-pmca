@@ -45,16 +45,16 @@ class ParamsPreviewTest {
     @Test void creativeStyleAndAdjustments() {
         Map<String, String> p = previewOf("Sony FL (film-like)", Q_FINE);
         assertEquals("neutral", p.get("color-mode"));
-        assertEquals("-4", p.get("saturation"));
+        assertEquals("-3", p.get("saturation"));
         assertEquals("-1", p.get("contrast"));
         assertEquals("1", p.get("light-balance-for-white-balance"));
     }
 
-    @Test void contrastAndSharpnessAreClampedToTheMenuRangeButSaturationIsNot() {
+    @Test void theAdjustmentsAreClampedToTheMenuRange() {
         int[] e = factoryRows();
         e[R_SAT] = -9; e[R_CON] = 8; e[R_SHARP] = -8;
         Map<String, String> p = preview(e);
-        assertEquals("-9", p.get("saturation"), "the core accepts saturation to ±16");
+        assertEquals("-3", p.get("saturation"), "the preview would take -9, but the store keeps only -3..+3");
         assertEquals("3", p.get("contrast"));
         assertEquals("-3", p.get("sharpness"));
     }

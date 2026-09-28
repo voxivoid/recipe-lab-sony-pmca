@@ -40,8 +40,11 @@ class ParamsChipsTest {
         e[R_DRO] = Recipes.DRO_AUTO; step(e, R_DRO, +1, Q_FINE); assertEquals(Recipes.DRO_OFF, e[R_DRO]);
         e[R_QUAL] = Q_STD; step(e, R_QUAL, +1, Q_FINE); assertEquals(Q_RAW, e[R_QUAL]);
 
-        e[R_SAT] = 16; step(e, R_SAT, +1, Q_FINE); assertEquals(16, e[R_SAT], "saturation stops at +16");
-        e[R_SAT] = -16; step(e, R_SAT, -1, Q_FINE); assertEquals(-16, e[R_SAT]);
+        e[R_SAT] = 3; step(e, R_SAT, +1, Q_FINE); assertEquals(3, e[R_SAT], "saturation stops at the menu's +3");
+        e[R_SAT] = -3; step(e, R_SAT, -1, Q_FINE); assertEquals(-3, e[R_SAT]);
+        e[R_CON] = 3; step(e, R_CON, +1, Q_FINE); assertEquals(3, e[R_CON]);
+        e[R_SHARP] = -3; step(e, R_SHARP, -1, Q_FINE); assertEquals(-3, e[R_SHARP]);
+        e[R_SAT] = -6; step(e, R_SAT, +1, Q_FINE); assertEquals(-3, e[R_SAT], "a value read from the store outside the range comes back into it");
         e[R_EV] = 0; step(e, R_EV, -1, Q_FINE); assertEquals(-1, e[R_EV]);
         e[R_KELVIN] = 99; step(e, R_KELVIN, +1, Q_FINE); assertEquals(99, e[R_KELVIN]);
         e[R_KELVIN] = 25; step(e, R_KELVIN, -1, Q_FINE); assertEquals(25, e[R_KELVIN]);
