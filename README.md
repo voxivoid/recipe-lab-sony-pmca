@@ -211,7 +211,7 @@ Open **Recipe Lab** from the Application List. You get the live image with a pan
 | **up / down** | move between the recipe line and the row of value chips |
 | **TRASH** | hide the panel — once for a small label, twice for nothing, a third time to bring it back. The wheel still works |
 | **hold TRASH** | reset to the factory look — the app asks first |
-| **hold MENU** | open the menu: browse recipes, panel visibility, reset settings, about |
+| **hold MENU** | open the menu: browse recipes, panel visibility, language, reset settings, about |
 | **shutter** | take a picture of what you are previewing |
 | **MENU** | leave the app |
 | **Fn** *(if your camera has one)* | open the brand list — the same as **hold MENU → Browse recipes** |
@@ -225,6 +225,10 @@ or the wheel move, centre picks, **MENU** goes back.
 - **Browse recipes** opens the brand list: **Favourites** first, then the brands, on the left; recipes on the right.
   Left / right switches column (the active one is amber), wheel or up / down scrolls, centre picks.
 - **Panel visibility** — *Full*, *Label* or *Hidden* — changes with left / right, right there in the menu.
+- **Language** — *Auto*, *English*, *简体中文* (Simplified Chinese) or *繁體中文* (Traditional Chinese) — changes the
+  same way, and the whole app switches at once. *Auto* follows the camera's own language and falls back to English.
+  Recipe names are translated too, with the original name kept in small type underneath; favourites and everything the
+  app writes to the memory card stay the same in every language.
 - **Reset settings** puts the camera back on its factory look, after asking. The factory look is not in the recipe
   list; this is the way to it.
 - **About** shows the app version, the camera model, its platform version and where the source lives.

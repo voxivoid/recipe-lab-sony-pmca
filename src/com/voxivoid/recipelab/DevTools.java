@@ -11,13 +11,16 @@ package com.voxivoid.recipelab;
 final class DevTools {
     private DevTools() {}
 
-    static final String APP_TITLE = "RECIPE LAB", TITLE = "DEV TOOLS", ABOUT_TITLE = "ABOUT";
+    /** the app menu's title: the app's name, which no language translates */
+    static final String APP_TITLE = "RECIPE LAB";
+    static String title() { return Lang.t("dev_title"); }
+    static String aboutTitle() { return Lang.t("about_title"); }
 
     /** the two menu levels: the app menu a MENU hold opens, and the developer menu under it */
     static final int LEVEL_APP = 0, LEVEL_DEV = 1;
 
     /** app menu rows, in display order */
-    static final int APP_BROWSE = 0, APP_PANEL = 1, APP_RESET = 2, APP_ABOUT = 3, APP_DEV = 4, APP_ROWS = 5;
+    static final int APP_BROWSE = 0, APP_PANEL = 1, APP_LANG = 2, APP_RESET = 3, APP_ABOUT = 4, APP_DEV = 5, APP_ROWS = 6;
 
     /** developer menu rows, in display order */
     static final int ROW_SNAPSHOT = 0, ROW_LOCKS = 1, ROW_SAMPLES = 2, ROW_SETTLE = 3, ROW_KEYS = 4, ROWS = 5;
@@ -48,11 +51,12 @@ final class DevTools {
     /** an app menu row's title */
     static String appLabel(int row) {
         switch (row) {
-            case APP_BROWSE: return "Browse recipes";
-            case APP_PANEL: return "Panel visibility";
-            case APP_RESET: return "Reset settings";
-            case APP_ABOUT: return "About";
-            case APP_DEV: return "Developer  >";
+            case APP_BROWSE: return Lang.t("menu_browse");
+            case APP_PANEL: return Lang.t("menu_panel");
+            case APP_LANG: return Lang.t("menu_language");
+            case APP_RESET: return Lang.t("menu_reset");
+            case APP_ABOUT: return Lang.t("menu_about");
+            case APP_DEV: return Lang.t("menu_dev");
             default: return "?" + row;
         }
     }
@@ -60,27 +64,35 @@ final class DevTools {
     /** the line under an app menu row's title */
     static String appDetail(int row) {
         switch (row) {
-            case APP_BROWSE: return "Brands and favourites";
-            case APP_PANEL: return "What stays over the live image — left / right to change";
-            case APP_RESET: return "Back to the camera's factory look";
-            case APP_ABOUT: return "Version, camera, platform";
-            case APP_DEV: return "Settings snapshot, read-only check, samples, key logger";
+            case APP_BROWSE: return Lang.t("menu_browse_detail");
+            case APP_PANEL: return Lang.t("menu_panel_detail");
+            case APP_LANG: return Lang.t("menu_language_detail");
+            case APP_RESET: return Lang.t("menu_reset_detail");
+            case APP_ABOUT: return Lang.t("menu_about_detail");
+            case APP_DEV: return Lang.t("menu_dev_detail");
             default: return "";
         }
     }
 
     /**
      * The value an app menu row shows at its right edge, which left / right change in place; null for a row that has
-     * none. Panel visibility shows the panel state: Full, Label (the pill) or Hidden.
+     * none. Panel visibility shows the panel state: Full, Label (the pill) or Hidden. Language shows the choice
+     * ({@link Lang#choiceLabel}): Auto, or a language by its own name.
      */
-    static String appValue(int row, int overlay) { return row == APP_PANEL ? panelLabel(overlay) : null; }
+    static String appValue(int row, int overlay, int langChoice) {
+        switch (row) {
+            case APP_PANEL: return panelLabel(overlay);
+            case APP_LANG: return Lang.choiceLabel(langChoice);
+            default: return null;
+        }
+    }
 
     /** a panel state as the menu names it */
     static String panelLabel(int overlay) {
         switch (overlay) {
-            case Params.OV_FULL: return "Full";
-            case Params.OV_PILL: return "Label";
-            case Params.OV_HIDDEN: return "Hidden";
+            case Params.OV_FULL: return Lang.t("panel_full");
+            case Params.OV_PILL: return Lang.t("panel_label");
+            case Params.OV_HIDDEN: return Lang.t("panel_hidden");
             default: return "?";
         }
     }
@@ -94,19 +106,19 @@ final class DevTools {
     /** the About page: {name, value}. The version comes from the installed package at runtime, never from here. */
     static String[][] about(String version, String model, String platform) {
         return new String[][] {
-            { "version", orUnknown(version) },
-            { "camera", orUnknown(model) },
-            { "platform", orUnknown(platform) },
-            { "source", "github.com/voxivoid/recipe-lab-sony-pmca" },
+            { Lang.t("about_version"), orShown(version) },
+            { Lang.t("about_camera"), orShown(model) },
+            { Lang.t("about_platform"), orShown(platform) },
+            { Lang.t("about_source"), "github.com/voxivoid/recipe-lab-sony-pmca" },
         };
     }
 
     // ------------------------------------------------------------ the reset question (hold trash, or Reset settings)
     /** the question asked before the factory look is stored: it replaces whatever the camera has now */
-    static final String RESET_TITLE = "Reset to factory settings?",
-            RESET_BODY = "Stores Standard 0 / 0 / 0, auto white balance, no effect, in place of the current look";
+    static String resetTitle() { return Lang.t("reset_title"); }
+    static String resetBody() { return Lang.t("reset_body"); }
     /** the answers; Cancel is the one highlighted when the question opens, so a stray centre press changes nothing */
-    static final String[] RESET_OPTIONS = { "Reset", "Cancel" };
+    static String[] resetOptions() { return new String[] { Lang.t("button_reset"), Lang.t("button_cancel") }; }
     static final int RESET_DEFAULT = 1;
 
     /**
@@ -127,7 +139,10 @@ final class DevTools {
         return out.toString();
     }
 
+    /** the key logger's and keys.txt's "unknown", which stays English like the rest of the file */
     private static String orUnknown(String s) { return s == null || s.isEmpty() ? "unknown" : s; }
+    /** the same on the About page, in the display language */
+    private static String orShown(String s) { return s == null || s.isEmpty() ? Lang.t("value_unknown") : s; }
 
     // ------------------------------------------------------------ the key logger
     /** how many events the logger keeps on screen, newest first */
@@ -155,11 +170,11 @@ final class DevTools {
     /** a row's title; the snapshot row and the delay row say what they will do next */
     static String rowLabel(int row, boolean snapshotTaken, int settle) {
         switch (row) {
-            case ROW_SNAPSHOT: return snapshotTaken ? "Settings diff" : "Settings snapshot";
-            case ROW_LOCKS: return "Read-only check — " + Params.allSlots().size() + " slots";
-            case ROW_SAMPLES: return "Shoot samples — " + Recipes.ALL.length + " recipes";
-            case ROW_SETTLE: return "Settle delay";
-            case ROW_KEYS: return "Key logger";
+            case ROW_SNAPSHOT: return Lang.t(snapshotTaken ? "dev_settings_diff" : "dev_settings_snapshot");
+            case ROW_LOCKS: return Lang.t("dev_read_only_check", Params.allSlots().size());
+            case ROW_SAMPLES: return Lang.t("dev_shoot_samples", Recipes.ALL.length);
+            case ROW_SETTLE: return Lang.t("dev_settle_delay");
+            case ROW_KEYS: return Lang.t("dev_key_logger");
             default: return "?" + row;
         }
     }
@@ -167,11 +182,11 @@ final class DevTools {
     /** the line under a row's title */
     static String rowDetail(int row, boolean snapshotTaken) {
         switch (row) {
-            case ROW_SNAPSHOT: return snapshotTaken ? "Compare every settings id against the snapshot" : "Store the value of every settings id";
-            case ROW_LOCKS: return "Test every slot a recipe writes for the read-only flag";
-            case ROW_SAMPLES: return "One JPEG per recipe, in table order — MENU stops the run";
-            case ROW_SETTLE: return "Wait after applying a recipe before the shutter fires — left / right to change";
-            case ROW_KEYS: return "Show every key's scan code — hold MENU to leave";
+            case ROW_SNAPSHOT: return Lang.t(snapshotTaken ? "dev_snapshot_compare" : "dev_snapshot_store");
+            case ROW_LOCKS: return Lang.t("dev_locks_detail");
+            case ROW_SAMPLES: return Lang.t("dev_samples_detail");
+            case ROW_SETTLE: return Lang.t("dev_settle_detail");
+            case ROW_KEYS: return Lang.t("dev_keys_detail");
             default: return "";
         }
     }
@@ -186,36 +201,29 @@ final class DevTools {
     /** the next / previous delay, wrapping */
     static int nextSettle(int idx, int dir) { return (clampSettle(idx) + SETTLE_MS.length + dir) % SETTLE_MS.length; }
 
-    /** a delay as the menu shows it: "1.2 s" (built by hand — String.format would follow the camera's locale) */
+    /** a delay as the menu shows it: "1.2 s" (the number built by hand — String.format would follow the camera's locale) */
     static String settleLabel(int idx) {
         int ms = SETTLE_MS[clampSettle(idx)];
-        return (ms / 1000) + "." + (ms % 1000) / 100 + " s";
+        return Lang.t("value_seconds", (ms / 1000) + "." + (ms % 1000) / 100);
     }
 
     // ------------------------------------------------------------ the sample run
     /** the run needs the live camera: without it nothing is applied and nothing can be shot */
-    static final String NO_PREVIEW = "No live preview — the sample run needs the camera";
+    static String noPreview() { return Lang.t("dev_no_preview"); }
 
     /** the sticky line while the run walks the table; frames count from 1 */
-    static String progress(int frame, int total, String recipeName) {
-        return "Shooting " + frame + " / " + total + "  ·  " + recipeName + "   —   MENU stops";
-    }
+    static String progress(int frame, int total, String recipeName) { return Lang.t("dev_progress", frame, total, recipeName); }
 
     /** the run reached the end of the table */
-    static String doneMessage(int shot, int total) {
-        return "Samples done — " + shot + " of " + total + " frames shot, listed in " + MANIFEST;
-    }
+    static String doneMessage(int shot, int total) { return Lang.t("dev_done", shot, total, MANIFEST); }
 
     /** MENU during the run */
     static String stoppedMessage(int shot, int total) {
-        return shot == 0 ? "Sample run stopped before the first frame"
-                : "Sample run stopped — " + shot + " of " + total + " frames shot, listed in " + MANIFEST;
+        return shot == 0 ? Lang.t("dev_stopped_none") : Lang.t("dev_stopped", shot, total, MANIFEST);
     }
 
     /** the camera refused a capture: the run cannot go on, and the frames so far are still listed */
-    static String shootFailed(int frame, int shot, String error) {
-        return "Shutter failed on frame " + frame + ": " + error + "  —  " + shot + " frames shot, listed in " + MANIFEST;
-    }
+    static String shootFailed(int frame, int shot, String error) { return Lang.t("dev_shoot_failed", frame, error, shot, MANIFEST); }
 
     // ------------------------------------------------------------ the manifest
     /**
@@ -227,10 +235,12 @@ final class DevTools {
                 + "  ·  frame" + SEP + "recipe" + SEP + "brand" + SEP + "values";
     }
 
-    /** one frame: its number in the run, and the recipe that was applied for it */
+    /** one frame: its number in the run, and the recipe that was applied for it — in English whatever the menu shows */
     static String manifestLine(int frame, int recipeIndex) {
         Recipes.Recipe r = Recipes.ALL[recipeIndex];
-        return pad2(frame) + SEP + r.name + SEP + Recipes.GROUPS[r.group] + SEP + r.summary();
+        int was = Lang.use(Lang.EN);
+        try { return pad2(frame) + SEP + r.name + SEP + Recipes.GROUPS[r.group] + SEP + r.summary(); }
+        finally { Lang.use(was); }
     }
 
     private static String pad2(int n) { return n < 10 ? "0" + n : String.valueOf(n); }

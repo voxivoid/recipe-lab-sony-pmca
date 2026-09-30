@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.RectF;
+import android.graphics.Typeface;
 import android.util.AttributeSet;
 import android.view.View;
 
@@ -14,7 +15,6 @@ import java.util.List;
 public class PromptView extends View {
     private static final int ACCENT = 0xFFF2B85C, INK = 0xFF1A1208;
     private static final int[] LEGEND_ICONS = { Legend.ENTER, Legend.MENU };
-    private static final String[] LEGEND_TEXT = { "confirm", "cancel" };
 
     private final Paint bg = new Paint(Paint.ANTI_ALIAS_FLAG), edge = new Paint(Paint.ANTI_ALIAS_FLAG), title = new Paint(Paint.ANTI_ALIAS_FLAG),
             body = new Paint(Paint.ANTI_ALIAS_FLAG), opt = new Paint(Paint.ANTI_ALIAS_FLAG), pill = new Paint(Paint.ANTI_ALIAS_FLAG), note = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -38,6 +38,12 @@ public class PromptView extends View {
         note.setColor(0x88FFFFFF); note.setTextSize(10 * d);
     }
 
+    /** the display language's typeface ({@link UiFont}) */
+    public void setTypeface(Typeface tf) {
+        title.setTypeface(tf); body.setTypeface(tf); opt.setTypeface(tf); note.setTypeface(tf); legend.setTypeface(tf);
+        requestLayout(); invalidate();
+    }
+
     public void set(String titleText, String bodyText, String[] options, int selected, String noteText) {
         this.titleText = titleText; this.bodyText = bodyText; this.options = options; this.selected = selected; this.noteText = noteText;
         requestLayout(); invalidate();                          // a different question needs a different box
@@ -59,14 +65,23 @@ public class PromptView extends View {
         setMeasuredDimension((int) wd, (int) h);
     }
 
-    /** breaks {@code text} into lines no wider than {@code width} at spaces; a single word wider than that keeps its line */
+    /**
+     * Breaks {@code text} into lines no wider than {@code width}: at spaces, and inside a word wider than the line —
+     * which a Chinese sentence, having no spaces, always is — where the line is full.
+     */
     private static void wrap(String text, Paint p, float width, List<String> out) {
         out.clear();
         String line = "";
         for (String word : text.split(" ")) {
             if (word.isEmpty()) continue;
             String next = line.isEmpty() ? word : line + " " + word;
-            if (!line.isEmpty() && p.measureText(next) > width) { out.add(line); line = word; } else line = next;
+            if (p.measureText(next) <= width) { line = next; continue; }
+            if (!line.isEmpty()) out.add(line);
+            while (p.measureText(word) > width) {
+                int n = Math.max(1, p.breakText(word, true, width, null));
+                out.add(word.substring(0, n)); word = word.substring(n);
+            }
+            line = word;
         }
         if (!line.isEmpty() || out.isEmpty()) out.add(line);
     }
@@ -100,6 +115,6 @@ public class PromptView extends View {
             while (note.measureText(noteText) > avail && ns > 7 * d) { ns -= 0.5f * d; note.setTextSize(ns); }
             c.drawText(noteText, pad, y, note); note.setTextSize(10 * d); y += 14 * d;
         }
-        legend.draw(c, pad, y + legend.height() / 2 - 2 * d, w - 2 * pad, LEGEND_ICONS, LEGEND_TEXT);
+        legend.draw(c, pad, y + legend.height() / 2 - 2 * d, w - 2 * pad, LEGEND_ICONS, new String[] { Lang.t("action_confirm"), Lang.t("action_cancel") });
     }
 }

@@ -12,7 +12,8 @@ import java.util.Set;
 /**
  * The parameter rows and everything about them that needs no camera: the settings-store slot of each row, how
  * the store encodes a value, the live-preview parameters a staged set translates to, chip navigation, and the
- * HUD strings. Every method is a pure function of its arguments.
+ * HUD strings. Every method is a pure function of its arguments — and, for the text it returns, of the display
+ * language ({@link Lang}).
  *
  * MainActivity owns the state (the {@code cur} / {@code edit} arrays, indexed by row) and the camera; this class
  * decides. That split is what lets tools/test.sh compile it — with Recipes — against a plain JDK and run it under
@@ -50,6 +51,11 @@ final class Params {
     static final int[] ROW_MIN = { 0, 1, -3, -3, -3, 0, 0, 0, 0, 25, -7, -7, -15, 0, 0 };
     static final int[] ROW_MAX = { 0, 14, 3, 3, 3, 1, 13, 4, 20, 99, 7, 7, 15, 6, 3 };
     static final int N = ROW_ID.length;
+
+    /** a row's name as its chip shows it, in the display language; ROW_NAME is the English */
+    static String rowName(int row) { return Lang.label("row_" + Lang.slug(ROW_NAME[row]), ROW_NAME[row]); }
+    /** a quality as the chip and the messages show it, in the display language; Q_LABEL is the English */
+    static String qualityLabel(int q) { return q >= 0 && q < Q_LABEL.length ? Lang.label("quality_" + Lang.slug(Q_LABEL[q]), Q_LABEL[q]) : "?" + q; }
     /** chip display / navigation order (quality first) */
     static final int[] ORDER = { R_QUAL, R_STYLE, R_SAT, R_CON, R_SHARP, R_PE, R_SUB, R_WBMODE, R_KELVIN, R_AB, R_GM, R_EV, R_DRO };   // R_PP has no chip
     /** the overlay MainActivity is in: the full panel, the pill, nothing, or the browser */
@@ -193,14 +199,14 @@ final class Params {
     /** the row a slot belongs to, as a message names it; the hex id for a slot no row owns */
     static String slotName(int id) {
         switch (id) {
-            case ID_EV: case ID_EV2: return ROW_NAME[R_EV];
-            case ID_QFMT: case ID_QJPG: case ID_QFMT2: case ID_QJPG2: return ROW_NAME[R_QUAL];
-            case ID_WB_AB: case ID_WB_AB_AWB: case ID_WB_AB_K: return ROW_NAME[R_AB];
-            case ID_WB_GM: case ID_WB_GM_AWB: case ID_WB_GM_K: return ROW_NAME[R_GM];
-            case ID_DRO: case ID_DRO_LVL: return ROW_NAME[R_DRO];
+            case ID_EV: case ID_EV2: return rowName(R_EV);
+            case ID_QFMT: case ID_QJPG: case ID_QFMT2: case ID_QJPG2: return rowName(R_QUAL);
+            case ID_WB_AB: case ID_WB_AB_AWB: case ID_WB_AB_K: return rowName(R_AB);
+            case ID_WB_GM: case ID_WB_GM_AWB: case ID_WB_GM_K: return rowName(R_GM);
+            case ID_DRO: case ID_DRO_LVL: return rowName(R_DRO);
         }
-        for (int i = 1; i < N; i++) if (ROW_ID[i] > 0 && ROW_ID[i] == id) return ROW_NAME[i];
-        for (int pe = 0; pe < Recipes.PE_KEYS.length; pe++) { int sid = Recipes.subId(pe); if (sid != 0 && sid == id) return ROW_NAME[R_SUB] + " " + Recipes.PE_LABEL[pe]; }   // an effect with no sub-slot answers 0, which is no slot at all
+        for (int i = 1; i < N; i++) if (ROW_ID[i] > 0 && ROW_ID[i] == id) return rowName(i);
+        for (int pe = 0; pe < Recipes.PE_KEYS.length; pe++) { int sid = Recipes.subId(pe); if (sid != 0 && sid == id) return rowName(R_SUB) + " " + Recipes.peLabel(pe); }   // an effect with no sub-slot answers 0, which is no slot at all
         return String.format("%08x", id);
     }
 
@@ -230,14 +236,13 @@ final class Params {
      * recipe in the store.
      */
     static String lockedMessage(List<Integer> ids) {
-        return "Not written — the camera holds " + (ids.size() == 1 ? "this setting" : "these settings") + " read-only: " + slotNames(ids)
-                + ". Unlock the settings store with OpenMemories-Tweak (Protection → Unlock protected settings), then pick the recipe again.";
+        return Lang.t(ids.size() == 1 ? "locked_one" : "locked_many", slotNames(ids)) + " " + Lang.t("unlock_hint");
     }
 
     /** the camera refused a write: which setting stopped it, and how much of the recipe went in before it did */
     static String writeFailedMessage(int id, String error, int written) {
-        return "WRITE FAILED on " + slotName(id) + " (" + String.format("%08x", id) + "): " + error
-                + (written == 0 ? " — nothing was written" : " — " + written + " byte" + (written == 1 ? "" : "s") + " written before it stopped");
+        return Lang.t(written == 0 ? "write_failed_none" : written == 1 ? "write_failed_one" : "write_failed_many",
+                slotName(id), String.format("%08x", id), error, written);
     }
 
     /**
@@ -252,20 +257,22 @@ final class Params {
             if (attrs[i] < 0) unreadable++;
             else if (slotLocked(attrs[i])) locked.add(ids.get(i));
         }
-        return ids.size() + " recipe slots checked  ·  "
-                + (locked.isEmpty() ? "none read-only" : locked.size() + " read-only: " + slotNames(locked))
-                + (unreadable == 0 ? "" : "  ·  " + unreadable + " would not answer");
+        return (locked.isEmpty() ? Lang.t("lock_report_none", ids.size()) : Lang.t("lock_report_some", ids.size(), locked.size(), slotNames(locked)))
+                + (unreadable == 0 ? "" : Lang.t("lock_report_unreadable", unreadable));
     }
 
-    /** the same check, one line per slot, as it is written to the file a compatibility report can quote */
+    /** the same check, one line per slot, as it is written to the file a compatibility report can quote — in English, always */
     static String lockLines(List<Integer> ids, int[] attrs) {
-        StringBuilder s = new StringBuilder();
-        for (int i = 0; i < ids.size(); i++) {
-            int id = ids.get(i);
-            s.append(String.format("%08x", id)).append(' ').append(slotName(id)).append(' ')
-             .append(attrs[i] < 0 ? "attr=?" : "attr=" + attrs[i] + (slotLocked(attrs[i]) ? " READ_ONLY" : "")).append('\n');
-        }
-        return s.toString();
+        int was = Lang.use(Lang.EN);
+        try {
+            StringBuilder s = new StringBuilder();
+            for (int i = 0; i < ids.size(); i++) {
+                int id = ids.get(i);
+                s.append(String.format("%08x", id)).append(' ').append(slotName(id)).append(' ')
+                 .append(attrs[i] < 0 ? "attr=?" : "attr=" + attrs[i] + (slotLocked(attrs[i]) ? " READ_ONLY" : "")).append('\n');
+            }
+            return s.toString();
+        } finally { Lang.use(was); }
     }
 
     /** stages a recipe over the current edit values (WB is left alone when the recipe says so); quality is the caller's */
@@ -388,8 +395,8 @@ final class Params {
     static String fmt(int row, int v, int[] edit) {
         switch (row) {
             case R_STYLE: return Recipes.styleLabel(v);
-            case R_PP: return v == 0 ? "off" : "on";
-            case R_WBMODE: return v == WB_AUTO ? "auto" : v == WB_KELVIN ? "kelvin" : String.valueOf(v);
+            case R_PP: return Lang.t(v == 0 ? "value_off" : "value_on");
+            case R_WBMODE: return v == WB_AUTO ? Lang.t("value_auto") : v == WB_KELVIN ? Lang.t("value_kelvin") : String.valueOf(v);
             case R_KELVIN: return edit[R_WBMODE] == WB_KELVIN ? (v * 100) + "K" : "-";
             case R_AB: return v == 0 ? "0" : (v > 0 ? "A" + v : "B" + (-v));
             case R_GM: return v == 0 ? "0" : (v > 0 ? "G" + v : "M" + (-v));
@@ -397,7 +404,7 @@ final class Params {
             case R_SUB: { String l = Recipes.subLabel(edit[R_PE], v); return l == null ? "-" : l; }
             case R_EV: return Recipes.evLabel(v);
             case R_DRO: return Recipes.droLabel(v);
-            case R_QUAL: return v >= 0 && v < Q_LABEL.length ? Q_LABEL[v] : "?" + v;
+            case R_QUAL: return qualityLabel(v);
             default: return (v > 0 ? "+" : "") + v;
         }
     }
@@ -406,30 +413,31 @@ final class Params {
     static String metaLine(int[] cur, int[] edit, String previewErr) {
         StringBuilder m = new StringBuilder();
         if (edit[R_PE] != 0) {
-            m.append("Picture Effect ").append(Recipes.PE_LABEL[edit[R_PE]]);
-            String sl = Recipes.subLabel(edit[R_PE], edit[R_SUB]); if (sl != null) m.append(' ').append(sl);
-            m.append(" (Creative Style ignored, JPEG only)");
+            String pe = Recipes.peLabel(edit[R_PE]), sl = Recipes.subLabel(edit[R_PE], edit[R_SUB]);
+            m.append(Lang.t("meta_picture_effect", sl == null ? pe : pe + " " + sl)).append(' ').append(Lang.t("meta_effect_note"));
         } else m.append(Recipes.styleLabel(edit[R_STYLE]));
-        m.append("  ·  WB ").append(edit[R_WBMODE] == WB_KELVIN ? (edit[R_KELVIN] * 100) + "K" : edit[R_WBMODE] == WB_AUTO ? "auto" : "mode " + edit[R_WBMODE]);
-        if (edit[R_EV] != 0) m.append("  ·  EV ").append(Recipes.evLabel(edit[R_EV]));
-        if (edit[R_DRO] != Recipes.DRO_AUTO) m.append("  ·  DRO ").append(Recipes.droLabel(edit[R_DRO]));
-        if (edit[R_QUAL] != cur[R_QUAL]) m.append("  ·  QUALITY → ").append(Q_LABEL[edit[R_QUAL]]).append(" (now ").append(Q_LABEL[cur[R_QUAL]]).append(")");
-        if (edit[R_PE] != 0 && edit[R_QUAL] <= Q_RAWJPG) m.append("  ·  RAW is on: effect ignored");
-        if (previewErr != null) m.append("  ·  no live preview: ").append(previewErr);
+        String wb = edit[R_WBMODE] == WB_KELVIN ? (edit[R_KELVIN] * 100) + "K" : edit[R_WBMODE] == WB_AUTO ? Lang.t("value_auto") : Lang.t("meta_wb_mode", edit[R_WBMODE]);
+        m.append("  ·  ").append(Lang.t("meta_white_balance", wb));
+        if (edit[R_EV] != 0) m.append("  ·  ").append(Lang.t("meta_ev", Recipes.evLabel(edit[R_EV])));
+        if (edit[R_DRO] != Recipes.DRO_AUTO) m.append("  ·  ").append(Lang.t("meta_dro", Recipes.droLabel(edit[R_DRO])));
+        if (edit[R_QUAL] != cur[R_QUAL]) m.append("  ·  ").append(Lang.t("meta_quality_change", qualityLabel(edit[R_QUAL]), qualityLabel(cur[R_QUAL])));
+        if (edit[R_PE] != 0 && edit[R_QUAL] <= Q_RAWJPG) m.append("  ·  ").append(Lang.t("meta_raw_effect_ignored"));
+        if (previewErr != null) m.append("  ·  ").append(Lang.t("meta_no_preview", previewErr));
         return m.toString();
     }
 
     /** the one-line pill of the minimal overlay */
     static String miniLine(int recipe, int[] cur, int[] edit, boolean dirty) {
-        return (edit[R_PE] != 0 ? "PE  " : "CS  ") + Recipes.ALL[recipe].name + "   " + (recipe + 1) + " / " + Recipes.ALL.length
-                + (dirty ? "   · preview" : "   · active") + (edit[R_QUAL] != cur[R_QUAL] ? "   · quality → " + Q_LABEL[edit[R_QUAL]] : "");
+        return (edit[R_PE] != 0 ? "PE  " : "CS  ") + Recipes.displayName(Recipes.ALL[recipe]) + "   " + (recipe + 1) + " / " + Recipes.ALL.length
+                + "   · " + Lang.t(dirty ? "mini_preview" : "mini_active")
+                + (edit[R_QUAL] != cur[R_QUAL] ? "   · " + Lang.t("mini_quality", qualityLabel(edit[R_QUAL])) : "");
     }
 
     /** title and explanation of the quality-change prompt */
     static String[] qualityPrompt(int[] cur, int[] edit) {
         return new String[] {
-            "Quality: " + Q_LABEL[cur[R_QUAL]] + "  →  " + Q_LABEL[edit[R_QUAL]],
-            edit[R_PE] != 0 ? "JPEG is needed to apply this recipe." : "Creative Style recipes use the Factory recipe's quality." };
+            Lang.t("quality_prompt_title", qualityLabel(cur[R_QUAL]), qualityLabel(edit[R_QUAL])),
+            Lang.t(edit[R_PE] != 0 ? "quality_prompt_effect" : "quality_prompt_style") };
     }
 
     // ------------------------------------------------------------ snapshot / diff tool

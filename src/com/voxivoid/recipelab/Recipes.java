@@ -29,10 +29,10 @@ public class Recipes {
             this.wbMode = wbMode; this.kelvin = kelvin; this.ab = ab; this.gm = gm; this.pe = pe; this.ev = ev; this.dro = dro;
         }
         public boolean isEffect() { return pe != 0; }
-        /** one-line summary for lists: "Neutral  -4/-1  A1" */
+        /** one-line summary for lists, in the display language: "Neutral  -4/-1  A1" */
         public String summary() {
             StringBuilder s = new StringBuilder();
-            if (pe != 0) { s.append(PE_LABEL[pe]); String sl = subLabel(pe, sub); if (sl != null) s.append(' ').append(sl); } else s.append(STYLE_LABEL[style]).append("  ").append(sat > 0 ? "+" : "").append(sat).append('/').append(con > 0 ? "+" : "").append(con);
+            if (pe != 0) { s.append(peLabel(pe)); String sl = subLabel(pe, sub); if (sl != null) s.append(' ').append(sl); } else s.append(styleLabel(style)).append("  ").append(sat > 0 ? "+" : "").append(sat).append('/').append(con > 0 ? "+" : "").append(con);
             if (ev != 0) s.append("  ").append(evLabel(ev));
             if (dro != DRO_AUTO) s.append("  DRO ").append(droLabel(dro));
             if (wbMode == 14) s.append("  ").append(kelvin).append('K');
@@ -55,9 +55,12 @@ public class Recipes {
     public static final int PE_OFF = 0, PE_TOY = 1, PE_POP = 2, PE_RETRO = 4, PE_HIGHKEY = 5, PE_HCMONO = 7;
     /** a style whose runtime name we know — the others are enum values seen in the store but never identified */
     public static boolean styleKnown(int v) { return v >= 1 && v < STYLE_NAMES.length && STYLE_NAMES[v] != null; }
-    /** chip / HUD labels with a "?n" fallback for an unidentified or out-of-table stored value */
-    public static String styleLabel(int v) { return styleKnown(v) ? STYLE_LABEL[v] : "?" + v; }
-    public static String peLabel(int v) { return v >= 0 && v < PE_LABEL.length ? PE_LABEL[v] : "?" + v; }
+    /**
+     * Chip / HUD labels in the display language, with a "?n" fallback for an unidentified or out-of-table stored value.
+     * STYLE_LABEL and PE_LABEL are the English; a translation keys them by the runtime name (see {@link Lang}).
+     */
+    public static String styleLabel(int v) { return styleKnown(v) ? Lang.label("style_" + Lang.slug(STYLE_NAMES[v]), STYLE_LABEL[v]) : "?" + v; }
+    public static String peLabel(int v) { return v >= 0 && v < PE_LABEL.length ? Lang.label("effect_" + Lang.slug(PE_KEYS[v]), PE_LABEL[v]) : "?" + v; }
     /** effect sub-parameter (tint / tone / hue / mode): runtime key, stored slot, value names — index = stored byte */
     public static String subKey(int pe) { switch (pe) { case 5: return "pe-soft-high-key-effect"; case 1: return "pe-toy-camera-effect"; case 6: return "pe-part-color-effect"; case 3: return "pe-posterization-effect"; default: return null; } }
     public static int subId(int pe) { switch (pe) { case 5: return 0x010709d8; case 1: return 0x010706f3; case 6: return 0x010706ee; case 3: return 0x010706ef; default: return 0; } }
@@ -70,10 +73,14 @@ public class Recipes {
             default: return null;
         }
     }
-    public static String subLabel(int pe, int sub) { String[] v = subValues(pe); return v == null ? null : (sub >= 0 && sub < v.length ? v[sub].replace("posterization-", "") : "?" + sub); }
+    public static String subLabel(int pe, int sub) {
+        String[] v = subValues(pe);
+        if (v == null) return null;
+        return sub >= 0 && sub < v.length ? Lang.label("sub_" + Lang.slug(v[sub]), v[sub].replace("posterization-", "")) : "?" + sub;
+    }
     /** DRO: 0 off, 1..5 level, 6 auto */
     public static final int DRO_OFF = 0, DRO_AUTO = 6;
-    public static String droLabel(int v) { return v == DRO_AUTO ? "auto" : v == 0 ? "off" : "Lv" + v; }
+    public static String droLabel(int v) { return v == DRO_AUTO ? Lang.t("value_auto") : v == 0 ? Lang.t("value_off") : Lang.t("value_level", v); }
     /** exposure bias in 1/3 EV steps -> "+0.7" */
     public static String evLabel(int ev) {
         if (ev == 0) return "0";
@@ -215,5 +222,14 @@ public class Recipes {
     }
 
     /** where a recipe sits in the list, as the panel shows it: "12 / 76", or "factory" for the look Reset stores */
-    public static String position(int i) { return i == FACTORY ? "factory" : i + " / " + LISTED; }
+    public static String position(int i) { return i == FACTORY ? Lang.t("position_factory") : i + " / " + LISTED; }
+
+    // ---- names on screen: the display language's, where it has one. The canonical English above stays the identifier
+    // that favourites, the sample manifest and the tests use, so a change of language never loses a mark.
+    /** a recipe's name as the panel and the list show it */
+    public static String displayName(Recipe r) { return Lang.label("recipe_" + Lang.slug(r.name), r.name); }
+    /** the canonical name, shown small under a translated one; null when the display name is the canonical one */
+    public static String originalName(Recipe r) { String d = displayName(r); return d.equals(r.name) ? null : r.name; }
+    /** a brand as the list shows it */
+    public static String groupLabel(int g) { return Lang.label("group_" + Lang.slug(GROUPS[g]), GROUPS[g]); }
 }

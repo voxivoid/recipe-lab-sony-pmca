@@ -41,6 +41,11 @@ src/com/voxivoid/recipelab/
                                keys a body has — pure functions, no Android, covered by test/
   KeyProbe.java                asks the camera which keys it has and which model it is (Sony classes by reflection);
                                every answer is null off the camera — no Android, covered by test/
+  Lang.java                    the display language: the Language row's choice, what Auto resolves to, and the lookup
+                               every word on screen goes through — no Android, covered by test/ (docs/LOCALIZATION.md)
+  TextEn.java                  the English text, key by key: the source, and what every other table falls back to
+  TextZhHans.java, TextZhHant.java   Simplified and Traditional Chinese, plus the recipe / brand / style names
+  UiFont.java                  the typeface of each language: the camera's for English, assets/fonts for Chinese
   res/raw/ids.txt              every settings entry of 16 bytes or less, used by the snapshot/diff tool
   PickerView.java              Canvas-drawn brand browser (Favourites first, then the brands)
   MenuView.java                Canvas-drawn full-screen list: the app menu, the developer menu (rows, some with a
@@ -56,11 +61,12 @@ src/com/voxivoid/recipelab/
 jni/jni.cpp                    Backup_read / Backup_write / Backup_sync_all via OpenMemories-Platform
 jni/platform/                  git submodule: ma1co/OpenMemories-Platform
 res/                           layout, shape drawables, launcher icon
+assets/fonts/                  the Chinese fonts: Noto Sans CJK SC / TC cut down to what the tables use (OFL)
 test/com/voxivoid/recipelab/   JUnit tests for the camera-free classes (see Unit tests)
 test/com/sony/scalar/sysutil/  test doubles of the Sony classes KeyProbe reflects on
 build.sh                       the build: ndk-build, aapt, javac, d8, zipalign, apksigner
 build.cmd                      the same seven steps on Windows
-tools/                         version computation, bumping, the unit tests, and the CI gates
+tools/                         version computation, bumping, the unit tests, the CI gates, and the font subsetter
 ```
 
 ## Settings slots
@@ -94,7 +100,8 @@ down or the wheel move, the centre button runs a row, a short MENU goes back a l
 |---|---|
 | **Browse recipes** | the brand list, as Fn opens it |
 | **Panel visibility** | a value — *Full* / *Label* / *Hidden* — that left / right step through in place, wrapping, with the menu left open; centre steps forward. The same states trash cycles |
-| **Reset settings** | asks `DevTools.RESET_TITLE` (Cancel highlighted), then stages `Recipes.FACTORY` and stores it (`writeAll`, so the quality prompt still asks when it must). The only way to the factory look besides holding trash: it is not in the list |
+| **Language** | a value — *Auto* / *English* / *简体中文* / *繁體中文* — stepped the same way, kept in the app's preferences under `language` by code (`Lang.CODES`). The app redraws in it at once. *Auto* follows the camera's locale (`Lang.fromLocale`); each language's name is drawn in its own script and font. See [LOCALIZATION.md](LOCALIZATION.md) |
+| **Reset settings** | asks `DevTools.resetTitle()` (Cancel highlighted), then stages `Recipes.FACTORY` and stores it (`writeAll`, so the quality prompt still asks when it must). The only way to the factory look besides holding trash: it is not in the list |
 | **About** | the installed version (from `PackageManager` — never a string in the source, `tools/check-version.sh`), `model.name`, `version.platform`, and the source URL |
 | **Developer >** | the developer menu below |
 
@@ -377,7 +384,7 @@ export JAVA_HOME=$HOME/toolchains/jdk17
 ```
 
 That is the whole of the `test` CI job on work branches; `dev-build` runs the same script before every
-development build and `create-release` before anything is pushed to `main`. It needs a JDK 17 and nothing else: `Recipes.java`, `Params.java` and `Favourites.java`
+development build and `create-release` before anything is pushed to `main`. It needs a JDK 17 and nothing else: the classes listed in `UNITS`
 are compiled against the bare JDK — no `android.jar`, no NDK — then the tests under `test/` are compiled and run
 with the JUnit 5 console launcher, one jar fetched from Maven Central into `out/test/` on first use and checked
 against a SHA-256 pinned in the script (`JUNIT_JAR=<path>` points it at a copy when offline). Reports land in
@@ -400,15 +407,16 @@ tests pin it down:
 | `KeyProbeTest` | that the key probe answers "unknown" off the camera instead of throwing |
 | `KeyProbeCameraTest` | the key probe against test doubles of Sony's `ScalarInput`, `KeyStatus` and `ScalarProperties` (`test/com/sony/scalar/sysutil/`, shaped like the OpenMemories-Framework stubs): the reflection finds the real signatures, only `valid == 1` is a key, only `status == 1` is a press. The doubles throw for anything a test did not set up, which is how the "off the camera" answers stay null |
 | `FavouritesTest` | the favourites list — stored by name, unknown names dropped, marking order kept, toggle, the highlight after a removal — and the browser's group order with Favourites first |
+| `LangTest` | the display language: every table has every key and keeps English's placeholders, every key the code asks for exists, the Language row's choices and what Auto resolves to, that samples.txt, locks.txt and favourites stay English in any language, and that each bundled font has a glyph for every character its table uses (read from the font's own cmap) |
 
 **What is not, and cannot be.** `MainActivity` (key dispatch, overlays, the camera and the JNI store), the
-Canvas views (`PickerView`, `PromptView`, `MenuView`, `HintBar`, `Legend`) and `jni/jni.cpp` need a running camera or an
+Canvas views (`PickerView`, `PromptView`, `MenuView`, `HintBar`, `Legend`), `UiFont` and `jni/jni.cpp` need a running camera or an
 Android runtime; there is no Gradle and no Robolectric here, and a mock of `CameraEx` would prove nothing. Those
 stay on the [on-camera checklist](CONTRIBUTING.md#on-the-camera). Likewise the slot ids themselves: a
 test can show that the app writes `0x01070175 = 6`, not that the camera means B&W by it.
 
 **Keeping it that way.** New logic that does not need the camera goes into `Params` (or `Recipes`, `Favourites`,
-`DevTools`, `Keys`, `KeyProbe`, or a new class listed in `UNITS` in `tools/test.sh`) with a test next to it, and is called from `MainActivity`, never the
+`DevTools`, `Keys`, `KeyProbe`, `Lang`, or a new class listed in `UNITS` in `tools/test.sh`) with a test next to it, and is called from `MainActivity`, never the
 other way round. `tools/test.sh` compiles those classes without `android.jar` on purpose: an `android.*` import in either fails there before it fails in CI. Tests
 are plain JUnit 5 (`org.junit.jupiter.api`), one behaviour per method, no mocking library; `Fixtures` has a
 factory-fresh camera as rows and as store bytes and a fake store to write into.

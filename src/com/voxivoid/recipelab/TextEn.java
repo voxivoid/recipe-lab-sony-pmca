@@ -1,0 +1,154 @@
+package com.voxivoid.recipelab;
+
+/**
+ * English: the source text, and what every other table falls back to (see {@link Lang}). A translation copies these
+ * keys and keeps every {@code %1$s}-style placeholder; LangTest fails a table that drops or adds one.
+ *
+ * Recipe, brand, style, effect, sub-setting, quality and row names are not here: their English is the canonical data
+ * in {@link Recipes} and {@link Params}. A translation adds them under keys made from that data (see
+ * {@link Lang#slug}): recipe_*, group_*, style_*, effect_*, sub_*, quality_*, row_*.
+ */
+final class TextEn {
+    private TextEn() {}
+
+    static final String[][] TEXT = {
+        // ---- the Language row
+        { "lang_name", "English" },
+        { "lang_auto", "Auto" },
+
+        // ---- values on the chips and in the HUD
+        { "value_auto", "auto" },
+        { "value_off", "off" },
+        { "value_on", "on" },
+        { "value_kelvin", "kelvin" },
+        { "value_level", "Lv%1$d" },
+        { "value_seconds", "%1$s s" },
+        { "value_unknown", "unknown" },
+
+        // ---- the panel, the pill and the line under the recipe name
+        { "state_preview", "PREVIEW" },
+        { "state_active", "ACTIVE" },
+        { "mini_preview", "preview" },
+        { "mini_active", "active" },
+        { "mini_quality", "quality → %1$s" },
+        { "position_factory", "factory" },
+        { "meta_picture_effect", "Picture Effect %1$s" },
+        { "meta_effect_note", "(Creative Style ignored, JPEG only)" },
+        { "meta_white_balance", "WB %1$s" },
+        { "meta_wb_mode", "mode %1$d" },
+        { "meta_ev", "EV %1$s" },
+        { "meta_dro", "DRO %1$s" },
+        { "meta_quality_change", "QUALITY → %1$s (now %2$s)" },
+        { "meta_raw_effect_ignored", "RAW is on: effect ignored" },
+        { "meta_no_preview", "no live preview: %1$s" },
+
+        // ---- the two questions
+        { "quality_prompt_title", "Quality: %1$s  →  %2$s" },
+        { "quality_prompt_effect", "JPEG is needed to apply this recipe." },
+        { "quality_prompt_style", "Creative Style recipes use the Factory recipe's quality." },
+        { "quality_slot_note", "quality slot not located yet — live view only" },
+        { "reset_title", "Reset to factory settings?" },
+        { "reset_body", "Stores Standard 0 / 0 / 0, auto white balance, no effect, in place of the current look" },
+        { "button_accept", "Accept" },
+        { "button_reset", "Reset" },
+        { "button_cancel", "Cancel" },
+
+        // ---- writing the store
+        { "locked_one", "Not written — the camera holds this setting read-only: %1$s." },
+        { "locked_many", "Not written — the camera holds these settings read-only: %1$s." },
+        { "unlock_hint", "Unlock the settings store with OpenMemories-Tweak (Protection → Unlock protected settings), then pick the recipe again." },
+        { "write_failed_none", "WRITE FAILED on %1$s (%2$s): %3$s — nothing was written" },
+        { "write_failed_one", "WRITE FAILED on %1$s (%2$s): %3$s — %4$d byte written before it stopped" },
+        { "write_failed_many", "WRITE FAILED on %1$s (%2$s): %3$s — %4$d bytes written before it stopped" },
+        { "lock_report_none", "%1$d recipe slots checked  ·  none read-only" },
+        { "lock_report_some", "%1$d recipe slots checked  ·  %2$d read-only: %3$s" },
+        { "lock_report_unreadable", "  ·  %1$d would not answer" },
+
+        // ---- favourites and the brand list
+        { "group_favourites", "Favourites" },
+        { "favourite_added", "%1$s added to Favourites" },
+        { "favourite_removed", "%1$s removed from Favourites" },
+        { "favourite_empty_title", "No favourites yet" },
+        { "favourite_empty_hint", "Hold the centre button on a recipe to keep it here" },
+        { "picker_brand", "BRAND" },
+
+        // ---- the legend
+        { "action_pick", "pick" },
+        { "action_browse", "browse" },
+        { "action_favourite_hold", "fav (hold)" },
+        { "action_menu_hold", "menu (hold)" },
+        { "action_hide", "hide" },
+        { "action_exit", "exit" },
+        { "action_exit_hold", "exit (hold)" },
+        { "action_edit", "edit" },
+        { "action_done", "done" },
+        { "action_recipes", "recipes" },
+        { "action_close", "close" },
+        { "action_back", "back" },
+        { "action_move", "move" },
+        { "action_select", "select" },
+        { "action_change", "change" },
+        { "action_confirm", "confirm" },
+        { "action_cancel", "cancel" },
+        { "keys_notice", "Hold MENU for the menu  ·  trash hides the panel  ·  hold trash to reset" },
+
+        // ---- toasts
+        { "status_read_failed", "Read failed: %1$s" },
+        { "status_already_picked", "Already picked — nothing to write" },
+        { "status_picked_one", "Picked — %1$d value written, power-cycle the camera to apply everywhere" },
+        { "status_picked_many", "Picked — %1$d values written, power-cycle the camera to apply everywhere" },
+        { "status_not_picked", "Not picked" },
+        { "status_not_reset", "Not reset" },
+        { "status_quality_pick", "Quality: %1$s  — ENTER to pick" },
+        { "status_quality_live", "Quality: %1$s  (live view only until the slot is known)" },
+        { "status_recipe_previewed", "%1$s previewed — ENTER to pick" },
+        { "status_snapshot_taken", "Snapshot of %1$d settings taken. Change a menu setting, reopen, run Settings diff." },
+        { "status_diff_changed", "%1$d changed  %2$s" },
+        { "status_snapshot_error", "snapshot error: %1$s" },
+        { "status_file_failed", "%1$s failed: %2$s" },
+        { "status_logger_stopped", "Key logger stopped — events are in %1$s" },
+
+        // ---- the app menu
+        { "menu_browse", "Browse recipes" },
+        { "menu_browse_detail", "Brands and favourites" },
+        { "menu_panel", "Panel visibility" },
+        { "menu_panel_detail", "What stays over the live image — left / right to change" },
+        { "menu_language", "Language" },
+        { "menu_language_detail", "Menus and messages — Auto follows the camera — left / right to change" },
+        { "menu_reset", "Reset settings" },
+        { "menu_reset_detail", "Back to the camera's factory look" },
+        { "menu_about", "About" },
+        { "menu_about_detail", "Version, camera, platform" },
+        { "menu_dev", "Developer  >" },
+        { "menu_dev_detail", "Settings snapshot, read-only check, samples, key logger" },
+        { "panel_full", "Full" },
+        { "panel_label", "Label" },
+        { "panel_hidden", "Hidden" },
+        { "about_title", "ABOUT" },
+        { "about_version", "version" },
+        { "about_camera", "camera" },
+        { "about_platform", "platform" },
+        { "about_source", "source" },
+
+        // ---- the developer menu and the sample run
+        { "dev_title", "DEV TOOLS" },
+        { "dev_settings_snapshot", "Settings snapshot" },
+        { "dev_settings_diff", "Settings diff" },
+        { "dev_read_only_check", "Read-only check — %1$d slots" },
+        { "dev_shoot_samples", "Shoot samples — %1$d recipes" },
+        { "dev_settle_delay", "Settle delay" },
+        { "dev_key_logger", "Key logger" },
+        { "dev_snapshot_store", "Store the value of every settings id" },
+        { "dev_snapshot_compare", "Compare every settings id against the snapshot" },
+        { "dev_locks_detail", "Test every slot a recipe writes for the read-only flag" },
+        { "dev_samples_detail", "One JPEG per recipe, in table order — MENU stops the run" },
+        { "dev_settle_detail", "Wait after applying a recipe before the shutter fires — left / right to change" },
+        { "dev_keys_detail", "Show every key's scan code — hold MENU to leave" },
+        { "dev_no_preview", "No live preview — the sample run needs the camera" },
+        { "dev_progress", "Shooting %1$d / %2$d  ·  %3$s   —   MENU stops" },
+        { "dev_done", "Samples done — %1$d of %2$d frames shot, listed in %3$s" },
+        { "dev_stopped_none", "Sample run stopped before the first frame" },
+        { "dev_stopped", "Sample run stopped — %1$d of %2$d frames shot, listed in %3$s" },
+        { "dev_shoot_failed", "Shutter failed on frame %1$d: %2$s  —  %3$d frames shot, listed in %4$s" },
+    };
+}

@@ -186,6 +186,6 @@ class KeysTest {
 
     @Test void theNoticeUsesOnlyCharactersTheCameraFontHas() {
         // the firmware font has no arrows or symbols (Legend); the notice is plain text in a toast
-        for (char ch : Keys.NOTICE.toCharArray()) assertTrue(ch < 0x2190, "U+" + Integer.toHexString(ch) + " in the notice");
+        for (char ch : Keys.notice().toCharArray()) assertTrue(ch < 0x2190, "U+" + Integer.toHexString(ch) + " in the notice");
     }
 }

@@ -35,12 +35,13 @@ import static com.voxivoid.recipelab.Params.*;
  *
  * Keys (issue #18 — every function on keys every body has; Fn is a shortcut where it exists, see {@link Keys}):
  *       wheel / LEFT / RIGHT recipe · UP / DOWN parameter · top dial adjust · ENTER pick · hold ENTER favourite
- *       TRASH overlay: full → pill → hidden · hold TRASH reset (asks first) · hold MENU app menu (browse, reset,
- *       about, developer) · SHUTTER photo · MENU exit · Fn brand browser
+ *       TRASH overlay: full → pill → hidden · hold TRASH reset (asks first) · hold MENU app menu (browse, panel,
+ *       language, reset, about, developer) · SHUTTER photo · MENU exit · Fn brand browser
  *
  * This class holds the state and talks to the camera, the store and the views. What a value means, how the store
  * encodes it, what the preview sets and where a key press lands is decided in {@link Params}, {@link Keys} and
- * {@link DevTools}, which have no Android in them and are covered by tools/test.sh.
+ * {@link DevTools}, which have no Android in them and are covered by tools/test.sh. Every word on screen comes from
+ * {@link Lang}, in the language the app menu picked; this class only applies it and its font ({@link UiFont}).
  */
 public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private static final int ACCENT = 0xFFF2B85C, INK = 0xFF1A1208, WHITE = 0xFFFFFFFF, DIM = 0x99FFFFFF;
@@ -49,7 +50,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private PickerView picker;
     private HorizontalScrollView chipScroll;
     private boolean swallowMenuUp = false;
-    private TextView name, badge, tag, count, meta, mini, toast;
+    private TextView name, nameOriginal, badge, tag, count, meta, mini, toast;
     private StarView fav;
     private PromptView prompt;
     private int promptSel = 0; private boolean promptOpen = false, promptReset = false;   // promptReset: the reset question, not the quality one
@@ -58,6 +59,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private boolean menuOpen = false;
     private int menuLevel = DevTools.LEVEL_APP, menuPage = PAGE_ROWS;   // which menu, and whether it shows rows or a read-only page
     private int menuSel = 0, settleIdx = DevTools.SETTLE_DEFAULT;   // menu: highlighted row · developer menu: chosen settle delay
+    private int langChoice = Lang.AUTO;                         // the Language row: Lang.AUTO or a language
     private static final int PAGE_ROWS = 0, PAGE_ABOUT = 1;
     private Keys.Caps caps = Keys.Caps.UNKNOWN;                 // the shortcut keys this body reports (KeyProbe)
     private HintBar hints;
@@ -104,10 +106,12 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         recipe = Math.max(0, Math.min(Recipes.ALL.length - 1, prefs.getInt("recipe", 0)));
         favs = Favourites.decode(prefs.getString("favourites", ""));
         settleIdx = DevTools.clampSettle(prefs.getInt("settle", DevTools.SETTLE_DEFAULT));
+        langChoice = Lang.parseChoice(prefs.getString("language", null));
         panel = findViewById(R.id.panel);
         picker = (PickerView) findViewById(R.id.picker);
         chipScroll = (HorizontalScrollView) findViewById(R.id.chipscroll);
         name = (TextView) findViewById(R.id.name);
+        nameOriginal = (TextView) findViewById(R.id.name_original);
         badge = (TextView) findViewById(R.id.badge);
         tag = (TextView) findViewById(R.id.tag);
         fav = (StarView) findViewById(R.id.fav);
@@ -120,6 +124,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         menu = (MenuView) findViewById(R.id.menu);
         chips = (LinearLayout) findViewById(R.id.chips);
         buildChips();
+        applyLanguage();
         caps = KeyProbe.caps();
         hints.setCaps(caps); picker.setCaps(caps);
         SurfaceView sv = (SurfaceView) findViewById(R.id.surface);
@@ -138,12 +143,21 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
             lp.rightMargin = dp(5);
             c.setLayoutParams(lp);
-            TextView l = new TextView(this); l.setTextSize(9); l.setText(ROW_NAME[i]);
+            TextView l = new TextView(this); l.setTextSize(9);                    // its text is set by render(), in the display language
             TextView v = new TextView(this); v.setTextSize(13); v.setTypeface(Typeface.DEFAULT_BOLD); v.setSingleLine(true);
             c.addView(l); c.addView(v);
             chips.addView(c);
             chip[i] = c; chipLabel[i] = l; chipValue[i] = v;
         }
+    }
+
+    /** the language the Language row resolves to on this camera, in every view, with its font */
+    private void applyLanguage() {
+        java.util.Locale l = getResources().getConfiguration().locale;
+        Lang.use(Lang.resolve(langChoice, l == null ? null : l.getLanguage(), l == null ? null : l.getCountry()));
+        Typeface tf = UiFont.of(this, Lang.current());
+        UiFont.apply(findViewById(android.R.id.content), tf);
+        picker.setTypeface(tf); prompt.setTypeface(tf); menu.setTypeface(tf); hints.setTypeface(tf);
     }
 
     @Override
@@ -161,7 +175,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         } catch (Throwable t) { previewOk = false; previewErr = String.valueOf(t); }
         stageRecipe(); applyPreview(); render();
         if (!prefs.getBoolean("keysNoticeSeen", false)) {               // the keys moved in this build (issue #18): say so once
-            showToast(Keys.NOTICE, 8000);
+            showToast(Keys.notice(), 8000);
             prefs.edit().putBoolean("keysNoticeSeen", true).commit();
         }
     }
@@ -203,7 +217,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
                 if (id == QUALITY_SLOTS) { cur[i] = edit[i] = readQuality(); continue; }
                 cur[i] = edit[i] = Params.fromStore(id, NativeBackup.readByte(id));
             }
-        } catch (Throwable t) { showToast("Read failed: " + t.getMessage(), 0); }
+        } catch (Throwable t) { showToast(Lang.t("status_read_failed", String.valueOf(t.getMessage())), 0); }
     }
 
     private void stageRecipe() {
@@ -257,7 +271,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
 
     private void writeAll(boolean confirmed) {
         if (!confirmed && qualityChanges()) { openPrompt(); return; }
-        if (!dirty()) { showToast("Already picked — nothing to write", 2500); return; }
+        if (!dirty()) { showToast(Lang.t("status_already_picked"), 2500); return; }
         int storedSub = storedSub();
         int n = Params.dirtyRows(cur, edit, storedSub);
         List<Params.Write> ws = Params.writes(cur, edit, storedSub);
@@ -272,24 +286,23 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         }
         if (written > 0) NativeBackup.sync();                    // Backup_sync_all is void: nothing to catch, nothing to report
         boolean ok = msg == null;
-        if (ok) msg = "Picked — " + n + " value" + (n == 1 ? "" : "s") + " written, power-cycle the camera to apply everywhere";
+        if (ok) msg = Lang.t(n == 1 ? "status_picked_one" : "status_picked_many", n);
         load(); stageRecipe();
         showToast(msg, ok ? 5000 : 0); render();
     }
 
     // ------------------------------------------------------------ the two questions: RAW vs Picture Effect, and reset to factory
-    private static final String[] PROMPT_OPTS = { "Accept", "Cancel" };
-
     private void openPrompt() { promptOpen = true; promptReset = false; promptSel = 0; renderPrompt(); }
 
     /** hold trash, or Reset settings in the app menu: ask before the factory look replaces the current one */
     private void askReset() { promptOpen = true; promptReset = true; promptSel = DevTools.RESET_DEFAULT; renderPrompt(); }
 
     private void renderPrompt() {
-        if (promptReset) prompt.set(DevTools.RESET_TITLE, DevTools.RESET_BODY, DevTools.RESET_OPTIONS, promptSel, null);
+        if (promptReset) prompt.set(DevTools.resetTitle(), DevTools.resetBody(), DevTools.resetOptions(), promptSel, null);
         else {
             String[] q = Params.qualityPrompt(cur, edit);
-            prompt.set(q[0], q[1], PROMPT_OPTS, promptSel, qualityPersistent() ? null : "quality slot not located yet — live view only");
+            String[] opts = { Lang.t("button_accept"), Lang.t("button_cancel") };
+            prompt.set(q[0], q[1], opts, promptSel, qualityPersistent() ? null : Lang.t("quality_slot_note"));
         }
         prompt.setVisibility(View.VISIBLE);
     }
@@ -301,8 +314,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             case K_LEFT: case K_WHEEL_CCW: case K_DIAL_CCW: case K_RIGHT: case K_WHEEL_CW: case K_DIAL_CW: promptSel ^= 1; renderPrompt(); return true;
             case K_ENTER:
                 closePrompt();
-                if (promptReset) { if (promptSel == 0) storeFactory(); else showToast("Not reset", 2000); render(); return true; }
-                if (promptSel == 0) writeAll(true); else showToast("Not picked", 2000);   // cancel: recipe stays previewed only
+                if (promptReset) { if (promptSel == 0) storeFactory(); else showToast(Lang.t("status_not_reset"), 2000); render(); return true; }
+                if (promptSel == 0) writeAll(true); else showToast(Lang.t("status_not_picked"), 2000);   // cancel: recipe stays previewed only
                 render(); return true;
             case K_MENU: case K_SK1: swallowMenuUp = true; closePrompt(); render(); return true;
         }
@@ -311,7 +324,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
 
     private void cycleQuality() {
         edit[R_QUAL] = (edit[R_QUAL] + 1) % 4; qualityChanged(); applyPreview(); render();
-        showToast("Quality: " + Q_LABEL[edit[R_QUAL]] + (qualityPersistent() ? "  — ENTER to pick" : "  (live view only until the slot is known)"), 2500);
+        showToast(Lang.t(qualityPersistent() ? "status_quality_pick" : "status_quality_live", qualityLabel(edit[R_QUAL])), 2500);
     }
 
     // ------------------------------------------------------------ snapshot / diff of the whole settings store (developer menu)
@@ -334,7 +347,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
                 FileOutputStream o = new FileOutputStream(f);
                 for (int[] e : ids) { byte[] v; try { v = NativeBackup.read(e[0]); } catch (Throwable t) { v = new byte[0]; } o.write(v.length); o.write(v); }
                 o.close();
-                showToast("Snapshot of " + ids.size() + " settings taken. Change a menu setting, reopen, run Settings diff.", 6000);
+                showToast(Lang.t("status_snapshot_taken", ids.size()), 6000);
                 return;
             }
             FileInputStream in = new FileInputStream(f);
@@ -348,10 +361,9 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
                 }
             }
             in.close(); f.delete();
-            String text = changed + " changed  " + sb;
-            java.io.FileWriter w = new java.io.FileWriter(new File(getFilesDir(), "diff.txt"), true); w.write(text + "\n"); w.close();
-            showToast(text, 0);
-        } catch (Throwable t) { showToast("snapshot error: " + t, 0); }
+            java.io.FileWriter w = new java.io.FileWriter(new File(getFilesDir(), "diff.txt"), true); w.write(changed + " changed  " + sb + "\n"); w.close();
+            showToast(Lang.t("status_diff_changed", changed, sb.toString()), 0);
+        } catch (Throwable t) { showToast(Lang.t("status_snapshot_error", String.valueOf(t)), 0); }
     }
 
     // ------------------------------------------------------------ read-only check of the slots a recipe writes
@@ -366,11 +378,13 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         for (int i = 0; i < attrs.length; i++) {
             try { attrs[i] = NativeBackup.attr(ids.get(i)); } catch (Throwable t) { attrs[i] = -1; }
         }
-        String text = Params.lockReport(ids, attrs);
+        String text = Params.lockReport(ids, attrs), file;
+        int was = Lang.use(Lang.EN);                              // the file is quoted in compatibility reports: English
+        try { file = Params.lockReport(ids, attrs); } finally { Lang.use(was); }
         try {
             java.io.FileWriter w = new java.io.FileWriter(new File(getFilesDir(), "locks.txt"), true);
-            try { w.write(text + "\n" + Params.lockLines(ids, attrs)); } finally { w.close(); }
-        } catch (Throwable t) { text += "  ·  locks.txt failed: " + t; }
+            try { w.write(file + "\n" + Params.lockLines(ids, attrs)); } finally { w.close(); }
+        } catch (Throwable t) { text += "  ·  " + Lang.t("status_file_failed", "locks.txt", String.valueOf(t)); }
         showToast(text, 0);
     }
 
@@ -381,20 +395,22 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     }
 
     private void renderMenu() {
-        if (menuPage == PAGE_ABOUT) menu.setPage(DevTools.ABOUT_TITLE, DevTools.about(versionName(), KeyProbe.prop("model.name"),
+        if (menuPage == PAGE_ABOUT) menu.setPage(DevTools.aboutTitle(), DevTools.about(versionName(), KeyProbe.prop("model.name"),
                 KeyProbe.prop("version.platform")), Keys.hints(Keys.H_PAGE, caps));
         else {
             int n = DevTools.rows(menuLevel);
             boolean app = menuLevel == DevTools.LEVEL_APP, snapshotTaken = !app && snapFile().exists();
             String[] labels = new String[n], details = new String[n], values = new String[n];
+            Typeface[] faces = new Typeface[n];
             for (int i = 0; i < n; i++) {
                 labels[i] = app ? DevTools.appLabel(i) : DevTools.rowLabel(i, snapshotTaken, settleIdx);
                 details[i] = app ? DevTools.appDetail(i) : DevTools.rowDetail(i, snapshotTaken);
-                values[i] = app ? DevTools.appValue(i, overlay) : DevTools.rowValue(i, settleIdx);
+                values[i] = app ? DevTools.appValue(i, overlay, langChoice) : DevTools.rowValue(i, settleIdx);
             }
+            if (app) faces[DevTools.APP_LANG] = UiFont.of(this, Lang.choiceScript(langChoice));   // 简体中文 in its own font, whatever the menu's
             boolean value = values[menuSel] != null;
             int legend = app ? (value ? Keys.H_MENU_TOP_VALUE : Keys.H_MENU_TOP) : (value ? Keys.H_MENU_SUB_VALUE : Keys.H_MENU_SUB);
-            menu.set(app ? DevTools.APP_TITLE : DevTools.TITLE, labels, details, values, menuSel, Keys.hints(legend, caps));
+            menu.set(app ? DevTools.APP_TITLE : DevTools.title(), labels, details, values, faces, menuSel, Keys.hints(legend, caps));
         }
         menu.setVisibility(View.VISIBLE);
     }
@@ -418,7 +434,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         if (menuLevel == DevTools.LEVEL_APP) {
             switch (menuSel) {
                 case DevTools.APP_BROWSE: closeMenu(); openBrowser(true); break;
-                case DevTools.APP_PANEL: stepMenuValue(+1); break;
+                case DevTools.APP_PANEL: case DevTools.APP_LANG: stepMenuValue(+1); break;
                 case DevTools.APP_RESET: closeMenu(); askReset(); break;
                 case DevTools.APP_ABOUT: menuPage = PAGE_ABOUT; renderMenu(); break;
                 case DevTools.APP_DEV: menuLevel = DevTools.LEVEL_DEV; menuSel = 0; renderMenu(); break;
@@ -438,7 +454,11 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     /** left / right on a row that has a value: change it in place, the menu stays open; false when the row has none */
     private boolean stepMenuValue(int dir) {
         if (menuLevel == DevTools.LEVEL_APP && menuSel == DevTools.APP_PANEL) overlay = DevTools.nextPanel(overlay, dir);
-        else if (menuLevel == DevTools.LEVEL_DEV && menuSel == DevTools.ROW_SETTLE) {
+        else if (menuLevel == DevTools.LEVEL_APP && menuSel == DevTools.APP_LANG) {
+            langChoice = Lang.nextChoice(langChoice, dir);
+            prefs.edit().putString("language", Lang.choiceCode(langChoice)).commit();
+            applyLanguage();                                     // the menu redraws in it straight away, the panel under it too
+        } else if (menuLevel == DevTools.LEVEL_DEV && menuSel == DevTools.ROW_SETTLE) {
             settleIdx = DevTools.nextSettle(settleIdx, dir);
             prefs.edit().putInt("settle", settleIdx).commit();
         } else return false;
@@ -522,7 +542,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
 
     /** shoot one frame per recipe, in table order: the gallery of issue #17, and a preview-pipeline test */
     private void startRun() {
-        if (camera == null || !previewOk) { showToast(DevTools.NO_PREVIEW, 5000); return; }
+        if (camera == null || !previewOk) { showToast(DevTools.noPreview(), 5000); return; }
         running = true; runFrame = 0; runReturnTo = recipe;
         runLog = new StringBuilder(DevTools.manifestHeader(Recipes.ALL.length, settleMs())).append('\n');
         handler.post(runStage);
@@ -536,7 +556,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         stageRecipe();
         edit[R_QUAL] = Q_FINE;                                  // a sample is only a sample as a JPEG with the look in it, whatever the user shoots
         applyPreview(); render();
-        showToast(DevTools.progress(runFrame + 1, Recipes.ALL.length, Recipes.ALL[runFrame].name), 0);
+        showToast(DevTools.progress(runFrame + 1, Recipes.ALL.length, Recipes.displayName(Recipes.ALL[runFrame])), 0);
         handler.postDelayed(runShoot, settleMs());
     }
 
@@ -575,7 +595,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         try {
             java.io.FileWriter w = new java.io.FileWriter(new File(getFilesDir(), DevTools.MANIFEST), true);
             try { w.write(runLog.toString()); } finally { w.close(); }
-        } catch (Throwable t) { return "  ·  " + DevTools.MANIFEST + " failed: " + t; }
+        } catch (Throwable t) { return "  ·  " + Lang.t("status_file_failed", DevTools.MANIFEST, String.valueOf(t)); }
         finally { runLog = null; }
         return "";
     }
@@ -598,7 +618,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         int pos = favs.indexOf(recipe);
         boolean on = Favourites.toggle(favs, recipe);
         saveFavourites();
-        showToast(Favourites.toggleMessage(Recipes.ALL[recipe].name, on), 2500);
+        showToast(Favourites.toggleMessage(Recipes.displayName(Recipes.ALL[recipe]), on), 2500);
         if (overlay == OV_BROWSER && browserGroup == Favourites.GROUP && !on) {
             // unmarked inside the Favourites list: the highlight moves to a neighbour, or back to the brand column when the list is empty
             int next = Favourites.afterRemoval(favs, pos);
@@ -630,24 +650,28 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         Recipes.Recipe r = Recipes.ALL[recipe];
         boolean dirty = dirty();
         String pos = Recipes.position(recipe);
-        String grp = Recipes.GROUPS[r.group].toUpperCase();
+        String grp = Recipes.groupLabel(r.group).toUpperCase();
         picker.setVisibility(overlay == OV_BROWSER ? View.VISIBLE : View.GONE);
         if (overlay == OV_BROWSER) { panel.setVisibility(View.GONE); mini.setVisibility(View.GONE); picker.set(recipe, browserCol, browserGroup, favs); return; }
         if (overlay == OV_FULL) {
             panel.setVisibility(View.VISIBLE); mini.setVisibility(View.GONE);
-            name.setText(r.name);
+            name.setText(Recipes.displayName(r));
             name.setTextColor(row == 0 ? ACCENT : WHITE);
+            String original = Recipes.originalName(r);            // a translated name keeps the canonical one under it
+            nameOriginal.setText(original == null ? "" : original);
+            nameOriginal.setVisibility(original == null ? View.GONE : View.VISIBLE);
             count.setText(grp + "   " + pos);
             tag.setText(edit[R_PE] != 0 ? "PE" : "CS");
             tag.setTextColor(edit[R_PE] != 0 ? ACCENT : 0xDDFFFFFF);
             fav.setVisibility(favs.contains(recipe) ? View.VISIBLE : View.GONE);
-            if (dirty) { badge.setText("PREVIEW"); badge.setBackgroundResource(R.drawable.badge_warn); }
-            else { badge.setText("ACTIVE"); badge.setBackgroundResource(R.drawable.badge_ok); }
+            if (dirty) { badge.setText(Lang.t("state_preview")); badge.setBackgroundResource(R.drawable.badge_warn); }
+            else { badge.setText(Lang.t("state_active")); badge.setBackgroundResource(R.drawable.badge_ok); }
             meta.setText(Params.metaLine(cur, edit, previewOk ? null : previewErr));
             for (int i : ORDER) {
                 chip[i].setVisibility(rowVisible(i) ? View.VISIBLE : View.GONE);
                 boolean sel = i == row, ch = rowDirty(i), foc = sel && focus;
                 chip[i].setBackgroundResource(foc ? R.drawable.chip_sel : sel ? R.drawable.chip_hi : R.drawable.chip);
+                chipLabel[i].setText(Params.rowName(i));
                 chipLabel[i].setTextColor(foc ? INK : sel ? ACCENT : DIM);
                 chipValue[i].setTextColor(foc ? INK : ch ? ACCENT : WHITE);
                 chipValue[i].setText(Params.fmt(i, edit[i], edit));
@@ -715,13 +739,13 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
 
     /** the recipe column is not reachable while the Favourites list is empty */
     private boolean enterRecipeColumn() {
-        if (!Favourites.hasRecipes(browserGroup, favs)) { showToast(Favourites.EMPTY_HINT, 3000); return false; }
+        if (!Favourites.hasRecipes(browserGroup, favs)) { showToast(Favourites.emptyHint(), 3000); return false; }
         browserCol = COL_RECIPES; render(); return true;
     }
 
     /** the centre button on a recipe in the browser: close it, leaving that recipe previewed */
     private void pickInBrowser() {
-        openBrowser(false); showToast(Recipes.ALL[recipe].name + " previewed — ENTER to pick", 3000);
+        openBrowser(false); showToast(Lang.t("status_recipe_previewed", Recipes.displayName(Recipes.ALL[recipe])), 3000);
     }
 
     /** the reset question answered Reset: the factory look, stored — the same store as a centre press */
@@ -738,7 +762,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private void menuHoldFired() {
         if (menuKeyHold.fire() != Keys.Hold.HOLD) return;
         swallowMenuUp = true;
-        if (logging) { stopLogger(); showToast("Key logger stopped — events are in " + DevTools.KEY_LOG, 4000); return; }
+        if (logging) { stopLogger(); showToast(Lang.t("status_logger_stopped", DevTools.KEY_LOG), 4000); return; }
         if (!running && !promptOpen && !menuOpen && menuHoldArms(overlay, focus)) openMenu(DevTools.LEVEL_APP);
     }
 

@@ -31,6 +31,10 @@ UNITS=(
   src/com/voxivoid/recipelab/DevTools.java
   src/com/voxivoid/recipelab/Keys.java
   src/com/voxivoid/recipelab/KeyProbe.java
+  src/com/voxivoid/recipelab/Lang.java
+  src/com/voxivoid/recipelab/TextEn.java
+  src/com/voxivoid/recipelab/TextZhHans.java
+  src/com/voxivoid/recipelab/TextZhHant.java
 )
 
 mkdir -p out/test

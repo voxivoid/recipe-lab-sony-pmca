@@ -18,11 +18,11 @@ final class Favourites {
 
     /** the browser group that lists the favourites; brands are 0..GROUPS.length-1 */
     static final int GROUP = -1;
-    static final String NAME = "Favourites";
     /** separates names in the stored string; no recipe name contains it (RecipesTest) */
     static final String SEP = "|";
     /** the right column of an empty Favourites group */
-    static final String EMPTY_TITLE = "No favourites yet", EMPTY_HINT = "Hold the centre button on a recipe to keep it here";
+    static String emptyTitle() { return Lang.t("favourite_empty_title"); }
+    static String emptyHint() { return Lang.t("favourite_empty_hint"); }
 
     // ------------------------------------------------------------ storage
     /** the stored string -> recipe indexes in marking order; unknown names, repeats and the factory look are dropped */
@@ -68,9 +68,7 @@ final class Favourites {
     }
 
     /** the toast after a toggle */
-    static String toggleMessage(String recipeName, boolean on) {
-        return recipeName + (on ? " added to " : " removed from ") + NAME;
-    }
+    static String toggleMessage(String recipeName, boolean on) { return Lang.t(on ? "favourite_added" : "favourite_removed", recipeName); }
 
     // ------------------------------------------------------------ browser navigation
     /** the group above / below in the brand column: Favourites sits first, everything wraps */
@@ -99,8 +97,8 @@ final class Favourites {
     /** the group the browser opens on: Favourites when the recipe is one, else its brand */
     static int openingGroup(List<Integer> favs, int recipe) { return favs.contains(recipe) ? GROUP : Recipes.ALL[recipe].group; }
 
-    /** the group's name as the brand column shows it */
-    static String groupName(int group) { return group == GROUP ? NAME : Recipes.GROUPS[group]; }
+    /** the group's name as the brand column shows it, in the display language */
+    static String groupName(int group) { return group == GROUP ? Lang.t("group_favourites") : Recipes.groupLabel(group); }
 
     /** how many recipes a group lists */
     static int groupCount(int group, List<Integer> favs) { return group == GROUP ? favs.size() : Recipes.GROUP_COUNT[group]; }

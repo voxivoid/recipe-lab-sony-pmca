@@ -73,6 +73,17 @@
                 android:textColor="#B3FFFFFF" />
         </LinearLayout>
 
+        <!-- the canonical name under a translated one (Recipes.originalName) -->
+        <TextView
+            android:id="@+id/name_original"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="-1dp"
+            android:textSize="9sp"
+            android:textColor="#8FFFFFFF"
+            android:singleLine="true"
+            android:visibility="gone" />
+
         <TextView
             android:id="@+id/meta"
             android:layout_width="fill_parent"

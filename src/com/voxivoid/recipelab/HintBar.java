@@ -2,6 +2,7 @@ package com.voxivoid.recipelab;
 
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.Typeface;
 import android.util.AttributeSet;
 import android.view.View;
 
@@ -22,6 +23,9 @@ public class HintBar extends View {
 
     /** what the key probe found; until it is set only the universal keys are named */
     public void setCaps(Keys.Caps k) { caps = k; invalidate(); }
+
+    /** the display language's typeface ({@link UiFont}); the labels themselves come from {@link Keys#hints} as it draws */
+    public void setTypeface(Typeface tf) { legend.setTypeface(tf); invalidate(); }
 
     @Override
     protected void onMeasure(int w, int h) { setMeasuredDimension(MeasureSpec.getSize(w), (int) legend.height()); }

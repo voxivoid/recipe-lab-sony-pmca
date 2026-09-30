@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.RectF;
+import android.graphics.Typeface;
 import android.util.AttributeSet;
 import android.view.View;
 
@@ -47,6 +48,9 @@ public class PickerView extends View {
     /** what the key probe found; until it is set only the universal keys are named */
     public void setCaps(Keys.Caps k) { caps = k; invalidate(); }
 
+    /** the display language's typeface ({@link UiFont}) */
+    public void setTypeface(Typeface tf) { head.setTypeface(tf); item.setTypeface(tf); small.setTypeface(tf); legend.setTypeface(tf); invalidate(); }
+
     /** the highlighted recipe, the active column, the group the left column is on, and the favourites in marking order */
     public void set(int recipe, int col, int grp, List<Integer> favourites) { selected = recipe; column = col; group = grp; favs = favourites; invalidate(); }
 
@@ -62,7 +66,7 @@ public class PickerView extends View {
         float top = pad + 12 * d, bottom = h - pad - 20 * d;    // header / footer reserved
         float sbW = 4 * d;                                      // scrollbar width
         head.setColor(column == 0 ? ACCENT : 0x99FFFFFF);
-        c.drawText("BRAND", pad, pad + 7 * d, head);
+        c.drawText(Lang.t("picker_brand"), pad, pad + 7 * d, head);
         head.setColor(column == 1 ? ACCENT : 0x99FFFFFF);
         c.drawText(Favourites.groupName(g).toUpperCase() + "  ·  " + count, colX + pad, pad + 7 * d, head);
         head.setColor(0x99FFFFFF);
@@ -97,9 +101,9 @@ public class PickerView extends View {
         float x = colX + pad;
         if (count == 0) {                                       // an empty Favourites group says so, and how to fill it
             item.setColor(0xCCFFFFFF);
-            c.drawText(Favourites.EMPTY_TITLE, x, listTop + 20 * d, item);
+            c.drawText(Favourites.emptyTitle(), x, listTop + 20 * d, item);
             small.setColor(0x99FFFFFF);
-            c.drawText(Favourites.EMPTY_HINT, x, listTop + 36 * d, small);
+            c.drawText(Favourites.emptyHint(), x, listTop + 36 * d, small);
         } else {
             float rh = 26 * d;
             int visible = Math.max(1, (int) (listH / rh));
@@ -114,9 +118,12 @@ public class PickerView extends View {
                 boolean on = idx == selected, active = on && column == 1;
                 if (on) { r.set(x - 4 * d, y, xr, y + rh); c.drawRoundRect(r, 3 * d, 3 * d, active ? sel : outline); }
                 item.setColor(active ? INK : on ? ACCENT : 0xFFFFFFFF); item.setFakeBoldText(on);
-                c.drawText(rc.name, x, y + 13 * d, item);
+                c.drawText(Recipes.displayName(rc), x, y + 13 * d, item);
                 small.setColor(active ? 0xAA1A1208 : 0x80FFFFFF);
-                c.drawText(favGroup ? Recipes.GROUPS[rc.group] + "  ·  " + rc.summary() : rc.summary(), x, y + 22 * d, small);
+                String detail = rc.summary(), original = Recipes.originalName(rc);   // a translated name keeps the canonical one beside it
+                if (original != null) detail = original + "  ·  " + detail;
+                if (favGroup) detail = Recipes.groupLabel(rc.group) + "  ·  " + detail;
+                c.drawText(detail, x, y + 22 * d, small);
                 float tx = tag(c, rc.isEffect() ? "PE" : "CS", xr - 4 * d, y, active, active ? 0x331A1208 : (rc.isEffect() ? 0x55B8741A : 0x33FFFFFF), active ? INK : 0xCCFFFFFF);
                 if (!favGroup && favs.contains(idx)) { star.setColor(active ? INK : ACCENT); Legend.star(c, tx - 4 * d - 6 * d, y + 11 * d, 6 * d, star); }
             }

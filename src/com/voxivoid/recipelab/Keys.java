@@ -143,34 +143,35 @@ final class Keys {
      * The legend for a screen, for this body. Universal keys carry every function; Fn appears only when the probe
      * reports it — as "browse", which is also in the app menu, or beside MENU where both close the list — so a body that
      * lacks it (or a probe that failed) still reads a complete legend. The order is fixed: pick, browse, fav, menu, hide,
-     * exit. Reset (hold trash) is left out on purpose: it asks before it writes, and a hint would invite it.
+     * exit. Reset (hold trash) is left out on purpose: it asks before it writes, and a hint would invite it. The labels
+     * are in the display language ({@link Lang}).
      */
     static Hints hints(int mode, Caps caps) {
         int fn = caps.hasFn() ? I_FN : I_NONE;
         switch (mode) {
             case H_RECIPE: {
-                Row r = new Row().add(I_ENTER, "pick");
-                if (caps.hasFn()) r.add(I_FN, "browse");
-                return r.add(I_ENTER, "fav (hold)").add(I_MENU, "menu (hold)").add(I_TRASH, "hide").add(I_MENU, "exit").done();
+                Row r = new Row().add(I_ENTER, Lang.t("action_pick"));
+                if (caps.hasFn()) r.add(I_FN, Lang.t("action_browse"));
+                return r.add(I_ENTER, Lang.t("action_favourite_hold")).add(I_MENU, Lang.t("action_menu_hold")).add(I_TRASH, Lang.t("action_hide")).add(I_MENU, Lang.t("action_exit")).done();
             }
             case H_CHIPS: {
-                Row r = new Row().add(I_ENTER, "edit");
-                if (caps.hasFn()) r.add(I_FN, "browse");
-                return r.add(I_MENU, "menu (hold)").add(I_TRASH, "hide").add(I_MENU, "exit").done();
+                Row r = new Row().add(I_ENTER, Lang.t("action_edit"));
+                if (caps.hasFn()) r.add(I_FN, Lang.t("action_browse"));
+                return r.add(I_MENU, Lang.t("action_menu_hold")).add(I_TRASH, Lang.t("action_hide")).add(I_MENU, Lang.t("action_exit")).done();
             }
-            case H_EDIT: return new Row().add(I_ENTER, "done").done();
-            case H_BRANDS: return new Row().add(I_ENTER, "recipes").add(I_MENU, fn, "close").done();
-            case H_RECIPES: return new Row().add(I_ENTER, "pick").add(I_ENTER, "fav (hold)").add(I_MENU, fn, "close").done();
-            case H_MENU_TOP: return new Row().add(I_UPDOWN, "move").add(I_ENTER, "select").add(I_MENU, "close").done();
-            case H_MENU_SUB: return new Row().add(I_UPDOWN, "move").add(I_ENTER, "select").add(I_MENU, "back").done();
-            case H_MENU_TOP_VALUE: return new Row().add(I_UPDOWN, "move").add(I_LEFTRIGHT, "change").add(I_MENU, "close").done();
-            case H_MENU_SUB_VALUE: return new Row().add(I_UPDOWN, "move").add(I_LEFTRIGHT, "change").add(I_MENU, "back").done();
-            case H_PAGE: return new Row().add(I_MENU, "back").done();
-            case H_LOGGER: return new Row().add(I_MENU, "exit (hold)").done();
+            case H_EDIT: return new Row().add(I_ENTER, Lang.t("action_done")).done();
+            case H_BRANDS: return new Row().add(I_ENTER, Lang.t("action_recipes")).add(I_MENU, fn, Lang.t("action_close")).done();
+            case H_RECIPES: return new Row().add(I_ENTER, Lang.t("action_pick")).add(I_ENTER, Lang.t("action_favourite_hold")).add(I_MENU, fn, Lang.t("action_close")).done();
+            case H_MENU_TOP: return new Row().add(I_UPDOWN, Lang.t("action_move")).add(I_ENTER, Lang.t("action_select")).add(I_MENU, Lang.t("action_close")).done();
+            case H_MENU_SUB: return new Row().add(I_UPDOWN, Lang.t("action_move")).add(I_ENTER, Lang.t("action_select")).add(I_MENU, Lang.t("action_back")).done();
+            case H_MENU_TOP_VALUE: return new Row().add(I_UPDOWN, Lang.t("action_move")).add(I_LEFTRIGHT, Lang.t("action_change")).add(I_MENU, Lang.t("action_close")).done();
+            case H_MENU_SUB_VALUE: return new Row().add(I_UPDOWN, Lang.t("action_move")).add(I_LEFTRIGHT, Lang.t("action_change")).add(I_MENU, Lang.t("action_back")).done();
+            case H_PAGE: return new Row().add(I_MENU, Lang.t("action_back")).done();
+            case H_LOGGER: return new Row().add(I_MENU, Lang.t("action_exit_hold")).done();
             default: return new Row().done();
         }
     }
 
     /** shown once, on the first launch of a build with these keys */
-    static final String NOTICE = "Hold MENU for the menu  ·  trash hides the panel  ·  hold trash to reset";
+    static String notice() { return Lang.t("keys_notice"); }
 }

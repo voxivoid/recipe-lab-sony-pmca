@@ -61,7 +61,7 @@ class DevToolsTest {
         assertEquals(DevTools.ROWS, DevTools.rows(DevTools.LEVEL_DEV));
         String[] labels = new String[DevTools.APP_ROWS];
         for (int r = 0; r < DevTools.APP_ROWS; r++) labels[r] = DevTools.appLabel(r);
-        assertEquals(Arrays.asList("Browse recipes", "Panel visibility", "Reset settings", "About", "Developer  >"), Arrays.asList(labels));
+        assertEquals(Arrays.asList("Browse recipes", "Panel visibility", "Language", "Reset settings", "About", "Developer  >"), Arrays.asList(labels));
         assertEquals(DevTools.APP_BROWSE, 0, "the menu opens on Browse, so a body without Fn is one press from the list");
     }
 
@@ -69,12 +69,21 @@ class DevToolsTest {
         for (int r = 0; r < DevTools.APP_ROWS; r++) assertFalse(DevTools.appDetail(r).isEmpty(), "row " + r);
     }
 
-    @Test void onlyThePanelRowHasAValueAndItNamesThePanelState() {
-        assertEquals("Full", DevTools.appValue(DevTools.APP_PANEL, Params.OV_FULL));
-        assertEquals("Label", DevTools.appValue(DevTools.APP_PANEL, Params.OV_PILL));
-        assertEquals("Hidden", DevTools.appValue(DevTools.APP_PANEL, Params.OV_HIDDEN));
-        for (int r = 0; r < DevTools.APP_ROWS; r++) if (r != DevTools.APP_PANEL) assertNull(DevTools.appValue(r, Params.OV_FULL), "row " + r);
+    @Test void onlyThePanelAndLanguageRowsHaveAValue() {
+        assertEquals("Full", DevTools.appValue(DevTools.APP_PANEL, Params.OV_FULL, Lang.AUTO));
+        assertEquals("Label", DevTools.appValue(DevTools.APP_PANEL, Params.OV_PILL, Lang.AUTO));
+        assertEquals("Hidden", DevTools.appValue(DevTools.APP_PANEL, Params.OV_HIDDEN, Lang.AUTO));
+        for (int r = 0; r < DevTools.APP_ROWS; r++)
+            if (r != DevTools.APP_PANEL && r != DevTools.APP_LANG) assertNull(DevTools.appValue(r, Params.OV_FULL, Lang.AUTO), "row " + r);
         assertTrue(DevTools.appDetail(DevTools.APP_PANEL).contains("left / right"), "the row says how to change it");
+        assertTrue(DevTools.appDetail(DevTools.APP_LANG).contains("left / right"), "the row says how to change it");
+    }
+
+    @Test void theLanguageRowNamesEachLanguageInItsOwnScript() {
+        assertEquals("Auto", DevTools.appValue(DevTools.APP_LANG, Params.OV_FULL, Lang.AUTO));
+        assertEquals("English", DevTools.appValue(DevTools.APP_LANG, Params.OV_FULL, Lang.EN));
+        assertEquals("简体中文", DevTools.appValue(DevTools.APP_LANG, Params.OV_FULL, Lang.ZH_HANS));
+        assertEquals("繁體中文", DevTools.appValue(DevTools.APP_LANG, Params.OV_FULL, Lang.ZH_HANT));
     }
 
     @Test void leftRightWalkThePanelStatesAndWrap() {
@@ -94,10 +103,10 @@ class DevToolsTest {
 
     // ---- the reset question
     @Test void theResetQuestionAsksAndDefaultsToCancel() {
-        assertTrue(DevTools.RESET_TITLE.endsWith("?"), DevTools.RESET_TITLE);
-        assertEquals("Reset", DevTools.RESET_OPTIONS[0], "option 0 is the one that writes");
-        assertEquals("Cancel", DevTools.RESET_OPTIONS[DevTools.RESET_DEFAULT], "a stray centre press cancels");
-        assertFalse(DevTools.RESET_BODY.isEmpty());
+        assertTrue(DevTools.resetTitle().endsWith("?"), DevTools.resetTitle());
+        assertEquals("Reset", DevTools.resetOptions()[0], "option 0 is the one that writes");
+        assertEquals("Cancel", DevTools.resetOptions()[DevTools.RESET_DEFAULT], "a stray centre press cancels");
+        assertFalse(DevTools.resetBody().isEmpty());
     }
 
     @Test void oneTurnOfTheAppMenuVisitsEveryRowAndWraps() {
