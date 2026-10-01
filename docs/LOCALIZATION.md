@@ -91,6 +91,12 @@ the code asks for exists and every English key is used, and the fonts.
 
 ## Adding a language
 
+**Only when someone asks for it.** Every language is another table each new string must be translated into, and
+nobody here can review most of them; a language arrives with a request, ideally with the person who will check it. The
+camera's firmware font draws Latin, Cyrillic, Greek and Vietnamese, so those need no font; Japanese and Korean would
+need one like Chinese (about 100 KB each). Arabic, Persian, Hebrew and Thai cannot be drawn properly: Android 2.3's
+Canvas does no shaping or right-to-left layout.
+
 1. Copy `TextEn.java` to `TextXx.java` and translate the values — keep every key and placeholder — then add the name
    keys above (`recipe_…`, `group_…`, …). `lang_name` is the language's name in its own script.
 2. Add it to `Lang`: a constant, its table in `TABLES`, its code in `CODES`, a place in `CHOICES`, and a rule in
