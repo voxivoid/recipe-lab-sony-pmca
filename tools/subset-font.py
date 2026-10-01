@@ -36,6 +36,9 @@ FONTS = [
     ("TextZhHant.java", "NotoSansTC-VF.ttf", "Sans/Variable/TTF/Subset/NotoSansTC-VF.ttf",
      "ac091cc8cd19e848202afc8fe6d3809b4526c8fdbdb4be82da20c4f785949591", "RecipeLabCJKtc-Regular.ttf", "Recipe Lab CJK TC"),
 ]
+# The camera's own font, Droid Sans (2048 units per em): line ascent / descent and the glyph bounding box. A TextView
+# sizes each line by these, so a font that reports more makes every line taller than it is in English.
+CAMERA_UPM, CAMERA_ASCENT, CAMERA_DESCENT = 2048, 1900, -500
 ROW = re.compile(r'\{\s*"([^"]+)",\s*"((?:[^"\\]|\\.)*)"\s*\}')
 
 
@@ -72,7 +75,9 @@ def table_chars(java):
 
 def build(src, output, family, chars):
     options = subset.Options()
-    options.layout_features = ["*"]
+    # no OpenType layout: Android 2.3 shapes nothing, and the alternates the features pull in (a 2.9 em tall bracket
+    # among them) only inflate the bounding box every line is padded to
+    options.layout_features = []
     options.name_IDs = ["*"]
     options.name_legacy = True
     options.name_languages = ["*"]
@@ -80,12 +85,21 @@ def build(src, output, family, chars):
     options.notdef_outline = True
     options.recommended_glyphs = True
     options.hinting = True
+    options.recalc_bounds = True   # the bounding box of what is left, not of the whole source
 
     font = subset.load_font(str(src), options)
     instantiateVariableFont(font, {"wght": 400}, inplace=True)   # Android 2.3 reads static TrueType only
     worker = subset.Subsetter(options=options)
     worker.populate(text="".join(sorted(chars)))
     worker.subset(font)
+
+    # line metrics in the camera font's proportions, so a Chinese line is as tall as an English one
+    upm = font["head"].unitsPerEm
+    ascent, descent = round(CAMERA_ASCENT * upm / CAMERA_UPM), round(CAMERA_DESCENT * upm / CAMERA_UPM)
+    font["hhea"].ascent, font["hhea"].descent, font["hhea"].lineGap = ascent, descent, 0
+    os2 = font["OS/2"]
+    os2.sTypoAscender, os2.sTypoDescender, os2.sTypoLineGap = ascent, descent, 0
+    os2.usWinAscent, os2.usWinDescent = ascent, -descent
 
     # a modified OFL font may not carry the upstream name
     postscript = family.replace(" ", "") + "-Regular"

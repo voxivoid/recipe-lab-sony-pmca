@@ -19,6 +19,10 @@ Generated (Regular weight instanced, static TrueType for Android 2.3):
   RecipeLabCJKsc-Regular.ttf   family "Recipe Lab CJK SC"
   RecipeLabCJKtc-Regular.ttf   family "Recipe Lab CJK TC"
 
+No OpenType layout tables are kept (Android 2.3 shapes nothing), and the line metrics are
+set to the camera font's proportions (Droid Sans: ascent 1900, descent 500 per 2048), so a
+Chinese line is no taller than an English one.
+
 Rebuild after any change to the Chinese text:
 
     python3 tools/subset-font.py

@@ -67,7 +67,8 @@ Renaming a recipe therefore renames its key: `LangTest` names the table that is 
 
 The camera's firmware font has no Chinese glyphs, so the APK carries two: Noto Sans CJK SC and TC (SIL Open Font
 License), each cut down to the characters its table uses plus printable ASCII and the English table's characters —
-about 170 KB each. One per script, so each gets its own glyph forms. They live in `assets/fonts/` with their licence
+about 105 KB each. One per script, so each gets its own glyph forms. Their line metrics are set to the camera
+font's, so a Chinese line is no taller than an English one. They live in `assets/fonts/` with their licence
 and provenance ([README.txt](../assets/fonts/README.txt)).
 
 `tools/subset-font.py` rebuilds both from the tables. It fetches the pinned sources once into `out/font-source/`

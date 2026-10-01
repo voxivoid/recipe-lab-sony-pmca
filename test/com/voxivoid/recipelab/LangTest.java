@@ -242,6 +242,32 @@ class LangTest {
         }
     }
 
+    @Test void noFontIsTallerThanTheCameras() throws Exception {
+        // a TextView sizes each line by the font's ascent / descent and pads it to the bounding box: a font that reports
+        // more than the camera's Droid Sans (2048 units: hhea 1900 / -500, bbox -555 .. 2163) makes every line taller
+        for (int lang : TRANSLATIONS) {
+            File f = new File(FONTS[lang]);
+            assumeTrue(f.isFile(), "run from the repository root to check " + f);
+            byte[] ttf = Files.readAllBytes(f.toPath());
+            ByteBuffer b = ByteBuffer.wrap(ttf);
+            int head = table(ttf, "head"), hhea = table(ttf, "hhea");
+            double upm = b.getShort(head + 18) & 0xffff;
+            double line = (b.getShort(hhea + 4) - b.getShort(hhea + 6) + b.getShort(hhea + 8)) / upm;
+            double box = (b.getShort(head + 42) - b.getShort(head + 38)) / upm;
+            assertTrue(line <= 2400 / 2048.0 + 0.001, f + " line height " + line + " em -- run tools/subset-font.py");
+            assertTrue(box <= 2718 / 2048.0, f + " bounding box " + box + " em -- run tools/subset-font.py");
+        }
+    }
+
+    /** where a TrueType table starts */
+    private static int table(byte[] ttf, String tag) {
+        ByteBuffer b = ByteBuffer.wrap(ttf);
+        for (int i = 0; i < (b.getShort(4) & 0xffff); i++)
+            if (new String(ttf, 12 + 16 * i, 4, StandardCharsets.US_ASCII).equals(tag)) return b.getInt(12 + 16 * i + 8);
+        fail("no " + tag + " table");
+        return -1;
+    }
+
     private static void addChars(Set<Integer> into, String s) {
         for (int i = 0; i < s.length(); ) { int c = s.codePointAt(i); i += Character.charCount(c); into.add(c); }
     }
@@ -249,12 +275,7 @@ class LangTest {
     /** the characters a TrueType font maps to a glyph, from its Unicode cmap subtables (formats 4 and 12) */
     static Set<Integer> cmap(byte[] ttf) {
         ByteBuffer b = ByteBuffer.wrap(ttf);
-        int tables = b.getShort(4) & 0xffff, cmap = -1;
-        for (int i = 0; i < tables; i++) {
-            int rec = 12 + 16 * i;
-            if (new String(ttf, rec, 4, StandardCharsets.US_ASCII).equals("cmap")) cmap = b.getInt(rec + 8);
-        }
-        assertTrue(cmap >= 0, "no cmap table");
+        int cmap = table(ttf, "cmap");
         Set<Integer> out = new HashSet<Integer>();
         int subtables = b.getShort(cmap + 2) & 0xffff;
         for (int i = 0; i < subtables; i++) {
