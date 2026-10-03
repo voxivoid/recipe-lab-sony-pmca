@@ -89,8 +89,8 @@ public class Recipes {
     }
 
     // ---- groups (brands) — recipes below MUST be listed in group order
-    public static final String[] GROUPS = { "Sony", "Fuji Sim", "Fuji Film", "Kodak", "Cine", "Ricoh GR", "Leica", "Hasselblad", "Canon / Nikon", "Pana / Olympus", "Other Stocks", "Ilford" };
-    private static final int SONY = 0, FSIM = 1, FFILM = 2, KODAK = 3, CINE = 4, RICOH = 5, LEICA = 6, HASSEL = 7, CANIK = 8, PANOLY = 9, OTHER = 10, ILFORD = 11;
+    public static final String[] GROUPS = { "Sony", "Fuji Sim", "Fuji Film", "Kodak", "Cine", "Ricoh GR", "Leica", "Hasselblad", "Canon / Nikon", "Pana / Olympus", "Other Stocks", "Ilford", "veresdenialex" };
+    private static final int SONY = 0, FSIM = 1, FFILM = 2, KODAK = 3, CINE = 4, RICOH = 5, LEICA = 6, HASSEL = 7, CANIK = 8, PANOLY = 9, OTHER = 10, ILFORD = 11, VERES = 12;
 
     public static final Recipe[] ALL = {
         // ---- Sony (Creative Looks from newer bodies — same pipeline, best fidelity)
@@ -182,6 +182,86 @@ public class Recipes {
         new Recipe(ILFORD,"Ilford Delta 100",                    MONO,     0,  1,  1, AUTO, 0,     0,  0),
         new Recipe(ILFORD,"Ilford Delta 3200",                   MONO,     0,  3, -2, AUTO, 0,     0,  0,  0,  2, 6),
         new Recipe(ILFORD,"Ilford Pan F 50",                     MONO,     0,  2,  2, AUTO, 0,     0,  0),
+        // ---- veresdenialex (SamBear Picture Profile cards — WB + clamped sliders only; gamma, color mode/depth/phase,
+        // black level/gamma, knee and detail (other than sharpness) have no slot on this body, so these are approximations)
+        new Recipe(VERES, "Vektro100",                             VIVID,    3,  0, -3, K,    4300,  7,  5),
+        new Recipe(VERES, "Vektro100 Night",                       VIVID,    3,  0, -3, K,    3200, -3,  2),
+        new Recipe(VERES, "Senova Light",                          STD,      3,  0, -3, K,    4600,  2,  2),
+        new Recipe(VERES, "Senova Light Night",                    STD,      3,  0, -3, K,    2900,  5,  3),
+        new Recipe(VERES, "Portra800",                             VIVID,    3,  0, -3, AUTO, 0,     3,  1),
+        new Recipe(VERES, "Kodak Gold",                            VIVID,    3,  0, -3, K,    7800,  6, -1),
+        new Recipe(VERES, "Kodak Gold Night",                      VIVID,    3,  0, -3, K,    7800,  4,  3),
+        new Recipe(VERES, "FUJI400",                               PORTRAIT, 3,  0, -3, K,    4700, -2,  1),
+        new Recipe(VERES, "FUJI400 Night",                         PORTRAIT, 3,  0, -3, K,    4700,  5,  3),
+        new Recipe(VERES, "EvPro+",                                VIVID,    3,  0, -3, K,    4700, -2,  1),
+        new Recipe(VERES, "EvPro+ Night",                          VIVID,    3,  0, -3, K,    4700,  5,  3),
+        new Recipe(VERES, "Ektar100",                              STD,      3,  0, -3, K,    6300,  2, -1),
+        new Recipe(VERES, "Ektar100 Night",                        STD,      3,  0, -3, K,    4100, -2,  2),
+        new Recipe(VERES, "Blue Velvet",                           NEUTRAL, -3,  0, -3, K,    6200, -4, -4),
+        new Recipe(VERES, "Blue Velvet Night",                     NEUTRAL, -3,  0, -3, K,    3200,  3,  2),
+        new Recipe(VERES, "Sony Eterna LowFi",                     VIVID,    3,  0, -3, K,    5000,  4,  2),
+        new Recipe(VERES, "Sony Eterna LowFi Night",               VIVID,    3,  0, -3, K,    4000,  3,  0),
+        new Recipe(VERES, "Fuji Eterna HiFi",                      STD,      3,  0, -3, K,    5500, -5, -2),
+        new Recipe(VERES, "Fuji Eterna HiFi Night",                STD,      3,  0, -3, K,    4300,  5, -1),
+        new Recipe(VERES, "Classic Chrome (SamBear)",              NEUTRAL, -3,  0, -3, K,    4500,  7, -2),
+        new Recipe(VERES, "Classic Chrome (SamBear) Night",        NEUTRAL, -3,  0, -3, K,    4500, -5,  2),
+        new Recipe(VERES, "Cinestill 800T (SamBear)",              STD,      2,  0, -3, K,    2500, -5, -2),
+        new Recipe(VERES, "Cinestill 800T (SamBear) Night",        STD,      2,  0, -3, K,    2500, -4,  2),
+        new Recipe(VERES, "Vektro 100",                            VIVID,    3,  0, -3, K,    4000,  5,  0),
+        new Recipe(VERES, "Vektro 100 Night",                      VIVID,    3,  0, -3, K,    9900,  7,  3),
+        new Recipe(VERES, "Senova Light (SamBear)",                STD,      3,  0, -3, K,    9900, -3, -2),
+        new Recipe(VERES, "Senova Light (SamBear) Night",          STD,      3,  0, -3, K,    2900,  5,  3),
+        new Recipe(VERES, "Fuji 400H",                             VIVID,    3,  0, -3, K,    4700,  3, -1),
+        new Recipe(VERES, "EvPro+ (SamBear)",                     VIVID,    3,  0, -3, K,    4300,  2,  1),
+        new Recipe(VERES, "Ektar 100",                             VIVID,    3,  0, -3, K,    5000,  2, -1),
+        new Recipe(VERES, "Portra 800",                            VIVID,    3,  0, -3, K,    4500,  3,  1),
+        new Recipe(VERES, "Kodak Gold (SamBear)",                  VIVID,    3,  0, -3, K,    7000, -3,  1),
+        new Recipe(VERES, "Blue Velvet (7400K)",                   NEUTRAL, -3,  0, -3, K,    7400, -4, -3),
+        new Recipe(VERES, "Sony Eterna",                           VIVID,    3,  0, -3, K,    4000,  5,  0),
+        new Recipe(VERES, "Fuji Eterna 4300K A3-M1.5",             VIVID,    3,  0, -3, K,    4300,  3, -2),
+        new Recipe(VERES, "Classic Chrome 4400K A7-M0.25",          STD,     -3,  0, -3, K,    4400,  7,  0),
+        new Recipe(VERES, "Kodachrome 64 V1 3600K A7-M0.75",        STD,      3,  0, -3, K,    3800,  7, -1),
+        new Recipe(VERES, "Kodachrome 64 V2 4300K A7-M1",           VIVID,    3,  0, -3, K,    4200,  7, -1),
+        new Recipe(VERES, "Leica Chrome 64 5500K B3-G0.5",          PORTRAIT, 3,  0, -3, K,    5500, -3,  1),
+        new Recipe(VERES, "Kodak Ultra Max 400 3600K A5.5-M0.5",    PORTRAIT, 2,  0, -3, K,    3800,  6,  0),
+        new Recipe(VERES, "Kodak Portra 400 4100K A7-G1.25",        STD,      3,  0, -3, K,    4100,  7,  1),
+        new Recipe(VERES, "Astia 4000K A7-M0.5",                   STD,      0,  0, -3, K,    4000,  7,  0),
+        new Recipe(VERES, "Classic Negative 3900K A7-M2",           STD,      3,  0, -3, K,    3900,  7, -2),
+        new Recipe(VERES, "Fortia 50 3500K A7-G0.25",              VIVID,    3,  0, -3, K,    3500,  7,  0),
+        new Recipe(VERES, "Fortia 50 Night",                       VIVID,    3,  0, -3, K,    7500, -2, -1),
+        new Recipe(VERES, "Oktar 5500K B1-G1",                     STD,      3,  0, -3, K,    5500, -1,  1),
+        new Recipe(VERES, "Zero Mute 5500K B1-G1",                 STD,      3,  0, -3, K,    5500, -1,  1),
+        new Recipe(VERES, "CineChrome 3600K A7-G1",                VIVID,    3,  0, -3, K,    3600,  7,  1),
+        new Recipe(VERES, "Kodak Portra 160 3800K A6-G0.5",        VIVID,    3,  0, -3, K,    3800,  6,  1),
+        new Recipe(VERES, "Pro Color 3900K A7-G1.25",              VIVID,    3,  0, -3, K,    3900,  7,  1),
+        new Recipe(VERES, "EktaChrome 4200K A3.5-M0.75",           STD,      3,  0, -3, K,    4200,  4, -1),
+        new Recipe(VERES, "Cinestill 800T Night 3500K A7-M1.75",    STD,      2,  0, -3, K,    3200,  7, -2),
+        new Recipe(VERES, "Delta 3200 AWB",                        MONO,     0,  0, -3, AUTO, 0,     0,  0),
+        new Recipe(VERES, "T-Max 100 AWB B3-G0.25",                MONO,     0,  0, -3, AUTO, 0,    -3,  0),
+        new Recipe(VERES, "Kosmo Pan AWB",                         MONO,     0,  0, -3, AUTO, 0,     0,  0),
+        new Recipe(VERES, "Chroma Fade AWB",                       MONO,     0,  0, -3, AUTO, 0,     0,  0),
+        new Recipe(VERES, "Kodak Tri-X 1600 5500K A3-G2",          MONO,     3,  0,  1, K,    5500,  3,  2),
+        new Recipe(VERES, "Kodak Tri-X 400 5500K A3-G2",           MONO,     3,  0, -3, K,    5500,  3,  2),
+        new Recipe(VERES, "MidRed Infra AWB",                      MONO,     3,  0, -1, AUTO, 0,     0,  0),
+        new Recipe(VERES, "Acros X AWB",                           MONO,     3,  0, -3, AUTO, 0,     0,  0),
+        new Recipe(VERES, "Acros XY AWB",                          MONO,     3,  0, -3, AUTO, 0,     0,  0),
+        new Recipe(VERES, "Acros XR AWB",                          MONO,     3,  0, -3, AUTO, 0,     0,  0),
+        new Recipe(VERES, "Acros XG AWB",                          MONO,     3,  0, -3, AUTO, 0,     0,  0),
+        new Recipe(VERES, "DreamNeg",                              VIVID,    3,  0, -3, K,    4500,  5, -2),
+        new Recipe(VERES, "DreamNeg Night",                        VIVID,    3,  0, -3, K,    4000,  3,  1),
+        new Recipe(VERES, "Agfa Precisa 3200K A7-G1.5",            VIVID,    3,  0, -3, K,    3200,  7,  2),
+        new Recipe(VERES, "Velvia Pro 5000K B1-M1.5",              STD,      3,  0,  1, K,    5000, -1, -2),
+        new Recipe(VERES, "RedScale Ultra 9900K B3-G2",            STD,      2,  0, -1, K,    9900, -3,  2),
+        new Recipe(VERES, "Zetra 100 4700K A3.5-M1.25",            STD,      3,  0, -3, K,    4700,  4, -1),
+        new Recipe(VERES, "Rose Spectra 3500K A7-M0.5",            PORTRAIT, 3,  0, -3, K,    3500,  7,  0),
+        new Recipe(VERES, "Provia RX 4000K A3-M1.75",              STD,      3,  0, -3, K,    4000,  3, -2),
+        new Recipe(VERES, "Classic Cinema AWB A2-G0.25",           STD,      3,  0, -3, AUTO, 0,     2,  0),
+        new Recipe(VERES, "Kodak Color Plus 200 3700K A7-G1.5",    VIVID,    3,  0, -3, K,    3700,  7,  2),
+        new Recipe(VERES, "Neo Max 6000K B2.5-M1.5",               MONO,     3,  0, -3, K,    6000, -3, -2),
+        new Recipe(VERES, "Nostalgic Neg 4700K A7-M1.75",          PORTRAIT, 3,  0, -3, K,    4700,  7, -2),
+        new Recipe(VERES, "Cinestill X 5500K",                     MONO,     3,  0, -3, K,    5500,  0,  0),
+        new Recipe(VERES, "Asteroid City (SamBear)",               VIVID,    3,  0, -3, K,    4700,  7,  3),
+        new Recipe(VERES, "Ilford HP5 AWB A3",                     MONO,     0,  0,  1, AUTO, 0,     3,  0),
     };
 
     /**
@@ -221,7 +301,7 @@ public class Recipes {
         return start + ((i - start + n + dir) % n);
     }
 
-    /** where a recipe sits in the list, as the panel shows it: "12 / 76", or "factory" for the look Reset stores */
+    /** where a recipe sits in the list, as the panel shows it: "12 / 154", or "factory" for the look Reset stores */
     public static String position(int i) { return i == FACTORY ? Lang.t("position_factory") : i + " / " + LISTED; }
 
     // ---- names on screen: the display language's, where it has one. The canonical English above stays the identifier

@@ -74,7 +74,7 @@ up for on the A6000.
 
 ## Can I make my own recipes and save them?
 
-Not today. The 77 recipes are built into the app, and you can adjust a recipe's values before storing it — the chips
+Not today. The 155 recipes are built into the app, and you can adjust a recipe's values before storing it — the chips
 in the app row — but there is no way to name and keep your own. It is the most requested feature and it is being
 thought about; nothing is promised.
 
@@ -107,7 +107,7 @@ not the same thing.
 
 ## Are there sample photos of each recipe?
 
-Yes — **[docs/SAMPLES.md](SAMPLES.md)**. All 77 recipes on one subject, in one light, at one fixed exposure
+Yes — **[docs/SAMPLES.md](SAMPLES.md)**. The original 77 recipes on one subject, in one light, at one fixed exposure
 (1/30, f/4.5, ISO 250), straight out of the camera and not edited, downscaled to 900 px so the page stays light.
 Nothing that touches colour was done to them.
 
