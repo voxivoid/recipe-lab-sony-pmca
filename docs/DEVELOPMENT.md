@@ -31,7 +31,7 @@ src/com/voxivoid/recipelab/
   MainActivity.java            UI state, key handling, the camera (CameraEx via reflection), store + sync
   Params.java                  the parameter rows: slot ids, store encodings, preview parameters, chip
                                navigation, HUD strings — pure functions, no Android, covered by test/
-  Recipes.java                 the 77-entry table (76 recipes + the factory look, FACTORY, which only Reset settings
+  Recipes.java                 the 155-entry table (154 recipes + the factory look, FACTORY, which only Reset settings
                                reaches), brands, GROUP_START / GROUP_COUNT, list navigation that skips FACTORY
   Favourites.java              the favourites list: stored by name in the app's preferences, and how the browser
                                walks the Favourites group — pure functions, no Android, covered by test/
@@ -114,7 +114,7 @@ The **developer menu** holds the tools that are not part of using the app:
 |---|---|
 | **Settings snapshot** / **Settings diff** | the snapshot / diff tool below; the row's name says which half is next |
 | **Read-only check — 26 slots** | the read-only check below: does this body flag any slot a recipe writes |
-| **Shoot samples — 77 recipes** | the sample run below |
+| **Shoot samples — 155 recipes** | the sample run below |
 | **Settle delay** | a value — the delay the sample run waits after applying a recipe; left / right step through 0.8 / 1.2 / 2.0 / 3.0 / 5.0 s in place (centre steps forward), kept in the app's preferences |
 | **Key logger** | every key event on screen, newest first, and appended to `keys.txt` in `getFilesDir()`: scan code, down / up, repeat count, Sony's logic code; the header is the model, the platform and what the probe found. Nothing else happens while it runs; **hold MENU** leaves |
 
@@ -180,7 +180,7 @@ The frames are identified by **order**: the camera names the files, and the run 
 `samples.txt` in `getFilesDir()`, one line per frame —
 
 ```
-# recipe-lab samples  ·  77 frames in recipe order  ·  settle 1200 ms  ·  frame|recipe|brand|values
+# recipe-lab samples  ·  155 frames in recipe order  ·  settle 1200 ms  ·  frame|recipe|brand|values
 01|FACTORY (ST)|Sony|Standard  0/0
 02|Sony PT (portrait)|Sony|Portrait  0/0
 ```
@@ -395,7 +395,7 @@ tests pin it down:
 
 | | |
 |---|---|
-| `RecipesTest` | the table itself — 77 entries (76 listed + the factory look, which navigation skips), group order, every value inside its row's range, kelvin in whole hundreds, sub-parameters that exist for the effect; labels, `summary()`, wrap-around navigation |
+| `RecipesTest` | the table itself — 155 entries (154 listed + the factory look, which navigation skips), group order, every value inside its row's range, kelvin in whole hundreds, sub-parameters that exist for the effect; labels, `summary()`, wrap-around navigation |
 | `ParamsCodecTest` | how the store encodes each row (DRO bytes, any Picture Profile reading as on, magenta-positive G-M, the quality pair, signed vs unsigned slots) and how it reads back |
 | `ParamsWritesTest` | which bytes ENTER writes for a recipe — golden lists for a few, and every recipe stored over a factory camera, then on top of each other, read back through the same decoder |
 | `ParamsPreviewTest` | the `Camera.Parameters` the live preview sets, recipe by recipe |

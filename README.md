@@ -52,7 +52,7 @@
 
 ## What it is
 
-Recipe Lab is a small app that runs on the Sony A6000 itself. It comes with 76 colour recipes that recreate the looks
+Recipe Lab is a small app that runs on the Sony A6000 itself. It comes with 154 colour recipes that recreate the looks
 of other cameras — Fuji film simulations, Ricoh GR image controls, Leica, Hasselblad, Canon and Nikon colour, Sony's
 newer Creative Looks — and of classic film stocks from Kodak, Fuji, Cinestill, Agfa and Ilford.
 
@@ -79,8 +79,9 @@ mode**, photo and video, with the app closed. Turn it off and on, it is still th
 | **Panasonic / Olympus** | L.Monochrome D, L.ClassicNeo, Pop Art, Pale & Light |
 | **Other stocks** | Agfa Vista 200, Agfa Ultra 100, Polaroid / Instax |
 | **Ilford** | HP5, FP4, Delta 100, Delta 3200, Pan F 50 |
+| **veresdenialex** | SamBear Picture Profile cards re-derived for this body (WB + clamped sliders only): Vektro100, Senova Light, Portra800, Kodak Gold, FUJI400, EvPro+, Ektar100, Blue Velvet, Sony Eterna, Fuji Eterna, Classic Chrome, Cinestill 800T, Fuji 400H, Kodachrome 64 V1 / V2, Leica Chrome 64, Ultra Max 400, Portra 400 / 160, Astia, Classic Negative, Fortia 50, Oktar, Zero Mute, CineChrome, Pro Color, EktaChrome, Delta 3200, T-Max 100, Kosmo Pan, Chroma Fade, Tri-X 1600 / 400, MidRed Infra, Acros X / XY / XR / XG, DreamNeg, Agfa Precisa, Velvia Pro, RedScale Ultra, Zetra 100, Rose Spectra, Provia RX, Classic Cinema, Color Plus 200, Neo Max, Nostalgic Neg, Cinestill X, Asteroid City, HP5 — multi-WB cards add a Night variant |
 
-**[See every recipe on the same subject →](docs/SAMPLES.md)** — 77 frames, one scene, one exposure, straight out of
+**[See every recipe on the same subject →](docs/SAMPLES.md)** — 77 frames of the original set, one scene, one exposure, straight out of
 the camera.
 
 Recipes marked **PE** in the app (Acros +R, Tri-X 1600, GR Retro, GR Hi-Contrast B&W, Sony SH, Polaroid) are built on
@@ -252,7 +253,7 @@ the app closed, and the app reopens on that recipe.
 **Favourites.** Hold the **centre button** on a recipe and it joins the **Favourites** group at the top of the brand
 list, with a star next to its name; hold again to drop it. The group lists your picks in the order you marked them,
 and the brand list opens straight on it whenever the recipe you are on is one of them. The wheel on the main screen
-still walks all 76 — favourites shorten the list in the browser, not the scroll. The marks are kept by the app, not in
+still walks all 154 — favourites shorten the list in the browser, not the scroll. The marks are kept by the app, not in
 the camera's settings, so they survive a power cycle but go with the app if you remove it.
 
 **The chips.** In the chip row, **left / right** walks the chips, **centre** focuses one (it turns amber),

@@ -1,6 +1,7 @@
 # Sample frames
 
-Every one of the 77 recipes, on the same subject, in the same light, straight out of the camera.
+Every one of the original 77 recipes, on the same subject, in the same light, straight out of the camera.
+The 78 `veresdenialex` recipes have no frames here yet — shoot a sample run to add them.
 
 One frame per recipe, shot in one run by the app's own [sample run](DEVELOPMENT.md#sample-run): it applies recipe *n*,
 waits for the preview pipeline, fires the shutter, moves on. Nothing here is edited. The frames are downscaled to
