@@ -257,7 +257,8 @@ the camera's settings, so they survive a power cycle but go with the app if you 
 
 **The chips.** In the chip row, **left / right** walks the chips, **centre** focuses one (it turns amber),
 **up / down** changes its value, **centre** leaves it. Leaving a changed chip on one of the app's own recipes asks
-whether to save your values as a [custom recipe](#custom-recipes); on a custom recipe they are saved straight away. The wheel keeps changing recipes throughout. A recipe only shows the chips it uses: **CS** recipes show style,
+whether to save your values as a [custom recipe](#custom-recipes) and apply them, or only apply them; on a custom
+recipe they are saved straight away. The wheel keeps changing recipes throughout. A recipe only shows the chips it uses: **CS** recipes show style,
 saturation, contrast and sharpness; **PE** recipes show the effect and its sub-setting. Quality, white
 balance, EV and DRO are always there. The legend at the bottom of the screen follows whatever you are doing.
 
@@ -267,8 +268,9 @@ The built-in recipes cannot change, but you can keep your own versions of them �
 camera's menus — on the memory card.
 
 - **From a recipe.** Change any chip on a built-in recipe and press **centre** to finish. The app asks *Save as a
-  custom recipe?* Choose **Save as new** and name it. If you choose **Not now**, the change still previews and can
-  still be picked, but nothing keeps it — and picking asks once more, offering **Save & apply**.
+  custom recipe?* — **Save & apply** names it, keeps it on the card and stores it in the camera; **Apply only** stores
+  your values in the camera just this once; **Cancel** leaves them as a preview. Picking a recipe with edits nothing
+  has kept asks the same question again.
 - **From the camera.** In the brand list, open **Custom** and pick **+ New recipe**: it keeps whatever the camera has
   stored right now, so you can set a look up in Sony's own menus and bottle it.
 - **Naming.** A keyboard fills the screen. The four-way and the wheel move, **centre** types, **trash** deletes,

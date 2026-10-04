@@ -313,8 +313,10 @@ class CustomRecipesTest {
         assertEquals("Cancel", CustomRecipes.deleteOptions()[CustomRecipes.DELETE_DEFAULT]);
         assertEquals("Favourite", CustomRecipes.options(false)[CustomRecipes.OPT_FAVOURITE]);
         assertEquals("Unfavourite", CustomRecipes.options(true)[CustomRecipes.OPT_FAVOURITE]);
-        assertEquals("Save & apply", CustomRecipes.applyOptions()[CustomRecipes.APPLY_SAVE]);
-        assertEquals("Apply only", CustomRecipes.applyOptions()[CustomRecipes.APPLY_ONLY]);
+        assertEquals(java.util.Arrays.asList("Save & apply", "Apply only", "Cancel"), java.util.Arrays.asList(CustomRecipes.forkOptions()),
+                "one question after an edit and before a pick: keep and store it, store it this once, or neither");
+        assertEquals("Save & apply", CustomRecipes.forkOptions()[CustomRecipes.FORK_SAVE_APPLY]);
+        assertEquals("Apply only", CustomRecipes.forkOptions()[CustomRecipes.FORK_APPLY]);
         assertEquals("Removes RECIPELAB/Mine.txt from the memory card. This cannot be undone.", CustomRecipes.deleteBody("Mine.txt"));
     }
 }

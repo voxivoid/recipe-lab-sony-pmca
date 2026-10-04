@@ -420,16 +420,16 @@ final class CustomRecipes {
     /** where a recipe's file is, as the screen names it: RECIPELAB/Golden Hour.txt */
     static String path(String file) { return DIR + "/" + file; }
 
-    /** an edit of a built-in recipe was finished: keep it as a custom recipe? */
+    /**
+     * Edits of a built-in recipe, which cannot change: asked when a chip edit is finished, and again whenever the recipe
+     * is picked with them. Keep them as a custom recipe and store it, store them this once, or neither.
+     */
     static String forkTitle() { return Lang.t("custom_fork_title"); }
     static String forkBody(String recipeName) { return Lang.t("custom_fork_body", recipeName); }
-    static String[] forkOptions() { return new String[] { Lang.t("button_save_new"), Lang.t("button_not_now") }; }
-
-    /** a built-in recipe with edits no recipe holds is being picked */
-    static String applyTitle() { return Lang.t("custom_apply_title"); }
-    static String applyBody() { return Lang.t("custom_apply_body"); }
-    static String[] applyOptions() { return new String[] { Lang.t("button_save_apply"), Lang.t("button_apply_only"), Lang.t("button_cancel") }; }
-    static final int APPLY_SAVE = 0, APPLY_ONLY = 1;
+    static String[] forkOptions() {
+        return new String[] { Lang.t("button_save_apply"), Lang.t("button_apply_only"), Lang.t("button_cancel") };
+    }
+    static final int FORK_SAVE_APPLY = 0, FORK_APPLY = 1;
 
     /** a hold on a custom recipe: what can be done with it. Cancel is highlighted, so a stray centre press does nothing */
     static String optionsBody(String file) { return Lang.t("custom_options_body", path(file)); }
