@@ -57,6 +57,7 @@ public class KeyboardView extends View {
     @Override
     protected void onDraw(Canvas c) {
         float w = getWidth(), h = getHeight(), pad = 16 * d;
+        float legTop = h - pad - legend.height(legend.lines(w - 2 * pad, hints)) + 2 * d;   // the legend, on as many lines as it needs
         c.drawRect(0, 0, w, h, bg);
         c.drawText(title.toUpperCase(), pad, pad + 7 * d, head);
         float top = pad + 14 * d;
@@ -78,7 +79,7 @@ public class KeyboardView extends View {
         if (entry.error() != null) c.drawText(entry.error(), pad, ey, err);
 
         // ---- the keyboard
-        float gTop = ey + 8 * d, gBottom = h - pad - 24 * d, rows = NameEntry.rows();
+        float gTop = ey + 8 * d, gBottom = legTop - 10 * d, rows = NameEntry.rows();
         float rh = Math.min(34 * d, (gBottom - gTop) / rows), gw = w - 2 * pad, gap = 3 * d;
         for (int row = 0; row < rows; row++) {
             int n = NameEntry.cols(row);
@@ -95,8 +96,8 @@ public class KeyboardView extends View {
             }
         }
 
-        c.drawLine(pad, h - pad - 16 * d, w - pad, h - pad - 16 * d, rule);
-        legend.draw(c, pad, h - pad - 6 * d, w - 2 * pad, hints);
+        c.drawLine(pad, legTop - 2 * d, w - pad, legTop - 2 * d, rule);
+        legend.drawWrapped(c, pad, legTop, w - 2 * pad, hints);
     }
 
     private void drawCell(Canvas c, char k, float cx, float cy) {

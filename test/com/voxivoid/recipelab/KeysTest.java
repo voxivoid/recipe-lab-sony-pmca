@@ -204,4 +204,32 @@ class KeysTest {
         // the firmware font has no arrows or symbols (Legend); the notice is plain text in a toast
         for (char ch : Keys.notice().toCharArray()) assertTrue(ch < 0x2190, "U+" + Integer.toHexString(ch) + " in the notice");
     }
+
+    // ---- wrapping the legend
+    private static float[] w(float... widths) { return widths; }
+
+    @Test void aRowThatFitsStaysOnOneLine() {
+        assertArrayEquals(new int[] { 3 }, Keys.lineCounts(w(10, 10, 10), 40, 5));
+        assertArrayEquals(new int[] { 1 }, Keys.lineCounts(w(10), 5, 5), "one item alone is one line, however wide");
+    }
+
+    @Test void aRowThatDoesNotFitWrapsEvenly() {
+        assertArrayEquals(new int[] { 4, 3 }, Keys.lineCounts(w(10, 10, 10, 10, 10, 10, 10), 85, 5),
+                "greedy would give 6 + 1; the same two lines share the seven items");
+        assertArrayEquals(new int[] { 2, 2, 2 }, Keys.lineCounts(w(10, 10, 10, 10, 10, 10), 25, 5));
+    }
+
+    @Test void unevenWidthsFallBackToFillingLineByLine() {
+        // an even 2 + 2 would put 30 + 5 + 30 = 65 on one line, past 50
+        assertArrayEquals(new int[] { 1, 2, 1 }, Keys.lineCounts(w(30, 30, 10, 30), 50, 5));
+    }
+
+    @Test void everyItemIsPlacedOnceInOrder() {
+        float[] widths = { 12, 40, 7, 33, 21, 9, 50, 14 };
+        for (float width : new float[] { 30, 60, 90, 200 }) {
+            int sum = 0;
+            for (int n : Keys.lineCounts(widths, width, 4)) { assertTrue(n > 0, "no empty line"); sum += n; }
+            assertEquals(widths.length, sum, "width " + width);
+        }
+    }
 }

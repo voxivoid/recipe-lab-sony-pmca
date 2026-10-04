@@ -88,7 +88,8 @@ public class MenuView extends View {
         float w = getWidth(), h = getHeight(), pad = 16 * d;
         c.drawRect(0, 0, w, h, bg);
         c.drawText(title, pad, pad + 7 * d, head);
-        float top = pad + 14 * d, bottom = h - pad - 20 * d;       // header / footer reserved, as in the brand list
+        float legTop = h - pad - legend.height(legend.lines(w - 2 * pad, hints)) + 2 * d;   // the legend, on as many lines as it needs
+        float top = pad + 14 * d, bottom = legTop - 6 * d;          // header / footer reserved, as in the brand list
         c.drawLine(pad, top, w - pad, top, rule);
 
         float y = top + 8 * d, rh = rowHeight();
@@ -115,8 +116,8 @@ public class MenuView extends View {
                 }
             }
         }
-        c.drawLine(pad, h - pad - 16 * d, w - pad, h - pad - 16 * d, rule);
-        legend.draw(c, pad, h - pad - 6 * d, w - 2 * pad, hints);
+        c.drawLine(pad, legTop - 2 * d, w - pad, legTop - 2 * d, rule);
+        legend.drawWrapped(c, pad, legTop, w - 2 * pad, hints);
     }
 
     /** "◀ Full ▶" ending at {@code right}, centred on {@code cy}: the arrows say left / right change it */

@@ -71,7 +71,10 @@ public class PickerView extends View {
         boolean favGroup = g == Favourites.GROUP;
         int count = Favourites.rows(g, favs, lib);
         float colX = w * 0.30f;                                 // divider
-        float top = pad + 12 * d, bottom = h - pad - 20 * d;    // header / footer reserved
+        int mode = column == 0 ? Keys.H_BRANDS : selected == Favourites.NEW ? Keys.H_NEW : lib.isCustom(selected) ? Keys.H_RECIPES_CUSTOM : Keys.H_RECIPES;
+        Keys.Hints hints = Keys.hints(mode, caps);
+        float legTop = h - pad - legend.height(legend.lines(w - 2 * pad, hints)) + 2 * d;   // the legend, on as many lines as it needs
+        float top = pad + 12 * d, bottom = legTop - 6 * d;      // header / footer reserved
         float sbW = 4 * d;                                      // scrollbar width
         head.setColor(column == 0 ? ACCENT : 0x99FFFFFF);
         c.drawText(Lang.t("picker_brand"), pad, pad + 7 * d, head);
@@ -152,9 +155,8 @@ public class PickerView extends View {
         }
 
         // ---- footer: icon legend
-        c.drawLine(pad, h - pad - 16 * d, w - pad, h - pad - 16 * d, rule);
-        int mode = column == 0 ? Keys.H_BRANDS : selected == Favourites.NEW ? Keys.H_NEW : lib.isCustom(selected) ? Keys.H_RECIPES_CUSTOM : Keys.H_RECIPES;
-        legend.draw(c, pad, h - pad - 6 * d, w - 2 * pad, Keys.hints(mode, caps));
+        c.drawLine(pad, legTop - 2 * d, w - pad, legTop - 2 * d, rule);
+        legend.drawWrapped(c, pad, legTop, w - 2 * pad, hints);
     }
 
     /** a small pill ending at {@code right} on the row at {@code y}; returns its left edge */

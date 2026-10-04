@@ -181,6 +181,38 @@ final class Keys {
         }
     }
 
+    /**
+     * How a legend row breaks into lines when it does not fit {@code width} at full size: the number of items on each line,
+     * in order. {@code widths} are the items' own widths, {@code gap} the least space between two. As few lines as
+     * greedy filling needs, then the items spread evenly over them when that still fits — seven items as 4 + 3, not
+     * 6 + 1. An item wider than the line gets a line to itself (the legend shrinks that one to fit).
+     */
+    static int[] lineCounts(float[] widths, float width, float gap) {
+        List<Integer> greedy = new ArrayList<Integer>();
+        int n = 0; float used = 0;
+        for (float w : widths) {
+            float need = n == 0 ? w : used + gap + w;
+            if (n > 0 && need > width) { greedy.add(n); n = 0; need = w; }
+            used = need; n++;
+        }
+        if (n > 0) greedy.add(n);
+        int lines = greedy.size(), total = widths.length;
+        if (lines > 1) {                                          // the same number of lines, items shared out evenly
+            int[] even = new int[lines];
+            for (int i = 0; i < lines; i++) even[i] = total / lines + (i < total % lines ? 1 : 0);
+            boolean fits = true;
+            for (int i = 0, at = 0; i < lines && fits; at += even[i], i++) {
+                float w = 0;
+                for (int k = at; k < at + even[i]; k++) w += widths[k] + (k > at ? gap : 0);
+                fits = w <= width || even[i] == 1;
+            }
+            if (fits) return even;
+        }
+        int[] out = new int[lines];
+        for (int i = 0; i < lines; i++) out[i] = greedy.get(i);
+        return out;
+    }
+
     /** shown once, on the first launch of a build with these keys */
     static String notice() { return Lang.t("keys_notice"); }
 }

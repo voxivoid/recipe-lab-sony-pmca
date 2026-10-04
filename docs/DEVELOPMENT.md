@@ -59,7 +59,7 @@ src/com/voxivoid/recipelab/
   MenuView.java                Canvas-drawn full-screen list: the app menu, the developer menu (rows, some with a
                                value left / right change in place, between drawn arrows), and read-only pages
                                (About, the key logger)
-  Legend.java                  Canvas-drawn key icons and the favourite star, fit-to-width (camera font has no symbol glyphs).
+  Legend.java                  Canvas-drawn key icons and the favourite star, wrapped onto more lines when a row does not fit (Keys.lineCounts; camera font has no symbol glyphs).
                                Draws what Keys.hints builds: the four-way and the wheel are left out as self-evident,
                                a hold is its key's icon labelled "(hold)", and Fn, where the body has it, sits before
                                MENU when both close the list ("Fn / MENU close")
