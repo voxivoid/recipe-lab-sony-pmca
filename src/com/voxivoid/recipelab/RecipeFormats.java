@@ -3,12 +3,15 @@ package com.voxivoid.recipelab;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Every version of the custom recipe file format the app knows, and which one reads or writes a file.
  *
  * <h3>Reading</h3>
- * A file is {@code key = value} lines, {@code #} starting a comment — the envelope every version shares ({@link #keys}).
+ * A file is YAML: a flat mapping, one {@code key: value} per line, {@code #} comments, a value optionally in quotes — the
+ * envelope every version shares ({@link #keys}). Lists, nesting and the rest of what YAML allows are not a recipe.
  * Its {@code format} line picks the reader: the {@link RecipeFormat} of that version, so a file keeps loading with the
  * reader it was written for after newer versions arrive. A file without the line is format 1. A file from a version this
  * build does not know is skipped as a whole, never half-read: it ends up in the camera's settings store.
@@ -60,21 +63,47 @@ final class RecipeFormats {
         return null;
     }
 
+    /** a top-level YAML mapping entry: a plain key, a colon, then the value (or nothing) after a space */
+    private static final Pattern ENTRY = Pattern.compile("([A-Za-z][A-Za-z0-9_-]*)\\s*:(?:\\s+(.*))?");
+
     /**
-     * The envelope: {@code text} into key → value, keys lower-cased, values trimmed; {@code #} to the line's end is a
-     * comment, a byte-order mark is dropped, a line without {@code =} is skipped (a later version may know it). Returns
-     * why the file cannot be read — a key given twice is ambiguous — or null.
+     * The envelope: a YAML flat mapping into key → value, keys lower-cased. Blank lines, {@code #} comments and the
+     * {@code ---} / {@code ...} document markers are skipped, as is a byte-order mark. A value is plain — a {@code #}
+     * after a space starts a comment — or in single or double quotes. Returns why the file cannot be read, or null: a
+     * line that is not a top-level {@code key: value} (a list, nesting, an old {@code key = value} file) names its line,
+     * and a key given twice is ambiguous.
      */
     static String keys(String text, Map<String, String> into) {
         if (text.startsWith("﻿")) text = text.substring(1);   // the byte-order mark some Windows editors add
-        for (String raw : text.split("\r\n|\r|\n")) {
-            int hash = raw.indexOf('#');
-            String line = (hash >= 0 ? raw.substring(0, hash) : raw).trim();
-            int eq = line.indexOf('=');
-            if (eq <= 0) continue;
-            String key = line.substring(0, eq).trim().toLowerCase(Locale.US), value = line.substring(eq + 1).trim();
+        String[] lines = text.split("\r\n|\r|\n");
+        for (int n = 0; n < lines.length; n++) {
+            String raw = lines[n], t = raw.trim();
+            if (t.isEmpty() || t.startsWith("#") || t.equals("---") || t.equals("...")) continue;
+            Matcher m = ENTRY.matcher(raw);
+            String value = m.matches() ? scalar(m.group(2) == null ? "" : m.group(2)) : null;
+            if (value == null) return Lang.t("custom_not_yaml", n + 1);
+            String key = m.group(1).toLowerCase(Locale.US);
             if (into.put(key, value) != null) return Lang.t("custom_twice", key);
         }
         return null;
+    }
+
+    /**
+     * A YAML scalar on one line: in single quotes ('it''s'), double quotes ("say \"hi\""), or plain up to a " #" comment.
+     * Null when it is malformed — a quote that does not close, or something after it other than a comment.
+     */
+    static String scalar(String v) {
+        v = v.trim();
+        if (v.startsWith("'") || v.startsWith("\"")) {
+            char q = v.charAt(0);
+            int end = v.lastIndexOf(q);
+            if (end <= 0) return null;
+            String rest = v.substring(end + 1).trim();
+            if (!rest.isEmpty() && !rest.startsWith("#")) return null;
+            String in = v.substring(1, end);
+            return q == '\'' ? in.replace("''", "'") : in.replace("\\\"", "\"").replace("\\\\", "\\");
+        }
+        int hash = v.indexOf(" #");
+        return (hash >= 0 ? v.substring(0, hash) : v).trim();
     }
 }

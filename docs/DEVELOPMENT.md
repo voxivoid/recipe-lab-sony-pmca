@@ -233,7 +233,7 @@ manifest), one file per recipe. Apps reach the card through Sony's FUSE layer, `
 only**: its `getattr` answers `ENAMETOOLONG` past them, it carries an upper-casing table, and the one PMCA app known to
 write to the card, PMCADemo, uses `PMCADEMO/LOG.TXT`. A first build that used `RECIPELAB` (nine letters) got
 `cannot create /mnt/sdcard/RECIPELAB` on an A6000. So the folder is seven letters and `CustomRecipes.fileName` makes
-`GOLDENHO.TXT` out of "Golden Hour" — the first eight letters and digits, in capitals — and `GOLDENH2.TXT`, `GOLDEN10.TXT`
+`GOLDENHO.YML` out of "Golden Hour" — the first eight letters and digits, in capitals — and `GOLDENH2.YML`, `GOLDEN10.YML`
 … when a file already has it (compared ignoring case); the recipe's name lives in the file. The folder is read again on every `onResume`, so a card edited on a computer or swapped is picked up. No card
 (`getExternalStorageState() != MEDIA_MOUNTED`): the Custom group says so and saving refuses with a toast.
 
@@ -241,7 +241,11 @@ write to the card, PMCADemo, uses `PMCADEMO/LOG.TXT`. A first build that used `R
 to Z. An index moves when a recipe is added, renamed or deleted, so nothing persistent holds one: the last recipe is
 kept as `customRecipe` (its name) beside `recipe`, and favourites by name.
 
-**The file.** `key = value`, `#` comments, UTF-8 (a BOM is ignored), English always. Format 1 (`RecipeFormatV1`) writes:
+**The file.** YAML — a flat mapping, one `key: value` per line, `#` comments, values plain or quoted — UTF-8 (a BOM is
+ignored), English always, `.YML`. Anything else YAML allows (lists, nesting) and any line that is not `key: value` (an
+old `key = value` file included) skips the file with its line number. The name is always written quoted, so other YAML
+tools read it as text; note that strict YAML 1.1 tools read `dro: off` as false — the app reads every value as text.
+Format 1 (`RecipeFormatV1`) writes:
 
 | key | values | missing → |
 |---|---|---|
@@ -261,7 +265,7 @@ Quality is not part of a recipe: it follows the Factory base like every other re
 
 **Versions.** Each version of the format is a `RecipeFormat` — its number, a reader and a writer — and
 `RecipeFormats.ALL` lists them, oldest first. A file is read by the version its `format` line names (no line: 1); the
-app writes with the newest (`RecipeFormats.current()`). The `key = value` envelope every version shares is
+app writes with the newest (`RecipeFormats.current()`). The YAML envelope every version shares is
 `RecipeFormats.keys`. The rules that keep old files readable:
 
 - A key a reader does not know is ignored. **Adding** a key never needs a new version; give it a default that means

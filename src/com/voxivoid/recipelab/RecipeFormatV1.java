@@ -15,7 +15,7 @@ import static com.voxivoid.recipelab.CustomRecipes.thirds;
 import static com.voxivoid.recipelab.Params.*;
 
 /**
- * Format 1 of the custom recipe file: one key per value the chips show, English, hand-editable. Style and effect by
+ * Format 1 of the custom recipe file: YAML, one key per value the chips show, English, hand-editable. Style and effect by
  * their runtime names, exposure in thirds as "+0.7", white balance as "auto", "keep" or "5600K"; every line written
  * with its allowed range beside it. A key left out takes the factory look's value.
  *
@@ -31,11 +31,11 @@ final class RecipeFormatV1 implements RecipeFormat {
     public String write(Recipes.Recipe r, String madeOn) {
         StringBuilder s = new StringBuilder();
         s.append("# Recipe Lab custom recipe. Keep it in the ").append(CustomRecipes.DIR).append(" folder of a memory card, under a name of\n");
-        s.append("# up to eight letters or digits and .TXT: the camera reads no longer file names. Its own name is below.\n");
+        s.append("# up to eight letters or digits and .YML: the camera reads no longer file names. Its own name is below.\n");
         s.append("# Edit with care: a value outside the range beside it makes the app skip this file.\n");
         line(s, "format", String.valueOf(version()), null);
-        line(s, "name", r.name, null);
-        if (madeOn != null && !madeOn.trim().isEmpty()) line(s, "made-on", madeOn.trim().replace('#', ' '), "the camera it was saved on");
+        line(s, "name", quoted(r.name), null);                     // quoted: to any YAML reader a name is text
+        if (madeOn != null && !madeOn.trim().isEmpty()) line(s, "made-on", quoted(madeOn.trim()), "the camera it was saved on");
         line(s, "style", Recipes.STYLE_NAMES[r.style], knownStyles());
         line(s, "saturation", signed(r.sat), "-3 .. +3");
         line(s, "contrast", signed(r.con), "-3 .. +3");
@@ -53,10 +53,13 @@ final class RecipeFormatV1 implements RecipeFormat {
 
     private static void line(StringBuilder s, String key, String value, String comment) {
         int at = s.length();
-        s.append(key).append(" = ").append(value);
+        s.append(key).append(": ").append(value);
         if (comment != null) { while (s.length() - at < 28) s.append(' '); s.append(" # ").append(comment); }
         s.append('\n');
     }
+
+    /** a YAML double-quoted scalar: the quote and the backslash escaped */
+    private static String quoted(String v) { return "\"" + v.replace("\\", "\\\\").replace("\"", "\\\"") + "\""; }
 
     private static String signed(int v) { return v > 0 ? "+" + v : String.valueOf(v); }
 

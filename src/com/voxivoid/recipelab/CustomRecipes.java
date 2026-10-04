@@ -38,7 +38,7 @@ import static com.voxivoid.recipelab.Params.*;
  * <h3>The card's file system</h3>
  * Apps reach the card through Sony's FUSE layer (libInfraFuFsys, mounted at /mnt/sdcard), which takes DOS 8.3 names
  * only: a longer one is ENAMETOOLONG, letters are upper case, and there is no fsync. So the folder is {@link #DIR}, the
- * app writes {@code GOLDENHO.TXT}-style names ({@link #fileName}), and the recipe's real name lives inside the file.
+ * app writes {@code GOLDENHO.YML}-style names ({@link #fileName}), and the recipe's real name lives inside the file.
  *
  * MainActivity finds the card and owns the list ({@link Library}); this class decides, reads and writes. No android.*
  * import may appear here (tools/test.sh).
@@ -48,7 +48,8 @@ final class CustomRecipes {
 
     /** the folder at the root of the memory card: eight characters at most, as the card's file system takes no longer name */
     static final String DIR = "RECIPES";
-    static final String EXT = ".TXT";
+    /** YAML, in the 8.3 the card takes: the file says what it is, and any editor that knows YAML colours it */
+    static final String EXT = ".YML";
     /** the file a save writes before it takes the recipe's name; 8.3 like every name on the card, and never read as a recipe */
     static final String TMP = "SAVING.TMP";
     /** a recipe file is a few hundred bytes; anything far bigger is not one */
@@ -152,8 +153,8 @@ final class CustomRecipes {
 
     /**
      * The file a name is kept in, as the card's file system takes it: an 8.3 name, the first eight letters and digits of
-     * the name in capitals plus {@link #EXT} — "Golden Hour" → GOLDENHO.TXT. When another file has it, the end of the
-     * eight gives way to a number: GOLDENH2.TXT, GOLDENH3.TXT … {@code takenFiles} are compared ignoring case.
+     * the name in capitals plus {@link #EXT} — "Golden Hour" → GOLDENHO.YML. When another file has it, the end of the
+     * eight gives way to a number: GOLDENH2.YML, GOLDENH3.YML … {@code takenFiles} are compared ignoring case.
      */
     static String fileName(String name, Collection<String> takenFiles) {
         StringBuilder b = new StringBuilder();
@@ -290,7 +291,7 @@ final class CustomRecipes {
         return skipped.size() == 1 ? Lang.t("custom_skipped_one", skipped.get(0)) : Lang.t("custom_skipped_many", skipped.size(), skipped.get(0));
     }
 
-    /** where a recipe's file is, as the screen names it: RECIPES/GOLDENHO.TXT */
+    /** where a recipe's file is, as the screen names it: RECIPES/GOLDENHO.YML */
     static String path(String file) { return DIR + "/" + file; }
 
     /**

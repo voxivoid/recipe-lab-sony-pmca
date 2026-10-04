@@ -304,17 +304,17 @@ Leaving a changed recipe asks first: **Discard** or **Cancel**.
 
 ### Sharing
 
-- Each recipe is a small text file in `RECIPES` on the card — e.g. `RECIPES/GOLDENHO.TXT`.
+- Each recipe is a small YAML file in `RECIPES` on the card — e.g. `RECIPES/GOLDENHO.YML`.
 - **Export:** connect the camera as *Mass Storage*. Copy the files out.
-- **Import:** copy a file into `RECIPES`. Keep its name short: up to 8 letters, then `.TXT`. Reopen the app.
+- **Import:** copy a file into `RECIPES`. Keep its name short: up to 8 letters, then `.YML`. Reopen the app.
 - Edit them in any text editor. Each line lists its allowed values:
 
-```
-name = Golden Hour
-style = portrait             # standard vivid neutral portrait …
-saturation = -1              # -3 .. +3
-white-balance = 5600K        # auto, keep, or 2500K .. 9900K
-exposure = +0.7              # -5.0 .. +5.0 in thirds
+```yaml
+name: "Golden Hour"
+style: portrait              # standard vivid neutral portrait …
+saturation: -1               # -3 .. +3
+white-balance: 5600K         # auto, keep, or 2500K .. 9900K
+exposure: +0.7               # -5.0 .. +5.0 in thirds
 ```
 
 - A file with a bad value is skipped. The app says which and why.
