@@ -331,13 +331,17 @@ class CustomRecipesTest {
         assertEquals("Cancel", CustomRecipes.deleteOptions()[CustomRecipes.DELETE_DEFAULT]);
         assertEquals("Favourite", CustomRecipes.options(false)[CustomRecipes.OPT_FAVOURITE]);
         assertEquals("Unfavourite", CustomRecipes.options(true)[CustomRecipes.OPT_FAVOURITE]);
-        assertEquals(java.util.Arrays.asList("Save & apply", "Apply only", "Cancel"), java.util.Arrays.asList(CustomRecipes.forkOptions()),
-                "one question after an edit and before a pick: keep and store it, store it this once, or neither");
-        assertEquals("Save & apply", CustomRecipes.forkOptions()[CustomRecipes.FORK_SAVE_APPLY]);
-        assertEquals("Apply only", CustomRecipes.forkOptions()[CustomRecipes.FORK_APPLY]);
-        assertEquals(java.util.Arrays.asList("Restore & apply", "Cancel"), java.util.Arrays.asList(CustomRecipes.restoreOptions()));
-        assertEquals("Restore & apply", CustomRecipes.restoreOptions()[CustomRecipes.RESTORE_APPLY]);
-        assertEquals("Restore Velvia?", CustomRecipes.restoreTitle("Velvia"));
+        assertEquals(java.util.Arrays.asList("Save & apply", "Apply", "Restore", "Cancel"), java.util.Arrays.asList(CustomRecipes.forkOptions(false)),
+                "edits not stored yet: keep and store them, store them once, go back to the recipe, or nothing");
+        assertEquals(java.util.Arrays.asList("Save", "Restore", "Cancel"), java.util.Arrays.asList(CustomRecipes.forkOptions(true)),
+                "edits already stored: nothing left to apply");
+        int[] pending = { CustomRecipes.FORK_SAVE_APPLY, CustomRecipes.FORK_APPLY, CustomRecipes.FORK_RESTORE, CustomRecipes.FORK_CANCEL };
+        for (int i = 0; i < pending.length; i++) assertEquals(pending[i], CustomRecipes.forkAction(false, i));
+        int[] applied = { CustomRecipes.FORK_SAVE, CustomRecipes.FORK_RESTORE, CustomRecipes.FORK_CANCEL };
+        for (int i = 0; i < applied.length; i++) assertEquals(applied[i], CustomRecipes.forkAction(true, i));
+        assertEquals(CustomRecipes.FORK_CANCEL, CustomRecipes.forkAction(true, 9), "anything else does nothing");
+        assertEquals("Velvia, edited", CustomRecipes.forkTitle("Velvia"));
+        assertTrue(CustomRecipes.forkBody("Velvia", true).contains("Velvia"));
         assertEquals("Removes RECIPES/MINE.TXT from the memory card. This cannot be undone.", CustomRecipes.deleteBody("MINE.TXT"));
     }
 }

@@ -433,24 +433,42 @@ final class CustomRecipes {
     static String path(String file) { return DIR + "/" + file; }
 
     /**
-     * Edits of a built-in recipe, which cannot change: asked when a chip edit is finished, and again whenever the recipe
-     * is picked with them. Keep them as a custom recipe and store it, store them this once, or neither.
+     * Edits of a built-in recipe, which cannot change — one question, asked when the recipe is picked (centre on the
+     * recipe line) with edits nothing keeps. What it offers depends on whether the camera already holds the edits
+     * ({@code applied}, after Apply; badge EDITED):
+     * <ul>
+     * <li>not yet: Save &amp; apply · Apply · Restore · Cancel</li>
+     * <li>already: Save · Restore · Cancel — there is nothing left to apply</li>
+     * </ul>
+     * Restore is always the recipe's own values, stored: it drops pending edits, or undoes an Apply, without walking to
+     * another recipe and back. Cancel writes and keeps nothing.
      */
-    static String forkTitle() { return Lang.t("custom_fork_title"); }
-    static String forkBody(String recipeName) { return Lang.t("custom_fork_body", recipeName); }
-    static String[] forkOptions() {
-        return new String[] { Lang.t("button_save_apply"), Lang.t("button_apply_only"), Lang.t("button_cancel") };
+    static String forkTitle(String recipeName) { return Lang.t("custom_fork_title", recipeName); }
+    static String forkBody(String recipeName, boolean applied) { return Lang.t(applied ? "custom_fork_body_applied" : "custom_fork_body", recipeName); }
+    static final int FORK_SAVE_APPLY = 0, FORK_SAVE = 1, FORK_APPLY = 2, FORK_RESTORE = 3, FORK_CANCEL = 4;
+    private static final int[] FORK_PENDING = { FORK_SAVE_APPLY, FORK_APPLY, FORK_RESTORE, FORK_CANCEL },
+            FORK_APPLIED = { FORK_SAVE, FORK_RESTORE, FORK_CANCEL };
+    /** the answers, as the pills show them */
+    static String[] forkOptions(boolean applied) {
+        int[] a = applied ? FORK_APPLIED : FORK_PENDING;
+        String[] out = new String[a.length];
+        for (int i = 0; i < a.length; i++) out[i] = forkLabel(a[i]);
+        return out;
     }
-    static final int FORK_SAVE_APPLY = 0, FORK_APPLY = 1;
-
-    /**
-     * Centre on a built-in recipe whose edited values are what the camera has stored ("Apply only"): put the recipe's own
-     * values back, and store them. Asked where the user is — no need to walk to another recipe and back.
-     */
-    static String restoreTitle(String recipeName) { return Lang.t("custom_restore_title", recipeName); }
-    static String restoreBody(String recipeName) { return Lang.t("custom_restore_body", recipeName); }
-    static String[] restoreOptions() { return new String[] { Lang.t("button_restore_apply"), Lang.t("button_cancel") }; }
-    static final int RESTORE_APPLY = 0;
+    /** what the highlighted answer does: one of FORK_* */
+    static int forkAction(boolean applied, int sel) {
+        int[] a = applied ? FORK_APPLIED : FORK_PENDING;
+        return sel >= 0 && sel < a.length ? a[sel] : FORK_CANCEL;
+    }
+    private static String forkLabel(int action) {
+        switch (action) {
+            case FORK_SAVE_APPLY: return Lang.t("button_save_apply");
+            case FORK_SAVE: return Lang.t("button_save");
+            case FORK_APPLY: return Lang.t("button_apply");
+            case FORK_RESTORE: return Lang.t("button_restore");
+            default: return Lang.t("button_cancel");
+        }
+    }
 
     /** a hold on a custom recipe: what can be done with it. Cancel is highlighted, so a stray centre press does nothing */
     static String optionsBody(String file) { return Lang.t("custom_options_body", path(file)); }

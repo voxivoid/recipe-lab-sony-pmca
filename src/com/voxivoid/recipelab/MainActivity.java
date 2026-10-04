@@ -63,9 +63,10 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private int promptSel = 0, promptKind = P_QUALITY; private boolean promptOpen = false;
     /**
      * the questions the prompt asks: quality change, reset, keep or apply an edit of a built-in recipe, a custom recipe's
-     * options, delete it, put a built-in recipe's own values back over an applied edit
+     * options, delete it
      */
-    private static final int P_QUALITY = 0, P_RESET = 1, P_FORK = 2, P_OPTIONS = 3, P_DELETE = 4, P_RESTORE = 5;
+    private static final int P_QUALITY = 0, P_RESET = 1, P_FORK = 2, P_OPTIONS = 3, P_DELETE = 4;
+    private boolean forkApplied = false;                         // the edits question: the camera already holds the edits (badge EDITED)
     // the name editor, and what its OK does: keep an edit as a new recipe and store it, keep the camera's settings, rename,
     // keep what the screen shows
     private KeyboardView keyboard;
@@ -342,9 +343,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         Recipes.Recipe r = library.get(recipe);
         switch (promptKind) {
             case P_RESET: prompt.set(DevTools.resetTitle(), DevTools.resetBody(), DevTools.resetOptions(), promptSel, null); break;
-            case P_FORK: prompt.set(CustomRecipes.forkTitle(), CustomRecipes.forkBody(Recipes.displayName(r)), CustomRecipes.forkOptions(), promptSel, null); break;
+            case P_FORK: { String n = Recipes.displayName(r); prompt.set(CustomRecipes.forkTitle(n), CustomRecipes.forkBody(n, forkApplied), CustomRecipes.forkOptions(forkApplied), promptSel, null); break; }
             case P_OPTIONS: prompt.set(r.name, CustomRecipes.optionsBody(library.entry(recipe).file), CustomRecipes.options(favs.contains(recipe)), promptSel, null); break;
-            case P_RESTORE: { String n = Recipes.displayName(r); prompt.set(CustomRecipes.restoreTitle(n), CustomRecipes.restoreBody(n), CustomRecipes.restoreOptions(), promptSel, null); break; }
             case P_DELETE: prompt.set(CustomRecipes.deleteTitle(r.name), CustomRecipes.deleteBody(library.entry(recipe).file), CustomRecipes.deleteOptions(), promptSel, null); break;
             default: {
                 String[] q = Params.qualityPrompt(cur, edit);
@@ -359,7 +359,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
 
     private int promptOptions() {
         switch (promptKind) {
-            case P_FORK: return CustomRecipes.forkOptions().length;
+            case P_FORK: return CustomRecipes.forkOptions(forkApplied).length;
             case P_OPTIONS: return CustomRecipes.options(false).length;
             default: return 2;
         }
@@ -372,7 +372,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             case K_ENTER: closePrompt(); promptAnswered(); render(); return true;
             case K_MENU: case K_SK1:
                 swallowMenuUp = true; closePrompt();
-                if (promptKind == P_FORK) showToast(Lang.t("custom_not_saved"), 3000);
+                if (promptKind == P_FORK && !forkApplied) showToast(Lang.t("custom_not_saved"), 3000);
                 render(); return true;
         }
         return true;
@@ -383,9 +383,13 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         switch (promptKind) {
             case P_RESET: if (promptSel == 0) storeFactory(); else showToast(Lang.t("status_not_reset"), 2000); return;
             case P_FORK:
-                if (promptSel == CustomRecipes.FORK_SAVE_APPLY) openName(NAME_APPLY);
-                else if (promptSel == CustomRecipes.FORK_APPLY) writeAll();
-                else showToast(Lang.t("custom_not_saved"), 3000);
+                switch (CustomRecipes.forkAction(forkApplied, promptSel)) {
+                    case CustomRecipes.FORK_SAVE_APPLY: openName(NAME_APPLY); break;
+                    case CustomRecipes.FORK_SAVE: openName(NAME_SAVE); break;             // already stored: keep it as a recipe
+                    case CustomRecipes.FORK_APPLY: writeAll(); break;
+                    case CustomRecipes.FORK_RESTORE: stageRecipe(); applyPreview(); writeAll(); break;   // the recipe's own values, stored
+                    default: if (!forkApplied) showToast(Lang.t("custom_not_saved"), 3000);
+                }
                 return;
             case P_OPTIONS:
                 if (promptSel == CustomRecipes.OPT_FAVOURITE) toggleFavourite();
@@ -393,10 +397,6 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
                 else if (promptSel == CustomRecipes.OPT_DELETE) openPrompt(P_DELETE, CustomRecipes.DELETE_DEFAULT);
                 return;
             case P_DELETE: if (promptSel == 0) deleteCustom(); return;
-            case P_RESTORE:
-                if (promptSel == CustomRecipes.RESTORE_APPLY) { stageRecipe(); applyPreview(); writeAll(); }   // the recipe's values, then the usual write
-                else showToast(Lang.t("status_not_picked"), 2000);
-                return;
             default: if (promptSel == 0) writeAll(true); else showToast(Lang.t("status_not_picked"), 2000);   // cancel: recipe stays previewed only
         }
     }
@@ -867,16 +867,14 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     }
 
     /**
-     * A chip edit finished — centre, or MENU with {@code ask} false. Only an edit that changed the value counts. A custom
-     * recipe takes the new values at once; a built-in one cannot change, so every such edit asks whether to keep it as a
-     * new recipe and apply it, or only apply it.
+     * A chip edit finished — centre or MENU. Only an edit that changed the value counts. A custom recipe takes the new
+     * values at once. A built-in one cannot change: its edits stay a preview, and the question about them is asked when
+     * the recipe is picked (centre on the recipe line), not after every chip.
      */
-    private void editDone(boolean ask) {
+    private void editDone() {
         if (java.util.Arrays.equals(focusStart, edit)) return;      // focused and left without a change
         Recipes.Recipe r = library.get(recipe);
-        if (!Params.differsFromRecipe(r, edit)) return;
-        if (r.isCustom()) { saveInPlace(); return; }
-        if (ask) openPrompt(P_FORK, CustomRecipes.FORK_SAVE_APPLY);
+        if (r.isCustom() && Params.differsFromRecipe(r, edit)) saveInPlace();
     }
 
     /** edits of a built-in recipe that no recipe holds: what picking asks about, and what the panel says */
@@ -884,13 +882,12 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
 
     /** the centre button on the recipe line: unsaved edits ask first, then the store is written */
     private void pick() {
-        if (unsavedEdits()) {
-            if (dirty()) openPrompt(P_FORK, CustomRecipes.FORK_SAVE_APPLY);           // edits not stored yet: keep them, apply them, or not
-            else openPrompt(P_RESTORE, CustomRecipes.RESTORE_APPLY);                  // edits already stored: the way back to the recipe
-            return;
-        }
+        if (unsavedEdits()) { askAboutEdits(); return; }
         writeAll();
     }
+
+    /** the edits question, with the answers that make sense: Apply only while the edits are not stored yet */
+    private void askAboutEdits() { forkApplied = !dirty(); openPrompt(P_FORK, 0); }
 
     // ------------------------------------------------------------ live preview (runtime params)
     private void applyPreview() {
@@ -1116,7 +1113,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             case ENTER_BROWSER_COLUMN: enterRecipeColumn(); break;
             case ENTER_BROWSER_PICK: pickInBrowser(); break;
             case ENTER_PICK: pick(); break;
-            default: { boolean was = focus; setFocus(!focus); if (was) editDone(true); break; }
+            default: { boolean was = focus; setFocus(!focus); if (was) editDone(); break; }
         }
     }
 
@@ -1166,7 +1163,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             case K_S1: try { camera.autoFocus(null); } catch (Throwable t) {} return true;
             case K_S2: try { camera.takePicture(null, null, null); } catch (Throwable t) {} return true;
             case K_MENU: case K_SK1:
-                if (focus) { swallowMenuUp = true; setFocus(false); editDone(false); return true; }
+                if (focus) { swallowMenuUp = true; setFocus(false); editDone(); return true; }
                 if (menuHoldArms(overlay, focus) && menuKeyHold.down(0) == Keys.Hold.ARM) handler.postDelayed(menuHold, HOLD_MS);
                 return true;                                     // exit waits for the release, unless the hold fires first
             case K_PLAY: return true;
