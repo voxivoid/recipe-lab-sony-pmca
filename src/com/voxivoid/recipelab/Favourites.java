@@ -40,7 +40,7 @@ final class Favourites {
         return r.isCustom() ? CUSTOM_PREFIX + r.name : r.name;
     }
 
-    /** the stored string -> recipe indexes in marking order; unknown names, repeats and the factory look are dropped */
+    /** the stored string -> recipe indexes in marking order; unknown names and repeats are dropped */
     static List<Integer> decode(String stored, Library lib) {
         List<Integer> favs = new ArrayList<Integer>();
         if (stored == null || stored.isEmpty()) return favs;
@@ -93,8 +93,8 @@ final class Favourites {
     }
 
     // ------------------------------------------------------------ marking
-    /** whether a recipe can be a favourite: every listed one, not the factory look, which only Reset settings reaches */
-    static boolean markable(int recipe) { return recipe != Recipes.FACTORY && recipe != NEW; }
+    /** whether a recipe can be a favourite: every one — the New row of the Custom group is not a recipe */
+    static boolean markable(int recipe) { return recipe != NEW; }
 
     /** marks an unmarked recipe (at the end) or unmarks a marked one; returns whether it is a favourite now */
     static boolean toggle(List<Integer> favs, int recipe) {

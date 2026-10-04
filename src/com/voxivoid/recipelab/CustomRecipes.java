@@ -479,12 +479,12 @@ final class CustomRecipes {
         }
     }
 
-    /** a hold on a custom recipe: what can be done with it. Cancel is highlighted, so a stray centre press does nothing */
+    /** a MENU hold on a custom recipe in the brand list: what can be done with it. Cancel is highlighted, so a stray centre press does nothing */
     static String optionsBody(String file) { return Lang.t("custom_options_body", path(file)); }
-    static String[] options(boolean favourite) {
-        return new String[] { Lang.t(favourite ? "button_unfavourite" : "button_favourite"), Lang.t("button_rename"), Lang.t("button_delete"), Lang.t("button_cancel") };
+    static String[] options() {
+        return new String[] { Lang.t("button_rename"), Lang.t("button_delete"), Lang.t("button_cancel") };
     }
-    static final int OPT_FAVOURITE = 0, OPT_RENAME = 1, OPT_DELETE = 2, OPT_DEFAULT = 3;
+    static final int OPT_RENAME = 0, OPT_DELETE = 1, OPT_DEFAULT = 2;
 
     /** the second question before a delete, Cancel highlighted */
     static String deleteTitle(String name) { return Lang.t("custom_delete_title", name); }

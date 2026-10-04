@@ -12,7 +12,7 @@ class KeysTest {
     private static final Keys.Caps NONE = new Keys.Caps(false), FN = new Keys.Caps(true);
     private static final int[] EVERY_MODE = { Keys.H_RECIPE, Keys.H_CHIPS, Keys.H_EDIT, Keys.H_BRANDS, Keys.H_RECIPES,
             Keys.H_MENU_TOP, Keys.H_MENU_SUB, Keys.H_PAGE, Keys.H_LOGGER, Keys.H_MENU_TOP_VALUE, Keys.H_MENU_SUB_VALUE,
-            Keys.H_RECIPE_CUSTOM, Keys.H_RECIPES_CUSTOM, Keys.H_NEW, Keys.H_NAME, Keys.H_ACTIONS };
+            Keys.H_RECIPES_CUSTOM, Keys.H_NEW, Keys.H_NAME, Keys.H_ACTIONS };
 
     // ---- press / hold
     @Test void aPressReleasedBeforeTheHoldIsShort() {
@@ -123,15 +123,16 @@ class KeysTest {
     }
 
     @Test void theRecipeLineReadsPickBrowseFavMenuHideExit() {
-        assertEquals(Arrays.asList("pick", "browse", "save (hold)", "fav (hold)", "menu (hold)", "hide", "exit"), Arrays.asList(Keys.hints(Keys.H_RECIPE, FN).labels));
+        assertEquals(Arrays.asList("pick", "browse", "fav (hold)", "menu (hold)", "hide", "exit"), Arrays.asList(Keys.hints(Keys.H_RECIPE, FN).labels));
         assertEquals(Arrays.asList("pick", "fav (hold)", "menu (hold)", "hide", "exit"), Arrays.asList(Keys.hints(Keys.H_RECIPE, NONE).labels),
                 "without Fn, browse is in the app menu, and the rest keep their order");
-        assertEquals(Arrays.asList("edit", "browse", "save (hold)", "menu (hold)", "hide", "exit"), Arrays.asList(Keys.hints(Keys.H_CHIPS, FN).labels));
+        assertEquals(Arrays.asList("edit", "browse", "menu (hold)", "hide", "exit"), Arrays.asList(Keys.hints(Keys.H_CHIPS, FN).labels));
     }
 
-    @Test void onACustomRecipeTheHoldOpensItsOptions() {
-        assertEquals(Arrays.asList("pick", "browse", "save (hold)", "options (hold)", "menu (hold)", "hide", "exit"), Arrays.asList(Keys.hints(Keys.H_RECIPE_CUSTOM, FN).labels));
-        assertEquals(Arrays.asList("pick", "options (hold)", "close"), Arrays.asList(Keys.hints(Keys.H_RECIPES_CUSTOM, NONE).labels));
+    @Test void onACustomRecipeInTheListAMenuHoldOpensItsOptions() {
+        Keys.Hints h = Keys.hints(Keys.H_RECIPES_CUSTOM, NONE);
+        assertEquals(Arrays.asList("pick", "fav (hold)", "options (hold)", "close"), Arrays.asList(h.labels), "centre still marks a favourite");
+        assertEquals(Keys.I_MENU, h.icons[2], "the options are on MENU");
         assertEquals(Arrays.asList("new", "close"), Arrays.asList(Keys.hints(Keys.H_NEW, NONE).labels));
     }
 
@@ -147,8 +148,6 @@ class KeysTest {
             Keys.Hints h = Keys.hints(mode, FN);
             assertEquals(Keys.I_FN, h.icons[Arrays.asList(h.labels).indexOf("browse")]);
             assertFalse(Arrays.asList(Keys.hints(mode, NONE).labels).contains("browse"), "browse is in the app menu without Fn");
-            assertEquals(Keys.I_FN, h.icons[Arrays.asList(h.labels).indexOf("save (hold)")]);
-            assertFalse(Arrays.asList(Keys.hints(mode, NONE).labels).contains("save (hold)"), "and so is save");
         }
     }
 

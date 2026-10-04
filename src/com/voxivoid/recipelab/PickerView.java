@@ -22,7 +22,7 @@ public class PickerView extends View {
     private final Paint bg = new Paint(Paint.ANTI_ALIAS_FLAG), edge = new Paint(Paint.ANTI_ALIAS_FLAG), sel = new Paint(Paint.ANTI_ALIAS_FLAG),
             head = new Paint(Paint.ANTI_ALIAS_FLAG), item = new Paint(Paint.ANTI_ALIAS_FLAG), small = new Paint(Paint.ANTI_ALIAS_FLAG), rule = new Paint(),
             track = new Paint(Paint.ANTI_ALIAS_FLAG), thumb = new Paint(Paint.ANTI_ALIAS_FLAG), tagBg = new Paint(Paint.ANTI_ALIAS_FLAG),
-            star = new Paint(Paint.ANTI_ALIAS_FLAG);
+            star = new Paint(Paint.ANTI_ALIAS_FLAG), plus = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final RectF r = new RectF();
     private final float d;
     private final Legend legend;
@@ -46,6 +46,7 @@ public class PickerView extends View {
         small.setColor(0x99FFFFFF); small.setTextSize(10 * d);
         rule.setColor(0x33FFFFFF);
         track.setColor(0x26FFFFFF); thumb.setColor(0xCCF2B85C);
+        plus.setStyle(Paint.Style.STROKE); plus.setStrokeWidth(1.5f * d);
     }
 
     /** what the key probe found; until it is set only the universal keys are named */
@@ -128,11 +129,18 @@ public class PickerView extends View {
                 int idx = Favourites.recipeAt(g, k, favs, lib);
                 boolean on = idx == selected, active = on && column == 1;
                 if (on) { r.set(x - 4 * d, y, xr, y + rh); c.drawRoundRect(r, 3 * d, 3 * d, active ? sel : outline); }
-                if (idx == Favourites.NEW) {                    // the Custom group's first row: keep the camera's settings
+                if (idx == Favourites.NEW) {                    // the Custom group's first row, drawn as a button: keep the camera's settings
+                    if (!on) { r.set(x - 4 * d, y + 1 * d, xr, y + rh - 1 * d); c.drawRoundRect(r, 3 * d, 3 * d, outline); }
+                    float pr = 6 * d, pcx = x + pr, pcy = y + rh / 2;   // a plus in a ring
+                    plus.setColor(active ? INK : ACCENT);
+                    c.drawCircle(pcx, pcy, pr, plus);
+                    c.drawLine(pcx - pr * 0.5f, pcy, pcx + pr * 0.5f, pcy, plus);
+                    c.drawLine(pcx, pcy - pr * 0.5f, pcx, pcy + pr * 0.5f, plus);
+                    float tx = x + 2 * pr + 6 * d;
                     item.setColor(active ? INK : ACCENT); item.setFakeBoldText(true);
-                    c.drawText(Lang.t("custom_new"), x, y + 13 * d, item);
-                    small.setColor(active ? 0xAA1A1208 : 0x80FFFFFF);
-                    c.drawText(card ? Lang.t("custom_new_detail") : Lang.t("custom_no_card"), x, y + 22 * d, small);
+                    c.drawText(Lang.t("custom_new"), tx, y + 13 * d, item);
+                    small.setColor(active ? 0xAA1A1208 : 0x99FFFFFF);
+                    c.drawText(card ? Lang.t("custom_new_detail") : Lang.t("custom_no_card"), tx, y + 22 * d, small);
                     continue;
                 }
                 Recipes.Recipe rc = lib.get(idx);

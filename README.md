@@ -71,7 +71,7 @@ mode**, photo and video, with the app closed. Turn it off and on, it is still th
 
 | brand | recipes |
 |---|---|
-| **Sony** | PT, NT, VV, VV2, FL, IN, SH — plus the factory look, under **Reset settings** |
+| **Sony** | Factory (the camera's own look), PT, NT, VV, VV2, FL, IN, SH |
 | **Fuji simulations** | Provia, Velvia, Astia, Classic Chrome, Classic Negative, Nostalgic Neg, Reala Ace, Pro Neg Std / Hi, Eterna, Eterna Bleach Bypass, Acros, Acros +Ye / +R / +G, Sepia |
 | **Fuji film** | Pro 400H, Fortia 50, Superia 400, C200, Natura 1600 |
 | **Kodak** | Portra 160 / 400 / 800, Gold 200, Ultra Max 400, Color Plus 200, Ektar 100, Ektachrome E100, Kodachrome 64, Vision3 500T, Vision 200T (Asteroid City), Tri-X 400, Tri-X 1600 (pushed), T-Max |
@@ -223,15 +223,14 @@ Open **Recipe Lab** from the Application List. You get the live image with a pan
 | **wheel** | scroll recipes, from anywhere — the live image changes at once, and that is what the camera will write |
 | **left / right**, **top dial** | scroll recipes too, but only on the recipe line; on the chip row they walk the chips |
 | **centre** | pick the recipe you are looking at — the camera keeps it. A message confirms it |
-| **hold centre** | mark the recipe as a favourite, or unmark it. Works on the main screen and inside the brand list. On a [custom recipe](#custom-recipes) it opens its options instead: favourite, rename, delete |
+| **hold centre** | mark the recipe as a favourite, or unmark it — any recipe, custom ones too. Works on the main screen and inside the brand list |
 | **up / down** | move between the recipe line and the row of value chips |
 | **TRASH** | step the panel: full → without the key legend → a small label → nothing → full. The wheel still works |
 | **hold TRASH** | reset to the factory look — the app asks first |
-| **hold MENU** | open the menu: browse recipes, save as new recipe, panel visibility, language, reset settings, about |
+| **hold MENU** | open the menu: browse recipes, panel visibility, language, reset settings, about. In the brand list, on a [custom recipe](#custom-recipes): its options — rename, delete |
 | **shutter** | take a picture of what you are previewing |
 | **MENU** | leave the app |
 | **Fn** *(if your camera has one)* | open the brand list — the same as **hold MENU → Browse recipes** |
-| **hold Fn** *(if your camera has one)* | save what you see as a new [custom recipe](#custom-recipes) — the same as **hold MENU → Save as new recipe** |
 
 Every function works on keys every camera has; **Fn** is a shortcut on the bodies that have it, and the legend at the
 bottom of the screen only names it when the camera reports it. **AEL**, **C1** and **DISP** do nothing in the app.
@@ -241,25 +240,24 @@ or the wheel move, centre picks, **MENU** goes back.
 
 - **Browse recipes** opens the brand list: **Favourites** first, then **Custom**, then the brands, on the left; recipes on the right.
   Left / right switches column (the active one is amber), wheel or up / down scrolls, centre picks.
-- **Save as new recipe** keeps the values on screen as a [custom recipe](#custom-recipes) — hold **Fn** does the same.
 - **Panel visibility** — *Full*, *No keys* (the full panel without the key legend), *Label* or *Hidden* — changes with
   left / right, right there in the menu.
 - **Language** — *Auto*, *English*, *简体中文* (Simplified Chinese) or *繁體中文* (Traditional Chinese) — changes the
   same way, and the whole app switches at once. *Auto* follows the camera's own language and falls back to English.
   Recipe names are translated too, with the original name kept in small type underneath; favourites and everything the
   app writes to the memory card stay the same in every language.
-- **Reset settings** puts the camera back on its factory look, after asking. The factory look is not in the recipe
-  list; this is the way to it.
+- **Reset settings** puts the camera back on its factory look, after asking — the same as picking **Factory**, the
+  first Sony recipe.
 - **About** shows the app version, the camera model, its platform version and where the source lives.
 - **Developer** holds tools for testing and for compatibility reports.
 
-Then **turn the camera off and on**. The look is now the camera's default in every mode — P, A, S, M, movie — with
-the app closed, and the app reopens on that recipe.
+The look is now the camera's default in every mode — P, A, S, M, movie — with the app closed, and the app reopens on
+that recipe.
 
 **Favourites.** Hold the **centre button** on a recipe and it joins the **Favourites** group at the top of the brand
 list, with a star next to its name; hold again to drop it. The group lists your picks in the order you marked them,
 and the brand list opens straight on it whenever the recipe you are on is one of them. The wheel on the main screen
-still walks all 76, then your custom recipes — favourites shorten the list in the browser, not the scroll. The marks are kept by the app, not in
+still walks all 77, then your custom recipes — favourites shorten the list in the browser, not the scroll. The marks are kept by the app, not in
 the camera's settings, so they survive a power cycle but go with the app if you remove it.
 
 **The chips.** In the chip row, **left / right** walks the chips, **centre** focuses one (it turns amber),
@@ -280,7 +278,7 @@ balance, EV and DRO are always there. The legend at the bottom of the screen fol
 
 ## Custom recipes
 
-The 76 built-in recipes never change, but you can keep your own looks next to them: a built-in recipe with your
+The 77 built-in recipes never change, but you can keep your own looks next to them: a built-in recipe with your
 tweaks, something you set up in the camera's own menus, or a recipe someone else made. They live on the **memory
 card**, one small text file each, and show up in the **Custom** group of the brand list, A to Z. The wheel reaches
 them after the built-in recipes, and picking one stores it in the camera exactly like any other recipe.
@@ -310,18 +308,16 @@ gives another one. Up to 24 letters, digits, spaces and `- . ' ( ) & +`; two rec
   Pressing **centre** on the name of a recipe you have changed asks *Discard edits?*: **Discard** goes back to the
   recipe's own values and picks them. Turning the wheel, opening the brand list or leaving the app with changes you have
   neither saved nor applied asks the same, with **Cancel** highlighted.
-- **Hold Fn** *(on cameras that have it)*, or **hold MENU → Save as new recipe** — keeps exactly what the screen
-  shows, edits and all, as a new recipe. It is not stored in the camera until you pick it.
-- **Browse → Custom → + New recipe** — keeps what the camera has **stored** right now, so you can set a look up in
+- **Browse → Custom → New recipe** — keeps what the camera has **stored** right now, so you can set a look up in
   Sony's own menus (Creative Style, white balance, DRO …) and bottle it.
 
 ### Changing, renaming, deleting
 
 - **Edit a custom recipe's chips** as usual, then press **Save** in the row under the chips (or **Copy** to keep the
   original too). Until you do, the card still has the old values.
-- **Hold centre** on a custom recipe, on the main screen or in the brand list, for its options:
-  **Favourite** / **Unfavourite**, **Rename** (the name editor, on its current name), **Delete** (asks again, with
-  *Cancel* highlighted) and **Cancel**. On a built-in recipe, hold centre still just marks a favourite.
+- **Hold MENU** on a custom recipe in the brand list for its options: **Rename** (the name editor, on its current
+  name), **Delete** (asks again, with *Cancel* highlighted) and **Cancel**. A short MENU press still closes the list.
+- **Hold centre** marks it a favourite, as on any recipe.
 
 ### Sharing: export and import
 
@@ -398,7 +394,7 @@ Quality: RAW+JPG → JPG Fine — JPEG is needed to apply this recipe
 **Is it permanent?** The look stays until you change it — on purpose, that is what makes it work in every mode
 without the app. It is not permanent in the sense of damage. Undo it any time, three ways:
 
-- In the app: **hold TRASH** (or **hold MENU → Reset settings**), confirm, then turn the camera off and on.
+- In the app: pick **Factory** (first in Sony), or **hold TRASH** / **hold MENU → Reset settings** and confirm.
 - In the menus: set Creative Style back to *Standard* 0 / 0 / 0 and White Balance to *Auto*.
 - Or use the camera's own `Setup → Setting Reset → Camera Settings Reset`.
 

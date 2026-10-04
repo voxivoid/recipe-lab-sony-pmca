@@ -117,11 +117,11 @@ final class Keys {
 
     /**
      * The legend rows: the main panel's three, the browser's two columns, and the menu's — *_VALUE on a row left / right
-     * change. *_CUSTOM where the recipe is a custom one, whose hold opens its options rather than marking it; H_NEW on
+     * change. H_RECIPES_CUSTOM on a custom recipe in the brand list, where a MENU hold opens its options; H_NEW on
      * the Custom group's "+ New recipe" row; H_NAME under the name editor; H_ACTIONS on the edit buttons.
      */
     static final int H_RECIPE = 0, H_CHIPS = 1, H_EDIT = 2, H_BRANDS = 3, H_RECIPES = 4, H_MENU_TOP = 5, H_MENU_SUB = 6,
-            H_PAGE = 7, H_LOGGER = 8, H_MENU_TOP_VALUE = 9, H_MENU_SUB_VALUE = 10, H_RECIPE_CUSTOM = 11, H_RECIPES_CUSTOM = 12,
+            H_PAGE = 7, H_LOGGER = 8, H_MENU_TOP_VALUE = 9, H_MENU_SUB_VALUE = 10, H_RECIPES_CUSTOM = 12,
             H_NEW = 13, H_NAME = 14, H_ACTIONS = 15;
 
     /** one legend row: per item an icon, an optional shortcut icon drawn before it (I_NONE for none), and a label */
@@ -146,7 +146,7 @@ final class Keys {
 
     /**
      * The legend for a screen, for this body. Universal keys carry every function; Fn appears only when the probe
-     * reports it — as "browse" and "save (hold)", both also in the app menu, or beside MENU where both close the list — so a body that
+     * reports it — as "browse", which is also in the app menu, or beside MENU where both close the list — so a body that
      * lacks it (or a probe that failed) still reads a complete legend. The order is fixed: pick, browse, fav, menu, hide,
      * exit. Reset (hold trash) is left out on purpose: it asks before it writes, and a hint would invite it. The labels
      * are in the display language ({@link Lang}).
@@ -154,22 +154,23 @@ final class Keys {
     static Hints hints(int mode, Caps caps) {
         int fn = caps.hasFn() ? I_FN : I_NONE;
         switch (mode) {
-            case H_RECIPE: case H_RECIPE_CUSTOM: {
+            case H_RECIPE: {
                 Row r = new Row().add(I_ENTER, Lang.t("action_pick"));
-                if (caps.hasFn()) r.add(I_FN, Lang.t("action_browse")).add(I_FN, Lang.t("action_save_hold"));
-                r.add(I_ENTER, mode == H_RECIPE ? Lang.t("action_favourite_hold") : Lang.t("action_options_hold"));
+                if (caps.hasFn()) r.add(I_FN, Lang.t("action_browse"));
+                r.add(I_ENTER, Lang.t("action_favourite_hold"));
                 return r.add(I_MENU, Lang.t("action_menu_hold")).add(I_TRASH, Lang.t("action_hide")).add(I_MENU, Lang.t("action_exit")).done();
             }
             case H_CHIPS: {
                 Row r = new Row().add(I_ENTER, Lang.t("action_edit"));
-                if (caps.hasFn()) r.add(I_FN, Lang.t("action_browse")).add(I_FN, Lang.t("action_save_hold"));
+                if (caps.hasFn()) r.add(I_FN, Lang.t("action_browse"));
                 return r.add(I_MENU, Lang.t("action_menu_hold")).add(I_TRASH, Lang.t("action_hide")).add(I_MENU, Lang.t("action_exit")).done();
             }
             case H_EDIT: return new Row().add(I_ENTER, Lang.t("action_done")).done();
             case H_ACTIONS: return new Row().add(I_LEFTRIGHT, Lang.t("action_move")).add(I_ENTER, Lang.t("action_select")).add(I_MENU, Lang.t("action_exit")).done();
             case H_BRANDS: return new Row().add(I_ENTER, Lang.t("action_recipes")).add(I_MENU, fn, Lang.t("action_close")).done();
             case H_RECIPES: return new Row().add(I_ENTER, Lang.t("action_pick")).add(I_ENTER, Lang.t("action_favourite_hold")).add(I_MENU, fn, Lang.t("action_close")).done();
-            case H_RECIPES_CUSTOM: return new Row().add(I_ENTER, Lang.t("action_pick")).add(I_ENTER, Lang.t("action_options_hold")).add(I_MENU, fn, Lang.t("action_close")).done();
+            case H_RECIPES_CUSTOM: return new Row().add(I_ENTER, Lang.t("action_pick")).add(I_ENTER, Lang.t("action_favourite_hold"))
+                    .add(I_MENU, Lang.t("action_options_hold")).add(I_MENU, fn, Lang.t("action_close")).done();
             case H_NEW: return new Row().add(I_ENTER, Lang.t("action_new")).add(I_MENU, fn, Lang.t("action_close")).done();
             case H_NAME: return new Row().add(I_UPDOWN, Lang.t("action_move")).add(I_ENTER, Lang.t("action_type")).add(I_TRASH, Lang.t("action_delete_char")).add(I_MENU, Lang.t("action_cancel")).done();
             case H_MENU_TOP: return new Row().add(I_UPDOWN, Lang.t("action_move")).add(I_ENTER, Lang.t("action_select")).add(I_MENU, Lang.t("action_close")).done();

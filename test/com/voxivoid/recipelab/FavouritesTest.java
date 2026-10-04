@@ -183,14 +183,12 @@ class FavouritesTest {
         assertEquals(two, Favourites.decode(Favourites.encode(two, LIB, ""), LIB));
     }
 
-    @Test void theFactoryLookAndTheNewRowAreNeverFavourites() {
+    @Test void theFactoryLookCanBeAFavouriteButTheNewRowCannot() {
         List<Integer> favs = new ArrayList<Integer>();
-        assertFalse(Favourites.markable(Recipes.FACTORY));
-        assertFalse(Favourites.toggle(favs, Recipes.FACTORY), "only Reset settings reaches it, so it has no place in a list");
-        assertFalse(Favourites.toggle(favs, Favourites.NEW));
-        assertTrue(favs.isEmpty());
-        assertEquals(Arrays.asList(3), Favourites.decode(Recipes.ALL[Recipes.FACTORY].name + "|" + Recipes.ALL[3].name, LIB),
-                "a mark stored by an older build is dropped on load");
+        assertTrue(Favourites.toggle(favs, Recipes.FACTORY), "a recipe like the others");
+        assertFalse(Favourites.markable(Favourites.NEW));
+        assertFalse(Favourites.toggle(favs, Favourites.NEW), "a row of the list, not a recipe");
+        assertEquals(Arrays.asList(Recipes.FACTORY), favs);
     }
 
     // ---- custom recipes as favourites

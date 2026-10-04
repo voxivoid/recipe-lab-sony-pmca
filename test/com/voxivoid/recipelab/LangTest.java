@@ -119,9 +119,9 @@ class LangTest {
 
     // ---- lookups
     @Test void textFollowsTheCurrentLanguageAndFallsBackToEnglish() {
-        assertEquals("Picked — 3 values written, power-cycle the camera to apply everywhere", Lang.t("status_picked_many", 3));
+        assertEquals("Picked — 3 values written", Lang.t("status_picked_many", 3));
         Lang.use(Lang.ZH_HANS);
-        assertEquals("已选用——写入 3 项；重启相机后将全面生效", Lang.t("status_picked_many", 3));
+        assertEquals("已选用——写入 3 项", Lang.t("status_picked_many", 3));
         assertEquals("no_such_key", Lang.t("no_such_key"), "a missing key shows itself rather than crashing the camera app");
     }
 

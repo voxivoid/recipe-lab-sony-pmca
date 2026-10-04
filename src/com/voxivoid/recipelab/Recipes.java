@@ -189,44 +189,38 @@ public class Recipes {
     };
 
     /**
-     * The camera's factory look. It stays in the table, because Reset settings stores it, and the sample run shoots it as
-     * the reference frame. It is not a recipe to scroll to: the wheel, the brand list and Favourites all skip it, and it
-     * is reached only through Reset settings (hold trash, or the app menu).
+     * The camera's factory look: the first recipe of the Sony group, a recipe like the others — users looked for it and
+     * did not find it when it was hidden. Reset settings stores it too, and the sample run shoots it as the reference frame.
      */
     public static final int FACTORY = 0;
-    /** how many recipes the wheel and the brand list walk: the table without the factory look */
-    public static final int LISTED = ALL.length - 1;
+    /** how many recipes the wheel and the brand list walk: the whole table */
+    public static final int LISTED = ALL.length;
 
-    /** first listed recipe index of each group, and how many it lists (the factory look is not listed) */
+    /** first recipe index of each group, and how many it lists */
     public static final int[] GROUP_START = new int[GROUPS.length];
     public static final int[] GROUP_COUNT = new int[GROUPS.length];
     static {
         for (int g = 0; g < GROUPS.length; g++) GROUP_START[g] = -1;
         for (int i = 0; i < ALL.length; i++) {
-            if (i == FACTORY) continue;
             int g = ALL[i].group;
             if (GROUP_START[g] < 0) GROUP_START[g] = i;
             GROUP_COUNT[g]++;
         }
     }
 
-    // ---- navigation: every step wraps over the listed recipes, dir is +1 / -1; from the factory look it enters the list
+    // ---- navigation: every step wraps over the list, dir is +1 / -1
     /** the recipe after / before i over the whole list */
-    public static int next(int i, int dir) {
-        if (i == FACTORY) return dir > 0 ? 1 : ALL.length - 1;
-        return 1 + (i - 1 + LISTED + dir) % LISTED;
-    }
+    public static int next(int i, int dir) { return (i + LISTED + dir) % LISTED; }
     /** the first recipe of the brand after / before i's */
     public static int nextGroupStart(int i, int dir) { return GROUP_START[(ALL[i].group + GROUPS.length + dir) % GROUPS.length]; }
     /** the recipe after / before i within its brand */
     public static int nextInGroup(int i, int dir) {
         int g = ALL[i].group, start = GROUP_START[g], n = GROUP_COUNT[g];
-        if (i == FACTORY) return dir > 0 ? start : start + n - 1;
         return start + ((i - start + n + dir) % n);
     }
 
-    /** where a recipe sits in the list, as the panel shows it: "12 / 76", or "factory" for the look Reset stores */
-    public static String position(int i) { return i == FACTORY ? Lang.t("position_factory") : i + " / " + LISTED; }
+    /** where a recipe sits in the list, as the panel shows it: "12 / 77" */
+    public static String position(int i) { return (i + 1) + " / " + LISTED; }
 
     // ---- names on screen: the display language's, where it has one. The canonical English above stays the identifier
     // that favourites, the sample manifest and the tests use, so a change of language never loses a mark.

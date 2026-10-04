@@ -20,7 +20,7 @@ final class DevTools {
     static final int LEVEL_APP = 0, LEVEL_DEV = 1;
 
     /** app menu rows, in display order */
-    static final int APP_BROWSE = 0, APP_SAVE = 1, APP_PANEL = 2, APP_LANG = 3, APP_RESET = 4, APP_ABOUT = 5, APP_DEV = 6, APP_ROWS = 7;
+    static final int APP_BROWSE = 0, APP_PANEL = 1, APP_LANG = 2, APP_RESET = 3, APP_ABOUT = 4, APP_DEV = 5, APP_ROWS = 6;
 
     /** developer menu rows, in display order */
     static final int ROW_SNAPSHOT = 0, ROW_LOCKS = 1, ROW_SAMPLES = 2, ROW_SETTLE = 3, ROW_KEYS = 4, ROWS = 5;
@@ -52,7 +52,6 @@ final class DevTools {
     static String appLabel(int row) {
         switch (row) {
             case APP_BROWSE: return Lang.t("menu_browse");
-            case APP_SAVE: return Lang.t("menu_save");
             case APP_PANEL: return Lang.t("menu_panel");
             case APP_LANG: return Lang.t("menu_language");
             case APP_RESET: return Lang.t("menu_reset");
@@ -66,7 +65,6 @@ final class DevTools {
     static String appDetail(int row) {
         switch (row) {
             case APP_BROWSE: return Lang.t("menu_browse_detail");
-            case APP_SAVE: return Lang.t("menu_save_detail");
             case APP_PANEL: return Lang.t("menu_panel_detail");
             case APP_LANG: return Lang.t("menu_language_detail");
             case APP_RESET: return Lang.t("menu_reset_detail");

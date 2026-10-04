@@ -46,11 +46,11 @@ class ParamsHudTest {
         int i = indexOf("Kodak Portra 400");
         int[] e = staged(Recipes.ALL[i], cur, Q_FINE);
         String pos = Recipes.position(i);
-        assertEquals("CS  Kodak Portra 400   " + i + " / 76   · preview", miniLine(Recipes.ALL[i], pos, cur, e, true), "counted as the panel counts");
-        assertEquals("CS  Kodak Portra 400   " + i + " / 76   · active", miniLine(Recipes.ALL[i], pos, cur, e, false));
+        assertEquals("CS  Kodak Portra 400   " + (i + 1) + " / 77   · preview", miniLine(Recipes.ALL[i], pos, cur, e, true), "counted as the panel counts");
+        assertEquals("CS  Kodak Portra 400   " + (i + 1) + " / 77   · active", miniLine(Recipes.ALL[i], pos, cur, e, false));
         i = indexOf("GR Retro"); cur[R_QUAL] = Q_RAW;
         e = staged(Recipes.ALL[i], cur, Q_RAW);
-        assertEquals("PE  GR Retro   " + i + " / 76   · preview   · quality → JPG Fine", miniLine(Recipes.ALL[i], Recipes.position(i), cur, e, true));
+        assertEquals("PE  GR Retro   " + (i + 1) + " / 77   · preview   · quality → JPG Fine", miniLine(Recipes.ALL[i], Recipes.position(i), cur, e, true));
     }
 
     @Test void miniPillOfACustomRecipe() {

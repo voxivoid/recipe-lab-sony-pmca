@@ -32,7 +32,6 @@ final class TextEn {
         { "mini_preview", "preview" },
         { "mini_active", "active" },
         { "mini_quality", "quality → %1$s" },
-        { "position_factory", "factory" },
         { "meta_picture_effect", "Picture Effect %1$s" },
         { "meta_effect_note", "(Creative Style ignored, JPEG only)" },
         { "meta_white_balance", "WB %1$s" },
@@ -75,8 +74,8 @@ final class TextEn {
 
         // ---- custom recipes (CustomRecipes): the Custom group, the questions, the name editor, the messages
         { "group_custom", "Custom" },
-        { "custom_new", "+ New recipe" },
-        { "custom_new_detail", "Keep the camera's current settings as a recipe" },
+        { "custom_new", "New recipe" },
+        { "custom_new_detail", "from the camera's current settings" },
         { "custom_empty_hint", "Or change a recipe's values and save them" },
         { "custom_no_card", "No memory card — custom recipes are kept on it, in RECIPES" },
         { "custom_options_body", "Custom recipe, on the memory card as %1$s" },
@@ -89,8 +88,6 @@ final class TextEn {
         { "button_discard", "Discard" },
         { "custom_discard_title", "Discard edits to %1$s?" },
         { "custom_discard_body", "Your changes are not saved anywhere. Discarding brings back the recipe's own values." },
-        { "button_favourite", "Favourite" },
-        { "button_unfavourite", "Unfavourite" },
         { "button_rename", "Rename" },
         { "button_delete", "Delete" },
         { "name_title_new", "Name the new recipe" },
@@ -122,7 +119,6 @@ final class TextEn {
         // ---- the legend
         { "action_pick", "pick" },
         { "action_browse", "browse" },
-        { "action_save_hold", "save (hold)" },
         { "action_favourite_hold", "fav (hold)" },
         { "action_menu_hold", "menu (hold)" },
         { "action_hide", "hide" },
@@ -147,8 +143,8 @@ final class TextEn {
         // ---- toasts
         { "status_read_failed", "Read failed: %1$s" },
         { "status_already_picked", "Already picked — nothing to write" },
-        { "status_picked_one", "Picked — %1$d value written, power-cycle the camera to apply everywhere" },
-        { "status_picked_many", "Picked — %1$d values written, power-cycle the camera to apply everywhere" },
+        { "status_picked_one", "Picked — %1$d value written" },
+        { "status_picked_many", "Picked — %1$d values written" },
         { "status_not_picked", "Not picked" },
         { "status_not_reset", "Not reset" },
         { "status_quality_pick", "Quality: %1$s  — ENTER to pick" },
@@ -163,8 +159,6 @@ final class TextEn {
         // ---- the app menu
         { "menu_browse", "Browse recipes" },
         { "menu_browse_detail", "Brands and favourites" },
-        { "menu_save", "Save as new recipe" },
-        { "menu_save_detail", "Keep the values on screen as a custom recipe on the memory card" },
         { "menu_panel", "Panel visibility" },
         { "menu_panel_detail", "What stays over the live image — left / right to change" },
         { "menu_language", "Language" },

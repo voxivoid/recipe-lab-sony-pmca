@@ -12,7 +12,7 @@ class LibraryTest {
     @Test void withoutCustomRecipesItIsTheTable() {
         Library lib = new Library();
         assertEquals(Recipes.ALL.length, Library.BASE);
-        for (int i = 1; i < Library.BASE; i++) {
+        for (int i = 0; i < Library.BASE; i++) {
             assertSame(Recipes.ALL[i], lib.get(i));
             assertEquals(Recipes.next(i, +1), lib.next(i, +1), "the wheel walks as before");
             assertEquals(Recipes.next(i, -1), lib.next(i, -1));
@@ -38,12 +38,11 @@ class LibraryTest {
         Library lib = FavouritesTest.custom("A", "B");
         assertEquals(Library.BASE, lib.next(LAST_BUILT_IN, +1));
         assertEquals(Library.BASE + 1, lib.next(Library.BASE, +1));
-        assertEquals(1, lib.next(Library.BASE + 1, +1), "past the last custom recipe: the first listed one, never the factory look");
-        assertEquals(Library.BASE + 1, lib.next(1, -1));
-        assertEquals(1, lib.next(Recipes.FACTORY, +1));
+        assertEquals(Recipes.FACTORY, lib.next(Library.BASE + 1, +1), "past the last custom recipe: the first one, the factory look");
         assertEquals(Library.BASE + 1, lib.next(Recipes.FACTORY, -1));
-        int seen = 0, i = 1;
-        do { i = lib.next(i, +1); seen++; } while (i != 1);
+        assertEquals(1, lib.next(Recipes.FACTORY, +1));
+        int seen = 0, i = 0;
+        do { i = lib.next(i, +1); seen++; } while (i != 0);
         assertEquals(Recipes.LISTED + 2, seen, "one turn visits every listed recipe once");
     }
 
@@ -58,6 +57,6 @@ class LibraryTest {
         assertTrue(lib.valid(Library.BASE));
         lib.set(Arrays.<CustomRecipes.Entry>asList());
         assertFalse(lib.valid(Library.BASE), "after the card lost its recipes, MainActivity moves off this index");
-        assertEquals(1, lib.next(Library.BASE, +1));
+        assertEquals(0, lib.next(Library.BASE, +1));
     }
 }

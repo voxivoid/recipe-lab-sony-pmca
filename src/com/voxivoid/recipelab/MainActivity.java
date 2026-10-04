@@ -36,10 +36,9 @@ import static com.voxivoid.recipelab.Params.*;
  *
  * Keys (issue #18 — every function on keys every body has; Fn is a shortcut where it exists, see {@link Keys}):
  *       wheel / LEFT / RIGHT recipe · UP / DOWN parameter · top dial adjust · ENTER pick · hold ENTER favourite
- *       hold Fn save what is on screen as a custom recipe (also an app menu row, for bodies without Fn)
  *       TRASH overlay: full → pill → hidden · hold TRASH reset (asks first) · hold MENU app menu (browse, panel,
  *       language, reset, about, developer) · SHUTTER photo · MENU exit · Fn brand browser
- *       hold ENTER on a custom recipe: its options (favourite, rename, delete) instead of the favourite mark
+ *       hold MENU on a custom recipe in the brand list: its options (rename, delete); a short MENU still closes the list
  *
  * Custom recipes ({@link CustomRecipes}) live on the memory card; {@link Library} gives them indexes after the table's.
  * Finishing an edit of a built-in recipe offers to keep it as a new custom recipe; an edit of a custom one is saved in
@@ -93,11 +92,10 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private final Handler handler = new Handler();
     private final Runnable hideToast = new Runnable() { public void run() { toast.setVisibility(View.GONE); } };
     // press / hold of the three keys that have both: centre (pick / favourite), MENU (exit / app menu), trash (hide / factory)
-    private final Keys.Hold enter = new Keys.Hold(), menuKeyHold = new Keys.Hold(), trash = new Keys.Hold(), fn = new Keys.Hold();
-    private final Runnable enterHold = new Runnable() { public void run() { if (enter.fire() == Keys.Hold.HOLD) holdCentre(); } };
+    private final Keys.Hold enter = new Keys.Hold(), menuKeyHold = new Keys.Hold(), trash = new Keys.Hold();
+    private final Runnable enterHold = new Runnable() { public void run() { if (enter.fire() == Keys.Hold.HOLD) toggleFavourite(); } };
     private final Runnable menuHold = new Runnable() { public void run() { menuHoldFired(); } };
     private final Runnable trashHold = new Runnable() { public void run() { trashHoldFired(); } };
-    private final Runnable fnHold = new Runnable() { public void run() { fnHoldFired(); } };
     private int trashScan = K_DELETE;                           // which of trash / SK2 the held press came from
     // the key logger (developer menu): every key event on screen and into keys.txt, until MENU is held
     private boolean logging = false;
@@ -242,8 +240,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         if (promptOpen && promptKind >= P_DISCARD) { closePrompt(); afterDiscard = null; }   // about this recipe: the card is read again on the way back
         stopLogger();
         handler.removeCallbacks(hideToast);
-        handler.removeCallbacks(enterHold); handler.removeCallbacks(menuHold); handler.removeCallbacks(trashHold); handler.removeCallbacks(fnHold);
-        enter.reset(); menuKeyHold.reset(); trash.reset(); fn.reset();
+        handler.removeCallbacks(enterHold); handler.removeCallbacks(menuHold); handler.removeCallbacks(trashHold);
+        enter.reset(); menuKeyHold.reset(); trash.reset();
         holder.removeCallback(this);
         // leave the live parameters equal to what is STORED (not to the launch snapshot): the camera writes some live
         // values (exposure bias, WB fine-tune) straight back into the settings store, which would undo a fresh store
@@ -362,7 +360,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         switch (promptKind) {
             case P_RESET: prompt.set(DevTools.resetTitle(), DevTools.resetBody(), DevTools.resetOptions(), promptSel, null); break;
             case P_DISCARD: prompt.set(CustomRecipes.discardTitle(Recipes.displayName(r)), CustomRecipes.discardBody(), CustomRecipes.discardOptions(), promptSel, null); break;
-            case P_OPTIONS: prompt.set(r.name, CustomRecipes.optionsBody(library.entry(recipe).file), CustomRecipes.options(favs.contains(recipe)), promptSel, null); break;
+            case P_OPTIONS: prompt.set(r.name, CustomRecipes.optionsBody(library.entry(recipe).file), CustomRecipes.options(), promptSel, null); break;
             case P_DELETE: prompt.set(CustomRecipes.deleteTitle(r.name), CustomRecipes.deleteBody(library.entry(recipe).file), CustomRecipes.deleteOptions(), promptSel, null); break;
             default: {
                 String[] q = Params.qualityPrompt(cur, edit);
@@ -377,7 +375,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
 
     private int promptOptions() {
         switch (promptKind) {
-            case P_OPTIONS: return CustomRecipes.options(false).length;
+            case P_OPTIONS: return CustomRecipes.options().length;
             default: return 2;
         }
     }
@@ -405,8 +403,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
                 return;
             }
             case P_OPTIONS:
-                if (promptSel == CustomRecipes.OPT_FAVOURITE) toggleFavourite();
-                else if (promptSel == CustomRecipes.OPT_RENAME) openName(NAME_RENAME);
+                if (promptSel == CustomRecipes.OPT_RENAME) openName(NAME_RENAME);
                 else if (promptSel == CustomRecipes.OPT_DELETE) openPrompt(P_DELETE, CustomRecipes.DELETE_DEFAULT);
                 return;
             case P_DELETE: if (promptSel == 0) deleteCustom(); return;
@@ -526,7 +523,6 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         if (menuLevel == DevTools.LEVEL_APP) {
             switch (menuSel) {
                 case DevTools.APP_BROWSE: closeMenu(); browse(); break;
-                case DevTools.APP_SAVE: closeMenu(); openName(NAME_SAVE); break;
                 case DevTools.APP_PANEL: case DevTools.APP_LANG: stepMenuValue(+1); break;
                 case DevTools.APP_RESET: closeMenu(); askReset(); break;
                 case DevTools.APP_ABOUT: menuPage = PAGE_ABOUT; renderMenu(); break;
@@ -709,7 +705,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         prefs.edit().putString("favourites", favStored).commit();
     }
 
-    /** hold on the centre button: mark / unmark the highlighted recipe — on a custom one, its options do it */
+    /** hold on the centre button: mark / unmark the highlighted recipe, built-in or custom */
     private void toggleFavourite() {
         int pos = favs.indexOf(recipe);
         boolean on = Favourites.toggle(favs, recipe);
@@ -724,11 +720,6 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         render();
     }
 
-    /** a hold on the centre button: a custom recipe's options, or the favourite mark of a built-in one */
-    private void holdCentre() {
-        if (library.isCustom(recipe)) openPrompt(P_OPTIONS, CustomRecipes.OPT_DEFAULT);
-        else toggleFavourite();
-    }
 
     // ------------------------------------------------------------ custom recipes (the memory card, RECIPES)
     /** the card's recipe folder; null when no card is in or the camera will not say */
@@ -754,7 +745,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         if (!l.skipped.equals(skipped)) { skipped = l.skipped; skippedShown = false; }
         favs = Favourites.decode(favStored, library);
         if (keep != null) recipe = library.indexOfCustom(keep);
-        if (!library.valid(recipe)) recipe = library.next(Recipes.FACTORY, +1);
+        if (!library.valid(recipe)) recipe = 0;
     }
 
     /** the files the last load skipped, said once, the first time the Custom group is shown after it */
@@ -867,7 +858,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         catch (Throwable t) { showToast(Lang.t("custom_delete_failed", e.recipe.name, String.valueOf(t.getMessage())), 0); return; }
         favStored = Favourites.forgetCustom(favStored, e.recipe.name);
         prefs.edit().putString("favourites", favStored).commit();
-        reloadCustoms();                                         // the recipe is gone: the first listed one stands in
+        reloadCustoms();                                         // the recipe is gone: the first one stands in
         if (overlay == OV_BROWSER && browserGroup == Favourites.GROUP) {
             int next = Favourites.afterRemoval(favs, favPos);
             if (next < 0) browserCol = COL_GROUPS; else recipe = next;
@@ -1015,7 +1006,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
                 } });
             }
             hints.setVisibility(overlay == OV_QUIET ? View.GONE : View.VISIBLE);
-            hints.setMode(onActions ? Keys.H_ACTIONS : row == 0 ? (r.isCustom() ? Keys.H_RECIPE_CUSTOM : HintBar.RECIPE) : focus ? HintBar.EDIT : HintBar.CHIPS);
+            hints.setMode(onActions ? Keys.H_ACTIONS : row == 0 ? HintBar.RECIPE : focus ? HintBar.EDIT : HintBar.CHIPS);
         } else if (overlay == OV_PILL) {
             panel.setVisibility(View.GONE); mini.setVisibility(View.VISIBLE);
             mini.setText(Params.miniLine(r, pos, cur, edit, dirty));
@@ -1069,7 +1060,6 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         overlay = open ? OV_BROWSER : fullPanel(); row = 0; focus = false; onNew = false;
         browserGroup = Favourites.openingGroup(favs, recipe, library);
         browserCol = COL_RECIPES;
-        if (open && recipe == Recipes.FACTORY) { recipe = Favourites.landing(browserGroup, favs, library); stageRecipe(); applyPreview(); }   // the list has no factory look to highlight
         if (open && browserGroup == Favourites.CUSTOM) reportSkipped();
         render();
     }
@@ -1111,20 +1101,18 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     /** the full panel to come back to from the browser: without its legend if that is how it was left, else with it */
     private int fullPanel() { return overlay == OV_QUIET || (overlay == OV_BROWSER && panelBefore == OV_QUIET) ? OV_QUIET : OV_FULL; }
 
-    /** Fn held past HOLD_MS on the live screen: keep what the screen shows as a custom recipe (APP_SAVE without Fn) */
-    private void fnHoldFired() {
-        if (fn.fire() != Keys.Hold.HOLD) return;
-        if (running || promptOpen || menuOpen || nameOpen || overlay == OV_BROWSER) return;
-        openName(NAME_SAVE);
-    }
-
     /** MENU held past HOLD_MS: the app menu, or out of the key logger; its release is swallowed either way */
     private void menuHoldFired() {
         if (menuKeyHold.fire() != Keys.Hold.HOLD) return;
         swallowMenuUp = true;
         if (logging) { stopLogger(); showToast(Lang.t("status_logger_stopped", DevTools.KEY_LOG), 4000); return; }
-        if (!running && !promptOpen && !menuOpen && !nameOpen && menuHoldArms(overlay, focus)) openMenu(DevTools.LEVEL_APP);
+        if (running || promptOpen || menuOpen || nameOpen) return;
+        if (overlay == OV_BROWSER) { if (onCustomRow()) openPrompt(P_OPTIONS, CustomRecipes.OPT_DEFAULT); return; }
+        if (menuHoldArms(overlay, focus)) openMenu(DevTools.LEVEL_APP);
     }
+
+    /** the brand list's highlight is on a custom recipe, whose options a MENU hold opens */
+    private boolean onCustomRow() { return overlay == OV_BROWSER && browserCol == COL_RECIPES && !onNew && library.isCustom(recipe); }
 
     /** trash held past HOLD_MS: ask to reset — unless the camera says the key is already up, and its release got lost */
     private void trashHoldFired() {
@@ -1146,7 +1134,10 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             case K_UP: case K_WHEEL_CCW: case K_DIAL_CCW: if (browserCol == COL_GROUPS) nextGroup(-1); else nextInGroup(-1); return true;
             case K_DOWN: case K_WHEEL_CW: case K_DIAL_CW: if (browserCol == COL_GROUPS) nextGroup(+1); else nextInGroup(+1); return true;
             case K_LEFT: case K_RIGHT: if (browserCol == COL_RECIPES) { browserCol = COL_GROUPS; render(); } else enterRecipeColumn(); return true;
-            case K_MENU: case K_SK1: swallowMenuUp = true; openBrowser(false); return true;
+            case K_MENU: case K_SK1:
+                // on a custom recipe MENU is press / hold: the release closes the list, a hold opens the recipe's options
+                if (onCustomRow()) { if (menuKeyHold.down(0) == Keys.Hold.ARM) handler.postDelayed(menuHold, HOLD_MS); return true; }
+                swallowMenuUp = true; openBrowser(false); return true;
             case K_FN: openBrowser(false); return true;
             case K_DELETE: case K_SK2: armTrash(sc); return true;       // closes the list on the release; a hold asks to reset
             case K_S1: try { camera.autoFocus(null); } catch (Throwable t) {} return true;
@@ -1229,7 +1220,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
                 if (focus) stepValue(e.getScanCode() == K_UP ? +1 : -1); else moveLine(e.getScanCode() == K_DOWN ? +1 : -1);
                 return true;
             }
-            case K_FN: if (fn.down(0) == Keys.Hold.ARM) handler.postDelayed(fnHold, HOLD_MS); return true;   // browse on the release, save on a hold
+            case K_FN: browse(); return true;
             case K_DELETE: case K_SK2: armTrash(sc); return true;       // hides on the release; a hold asks to reset
             case K_S1: try { camera.autoFocus(null); } catch (Throwable t) {} return true;
             case K_S2: try { camera.takePicture(null, null, null); } catch (Throwable t) {} return true;
@@ -1250,17 +1241,16 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         // the hold bookkeeping runs on every release, whatever is on screen, or a lost release would block the next press
         if (isTrash(sc)) { handler.removeCallbacks(trashHold); if (trash.up() == Keys.Hold.SHORT) trashPress(); }
         if (isMenu(sc)) { handler.removeCallbacks(menuHold); menuKeyHold.up(); }
-        if (sc == K_FN) {
-            handler.removeCallbacks(fnHold);
-            if (fn.up() == Keys.Hold.SHORT && !running && !promptOpen && !menuOpen && !nameOpen && overlay != OV_BROWSER) browse();
-        }
         if (sc == K_ENTER && (promptOpen || nameOpen || running)) { handler.removeCallbacks(enterHold); enter.reset(); }
         if (promptOpen || nameOpen) { if (isMenu(sc)) swallowMenuUp = false; return true; }
         if (running) return true;                               // the release of whatever key started or stopped the run
         switch (sc) {
             case K_ENTER: enterUp(); return true;
             case K_FN: return true;
-            case K_MENU: case K_SK1: if (swallowMenuUp) { swallowMenuUp = false; return true; } leave(); return true;
+            case K_MENU: case K_SK1:
+                if (swallowMenuUp) { swallowMenuUp = false; return true; }
+                if (overlay == OV_BROWSER) { openBrowser(false); return true; }   // a short press on a custom recipe's row
+                leave(); return true;
             case K_S1: try { camera.cancelAutoFocus(); } catch (Throwable t) {} return true;
             case K_S2: cancelCapture(); return true;
             case K_UP: case K_DOWN: case K_LEFT: case K_RIGHT: case K_PLAY: case K_DISP:

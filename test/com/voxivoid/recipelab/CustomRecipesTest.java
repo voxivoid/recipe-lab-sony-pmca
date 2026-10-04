@@ -352,10 +352,9 @@ class CustomRecipesTest {
     }
 
     @Test void theQuestionsHighlightTheHarmlessAnswer() {
-        assertEquals("Cancel", CustomRecipes.options(false)[CustomRecipes.OPT_DEFAULT], "a stray centre press after a hold does nothing");
+        assertEquals(Arrays.asList("Rename", "Delete", "Cancel"), Arrays.asList(CustomRecipes.options()), "favourites are hold centre, as on any recipe");
+        assertEquals("Cancel", CustomRecipes.options()[CustomRecipes.OPT_DEFAULT], "a stray centre press after the hold does nothing");
         assertEquals("Cancel", CustomRecipes.deleteOptions()[CustomRecipes.DELETE_DEFAULT]);
-        assertEquals("Favourite", CustomRecipes.options(false)[CustomRecipes.OPT_FAVOURITE]);
-        assertEquals("Unfavourite", CustomRecipes.options(true)[CustomRecipes.OPT_FAVOURITE]);
         assertEquals("Cancel", CustomRecipes.discardOptions()[CustomRecipes.DISCARD_DEFAULT], "leaving by accident keeps the edits");
         assertEquals("Discard", CustomRecipes.discardOptions()[CustomRecipes.DISCARD]);
         assertEquals("Discard edits to Velvia?", CustomRecipes.discardTitle("Velvia"));

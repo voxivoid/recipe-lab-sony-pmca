@@ -51,16 +51,16 @@ final class Library {
     }
 
     /**
-     * The recipe after / before i, as the wheel walks them: the table's, then the custom ones, wrapping, never the
-     * factory look. Listed recipes are the indexes 1 .. BASE + customCount - 1, with no gap where the table ends.
+     * The recipe after / before i, as the wheel walks them: the table's, then the custom ones, wrapping. They are the
+     * indexes 0 .. BASE + customCount - 1, with no gap where the table ends; from an index that is no recipe, the ends.
      */
     int next(int i, int dir) {
         int listed = Recipes.LISTED + custom.size();
-        if (i == Recipes.FACTORY || !valid(i)) return dir > 0 ? 1 : listed;
-        return 1 + (i - 1 + listed + dir) % listed;
+        if (!valid(i)) return dir > 0 ? 0 : listed - 1;
+        return (i + listed + dir) % listed;
     }
 
-    /** where a recipe sits, as the panel shows it: "12 / 76" in the table, "2 / 5" among the custom ones */
+    /** where a recipe sits, as the panel shows it: "12 / 77" in the table, "2 / 5" among the custom ones */
     String position(int i) {
         return isCustom(i) ? (i - BASE + 1) + " / " + custom.size() : Recipes.position(i);
     }
