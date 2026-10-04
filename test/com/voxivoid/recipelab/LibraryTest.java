@@ -59,4 +59,12 @@ class LibraryTest {
         assertFalse(lib.valid(Library.BASE), "after the card lost its recipes, MainActivity moves off this index");
         assertEquals(0, lib.next(Library.BASE, +1));
     }
+
+    @Test void fromAnIndexThatIsNoRecipeTheWheelGoesToAnEnd() {
+        Library lib = FavouritesTest.custom("A", "B");
+        assertEquals(0, lib.next(-1, +1));
+        assertEquals(Library.BASE + 1, lib.next(-1, -1), "backwards: the last custom recipe");
+        assertEquals(Library.BASE + 1, lib.next(Library.BASE + 2, -1));
+        assertEquals(Library.BASE - 1, lib.next(Library.BASE, -1), "from the first custom back into the table");
+    }
 }

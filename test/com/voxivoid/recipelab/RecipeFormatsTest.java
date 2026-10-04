@@ -84,4 +84,52 @@ class RecipeFormatsTest {
         assertEquals("ILCE \"6000\"", kv.get("made-on"), "a quote in the camera's name survives");
         assertTrue(text.contains("\nname: \"Mr. T's (2)\""), text);
     }
+
+    // ---- format 1, what mutation testing found unasserted
+    private static String v1(Recipes.Recipe r, String madeOn) { return new RecipeFormatV1().write(r, madeOn); }
+    private static CustomRecipes.Parsed read(String text) { return RecipeFormats.parse(text, "x.YML"); }
+
+    @Test void v1WritesEachValueWithItsRangeInAColumn() {
+        String t = v1(CustomRecipes.renamed(Recipes.ALL[3], "Col"), null);
+        assertTrue(t.contains("\nsaturation: " + (Recipes.ALL[3].sat > 0 ? "+" : "") + Recipes.ALL[3].sat), t);
+        for (String line : t.split("\n")) {
+            int hash = line.indexOf(" # ");
+            if (line.startsWith("#") || hash < 0) continue;
+            assertEquals(28, hash, "the comments line up after the value: " + line);
+        }
+        assertTrue(t.contains("# standard vivid neutral portrait landscape mono clear deep light sunset night red-leaves sepia\n"), "every known style, and only those");
+        assertTrue(t.contains("# off toy-camera pop-color posterization"), "the effects");
+        assertTrue(t.contains("\nsaturation: 0 ") || t.contains("\nsaturation: +") || t.contains("\nsaturation: -"), t);
+    }
+
+    @Test void v1WritesNoCameraWhenItIsUnknownOrBlank() {
+        assertFalse(v1(Recipes.ALL[3], "   ").contains("made-on"));
+        assertFalse(v1(Recipes.ALL[3], null).contains("made-on"));
+        assertTrue(v1(Recipes.ALL[3], "ILCE-6000").contains("made-on: \"ILCE-6000\""));
+    }
+
+    @Test void v1ReadsEveryValueAtItsEdges() {
+        Recipes.Recipe r = read("name: E\nsharpness: 3\ncontrast: -3\nexposure: -5.0\ndro: 5\namber-blue: -7\ngreen-magenta: 7\n").recipe;
+        assertEquals(3, r.sharp); assertEquals(-3, r.con); assertEquals(-15, r.ev); assertEquals(5, r.dro); assertEquals(-7, r.ab); assertEquals(7, r.gm);
+        assertEquals(1, read("name: E\ndro: 1\n").recipe.dro);
+        assertEquals("sharpness: 4 is not allowed", read("name: E\nsharpness: 4\n").error);
+        assertEquals("exposure: -5.3 is not allowed", read("name: E\nexposure: -5.3\n").error);
+        assertEquals("dro: 0 is not allowed", read("name: E\ndro: 0\n").error, "off is spelled off");
+        assertEquals("green-magenta: 8 is not allowed", read("name: E\ngreen-magenta: 8\n").error);
+    }
+
+    @Test void v1IgnoresAnOptionForAnEffectThatHasNone() {
+        Recipes.Recipe r = read("name: E\neffect: off\neffect-option: purple\n").recipe;
+        assertNotNull(r);
+        assertEquals(0, r.sub);
+        assertEquals(2, read("name: E\neffect: soft-high-key\neffect-option: green\n").recipe.sub);
+    }
+
+    @Test void aLoneQuoteIsNotAValue() {
+        assertEquals("line 1 is not a YAML key: value", RecipeFormats.keys("name: '\n", new java.util.HashMap<String, String>()));
+        java.util.Map<String, String> kv = new java.util.HashMap<String, String>();
+        assertNull(RecipeFormats.keys("name: ''\nnote:\n", kv));
+        assertEquals("", kv.get("name"), "an empty quoted value");
+        assertEquals("", kv.get("note"), "a key with nothing after it");
+    }
 }

@@ -365,4 +365,82 @@ class CustomRecipesTest {
         assertEquals("Discard edits to Velvia?", CustomRecipes.discardTitle("Velvia"));
         assertEquals("Removes RECIPES/MINE.YML from the memory card. This cannot be undone.", CustomRecipes.deleteBody("MINE.YML"));
     }
+
+    // ---- what mutation testing found unasserted
+    /** the factory look under a name, with one value replaced: {field: value} */
+    private static Recipes.Recipe with(String field, int v) {
+        Recipes.Recipe f = Recipes.ALL[Recipes.FACTORY];
+        int style = f.style, sat = f.sat, con = f.con, sharp = f.sharp, wb = f.wbMode, k = f.kelvin, ab = f.ab, gm = f.gm, pe = f.pe, ev = f.ev, dro = f.dro, sub = f.sub;
+        switch (field) {
+            case "sat": sat = v; break; case "con": con = v; break; case "sharp": sharp = v; break;
+            case "pe": pe = v; break; case "sub": sub = v; break; case "wb": wb = v; break;
+            case "kelvin": wb = WB_KELVIN; k = v; break; case "ab": ab = v; break; case "gm": gm = v; break;
+            case "ev": ev = v; break; case "dro": dro = v; break; case "style": style = v; break;
+            default: fail(field);
+        }
+        return new Recipes.Recipe(Recipes.CUSTOM, "X", style, sat, con, sharp, wb, k, ab, gm, pe, ev, dro, sub);
+    }
+
+    @Test void problemNamesEveryValueOutsideWhatTheStoreTakes() {
+        assertEquals("saturation: 4 is not allowed", CustomRecipes.problem(with("sat", 4)));
+        assertEquals("saturation: -4 is not allowed", CustomRecipes.problem(with("sat", -4)));
+        assertEquals("contrast: 4 is not allowed", CustomRecipes.problem(with("con", 4)));
+        assertEquals("sharpness: -4 is not allowed", CustomRecipes.problem(with("sharp", -4)));
+        assertEquals("effect: ?14 is not allowed", CustomRecipes.problem(with("pe", 14)));
+        assertEquals("effect: ?-1 is not allowed", CustomRecipes.problem(with("pe", -1)));
+        assertEquals("effect-option: ?1 is not allowed", CustomRecipes.problem(with("sub", 1)), "no effect, so no option");
+        assertEquals("white-balance: ?2 is not allowed", CustomRecipes.problem(with("wb", 2)));
+        assertEquals("white-balance: 2400K is not allowed", CustomRecipes.problem(with("kelvin", 2400)));
+        assertEquals("white-balance: 5650K is not allowed", CustomRecipes.problem(with("kelvin", 5650)));
+        assertEquals("amber-blue: 8 is not allowed", CustomRecipes.problem(with("ab", 8)));
+        assertEquals("green-magenta: -8 is not allowed", CustomRecipes.problem(with("gm", -8)));
+        assertEquals("exposure: -16 is not allowed", CustomRecipes.problem(with("ev", -16)));
+        assertEquals("dro: 7 is not allowed", CustomRecipes.problem(with("dro", 7)));
+        assertEquals("dro: -1 is not allowed", CustomRecipes.problem(with("dro", -1)));
+        assertEquals("style: ?0 is not allowed", CustomRecipes.problem(with("style", 0)));
+    }
+
+    @Test void problemTakesEveryValueOnTheEdgeOfItsRange() {
+        for (Object[] c : new Object[][] { { "sat", 3 }, { "sat", -3 }, { "con", -3 }, { "sharp", 3 }, { "pe", 13 }, { "pe", 0 },
+                { "kelvin", 2500 }, { "kelvin", 9900 }, { "ab", 7 }, { "ab", -7 }, { "gm", 7 }, { "ev", 15 }, { "ev", -15 },
+                { "dro", 0 }, { "dro", 6 }, { "wb", 0 }, { "style", 14 } })
+            assertNull(CustomRecipes.problem(with((String) c[0], (Integer) c[1])), c[0] + " " + c[1]);
+        int[] rows = factoryRows(); rows[R_PE] = Recipes.PE_HIGHKEY; rows[R_SUB] = 2;
+        assertNull(CustomRecipes.problem(CustomRecipes.recipe("x", rows)), "an effect's last option");
+        rows[R_SUB] = 3;
+        assertEquals("effect-option: ?3 is not allowed", CustomRecipes.problem(CustomRecipes.recipe("x", rows)), "one past it");
+    }
+
+    @Test void aFileNameKeepsDigits() {
+        assertEquals("PORTRA40.YML", CustomRecipes.fileName("Portra 400", Collections.<String>emptyList()));
+        assertEquals("400.YML", CustomRecipes.fileName("400", Collections.<String>emptyList()));
+        assertEquals("AZ09.YML", CustomRecipes.fileName("a-z 0.9", Collections.<String>emptyList()), "letters and digits only, in capitals");
+    }
+
+    @Test void aCopysNameCollapsesSpacesAndUsesTheWholeLimit() {
+        assertEquals("Golden Hour 2", CustomRecipes.copyName("Golden  Hour", Arrays.<String>asList()));
+        String n22 = "abcdefghijklmnopqrstuv";
+        assertEquals(n22 + " 2", CustomRecipes.copyName(n22, Arrays.<String>asList()), "22 letters and \" 2\" make exactly 24: nothing cut");
+        assertEquals("Untitled 2", CustomRecipes.copyName("///", Arrays.<String>asList()), "a name with nothing a name may hold");
+    }
+
+    @Test void theFolderSkipsHiddenFilesTakesAFileAtTheLimitAndListsByName() throws IOException {
+        write("._GOOD.YML", "name: Resource Fork\n");                      // what macOS leaves on a FAT card
+        write("A.YML", "name: Zulu\n");
+        write("B.YML", "name: Alpha\n");
+        StringBuilder big = new StringBuilder("name: Big\n");
+        while (big.length() < CustomRecipes.MAX_BYTES) big.append('#');
+        big.setLength(CustomRecipes.MAX_BYTES);
+        write("C.YML", big.toString());
+        CustomRecipes.Loaded l = CustomRecipes.load(dir);
+        java.util.List<String> names = new java.util.ArrayList<String>();
+        for (CustomRecipes.Entry e : l.entries) names.add(e.recipe.name);
+        assertEquals(Arrays.asList("Alpha", "Big", "Zulu"), names, "A to Z by name, not by file; a file of exactly MAX_BYTES still loads");
+        assertTrue(l.skipped.isEmpty(), "the hidden file is ignored, not skipped with a reason: " + l.skipped);
+    }
+
+    @Test void aFileWithoutTheExtensionStillNamesANamelessRecipe() {
+        assertEquals("Mine", RecipeFormats.parse("style: vivid", "Mine").recipe.name);
+        assertEquals("Mine", RecipeFormats.parse("name: \"\"\nstyle: vivid", "Mine.YML").recipe.name, "an empty name line, as no name line");
+    }
 }

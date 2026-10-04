@@ -110,4 +110,49 @@ class NameEntryTest {
         String all = String.join("", NameEntry.GRID);
         for (char c : new char[] { NameEntry.SHIFT, NameEntry.BACK, NameEntry.OK, ' ' }) assertTrue(all.indexOf(c) >= 0, "cell " + (int) c);
     }
+
+    // ---- what mutation testing found unasserted
+    @Test void pressSaysWhatItDid() {
+        NameEntry e = NameEntry.blank("x");
+        assertEquals(NameEntry.TYPED, e.press(), "a letter");
+        go(e, NameEntry.SHIFT); assertEquals(NameEntry.TYPED, e.press(), "shift");
+        go(e, NameEntry.BACK); assertEquals(NameEntry.TYPED, e.press(), "delete");
+        assertEquals("", e.shown(), "the delete key deletes, like trash");
+        go(e, NameEntry.OK); assertEquals(NameEntry.DONE, e.press());
+        NameEntry full = NameEntry.of("xxxxxxxxxxxxxxxxxxxxxxxx");
+        go(full, 'A'); assertEquals(NameEntry.NONE, full.press(), "nothing typed past the limit");
+    }
+
+    @Test void anEmptyStartTypesACapital() {
+        NameEntry e = NameEntry.of("");
+        assertTrue(e.upper());
+        type(e, "AB");
+        assertEquals("Ab", e.shown());
+    }
+
+    @Test void upAndDownLandUnderTheSamePartOfTheScreen() {
+        NameEntry e = NameEntry.blank("x");
+        e.move(0, -1);                                   // M, the end of the top row
+        e.move(+1, 0);
+        assertEquals('Z', e.current()); assertEquals(1, e.row()); assertEquals(12, e.col());
+        e.move(+1, 0);
+        assertEquals('\'', e.current(), "the end of the third row");
+        e.move(+1, 0);
+        assertEquals(NameEntry.OK, e.current(), "the end of the short bottom row");
+        assertEquals(3, e.row()); assertEquals(NameEntry.cols(3) - 1, e.col());
+        e.move(-1, 0); e.move(0, -6);                    // the middle of the third row
+        assertEquals('6', e.current());
+        e.move(+1, 0);
+        assertEquals('+', e.current(), "the cell of the bottom row under it, not its first");
+    }
+
+    @Test void theWheelGoesFromTheEndOfARowToTheStartOfTheNext() {
+        NameEntry e = NameEntry.blank("x");
+        e.move(0, -1);
+        assertEquals('M', e.current());
+        e.step(+1);
+        assertEquals('N', e.current());
+        e.step(-1);
+        assertEquals('M', e.current());
+    }
 }

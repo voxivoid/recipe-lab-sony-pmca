@@ -219,4 +219,29 @@ class FavouritesTest {
         assertEquals("Velvia|Acros", Favourites.forgetCustom(stored + "|", "Old"));
         assertEquals("", Favourites.renameCustom(null, "a", "b"));
     }
+
+    // ---- what mutation testing found unasserted
+    @Test void theCustomColumnStepsBackAndForthOverThree() {
+        Library lib = custom("A", "B", "C");
+        assertEquals(Library.BASE + 1, Favourites.nextCustom(Library.BASE + 2, -1, lib));
+        assertEquals(Library.BASE + 2, Favourites.nextCustom(Library.BASE, -1, lib), "back from the first wraps to the last");
+        assertEquals(Library.BASE + 2, Favourites.nextCustom(Library.BASE + 1, +1, lib));
+    }
+
+    @Test void theFactoryLookIsStoredAndReadBack() {
+        List<Integer> f = new ArrayList<Integer>(Arrays.asList(Recipes.FACTORY));
+        String stored = Favourites.encode(f, LIB, "");
+        assertEquals(Recipes.ALL[Recipes.FACTORY].name, stored);
+        assertEquals(f, Favourites.decode(stored, LIB), "index 0 is a recipe like the others");
+    }
+
+    @Test void emptyMarksInTheStoredStringAreDropped() {
+        assertEquals("Velvia|Acros|custom:Gone", Favourites.encode(favs("Velvia", "Acros"), LIB, "||custom:Gone|"),
+                "an unknown custom mark is kept, the empty ones are not");
+    }
+
+    @Test void theLastRecipeOfTheTableIsInItsBrand() {
+        int last = Library.BASE - 1, g = Recipes.ALL[last].group;
+        assertEquals(Recipes.GROUP_COUNT[g] - 1, Favourites.positionIn(g, last, new ArrayList<Integer>(), LIB));
+    }
 }
