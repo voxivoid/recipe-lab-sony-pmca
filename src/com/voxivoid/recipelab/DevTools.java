@@ -119,15 +119,25 @@ final class DevTools {
         return PANELS[(pos + PANELS.length + dir) % PANELS.length];
     }
 
-    /** the About page: {name, value}. The version comes from the installed package at runtime, never from here. */
+    /**
+     * The About page: {name, value}. The version comes from the installed package at runtime, never from here. Below the
+     * facts, the sponsor ask the README opens with, and where to give.
+     */
     static String[][] about(String version, String model, String platform) {
         return new String[][] {
             { Lang.t("about_version"), orShown(version) },
             { Lang.t("about_camera"), orShown(model) },
             { Lang.t("about_platform"), orShown(platform) },
             { Lang.t("about_source"), "github.com/voxivoid/recipe-lab-sony-pmca" },
+            { "", "" },                                             // then the ask, as the README makes it
+            { "", Lang.t("about_love") },
+            { Lang.t("about_sponsor"), "github.com/sponsors/voxivoid" },
+            { Lang.t("about_tip"), "ko-fi.com/voxivoid" },
         };
     }
+
+    /** the line at the top of the live view, after its drawn heart: the ask and where to give */
+    static String sponsorLine() { return Lang.t("about_love") + "  github.com/sponsors/voxivoid"; }
 
     // ------------------------------------------------------------ the reset question (hold trash, or Reset settings)
     /** the question asked before the factory look is stored: it replaces whatever the camera has now */

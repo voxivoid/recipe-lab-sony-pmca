@@ -169,6 +169,9 @@ final class TextEn {
         { "about_camera", "camera" },
         { "about_platform", "platform" },
         { "about_source", "source" },
+        { "about_love", "Do you love this project? Sponsor it!" },
+        { "about_sponsor", "sponsor" },
+        { "about_tip", "tip" },
 
         // ---- the developer menu and the sample run
         { "dev_title", "DEV TOOLS" },

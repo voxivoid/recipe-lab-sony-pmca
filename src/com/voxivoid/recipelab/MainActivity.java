@@ -85,6 +85,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private static final int PAGE_ROWS = 0, PAGE_ABOUT = 1;
     private Keys.Caps caps = Keys.Caps.UNKNOWN;                 // the shortcut keys this body reports (KeyProbe)
     private HintBar hints;
+    private SponsorLine sponsor;
     private LinearLayout chips;
     private final TextView[] chipLabel = new TextView[N], chipValue = new TextView[N];
     private final View[] chip = new View[N];
@@ -148,6 +149,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         count = (TextView) findViewById(R.id.count);
         meta = (TextView) findViewById(R.id.meta);
         hints = (HintBar) findViewById(R.id.hints);
+        sponsor = (SponsorLine) findViewById(R.id.sponsor);
         mini = (TextView) findViewById(R.id.mini);
         toast = (TextView) findViewById(R.id.toast);
         prompt = (PromptView) findViewById(R.id.prompt);
@@ -204,7 +206,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         Lang.use(Lang.resolve(langChoice, l == null ? null : l.getLanguage(), l == null ? null : l.getCountry()));
         Typeface tf = UiFont.of(this, Lang.current());
         UiFont.apply(findViewById(android.R.id.content), tf);
-        picker.setTypeface(tf); prompt.setTypeface(tf); menu.setTypeface(tf); hints.setTypeface(tf); keyboard.setTypeface(tf);
+        picker.setTypeface(tf); prompt.setTypeface(tf); menu.setTypeface(tf); hints.setTypeface(tf); keyboard.setTypeface(tf); sponsor.setTypeface(tf);
     }
 
     @Override
@@ -964,6 +966,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         String pos = library.position(recipe);
         String grp = Recipes.groupLabel(r.group).toUpperCase();
         picker.setVisibility(overlay == OV_BROWSER ? View.VISIBLE : View.GONE);
+        sponsor.setText(DevTools.sponsorLine());                     // the README's ask, small, over the live view
+        sponsor.setVisibility(overlay == OV_FULL ? View.VISIBLE : View.GONE);   // Full only: every hiding step hides it too
         if (overlay == OV_BROWSER) { panel.setVisibility(View.GONE); mini.setVisibility(View.GONE); picker.set(recipe, browserCol, browserGroup, favs, library, cardDir != null); return; }
         if (panelUp(overlay)) {
             panel.setVisibility(View.VISIBLE); mini.setVisibility(View.GONE);

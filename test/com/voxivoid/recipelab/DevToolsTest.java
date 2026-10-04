@@ -135,11 +135,15 @@ class DevToolsTest {
     // ---- About
     @Test void aboutShowsVersionCameraPlatformAndSource() {
         String[][] a = DevTools.about("9.8.7", null, "");
-        assertEquals(4, a.length);
+        assertEquals(8, a.length);
         assertEquals("version", a[0][0]); assertEquals("9.8.7", a[0][1]);
         assertEquals("camera", a[1][0]); assertEquals("unknown", a[1][1], "no model from the camera");
         assertEquals("platform", a[2][0]); assertEquals("unknown", a[2][1], "an empty platform string");
         assertEquals("source", a[3][0]);
+        assertEquals("Do you love this project? Sponsor it!", a[5][1], "the README's ask");
+        assertEquals("github.com/sponsors/voxivoid", a[6][1]);
+        assertEquals("ko-fi.com/voxivoid", a[7][1]);
+        assertEquals("Do you love this project? Sponsor it!  github.com/sponsors/voxivoid", DevTools.sponsorLine(), "the live view's line");
         assertEquals("ILCE-6000", DevTools.about(null, "ILCE-6000", "2.4")[1][1]);
     }
 
