@@ -21,8 +21,20 @@
         android:paddingTop="14dp"
         android:paddingBottom="8dp">
 
-        <LinearLayout
+        <!-- brand and position, over the name: "FUJI SIM   2 / 18" -->
+        <TextView
+            android:id="@+id/count"
             android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="-1dp"
+            android:textSize="11sp"
+            android:textColor="#B3FFFFFF"
+            android:singleLine="true" />
+
+        <!-- name, then its badges. The row is as wide as its content, so the badges sit right after a short name; the
+             name alone has a weight, so it alone gives way — cut with an ellipsis — when everything does not fit -->
+        <LinearLayout
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical">
@@ -30,6 +42,8 @@
                 android:id="@+id/name"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:ellipsize="end"
                 android:textSize="21sp"
                 android:textStyle="bold"
                 android:textColor="#FFFFFFFF"
@@ -77,13 +91,6 @@
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="6dp"
                 android:visibility="gone" />
-            <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
-            <TextView
-                android:id="@+id/count"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textSize="12sp"
-                android:textColor="#B3FFFFFF" />
         </LinearLayout>
 
         <!-- the canonical name under a translated one (Recipes.originalName) -->
