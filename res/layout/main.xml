@@ -8,7 +8,7 @@
         android:layout_width="fill_parent"
         android:layout_height="fill_parent" />
 
-    <!-- the sponsor ask, small, at the top of the live view on the Full panel -->
+    <!-- the sponsor ask, small, at the top of the live view on the Full and No keys panels -->
     <com.voxivoid.recipelab.SponsorLine
         android:id="@+id/sponsor"
         android:layout_width="wrap_content"

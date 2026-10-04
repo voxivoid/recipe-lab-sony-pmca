@@ -9,7 +9,7 @@ import android.util.AttributeSet;
 import android.view.View;
 
 /**
- * The small line at the top of the live view on the Full panel (No keys, Label and Hidden hide it): a heart and the
+ * The small line at the top of the live view on the Full and No keys panels (Label and Hidden hide it): a heart and the
  * sponsor ask, as the README opens with. The heart is drawn — neither the camera font nor the bundled Chinese ones have
  * an emoji or a ♥ glyph. The About page lists the addresses (DevTools.about).
  */
