@@ -709,7 +709,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         else toggleFavourite();
     }
 
-    // ------------------------------------------------------------ custom recipes (the memory card, RECIPELAB)
+    // ------------------------------------------------------------ custom recipes (the memory card, RECIPES)
     /** the card's recipe folder; null when no card is in or the camera will not say */
     private static File findCardDir() {
         try {

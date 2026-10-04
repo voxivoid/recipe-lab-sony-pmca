@@ -60,7 +60,7 @@ final class TextZhHant {
         { "custom_new", "+ 新增配方" },
         { "custom_new_detail", "將相機目前的設定儲存為配方" },
         { "custom_empty_hint", "或修改某個配方的數值後儲存" },
-        { "custom_no_card", "沒有記憶卡——自訂配方儲存在卡上的 RECIPELAB 資料夾中" },
+        { "custom_no_card", "沒有記憶卡——自訂配方儲存在卡上的 RECIPES 資料夾中" },
         { "custom_fork_title", "儲存為自訂配方？" },
         { "custom_fork_body", "%1$s 是本 App 內建的配方，無法變更。將你的修改儲存為新的自訂配方即可保留，也可以只套用這一次。" },
         { "custom_options_body", "自訂配方，儲存在記憶卡上：%1$s" },

@@ -41,15 +41,22 @@ import static com.voxivoid.recipelab.Params.*;
  * is skipped with the reason, not clamped. Two files never share a name: the second is skipped, so nothing a card
  * brings in overwrites a recipe.
  *
+ * <h3>The card's file system</h3>
+ * Apps reach the card through Sony's FUSE layer (libInfraFuFsys, mounted at /mnt/sdcard), which takes DOS 8.3 names
+ * only: a longer one is ENAMETOOLONG, letters are upper case, and there is no fsync. So the folder is {@link #DIR}, the
+ * app writes {@code GOLDENHO.TXT}-style names ({@link #fileName}), and the recipe's real name lives inside the file.
+ *
  * MainActivity finds the card and owns the list ({@link Library}); this class decides, reads and writes. No android.*
  * import may appear here (tools/test.sh).
  */
 final class CustomRecipes {
     private CustomRecipes() {}
 
-    /** the folder at the root of the memory card */
-    static final String DIR = "RECIPELAB";
-    static final String EXT = ".txt";
+    /** the folder at the root of the memory card: eight characters at most, as the card's file system takes no longer name */
+    static final String DIR = "RECIPES";
+    static final String EXT = ".TXT";
+    /** the file a save writes before it takes the recipe's name; 8.3 like every name on the card, and never read as a recipe */
+    static final String TMP = "SAVING.TMP";
     /** the newest file format this build reads and the one it writes */
     static final int FORMAT = 1;
     /** a recipe file is a few hundred bytes; anything far bigger is not one */
@@ -150,18 +157,20 @@ final class CustomRecipes {
     }
 
     /**
-     * The file a name is kept in: the name itself, without what FAT will not end a name with, plus {@link #EXT}; "-2",
-     * "-3" … before the extension when another file has it. {@code takenFiles} are compared ignoring case, as FAT does.
+     * The file a name is kept in, as the card's file system takes it: an 8.3 name, the first eight letters and digits of
+     * the name in capitals plus {@link #EXT} — "Golden Hour" → GOLDENHO.TXT. When another file has it, the end of the
+     * eight gives way to a number: GOLDENH2.TXT, GOLDENH3.TXT … {@code takenFiles} are compared ignoring case.
      */
     static String fileName(String name, Collection<String> takenFiles) {
         StringBuilder b = new StringBuilder();
-        for (char c : name.trim().toCharArray()) if (nameChar(c)) b.append(c);
-        String base = b.toString();
-        while (base.endsWith(".") || base.endsWith(" ")) base = base.substring(0, base.length() - 1);
-        if (base.isEmpty()) base = "recipe";
+        for (char c : name.toUpperCase(Locale.US).toCharArray()) if ((c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')) b.append(c);
+        String base = b.length() == 0 ? "RECIPE" : b.substring(0, Math.min(8, b.length()));
         Set<String> lower = lower(takenFiles);
         String f = base + EXT;
-        for (int n = 2; lower.contains(f.toLowerCase(Locale.US)); n++) f = base + "-" + n + EXT;
+        for (int n = 2; lower.contains(f.toLowerCase(Locale.US)); n++) {
+            String num = String.valueOf(n);
+            f = base.substring(0, Math.min(base.length(), 8 - num.length())) + num + EXT;
+        }
         return f;
     }
 
@@ -175,7 +184,8 @@ final class CustomRecipes {
     /** the file text of a recipe; {@code madeOn} is the camera model it was saved on, null when unknown */
     static String encode(Recipes.Recipe r, String madeOn) {
         StringBuilder s = new StringBuilder();
-        s.append("# Recipe Lab custom recipe. Keep it in the ").append(DIR).append(" folder of a memory card.\n");
+        s.append("# Recipe Lab custom recipe. Keep it in the ").append(DIR).append(" folder of a memory card, under a name of\n");
+        s.append("# up to eight letters or digits and .TXT: the camera reads no longer file names. Its own name is below.\n");
         s.append("# Edit with care: a value outside the range beside it makes the app skip this file.\n");
         line(s, "format", String.valueOf(FORMAT), null);
         line(s, "name", r.name, null);
@@ -307,7 +317,7 @@ final class CustomRecipes {
 
     private static String stem(String fileName) {
         if (fileName == null) return "";
-        return fileName.toLowerCase(Locale.US).endsWith(EXT) ? fileName.substring(0, fileName.length() - EXT.length()) : fileName;
+        return fileName.toLowerCase(Locale.US).endsWith(EXT.toLowerCase(Locale.US)) ? fileName.substring(0, fileName.length() - EXT.length()) : fileName;
     }
 
     /** the position of {@code v} in a table of runtime names, ignoring case; -1 for a name it does not hold */
@@ -341,7 +351,7 @@ final class CustomRecipes {
         Map<String, String> byName = new HashMap<String, String>();   // lower-case name → the file that has it
         for (File f : files) {
             String fn = f.getName();
-            if (fn.startsWith(".") || !fn.toLowerCase(Locale.US).endsWith(EXT) || !f.isFile()) continue;
+            if (fn.startsWith(".") || !fn.toLowerCase(Locale.US).endsWith(EXT.toLowerCase(Locale.US)) || !f.isFile()) continue;
             Parsed p;
             if (f.length() > MAX_BYTES) p = fail(Lang.t("custom_too_large"));
             else {
@@ -377,8 +387,9 @@ final class CustomRecipes {
 
     /**
      * Writes a recipe into {@code dir}, creating the folder on first use; {@code oldFile} is the file it replaces (an
-     * edit or a rename), null for a new recipe. The text goes to a hidden temporary file first, synced, and only then
-     * takes the recipe's name, so a camera switched off mid-write leaves the old file or the new one, never half of one.
+     * edit or a rename), null for a new recipe. The text goes to {@link #TMP} first and only then takes the recipe's
+     * name, so a camera switched off mid-write leaves the old file or the new one, never half of one. It is synced where
+     * the file system can; the card's cannot, and a sync it refuses is not a failed save.
      */
     static Entry save(File dir, Recipes.Recipe r, String madeOn, String oldFile) throws IOException {
         if (!dir.isDirectory() && !dir.mkdirs()) throw new IOException("cannot create " + dir);
@@ -386,12 +397,13 @@ final class CustomRecipes {
         String[] names = dir.list();
         if (names != null) for (String n : names) if (oldFile == null || !n.equalsIgnoreCase(oldFile)) taken.add(n);
         String file = fileName(r.name, taken);
-        File tmp = new File(dir, "." + file + ".tmp"), target = new File(dir, file);
+        File tmp = new File(dir, TMP), target = new File(dir, file);
+        if (tmp.exists()) remove(tmp);                                  // left by a save the camera was switched off in
         FileOutputStream out = new FileOutputStream(tmp);
         try {
             out.write(encode(r, madeOn).getBytes(UTF8));
             out.flush();
-            out.getFD().sync();
+            try { out.getFD().sync(); } catch (IOException noSync) {}   // Sony's FUSE layer has no fsync
         } catch (IOException e) {
             out.close(); tmp.delete(); throw e;
         }
@@ -417,7 +429,7 @@ final class CustomRecipes {
         return skipped.size() == 1 ? Lang.t("custom_skipped_one", skipped.get(0)) : Lang.t("custom_skipped_many", skipped.size(), skipped.get(0));
     }
 
-    /** where a recipe's file is, as the screen names it: RECIPELAB/Golden Hour.txt */
+    /** where a recipe's file is, as the screen names it: RECIPES/GOLDENHO.TXT */
     static String path(String file) { return DIR + "/" + file; }
 
     /**

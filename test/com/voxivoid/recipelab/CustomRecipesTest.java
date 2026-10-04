@@ -223,10 +223,21 @@ class CustomRecipesTest {
     }
 
     @Test void theFileIsNamedAfterTheRecipe() {
-        assertEquals("Golden Hour.txt", CustomRecipes.fileName("Golden Hour", Collections.<String>emptyList()));
-        assertEquals("Golden Hour-2.txt", CustomRecipes.fileName("Golden Hour", Arrays.asList("golden hour.TXT")), "FAT ignores case");
-        assertEquals("Mr. T.txt", CustomRecipes.fileName("Mr. T.", Collections.<String>emptyList()), "FAT will not end a name with a dot");
-        assertEquals("recipe.txt", CustomRecipes.fileName("...", Collections.<String>emptyList()));
+        // the card's file system takes 8.3 names only (ENAMETOOLONG past them), in capitals
+        assertEquals("GOLDENHO.TXT", CustomRecipes.fileName("Golden Hour", Collections.<String>emptyList()));
+        assertEquals("GOLDENH2.TXT", CustomRecipes.fileName("Golden Hour", Arrays.asList("goldenho.txt")), "case is ignored, as the card does");
+        assertEquals("GOLDEN10.TXT", CustomRecipes.fileName("Golden Hour", Arrays.asList("GOLDENHO.TXT", "GOLDENH2.TXT", "GOLDENH3.TXT",
+                "GOLDENH4.TXT", "GOLDENH5.TXT", "GOLDENH6.TXT", "GOLDENH7.TXT", "GOLDENH8.TXT", "GOLDENH9.TXT")));
+        assertEquals("MRT.TXT", CustomRecipes.fileName("Mr. T.", Collections.<String>emptyList()), "only letters and digits");
+        assertEquals("RECIPE.TXT", CustomRecipes.fileName("...", Collections.<String>emptyList()));
+        assertEquals("AB2.TXT", CustomRecipes.fileName("a b", Arrays.asList("AB.TXT")));
+    }
+
+    @Test void everyNameTheAppWritesIsAnEightThreeName() {
+        assertTrue(CustomRecipes.DIR.length() <= 8 && CustomRecipes.DIR.equals(CustomRecipes.DIR.toUpperCase()), CustomRecipes.DIR);
+        assertTrue(CustomRecipes.TMP.matches("[A-Z0-9]{1,8}\\.[A-Z0-9]{1,3}"), CustomRecipes.TMP);
+        for (String n : new String[] { "Golden Hour", "x", "Untitled 12", "(Kodak) & Fuji + 2'" })
+            assertTrue(CustomRecipes.fileName(n, Collections.<String>emptyList()).matches("[A-Z0-9]{1,8}\\.TXT"), n);
     }
 
     // ---- the folder
@@ -237,7 +248,7 @@ class CustomRecipesTest {
     }
 
     @Test void aMissingFolderHoldsNothing() {
-        CustomRecipes.Loaded l = CustomRecipes.load(new File(dir, "RECIPELAB"));
+        CustomRecipes.Loaded l = CustomRecipes.load(new File(dir, CustomRecipes.DIR));
         assertTrue(l.entries.isEmpty());
         assertTrue(l.skipped.isEmpty());
         assertTrue(CustomRecipes.load(null).entries.isEmpty(), "no card at all");
@@ -246,12 +257,12 @@ class CustomRecipesTest {
     @Test void saveThenLoad() throws IOException {
         File folder = new File(dir, CustomRecipes.DIR);
         CustomRecipes.Entry e = CustomRecipes.save(folder, mine("Zed", "Velvia"), "ILCE-6000", null);
-        assertEquals("Zed.txt", e.file);
+        assertEquals("ZED.TXT", e.file);
         CustomRecipes.save(folder, mine("Alpha", "Acros"), null, null);
         CustomRecipes.Loaded l = CustomRecipes.load(folder);
         assertEquals(Arrays.asList("Alpha", "Zed"), Arrays.asList(l.entries.get(0).recipe.name, l.entries.get(1).recipe.name), "A to Z");
         assertSameLook(mine("Zed", "Velvia"), l.entries.get(1).recipe);
-        assertEquals(Arrays.asList("Alpha.txt", "Zed.txt"), sorted(folder.list()), "no temporary file left behind");
+        assertEquals(Arrays.asList("ALPHA.TXT", "ZED.TXT"), sorted(folder.list()), "no temporary file left behind");
     }
 
     private static List<String> sorted(String[] names) { List<String> l = new ArrayList<String>(Arrays.asList(names)); Collections.sort(l); return l; }
@@ -260,18 +271,24 @@ class CustomRecipesTest {
         CustomRecipes.Entry e = CustomRecipes.save(dir, mine("Mine", "Velvia"), null, null);
         int[] rows = staged(e.recipe, factoryRows(), Q_FINE); rows[R_SAT] = -1;
         CustomRecipes.Entry again = CustomRecipes.save(dir, CustomRecipes.recipe("Mine", rows), null, e.file);
-        assertEquals("Mine.txt", again.file, "the same file, not Mine-2");
-        assertEquals(Arrays.asList("Mine.txt"), sorted(dir.list()));
+        assertEquals("MINE.TXT", again.file, "the same file, not MINE2");
+        assertEquals(Arrays.asList("MINE.TXT"), sorted(dir.list()));
         assertEquals(-1, CustomRecipes.load(dir).entries.get(0).recipe.sat);
     }
 
     @Test void aRenameMovesTheFile() throws IOException {
         CustomRecipes.Entry e = CustomRecipes.save(dir, mine("Old", "Velvia"), null, null);
         CustomRecipes.Entry r = CustomRecipes.save(dir, CustomRecipes.renamed(e.recipe, "New"), null, e.file);
-        assertEquals(Arrays.asList("New.txt"), sorted(dir.list()));
+        assertEquals(Arrays.asList("NEW.TXT"), sorted(dir.list()));
         assertEquals("New", CustomRecipes.load(dir).entries.get(0).recipe.name);
         CustomRecipes.save(dir, CustomRecipes.renamed(r.recipe, "NEW"), null, r.file);
-        assertEquals(Arrays.asList("NEW.txt"), sorted(dir.list()), "a change of case only, which FAT sees as the same file");
+        assertEquals(Arrays.asList("NEW.TXT"), sorted(dir.list()), "a change of case only keeps the file");
+    }
+
+    @Test void aSaveCutShortLeavesNothingInTheWayOfTheNext() throws IOException {
+        write(CustomRecipes.TMP, "name = Half");                  // the camera went off between writing and renaming
+        CustomRecipes.save(dir, mine("Next", "Velvia"), null, null);
+        assertEquals(Arrays.asList("NEXT.TXT"), sorted(dir.list()));
     }
 
     @Test void deleteRemovesTheFile() throws IOException {
@@ -285,10 +302,10 @@ class CustomRecipesTest {
         write("from a friend.txt", "name = shared\nstyle = mono\n");
         CustomRecipes.Loaded l = CustomRecipes.load(dir);
         assertEquals(1, l.entries.size());
-        assertEquals(Arrays.asList("Shared.txt: Shared is already the name in from a friend.txt"), l.skipped,
+        assertEquals(Arrays.asList("SHARED.TXT: Shared is already the name in from a friend.txt"), l.skipped,
                 "the first file by name keeps it; the other is skipped and said so");
         CustomRecipes.Entry e = CustomRecipes.save(dir, mine("Shared", "Acros"), null, null);
-        assertEquals("Shared-2.txt", e.file, "a new file never takes an existing one's name");
+        assertEquals("SHARED2.TXT", e.file, "a new file never takes an existing one's name");
     }
 
     @Test void badFilesAreSkippedWithTheReasonAndTheRestLoad() throws IOException {
@@ -297,6 +314,7 @@ class CustomRecipesTest {
         write("future.txt", "format = 7\nname = Future\n");
         write("notes.md", "not a recipe");
         write(".hidden.txt.tmp", "name = Half\n");
+        write(CustomRecipes.TMP, "name = Half\n");
         Files.write(new File(dir, "huge.txt").toPath(), new byte[CustomRecipes.MAX_BYTES + 1]);
         CustomRecipes.Loaded l = CustomRecipes.load(dir);
         assertEquals(1, l.entries.size());
@@ -317,6 +335,6 @@ class CustomRecipesTest {
                 "one question after an edit and before a pick: keep and store it, store it this once, or neither");
         assertEquals("Save & apply", CustomRecipes.forkOptions()[CustomRecipes.FORK_SAVE_APPLY]);
         assertEquals("Apply only", CustomRecipes.forkOptions()[CustomRecipes.FORK_APPLY]);
-        assertEquals("Removes RECIPELAB/Mine.txt from the memory card. This cannot be undone.", CustomRecipes.deleteBody("Mine.txt"));
+        assertEquals("Removes RECIPES/MINE.TXT from the memory card. This cannot be undone.", CustomRecipes.deleteBody("MINE.TXT"));
     }
 }

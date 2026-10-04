@@ -77,7 +77,7 @@ final class TextEn {
         { "custom_new", "+ New recipe" },
         { "custom_new_detail", "Keep the camera's current settings as a recipe" },
         { "custom_empty_hint", "Or change a recipe's values and save them" },
-        { "custom_no_card", "No memory card — custom recipes are kept on it, in RECIPELAB" },
+        { "custom_no_card", "No memory card — custom recipes are kept on it, in RECIPES" },
         { "custom_fork_title", "Save as a custom recipe?" },
         { "custom_fork_body", "%1$s comes with the app and cannot change. Save your edits as a new custom recipe to keep them, or apply them just this once." },
         { "custom_options_body", "Custom recipe, on the memory card as %1$s" },

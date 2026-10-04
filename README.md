@@ -315,25 +315,30 @@ gives another one. Up to 24 letters, digits, spaces and `- . ' ( ) & +`; two rec
 
 ### Sharing: export and import
 
-There is no export button because there is nothing to convert: each recipe already *is* a file, in a `RECIPELAB`
-folder at the top of the memory card, named after the recipe — `RECIPELAB/Golden Hour.txt`.
+There is no export button because there is nothing to convert: each recipe already *is* a file, in a `RECIPES`
+folder at the top of the memory card. The camera only handles short, old-style file names, so the app names each file
+after the first eight letters and digits of the recipe — *Golden Hour* is `RECIPES/GOLDENHO.TXT` — and keeps the real
+name inside the file.
 
 **Export** — get the files onto a computer:
 
 1. Set `Setup → USB Connection` to **Mass Storage** and connect the camera (or put the card in a card reader).
-2. Open the card, then the `RECIPELAB` folder, and copy out the `.txt` files you want to keep or share.
+2. Open the card, then the `RECIPES` folder, and copy out the `.TXT` files you want to keep or share.
 
 **Import** — use someone else's:
 
-1. Copy their `.txt` file into `RECIPELAB` on your card. If the folder is not there yet, create it at the top of the
-   card, next to `DCIM`, with exactly that name.
+1. Copy their file into `RECIPES` on your card. If the folder is not there yet, create it at the top of the card,
+   next to `DCIM`, with exactly that name. Give the file a **short name**: up to eight letters or digits, then `.TXT`
+   — `PORTRA.TXT`, not `Kodak Portra look (v2).txt`. The camera cannot be relied on to see longer names; the name the
+   app shows comes from the `name =` line inside, not from the file name.
 2. Eject, put the card back, and open Recipe Lab: the recipe is in **Custom**. Nothing needs restarting beyond
    reopening the app.
 
 The files are plain text you can read and edit in any text editor. Each line says which values are allowed:
 
 ```
-# Recipe Lab custom recipe. Keep it in the RECIPELAB folder of a memory card.
+# Recipe Lab custom recipe. Keep it in the RECIPES folder of a memory card, under a name of
+# up to eight letters or digits and .TXT: the camera reads no longer file names. Its own name is below.
 format = 1
 name = Golden Hour
 made-on = ILCE-6000          # the camera it was saved on
@@ -393,7 +398,7 @@ without the app. It is not permanent in the sense of damage. Undo it any time, t
 **Worth knowing:**
 
 - The preview inside the app is temporary; closing the app removes it. Only what you *picked* stays.
-- Removing the app leaves your custom recipes on the memory card, in `RECIPELAB`; formatting the card does not.
+- Removing the app leaves your custom recipes on the memory card, in `RECIPES`; formatting the card does not.
 - Built and tested on the A6000 with firmware 3.21. Several other bodies have been reported working — see
   [Compatibility](#compatibility) — but on anything still marked ❔ there, compare what the chips show with your menus
   before picking a recipe.

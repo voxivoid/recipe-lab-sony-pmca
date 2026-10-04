@@ -37,7 +37,7 @@ src/com/voxivoid/recipelab/
   Favourites.java              the favourites list: stored by name in the app's preferences, and how the browser
                                walks the Favourites and Custom groups — pure functions, no Android, covered by test/
   CustomRecipes.java           custom recipes on the memory card: the versioned file format, what a file may hold,
-                               names, file names, and reading / writing the RECIPELAB folder — no Android, covered by test/
+                               names, file names, and reading / writing the RECIPES folder — no Android, covered by test/
   Library.java                 one index over the table's recipes and the custom ones after it: the wheel, the panel's
                                count — no Android, covered by test/
   NameEntry.java               the name editor: placeholder, capitals, delete, walking the keyboard grid — no Android,
@@ -223,9 +223,14 @@ Issues [#14](https://github.com/voxivoid/recipe-lab-sony-pmca/issues/14) and
 not app storage: they survive an uninstall, show up over USB Mass Storage, and travel by copying. Formatting the card
 deletes them.
 
-**Where.** `RECIPELAB/` at the root of `Environment.getExternalStorageDirectory()` (hence `WRITE_EXTERNAL_STORAGE` in the
-manifest), one file per recipe, `<name>.txt`, `-2`, `-3` … when a file already has that name (compared ignoring case, as
-FAT does). The folder is read again on every `onResume`, so a card edited on a computer or swapped is picked up. No card
+**Where.** `RECIPES/` at the root of `Environment.getExternalStorageDirectory()` (hence `WRITE_EXTERNAL_STORAGE` in the
+manifest), one file per recipe. Apps reach the card through Sony's FUSE layer, `libInfraFuFsys.so`, mounted at
+`/android/mnt/sdcard` (`allow_other,direct_io,atomic_o_trunc`) — not the kernel's vfat. It takes **DOS 8.3 names
+only**: its `getattr` answers `ENAMETOOLONG` past them, it carries an upper-casing table, and the one PMCA app known to
+write to the card, PMCADemo, uses `PMCADEMO/LOG.TXT`. A first build that used `RECIPELAB` (nine letters) got
+`cannot create /mnt/sdcard/RECIPELAB` on an A6000. So the folder is seven letters and `CustomRecipes.fileName` makes
+`GOLDENHO.TXT` out of "Golden Hour" — the first eight letters and digits, in capitals — and `GOLDENH2.TXT`, `GOLDEN10.TXT`
+… when a file already has it (compared ignoring case); the recipe's name lives in the file. The folder is read again on every `onResume`, so a card edited on a computer or swapped is picked up. No card
 (`getExternalStorageState() != MEDIA_MOUNTED`): the Custom group says so and saving refuses with a toast.
 
 **Index.** `Library` puts them after the table: `recipe` in `0 .. BASE-1` is `Recipes.ALL`, `BASE ..` a custom recipe, A
@@ -265,9 +270,10 @@ clamped. A second file with a name already loaded is skipped too, so a card brou
 over 8 KB, hidden files and anything but `*.txt` are ignored. Skipped files are toasted once, when the Custom group is
 first shown after a load.
 
-**Writing.** `CustomRecipes.save` writes a hidden `.<file>.tmp`, `fsync`s it, then renames it over the target; an edit
-or a rename that changes only case deletes the old file first (FAT sees it as the target), any other rename deletes it
-after. A camera switched off mid-write leaves the old file or the new one.
+**Writing.** `CustomRecipes.save` writes `SAVING.TMP` (removing one a cut-short save left), tries to `fsync` it — the FUSE
+layer has no `fsync` handler, so a refusal is ignored — then renames it over the target; an edit, or a rename to a name
+with the same 8.3 file, deletes the old file first, any other rename deletes it after. A camera switched off mid-write
+leaves the old file or the new one.
 
 **The flows** (`MainActivity`, question text in `CustomRecipes`):
 
@@ -288,7 +294,8 @@ first character replaces it, delete clears it, OK keeps it. A rename opens on th
 capital, then lower case; the shift cell gives one more capital. Names are unique ignoring case.
 
 **On the camera, still to prove:** that `getExternalStorageDirectory()` is the memory card on every body, that the folder
-is visible over USB Mass Storage, that `fsync` + rename survive a power-off mid-save, and — as always — that a custom
+is visible over USB Mass Storage, that a file a computer gave a long name is still read (through its 8.3 alias), that
+rename survives a power-off mid-save, and — as always — that a custom
 recipe picked, then power-cycled, is still the camera's look.
 
 ## Keys on every body

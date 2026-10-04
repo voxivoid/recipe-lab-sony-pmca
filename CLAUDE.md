@@ -79,7 +79,7 @@ Closes #123
 - **Every word on screen goes through `Lang`** (`Lang.t` with a key in `TextEn`, or `Lang.label` for names whose English
   is canonical data). A new or changed string needs its Simplified and Traditional Chinese too, then
   `tools/subset-font.py` so the fonts have the glyphs — `LangTest` fails a missing key or glyph. Files the app writes
-  (samples.txt, locks.txt, keys.txt, diff.txt, the RECIPELAB recipe files) stay English. See [docs/LOCALIZATION.md](docs/LOCALIZATION.md).
+  (samples.txt, locks.txt, keys.txt, diff.txt, the RECIPES recipe files) stay English. See [docs/LOCALIZATION.md](docs/LOCALIZATION.md).
 - **Every function needs a route on keys every body has** (wheel, four-way, centre, MENU, shutter, TRASH). A new
   function becomes a row of the app menu (hold MENU), not a new key. Fn is the one shortcut; AEL, C1 and DISP are not
   bound (issue #18). The legend names Fn only when `KeyProbe` reports the key — never a per-model table.
