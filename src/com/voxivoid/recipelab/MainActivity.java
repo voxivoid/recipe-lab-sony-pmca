@@ -825,13 +825,14 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     }
 
     /** an edit of a custom recipe finished: its file takes the new values */
-    private void saveInPlace() {
+    private boolean saveInPlace() {
         CustomRecipes.Entry e = library.entry(recipe);
-        if (cardDir == null) { showToast(Lang.t("custom_need_card"), 4000); return; }
+        if (cardDir == null) { showToast(Lang.t("custom_need_card"), 4000); return false; }
         try { CustomRecipes.save(cardDir, CustomRecipes.recipe(e.recipe.name, edit), madeOn(), e.file); }
-        catch (Throwable t) { showToast(Lang.t("custom_save_failed", String.valueOf(t.getMessage())), 0); return; }
+        catch (Throwable t) { showToast(Lang.t("custom_save_failed", String.valueOf(t.getMessage())), 0); return false; }
         reloadCustoms();
         showToast(Lang.t("custom_saved", e.recipe.name), 2500);
+        return true;
     }
 
     private void renameCustom(String name) {
@@ -901,7 +902,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     /** centre on an edit button */
     private void doAction(int action) {
         switch (action) {
-            case CustomRecipes.EDIT_SAVE: saveInPlace(); break;     // custom recipes only: a built-in one has Copy
+            case CustomRecipes.EDIT_SAVE: if (saveInPlace() && dirty()) writeAll(); break;   // custom only; stored too, unless the camera has it already
             case CustomRecipes.EDIT_COPY: openName(NAME_COPY); break;
             case CustomRecipes.EDIT_APPLY: writeAll(); break;
             case CustomRecipes.EDIT_DISCARD:                         // asks first; then the recipe's own values, written too when the camera had the edits

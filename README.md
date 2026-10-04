@@ -290,7 +290,7 @@ Change any chip and buttons appear under the chips. Press **down** to reach them
 
 | button | does |
 |---|---|
-| **Save** | keeps the changes *(your own recipes only)* |
+| **Save** | keeps the changes, and stores them *(your own recipes only)* |
 | **Apply** | stores the changes in the camera, without saving |
 | **Copy** | saves the changes as a new recipe, and stores it |
 | **Discard** | back to the recipe's own values (asks first) |

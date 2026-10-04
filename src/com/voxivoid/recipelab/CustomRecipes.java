@@ -437,7 +437,8 @@ final class CustomRecipes {
      * (the edits as a new custom recipe, under a name, then stored in the camera — the original untouched), Apply (write
      * them to the camera, keep nothing — left out once the camera has them) and Discard (the recipe's own values again,
      * after asking);
-     * a custom one also Save (the edits over itself). A built-in recipe never changes, so it has no Save.
+     * a custom one also Save (the edits over itself, then stored in the camera). A built-in recipe never changes, so it
+     * has no Save.
      */
     static final int EDIT_SAVE = 0, EDIT_COPY = 1, EDIT_APPLY = 2, EDIT_DISCARD = 3;
     static int[] editActions(boolean custom, boolean applied) {
