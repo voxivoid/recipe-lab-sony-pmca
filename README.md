@@ -41,7 +41,7 @@
   - [Cameras that run PlayMemories apps](#cameras-that-run-playmemories-apps)
   - [Cameras that cannot run camera apps](#cameras-that-cannot-run-camera-apps)
 - [Installing](#installing)
-- [Using it](#using-it)
+- [How to use](#how-to-use)
 - [Custom recipes](#custom-recipes)
   - [Making one](#making-one)
   - [The edit buttons](#the-edit-buttons)
@@ -217,7 +217,7 @@ is usually left on its own `Application Download / Connecting via USB...` screen
 **5. Unplug, then turn the camera off and on.** The app now lives under
 `MENU → Application → Application List → Recipe Lab`.
 
-## Using it
+## How to use
 
 Open **Recipe Lab** from the Application List. The live view shows the look. The panel at the bottom names the recipe.
 
