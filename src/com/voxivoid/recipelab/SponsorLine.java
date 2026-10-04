@@ -3,7 +3,6 @@ package com.voxivoid.recipelab;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
-import android.graphics.Path;
 import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.util.AttributeSet;
@@ -16,7 +15,6 @@ import android.view.View;
  */
 public class SponsorLine extends View {
     private final Paint text = new Paint(Paint.ANTI_ALIAS_FLAG), heart = new Paint(Paint.ANTI_ALIAS_FLAG), bg = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final Path path = new Path();
     private final RectF r = new RectF();
     /** padding inside the dark pill, in dp */
     private static final float PAD = 6;
@@ -28,7 +26,7 @@ public class SponsorLine extends View {
         d = c.getResources().getDisplayMetrics().density;
         text.setColor(0xDDFFFFFF); text.setTextSize(9 * d);
         bg.setColor(0x99000000);                                    // a dark pill, see-through: readable over a bright scene
-        heart.setColor(0xFFDB61A2);                                 // the pink of the README's sponsor badge
+        heart.setColor(Legend.HEART_PINK);
     }
 
     public void setTypeface(Typeface tf) { text.setTypeface(tf); requestLayout(); invalidate(); }
@@ -45,13 +43,7 @@ public class SponsorLine extends View {
         r.set(0, 0, getWidth(), getHeight());
         c.drawRoundRect(r, getHeight() / 2f, getHeight() / 2f, bg);
         float s = 4 * d, cx = PAD * d + s + d, cy = getHeight() / 2f;
-        // a heart: two lobes and a point, from a path
-        path.reset();
-        path.moveTo(cx, cy + s);
-        path.cubicTo(cx - 2.2f * s, cy - 0.2f * s, cx - 0.9f * s, cy - 1.6f * s, cx, cy - 0.5f * s);
-        path.cubicTo(cx + 0.9f * s, cy - 1.6f * s, cx + 2.2f * s, cy - 0.2f * s, cx, cy + s);
-        path.close();
-        c.drawPath(path, heart);
+        Legend.heart(c, cx, cy, s, heart);
         c.drawText(line, PAD * d + 14 * d, cy - (text.ascent() + text.descent()) / 2, text);
     }
 }

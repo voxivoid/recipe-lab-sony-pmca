@@ -35,6 +35,7 @@ public class MenuView extends View {
     private boolean page = false;                                 // read-only name / value lines rather than rows
     private int selected = 0;
     private int[] icons;                                           // DevTools.IC_* per row, or null for none
+    private String[] footer;                                       // a page's centred footer (About's sponsor ask), or null
     private Keys.Hints hints = Keys.hints(Keys.H_MENU_TOP, Keys.Caps.UNKNOWN);
 
     public MenuView(Context c, AttributeSet a) {
@@ -67,15 +68,18 @@ public class MenuView extends View {
      */
     public void set(String title, String[] labels, String[] details, String[] values, Typeface[] valueFaces, int[] icons, int selected, Keys.Hints hints) {
         this.title = title; this.labels = labels; this.details = details; this.selected = selected; this.hints = hints; page = false;
-        this.icons = icons;
+        this.icons = icons; footer = null;
         this.values = values != null ? values : new String[labels.length];
         this.valueFaces = valueFaces != null ? valueFaces : new Typeface[labels.length];
         requestLayout(); invalidate();
     }
 
     /** a read-only page: one {name, value} line each */
-    public void setPage(String title, String[][] lines, Keys.Hints hints) {
-        this.title = title; this.hints = hints; page = true; selected = -1;
+    public void setPage(String title, String[][] lines, Keys.Hints hints) { setPage(title, lines, null, hints); }
+
+    /** a read-only page with a centred footer under its lines: the first footer line after a heart, the rest below it */
+    public void setPage(String title, String[][] lines, String[] footer, Keys.Hints hints) {
+        this.title = title; this.hints = hints; page = true; selected = -1; this.footer = footer;
         labels = new String[lines.length]; details = new String[lines.length]; values = new String[lines.length]; valueFaces = new Typeface[lines.length];
         for (int i = 0; i < lines.length; i++) { labels[i] = lines[i][0]; details[i] = lines[i][1]; }
         requestLayout(); invalidate();
@@ -109,6 +113,19 @@ public class MenuView extends View {
             for (int i = first; i < Math.min(n, first + visible); i++, y += rh) {
                 c.drawText(labels[i], pad, y + 13 * d, key);
                 c.drawText(details[i], pad + kc, y + 13 * d, small);
+            }
+            if (footer != null && footer.length > 0) {             // centred: heart + the ask, then the addresses
+                float fy = Math.max(y, top + 8 * d + Math.min(n, visible) * rh) + 14 * d;
+                small.setTextAlign(Paint.Align.LEFT);
+                float tw = small.measureText(footer[0]), hs = 4 * d, x0 = (w - (tw + 4 * hs)) / 2;
+                glyph.setStyle(Paint.Style.FILL); glyph.setColor(Legend.HEART_PINK);
+                Legend.heart(c, x0 + hs, fy - 3.5f * d, hs, glyph);
+                small.setColor(0xFFFFFFFF);
+                c.drawText(footer[0], x0 + 4 * hs, fy, small);
+                small.setColor(0xCCF2B85C);
+                small.setTextAlign(Paint.Align.CENTER);
+                for (int k = 1; k < footer.length; k++) c.drawText(footer[k], w / 2, fy + k * 16 * d, small);
+                small.setTextAlign(Paint.Align.LEFT);
             }
         } else {
             for (int i = first; i < Math.min(n, first + visible); i++, y += rh) {

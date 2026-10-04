@@ -48,6 +48,21 @@ public class Legend {
         c.drawPath(STAR, p);
     }
 
+    private static final Path HEART = new Path();
+
+    /** a heart centred on (cx, cy), about 2 * s across — the sponsor mark: no font the app has carries an emoji or ♥ */
+    public static void heart(Canvas c, float cx, float cy, float s, Paint p) {
+        HEART.reset();
+        HEART.moveTo(cx, cy + s);
+        HEART.cubicTo(cx - 2.2f * s, cy - 0.2f * s, cx - 0.9f * s, cy - 1.6f * s, cx, cy - 0.5f * s);
+        HEART.cubicTo(cx + 0.9f * s, cy - 1.6f * s, cx + 2.2f * s, cy - 0.2f * s, cx, cy + s);
+        HEART.close();
+        c.drawPath(HEART, p);
+    }
+
+    /** the heart's colour: the pink of the README's sponsor badge */
+    public static final int HEART_PINK = 0xFFDB61A2;
+
     /** natural height for a legend row at scale 1 */
     public float height() { return 16 * d; }
 

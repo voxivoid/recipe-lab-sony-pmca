@@ -120,8 +120,8 @@ final class DevTools {
     }
 
     /**
-     * The About page: {name, value}. The version comes from the installed package at runtime, never from here. Below the
-     * facts, the sponsor ask the README opens with, and where to give.
+     * The About page: {name, value}. The version comes from the installed package at runtime, never from here. The sponsor
+     * ask goes under it ({@link #aboutFooter}).
      */
     static String[][] about(String version, String model, String platform) {
         return new String[][] {
@@ -129,11 +129,15 @@ final class DevTools {
             { Lang.t("about_camera"), orShown(model) },
             { Lang.t("about_platform"), orShown(platform) },
             { Lang.t("about_source"), "github.com/voxivoid/recipe-lab-sony-pmca" },
-            { "", "" },                                             // then the ask, as the README makes it
-            { "", Lang.t("about_love") },
-            { Lang.t("about_sponsor"), SPONSOR_URL },                // Ko-fi first: it needs no GitHub account
-            { Lang.t("about_github"), "github.com/sponsors/voxivoid" },
         };
+    }
+
+    /**
+     * The About page's footer, centred under the facts: the sponsor ask (drawn after a heart), then where to give —
+     * Ko-fi first, as it needs no GitHub account.
+     */
+    static String[] aboutFooter() {
+        return new String[] { Lang.t("about_love"), SPONSOR_URL, "github.com/sponsors/voxivoid" };
     }
 
     /** the line at the top of the live view, after its drawn heart: the ask and where to give */
