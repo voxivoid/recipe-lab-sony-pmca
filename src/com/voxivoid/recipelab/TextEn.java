@@ -123,7 +123,6 @@ final class TextEn {
         { "action_move", "move" },
         { "action_select", "select" },
         { "action_change", "change" },
-        { "action_confirm", "confirm" },
         { "action_cancel", "cancel" },
         { "action_options_hold", "options (hold)" },
         { "action_type", "type" },

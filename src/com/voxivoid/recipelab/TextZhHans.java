@@ -108,7 +108,6 @@ final class TextZhHans {
         { "action_move", "移动" },
         { "action_select", "选择" },
         { "action_change", "更改" },
-        { "action_confirm", "确认" },
         { "action_cancel", "取消" },
         { "keys_notice", "长按 MENU 打开菜单  ·  删除键隐藏面板  ·  长按删除键重置" },
         { "status_read_failed", "读取失败：%1$s" },

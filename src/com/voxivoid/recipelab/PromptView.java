@@ -12,17 +12,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Modal question: title and explanation (word-wrapped to the box), two or more option pills that left / right walk,
- * icon legend. Canvas-drawn. Pills that would overflow the box are drawn smaller rather than cut.
+ * Modal question: title and explanation (word-wrapped to the box) and two or more option pills that left / right walk.
+ * No key legend: the highlighted pill is what centre does, and the hints only confused. Canvas-drawn. Pills that would
+ * overflow the box are drawn smaller rather than cut.
  */
 public class PromptView extends View {
     private static final int ACCENT = 0xFFF2B85C, INK = 0xFF1A1208;
-    private static final int[] LEGEND_ICONS = { Legend.ENTER, Legend.MENU };
 
     private final Paint bg = new Paint(Paint.ANTI_ALIAS_FLAG), edge = new Paint(Paint.ANTI_ALIAS_FLAG), title = new Paint(Paint.ANTI_ALIAS_FLAG),
             body = new Paint(Paint.ANTI_ALIAS_FLAG), opt = new Paint(Paint.ANTI_ALIAS_FLAG), pill = new Paint(Paint.ANTI_ALIAS_FLAG), note = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final RectF r = new RectF();
-    private final Legend legend;
     private final float d;
     private String titleText = "", bodyText = "", noteText = null;
     private String[] options = new String[0];
@@ -32,7 +31,6 @@ public class PromptView extends View {
     public PromptView(Context c, AttributeSet a) {
         super(c, a);
         d = c.getResources().getDisplayMetrics().density;
-        legend = new Legend(d);
         bg.setColor(0xF0141414);
         edge.setColor(0x88F2B85C); edge.setStyle(Paint.Style.STROKE); edge.setStrokeWidth(d);
         title.setColor(0xFFFFFFFF); title.setTextSize(15 * d); title.setFakeBoldText(true);
@@ -43,7 +41,7 @@ public class PromptView extends View {
 
     /** the display language's typeface ({@link UiFont}) */
     public void setTypeface(Typeface tf) {
-        title.setTypeface(tf); body.setTypeface(tf); opt.setTypeface(tf); note.setTypeface(tf); legend.setTypeface(tf);
+        title.setTypeface(tf); body.setTypeface(tf); opt.setTypeface(tf); note.setTypeface(tf);
         requestLayout(); invalidate();
     }
 
@@ -64,7 +62,7 @@ public class PromptView extends View {
         wrap(titleText, title, wd - 2 * pad, titleLines);
         wrap(bodyText, body, wd - 2 * pad, bodyLines);
         float h = 14 * d + titleLines.size() * titleStep() + bodyLines.size() * bodyStep() + 12 * d + 30 * d + 14 * d
-                + (noteText != null ? 14 * d : 0) + legend.height() + 12 * d;
+                + (noteText != null ? 14 * d : 0);
         setMeasuredDimension((int) wd, (int) h);
     }
 
@@ -125,6 +123,5 @@ public class PromptView extends View {
             while (note.measureText(noteText) > avail && ns > 7 * d) { ns -= 0.5f * d; note.setTextSize(ns); }
             c.drawText(noteText, pad, y, note); note.setTextSize(10 * d); y += 14 * d;
         }
-        legend.draw(c, pad, y + legend.height() / 2 - 2 * d, w - 2 * pad, LEGEND_ICONS, new String[] { Lang.t("action_confirm"), Lang.t("action_cancel") });
     }
 }

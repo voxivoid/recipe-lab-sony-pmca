@@ -108,7 +108,6 @@ final class TextZhHant {
         { "action_move", "移動" },
         { "action_select", "選擇" },
         { "action_change", "變更" },
-        { "action_confirm", "確認" },
         { "action_cancel", "取消" },
         { "keys_notice", "長按 MENU 開啟選單  ·  刪除鍵隱藏面板  ·  長按刪除鍵重設" },
         { "status_read_failed", "讀取失敗：%1$s" },
