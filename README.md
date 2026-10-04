@@ -216,65 +216,59 @@ is usually left on its own `Application Download / Connecting via USB...` screen
 
 ## Using it
 
-Open **Recipe Lab** from the Application List. You get the live image with a panel at the bottom, then:
+Open **Recipe Lab** from the Application List. The live view shows the look. The panel at the bottom names the recipe.
 
-| key | what it does |
+**The basics**
+
+- Turn the **wheel** to change recipe. The live view updates at once.
+- Press **centre** to pick it. The camera keeps it — every mode, even with the app closed.
+- Press **MENU** to leave.
+
+**Keys**
+
+| key | does |
 |---|---|
-| **wheel** | scroll recipes, from anywhere — the live image changes at once, and that is what the camera will write |
-| **left / right**, **top dial** | scroll recipes too, but only on the recipe line; on the chip row they walk the chips |
-| **centre** | pick the recipe you are looking at — the camera keeps it. A message confirms it |
-| **hold centre** | mark the recipe as a favourite, or unmark it — any recipe, custom ones too. Works on the main screen and inside the brand list |
-| **up / down** | move between the recipe line and the row of value chips |
-| **TRASH** | step the panel: full → without the key legend → a small label → nothing → full. The wheel still works |
-| **hold TRASH** | reset to the factory look — the app asks first |
-| **hold MENU** | open the menu: browse recipes, panel visibility, language, reset settings, about. In the brand list, on a [custom recipe](#custom-recipes): its options — rename, delete |
-| **shutter** | take a picture of what you are previewing |
-| **MENU** | leave the app |
-| **Fn** *(if your camera has one)* | open the brand list — the same as **hold MENU → Browse recipes** |
+| **wheel** | next / previous recipe |
+| **left / right**, **top dial** | next recipe on the name line · next chip on the chip row |
+| **up / down** | move between name, chips and edit buttons |
+| **centre** | pick the recipe · edit a chip · press a button |
+| **hold centre** | favourite on / off |
+| **TRASH** | panel: full → no keys → label → hidden |
+| **hold TRASH** | back to the factory look (asks first) |
+| **MENU** | leave the app · close a list |
+| **hold MENU** | app menu · in the brand list, a custom recipe's options |
+| **Fn** | brand list *(if your camera has Fn — everything works without it)* |
+| **shutter** | take a photo |
 
-Every function works on keys every camera has; **Fn** is a shortcut on the bodies that have it, and the legend at the
-bottom of the screen only names it when the camera reports it. **AEL**, **C1** and **DISP** do nothing in the app.
+**Badges**
 
-**The menu.** Hold **MENU** for a moment and the menu fills the screen; a short press still leaves the app. Up / down
-or the wheel move, centre picks, **MENU** goes back.
-
-- **Browse recipes** opens the brand list: **Favourites** first, then **Custom**, then the brands, on the left; recipes on the right.
-  Left / right switches column (the active one is amber), wheel or up / down scrolls, centre picks.
-- **Panel visibility** — *Full*, *No keys* (the full panel without the key legend), *Label* or *Hidden* — changes with
-  left / right, right there in the menu.
-- **Language** — *Auto*, *English*, *简体中文* (Simplified Chinese) or *繁體中文* (Traditional Chinese) — changes the
-  same way, and the whole app switches at once. *Auto* follows the camera's own language and falls back to English.
-  Recipe names are translated too, with the original name kept in small type underneath; favourites and everything the
-  app writes to the memory card stay the same in every language.
-- **Reset settings** puts the camera back on its factory look, after asking — the same as picking **Factory**, the
-  first Sony recipe.
-- **About** shows the app version, the camera model, its platform version and where the source lives.
-- **Developer** holds tools for testing and for compatibility reports.
-
-The look is now the camera's default in every mode — P, A, S, M, movie — with the app closed, and the app reopens on
-that recipe.
-
-**Favourites.** Hold the **centre button** on a recipe and it joins the **Favourites** group at the top of the brand
-list, with a star next to its name; hold again to drop it. The group lists your picks in the order you marked them,
-and the brand list opens straight on it whenever the recipe you are on is one of them. The wheel on the main screen
-still walks all 77, then your custom recipes — favourites shorten the list in the browser, not the scroll. The marks are kept by the app, not in
-the camera's settings, so they survive a power cycle but go with the app if you remove it.
-
-**The chips.** In the chip row, **left / right** walks the chips, **centre** focuses one (it turns amber),
-**up / down** changes its value, **centre** leaves it. Changes stay a preview: as soon as a recipe has one, a row of
-buttons appears under the chips — **Save** (on a [custom recipe](#custom-recipes)), **Apply**, **Copy**, **Restore** —
-which **down** from the chips reaches. The wheel keeps changing recipes throughout, and asks first if that would
-drop changes you have neither saved nor applied. A recipe only shows the chips it uses: **CS** recipes show style,
-saturation, contrast and sharpness; **PE** recipes show the effect and its sub-setting. Quality, white
-balance, EV and DRO are always there. The legend at the bottom of the screen follows whatever you are doing.
-
-**The badge** next to the recipe name says where you stand:
-
-| badge | meaning |
+| badge | means |
 |---|---|
-| **ACTIVE** | the camera already has these values |
-| **PREVIEW** | you are only looking; press **centre** to pick it |
-| **EDITED** | shown *next to* the other one: the values are not the recipe's own — you changed them. **PREVIEW EDITED**: changed, not stored yet; **ACTIVE EDITED**: the camera has your changed version (you chose **Apply**). **Copy** (or **Save**, on a custom recipe) keeps the changes, **Restore** goes back to the recipe |
+| **ACTIVE** | the camera has this look |
+| **PREVIEW** | only a preview. **centre** picks it |
+| **EDITED** | you changed values |
+
+**Change a value**
+
+- Go **down** to the chips. **centre** a chip. **up / down** changes it. **centre** again to finish.
+- It is only a preview until you choose.
+- Buttons appear under the chips: **Apply**, **Copy**, **Restore** — and **Save** on your own recipes.
+- See [Custom recipes](#custom-recipes).
+
+**Brand list** — **Fn**, or **hold MENU → Browse recipes**
+
+- Left column: **Favourites**, **Custom**, then the brands. Right column: their recipes.
+- **left / right** switches column. **centre** picks.
+
+**Favourites**
+
+- **Hold centre** on a recipe. A star appears.
+- They wait under **Favourites**, in the order you marked them.
+
+**Menu** — **hold MENU**
+
+- **Browse recipes** · **Panel visibility** · **Language** · **Reset settings** · **About** · **Developer**.
+- Languages: *Auto*, English, 简体中文, 繁體中文.
 
 ## Custom recipes
 
