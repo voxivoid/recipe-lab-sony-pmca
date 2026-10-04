@@ -326,22 +326,39 @@ class CustomRecipesTest {
     }
 
     // ---- the questions
+    private static java.util.List<String> labels(int[] actions) {
+        java.util.List<String> l = new java.util.ArrayList<String>();
+        for (int x : actions) l.add(CustomRecipes.editLabel(x));
+        return l;
+    }
+
+    @Test void everyEditedRecipeGetsSaveApplyRestoreAndACustomOneCopy() {
+        assertEquals(Arrays.asList("Save", "Apply", "Restore"), labels(CustomRecipes.editActions(false, false)));
+        assertEquals(Arrays.asList("Save", "Copy", "Apply", "Restore"), labels(CustomRecipes.editActions(true, false)));
+    }
+
+    @Test void applyGoesOnceTheCameraHasTheEdits() {
+        assertEquals(Arrays.asList("Save", "Restore"), labels(CustomRecipes.editActions(false, true)), "nothing left to write");
+        assertEquals(Arrays.asList("Save", "Copy", "Restore"), labels(CustomRecipes.editActions(true, true)));
+    }
+
+    @Test void aCopyIsNumberedAndFitsTheNameLimit() {
+        assertEquals("Golden Hour 2", CustomRecipes.copyName("Golden Hour", Arrays.asList("Golden Hour")));
+        assertEquals("Golden Hour 3", CustomRecipes.copyName("Golden Hour", Arrays.asList("golden hour 2")));
+        String long24 = "abcdefghijklmnopqrstuvwx";
+        String c = CustomRecipes.copyName(long24, Arrays.asList(long24));
+        assertEquals("abcdefghijklmnopqrstuv 2", c);
+        assertNull(CustomRecipes.nameProblem(c, Arrays.asList(long24), null), "a copy's name is always one the editor accepts");
+    }
+
     @Test void theQuestionsHighlightTheHarmlessAnswer() {
         assertEquals("Cancel", CustomRecipes.options(false)[CustomRecipes.OPT_DEFAULT], "a stray centre press after a hold does nothing");
         assertEquals("Cancel", CustomRecipes.deleteOptions()[CustomRecipes.DELETE_DEFAULT]);
         assertEquals("Favourite", CustomRecipes.options(false)[CustomRecipes.OPT_FAVOURITE]);
         assertEquals("Unfavourite", CustomRecipes.options(true)[CustomRecipes.OPT_FAVOURITE]);
-        assertEquals(java.util.Arrays.asList("Save & apply", "Apply", "Restore", "Cancel"), java.util.Arrays.asList(CustomRecipes.forkOptions(false)),
-                "edits not stored yet: keep and store them, store them once, go back to the recipe, or nothing");
-        assertEquals(java.util.Arrays.asList("Save", "Restore", "Cancel"), java.util.Arrays.asList(CustomRecipes.forkOptions(true)),
-                "edits already stored: nothing left to apply");
-        int[] pending = { CustomRecipes.FORK_SAVE_APPLY, CustomRecipes.FORK_APPLY, CustomRecipes.FORK_RESTORE, CustomRecipes.FORK_CANCEL };
-        for (int i = 0; i < pending.length; i++) assertEquals(pending[i], CustomRecipes.forkAction(false, i));
-        int[] applied = { CustomRecipes.FORK_SAVE, CustomRecipes.FORK_RESTORE, CustomRecipes.FORK_CANCEL };
-        for (int i = 0; i < applied.length; i++) assertEquals(applied[i], CustomRecipes.forkAction(true, i));
-        assertEquals(CustomRecipes.FORK_CANCEL, CustomRecipes.forkAction(true, 9), "anything else does nothing");
-        assertEquals("Velvia, edited", CustomRecipes.forkTitle("Velvia"));
-        assertTrue(CustomRecipes.forkBody("Velvia", true).contains("Velvia"));
+        assertEquals("Cancel", CustomRecipes.discardOptions()[CustomRecipes.DISCARD_DEFAULT], "leaving by accident keeps the edits");
+        assertEquals("Discard", CustomRecipes.discardOptions()[CustomRecipes.DISCARD]);
+        assertEquals("Discard edits to Velvia?", CustomRecipes.discardTitle("Velvia"));
         assertEquals("Removes RECIPES/MINE.TXT from the memory card. This cannot be undone.", CustomRecipes.deleteBody("MINE.TXT"));
     }
 }

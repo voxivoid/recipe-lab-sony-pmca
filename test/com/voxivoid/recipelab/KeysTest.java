@@ -12,7 +12,7 @@ class KeysTest {
     private static final Keys.Caps NONE = new Keys.Caps(false), FN = new Keys.Caps(true);
     private static final int[] EVERY_MODE = { Keys.H_RECIPE, Keys.H_CHIPS, Keys.H_EDIT, Keys.H_BRANDS, Keys.H_RECIPES,
             Keys.H_MENU_TOP, Keys.H_MENU_SUB, Keys.H_PAGE, Keys.H_LOGGER, Keys.H_MENU_TOP_VALUE, Keys.H_MENU_SUB_VALUE,
-            Keys.H_RECIPE_CUSTOM, Keys.H_RECIPES_CUSTOM, Keys.H_NEW, Keys.H_NAME };
+            Keys.H_RECIPE_CUSTOM, Keys.H_RECIPES_CUSTOM, Keys.H_NEW, Keys.H_NAME, Keys.H_ACTIONS };
 
     // ---- press / hold
     @Test void aPressReleasedBeforeTheHoldIsShort() {

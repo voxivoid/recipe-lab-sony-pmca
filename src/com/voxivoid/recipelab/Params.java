@@ -373,6 +373,15 @@ final class Params {
         return ORDER[pos];
     }
 
+    /** the panel's lines, top to bottom: the recipe name, the chips, and the edit buttons while the recipe is edited */
+    static final int LINE_RECIPE = 0, LINE_CHIPS = 1, LINE_ACTIONS = 2;
+
+    /** UP / DOWN between the lines, wrapping: down goes recipe → chips → buttons → recipe; without buttons, recipe ↔ chips */
+    static int nextLine(int line, int dir, boolean actions) {
+        int n = actions ? 3 : 2, at = Math.min(line, n - 1);
+        return (at + n + (dir > 0 ? 1 : -1)) % n;
+    }
+
     /** the chip to land on when leaving the recipe line: the last one used if still visible, else the first visible */
     static int enterChips(int lastChip, int[] edit) {
         if (lastChip != R_RECIPE && rowVisible(lastChip, edit)) return lastChip;

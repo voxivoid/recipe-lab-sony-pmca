@@ -263,9 +263,10 @@ still walks all 76, then your custom recipes — favourites shorten the list in 
 the camera's settings, so they survive a power cycle but go with the app if you remove it.
 
 **The chips.** In the chip row, **left / right** walks the chips, **centre** focuses one (it turns amber),
-**up / down** changes its value, **centre** leaves it. Changes to one of the app's own recipes stay a preview until you
-press **centre** on the recipe name, which asks whether to save them as a [custom recipe](#custom-recipes), apply them
-once, or restore the recipe; on a custom recipe they are saved straight away. The wheel keeps changing recipes throughout. A recipe only shows the chips it uses: **CS** recipes show style,
+**up / down** changes its value, **centre** leaves it. Changes stay a preview: as soon as a recipe has one, a row of
+buttons appears under the chips — **Save**, **Apply**, **Restore** (and **Copy** on a [custom recipe](#custom-recipes)) —
+which **down** from the chips reaches. The wheel keeps changing recipes throughout, and asks first if that would
+drop changes you have neither saved nor applied. A recipe only shows the chips it uses: **CS** recipes show style,
 saturation, contrast and sharpness; **PE** recipes show the effect and its sub-setting. Quality, white
 balance, EV and DRO are always there. The legend at the bottom of the screen follows whatever you are doing.
 
@@ -275,7 +276,7 @@ balance, EV and DRO are always there. The legend at the bottom of the screen fol
 |---|---|
 | **ACTIVE** | the camera already has these values |
 | **PREVIEW** | you are only looking; press **centre** to pick it |
-| **EDITED** | the camera has this recipe *with your changes* (you chose **Apply**); press **centre** to save them as a recipe or restore the recipe's own values |
+| **EDITED** | the camera has this recipe *with your changes* (you chose **Apply**); **Save** keeps them, **Restore** goes back to the recipe |
 
 ## Custom recipes
 
@@ -294,16 +295,21 @@ as *Untitled* (or *Untitled 2*, *Untitled 3* … when that is taken), drawn dimm
 so there is nothing to delete, and **OK** straight away keeps the name. The first letter is a capital; the arrow key
 gives another one. Up to 24 letters, digits, spaces and `- . ' ( ) & +`; two recipes cannot share a name.
 
-- **Change a built-in recipe.** Edit any chips — they preview as you go, and the line under the name says *edited —
-  not saved to a recipe*. Then press **centre** on the recipe name. Since a built-in recipe cannot change, the app
-  asks what to do with your edits (*Velvia, edited*):
-  - **Save & apply** — name it, keep it on the card, and store it in the camera.
-  - **Apply** — store your values in the camera this once, without keeping a recipe. The badge then reads **EDITED**.
-  - **Restore** — drop your edits and store the recipe's own values.
-  - **Cancel** — nothing is stored or kept; your edits stay on screen.
+- **Change a recipe and press Save.** Edit any chips — they preview as you go, the line under the name says
+  *edited — not saved*, and a row of buttons appears under the chips. Press **down** from the chips to reach it,
+  **left / right** to choose, **centre** to press:
+  - **Save** — on one of the app's recipes, name it and keep it as a new custom recipe (the app's own recipes never
+    change); on a custom recipe, keep the changes in it.
+  - **Copy** *(custom recipes)* — keep the changes as a new custom recipe under another name (*Golden Hour 2* …),
+    leaving the original as it was.
+  - **Apply** — store your values in the camera this once, without keeping a recipe. The badge then reads **EDITED**,
+    and the button goes away: the camera has them.
+  - **Restore** — drop your changes and go back to the recipe's own values (stored again too, if you had applied them).
 
-  After **Apply**, pressing **centre** again asks once more, with **Save** (keep what the camera now has as a recipe),
-  **Restore** (go back to the recipe's own values) and **Cancel** — all without leaving the recipe.
+  Saving keeps a recipe; it does not store it in the camera — **Apply**, or **centre** on the recipe name, does that.
+  Pressing **centre** on the name of a recipe you have changed asks *Discard edits?*: **Discard** goes back to the
+  recipe's own values and picks them. Turning the wheel, opening the brand list or leaving the app with changes you have
+  neither saved nor applied asks the same, with **Cancel** highlighted.
 - **Hold Fn** *(on cameras that have it)*, or **hold MENU → Save as new recipe** — keeps exactly what the screen
   shows, edits and all, as a new recipe. It is not stored in the camera until you pick it.
 - **Browse → Custom → + New recipe** — keeps what the camera has **stored** right now, so you can set a look up in
@@ -311,8 +317,8 @@ gives another one. Up to 24 letters, digits, spaces and `- . ' ( ) & +`; two rec
 
 ### Changing, renaming, deleting
 
-- **Edit a custom recipe's chips** as usual: the recipe on the card takes the new values the moment you leave the
-  chip — no question asked.
+- **Edit a custom recipe's chips** as usual, then press **Save** in the row under the chips (or **Copy** to keep the
+  original too). Until you do, the card still has the old values.
 - **Hold centre** on a custom recipe, on the main screen or in the brand list, for its options:
   **Favourite** / **Unfavourite**, **Rename** (the name editor, on its current name), **Delete** (asks again, with
   *Cancel* highlighted) and **Cancel**. On a built-in recipe, hold centre still just marks a favourite.

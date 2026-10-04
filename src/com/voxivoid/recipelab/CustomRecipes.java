@@ -433,40 +433,49 @@ final class CustomRecipes {
     static String path(String file) { return DIR + "/" + file; }
 
     /**
-     * Edits of a built-in recipe, which cannot change — one question, asked when the recipe is picked (centre on the
-     * recipe line) with edits nothing keeps. What it offers depends on whether the camera already holds the edits
-     * ({@code applied}, after Apply; badge EDITED):
-     * <ul>
-     * <li>not yet: Save &amp; apply · Apply · Restore · Cancel</li>
-     * <li>already: Save · Restore · Cancel — there is nothing left to apply</li>
-     * </ul>
-     * Restore is always the recipe's own values, stored: it drops pending edits, or undoes an Apply, without walking to
-     * another recipe and back. Cancel writes and keeps nothing.
+     * The button row under the chips while a recipe is edited: what can be done with the edits. Every recipe gets Save
+     * (a built-in one as a new custom recipe, under a name; a custom one over itself), Apply (write them to the camera,
+     * keep nothing — left out once the camera has them) and Restore (the recipe's own values again); a custom one also
+     * Copy (the edits as a new custom recipe, under a name).
      */
-    static String forkTitle(String recipeName) { return Lang.t("custom_fork_title", recipeName); }
-    static String forkBody(String recipeName, boolean applied) { return Lang.t(applied ? "custom_fork_body_applied" : "custom_fork_body", recipeName); }
-    static final int FORK_SAVE_APPLY = 0, FORK_SAVE = 1, FORK_APPLY = 2, FORK_RESTORE = 3, FORK_CANCEL = 4;
-    private static final int[] FORK_PENDING = { FORK_SAVE_APPLY, FORK_APPLY, FORK_RESTORE, FORK_CANCEL },
-            FORK_APPLIED = { FORK_SAVE, FORK_RESTORE, FORK_CANCEL };
-    /** the answers, as the pills show them */
-    static String[] forkOptions(boolean applied) {
-        int[] a = applied ? FORK_APPLIED : FORK_PENDING;
-        String[] out = new String[a.length];
-        for (int i = 0; i < a.length; i++) out[i] = forkLabel(a[i]);
+    static final int EDIT_SAVE = 0, EDIT_COPY = 1, EDIT_APPLY = 2, EDIT_RESTORE = 3;
+    static int[] editActions(boolean custom, boolean applied) {
+        List<Integer> a = new ArrayList<Integer>();
+        a.add(EDIT_SAVE);
+        if (custom) a.add(EDIT_COPY);
+        if (!applied) a.add(EDIT_APPLY);
+        a.add(EDIT_RESTORE);
+        int[] out = new int[a.size()];
+        for (int i = 0; i < out.length; i++) out[i] = a.get(i);
         return out;
     }
-    /** what the highlighted answer does: one of FORK_* */
-    static int forkAction(boolean applied, int sel) {
-        int[] a = applied ? FORK_APPLIED : FORK_PENDING;
-        return sel >= 0 && sel < a.length ? a[sel] : FORK_CANCEL;
-    }
-    private static String forkLabel(int action) {
+    static String editLabel(int action) {
         switch (action) {
-            case FORK_SAVE_APPLY: return Lang.t("button_save_apply");
-            case FORK_SAVE: return Lang.t("button_save");
-            case FORK_APPLY: return Lang.t("button_apply");
-            case FORK_RESTORE: return Lang.t("button_restore");
-            default: return Lang.t("button_cancel");
+            case EDIT_SAVE: return Lang.t("button_save");
+            case EDIT_COPY: return Lang.t("button_copy");
+            case EDIT_APPLY: return Lang.t("button_apply");
+            default: return Lang.t("button_restore");
+        }
+    }
+
+    /**
+     * Leaving an edited recipe — the wheel to another one, the brand list, leaving the app — or picking it again with
+     * centre: the edits would be lost, so ask. Discard is the recipe's own values again (picked, when it was centre);
+     * Cancel, highlighted, keeps the edits on screen.
+     */
+    static String discardTitle(String recipeName) { return Lang.t("custom_discard_title", recipeName); }
+    static String discardBody() { return Lang.t("custom_discard_body"); }
+    static String[] discardOptions() { return new String[] { Lang.t("button_discard"), Lang.t("button_cancel") }; }
+    static final int DISCARD = 0, DISCARD_DEFAULT = 1;
+
+    /** the name a copy starts with: "Golden Hour 2", then 3 …, the name shortened to leave room within NAME_MAX */
+    static String copyName(String name, Collection<String> taken) {
+        Set<String> lower = lower(taken);
+        for (int n = 2; ; n++) {
+            String suffix = " " + n, base = name.trim();
+            if (base.length() + suffix.length() > NAME_MAX) base = base.substring(0, NAME_MAX - suffix.length()).trim();
+            String c = base + suffix;
+            if (!lower.contains(c.toLowerCase(Locale.US))) return c;
         }
     }
 

@@ -118,11 +118,11 @@ final class Keys {
     /**
      * The legend rows: the main panel's three, the browser's two columns, and the menu's — *_VALUE on a row left / right
      * change. *_CUSTOM where the recipe is a custom one, whose hold opens its options rather than marking it; H_NEW on
-     * the Custom group's "+ New recipe" row; H_NAME under the name editor.
+     * the Custom group's "+ New recipe" row; H_NAME under the name editor; H_ACTIONS on the edit buttons.
      */
     static final int H_RECIPE = 0, H_CHIPS = 1, H_EDIT = 2, H_BRANDS = 3, H_RECIPES = 4, H_MENU_TOP = 5, H_MENU_SUB = 6,
             H_PAGE = 7, H_LOGGER = 8, H_MENU_TOP_VALUE = 9, H_MENU_SUB_VALUE = 10, H_RECIPE_CUSTOM = 11, H_RECIPES_CUSTOM = 12,
-            H_NEW = 13, H_NAME = 14;
+            H_NEW = 13, H_NAME = 14, H_ACTIONS = 15;
 
     /** one legend row: per item an icon, an optional shortcut icon drawn before it (I_NONE for none), and a label */
     static final class Hints {
@@ -166,6 +166,7 @@ final class Keys {
                 return r.add(I_MENU, Lang.t("action_menu_hold")).add(I_TRASH, Lang.t("action_hide")).add(I_MENU, Lang.t("action_exit")).done();
             }
             case H_EDIT: return new Row().add(I_ENTER, Lang.t("action_done")).done();
+            case H_ACTIONS: return new Row().add(I_LEFTRIGHT, Lang.t("action_move")).add(I_ENTER, Lang.t("action_select")).add(I_MENU, Lang.t("action_exit")).done();
             case H_BRANDS: return new Row().add(I_ENTER, Lang.t("action_recipes")).add(I_MENU, fn, Lang.t("action_close")).done();
             case H_RECIPES: return new Row().add(I_ENTER, Lang.t("action_pick")).add(I_ENTER, Lang.t("action_favourite_hold")).add(I_MENU, fn, Lang.t("action_close")).done();
             case H_RECIPES_CUSTOM: return new Row().add(I_ENTER, Lang.t("action_pick")).add(I_ENTER, Lang.t("action_options_hold")).add(I_MENU, fn, Lang.t("action_close")).done();

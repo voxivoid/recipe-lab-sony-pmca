@@ -70,6 +70,21 @@ class ParamsEnterTest {
         assertTrue(menuHoldArms(OV_QUIET, false));
     }
 
+    @Test void downWalksRecipeChipsButtonsAndWraps() {
+        assertEquals(LINE_CHIPS, nextLine(LINE_RECIPE, +1, true));
+        assertEquals(LINE_ACTIONS, nextLine(LINE_CHIPS, +1, true));
+        assertEquals(LINE_RECIPE, nextLine(LINE_ACTIONS, +1, true));
+        assertEquals(LINE_ACTIONS, nextLine(LINE_RECIPE, -1, true), "up from the recipe name wraps to the buttons");
+        assertEquals(LINE_CHIPS, nextLine(LINE_ACTIONS, -1, true));
+    }
+
+    @Test void withoutEditsThereAreNoButtonsToLandOn() {
+        assertEquals(LINE_CHIPS, nextLine(LINE_RECIPE, +1, false));
+        assertEquals(LINE_RECIPE, nextLine(LINE_CHIPS, +1, false), "as before the buttons: recipe and chips toggle");
+        assertEquals(LINE_CHIPS, nextLine(LINE_RECIPE, -1, false));
+        assertEquals(LINE_RECIPE, nextLine(LINE_ACTIONS, +1, false), "buttons that just went away count as the chips");
+    }
+
     @Test void aMenuHoldOpensTheAppMenuFromTheLiveScreen() {
         assertTrue(menuHoldArms(OV_FULL, false));
         assertTrue(menuHoldArms(OV_PILL, false));
