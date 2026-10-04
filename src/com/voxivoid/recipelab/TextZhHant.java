@@ -149,7 +149,7 @@ final class TextZhHant {
         { "about_source", "原始碼" },
         { "about_love", "喜歡這個專案嗎？歡迎贊助！" },
         { "about_sponsor", "贊助" },
-        { "about_tip", "打賞" },
+        { "about_github", "GitHub" },
         { "dev_title", "開發工具" },
         { "dev_settings_snapshot", "設定快照" },
         { "dev_settings_diff", "設定差異" },

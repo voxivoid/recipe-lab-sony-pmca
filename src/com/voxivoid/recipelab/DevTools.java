@@ -131,13 +131,16 @@ final class DevTools {
             { Lang.t("about_source"), "github.com/voxivoid/recipe-lab-sony-pmca" },
             { "", "" },                                             // then the ask, as the README makes it
             { "", Lang.t("about_love") },
-            { Lang.t("about_sponsor"), "github.com/sponsors/voxivoid" },
-            { Lang.t("about_tip"), "ko-fi.com/voxivoid" },
+            { Lang.t("about_sponsor"), SPONSOR_URL },                // Ko-fi first: it needs no GitHub account
+            { Lang.t("about_github"), "github.com/sponsors/voxivoid" },
         };
     }
 
     /** the line at the top of the live view, after its drawn heart: the ask and where to give */
-    static String sponsorLine() { return Lang.t("about_love") + "  github.com/sponsors/voxivoid"; }
+    static String sponsorLine() { return Lang.t("about_love") + "  " + SPONSOR_URL; }
+
+    /** where the sponsor ask sends people: Ko-fi, which needs no account anywhere */
+    static final String SPONSOR_URL = "ko-fi.com/voxivoid";
 
     // ------------------------------------------------------------ the reset question (hold trash, or Reset settings)
     /** the question asked before the factory look is stored: it replaces whatever the camera has now */

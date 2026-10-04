@@ -65,7 +65,7 @@ src/com/voxivoid/recipelab/
                                MENU when both close the list ("Fn / MENU close")
   StarView.java                the star next to the recipe name when it is a favourite
   SponsorLine.java             the small "Do you love this project? Sponsor it!" line, with a drawn heart, at the top of
-                               the live view on the Full panel (DevTools.sponsorLine); the About page lists the links
+                               the live view on the Full panel (DevTools.sponsorLine, Ko-fi); the About page lists Ko-fi and GitHub Sponsors
   HintBar.java                 legend view under the panel (uses Legend)
   NativeBackup.java            JNI: read / write / attr / sync
 jni/jni.cpp                    Backup_read / Backup_write / Backup_sync_all via OpenMemories-Platform

@@ -141,9 +141,9 @@ class DevToolsTest {
         assertEquals("platform", a[2][0]); assertEquals("unknown", a[2][1], "an empty platform string");
         assertEquals("source", a[3][0]);
         assertEquals("Do you love this project? Sponsor it!", a[5][1], "the README's ask");
-        assertEquals("github.com/sponsors/voxivoid", a[6][1]);
-        assertEquals("ko-fi.com/voxivoid", a[7][1]);
-        assertEquals("Do you love this project? Sponsor it!  github.com/sponsors/voxivoid", DevTools.sponsorLine(), "the live view's line");
+        assertEquals("ko-fi.com/voxivoid", a[6][1], "Ko-fi first: no GitHub account needed");
+        assertEquals("github.com/sponsors/voxivoid", a[7][1]);
+        assertEquals("Do you love this project? Sponsor it!  ko-fi.com/voxivoid", DevTools.sponsorLine(), "the live view's line");
         assertEquals("ILCE-6000", DevTools.about(null, "ILCE-6000", "2.4")[1][1]);
     }
 
