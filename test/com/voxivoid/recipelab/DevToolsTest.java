@@ -88,8 +88,8 @@ class DevToolsTest {
         assertEquals("Hidden", DevTools.appValue(DevTools.APP_PANEL, Params.OV_HIDDEN, Lang.AUTO));
         for (int r = 0; r < DevTools.APP_ROWS; r++)
             if (r != DevTools.APP_PANEL && r != DevTools.APP_LANG) assertNull(DevTools.appValue(r, Params.OV_FULL, Lang.AUTO), "row " + r);
-        assertTrue(DevTools.appDetail(DevTools.APP_PANEL).contains("left / right"), "the row says how to change it");
-        assertTrue(DevTools.appDetail(DevTools.APP_LANG).contains("left / right"), "the row says how to change it");
+        assertFalse(DevTools.appDetail(DevTools.APP_PANEL).contains("left / right"), "the drawn arrows say how to change it");
+        assertFalse(DevTools.appDetail(DevTools.APP_LANG).contains("left / right"));
     }
 
     @Test void theLanguageRowNamesEachLanguageInItsOwnScript() {
