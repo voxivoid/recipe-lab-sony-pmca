@@ -56,7 +56,7 @@ src/com/voxivoid/recipelab/
   res/raw/ids.txt              every settings entry of 16 bytes or less, used by the snapshot/diff tool
   PickerView.java              Canvas-drawn brand browser (Favourites, Custom, then the brands; an empty group says how to fill it)
   KeyboardView.java            Canvas-drawn name editor: the field and NameEntry's keyboard grid
-  MenuView.java                Canvas-drawn full-screen list: the app menu, the developer menu (rows, some with a
+  MenuView.java                Canvas-drawn full-screen list: the app menu, the developer menu (rows with drawn icons, DevTools.icons; some with a
                                value left / right change in place, between drawn arrows), and read-only pages
                                (About, the key logger)
   Legend.java                  Canvas-drawn key icons and the favourite star, wrapped onto more lines when a row does not fit (Keys.lineCounts; camera font has no symbol glyphs).

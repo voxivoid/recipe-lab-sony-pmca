@@ -66,6 +66,17 @@ class DevToolsTest {
         assertEquals(DevTools.APP_BROWSE, 0, "the menu opens on Browse, so a body without Fn is one press from the list");
     }
 
+    @Test void everyMenuRowHasItsOwnIcon() {
+        for (int level : new int[] { DevTools.LEVEL_APP, DevTools.LEVEL_DEV }) {
+            int[] icons = DevTools.icons(level);
+            assertEquals(DevTools.rows(level), icons.length, "one icon per row, level " + level);
+            java.util.Set<Integer> seen = new java.util.HashSet<Integer>();
+            for (int ic : icons) assertTrue(seen.add(ic), "level " + level + " repeats icon " + ic);
+        }
+        assertEquals(DevTools.IC_NEW, DevTools.icons(DevTools.LEVEL_APP)[DevTools.APP_NEW]);
+        assertEquals(DevTools.IC_LANGUAGE, DevTools.icons(DevTools.LEVEL_APP)[DevTools.APP_LANG]);
+    }
+
     @Test void everyAppRowHasADetailLine() {
         for (int r = 0; r < DevTools.APP_ROWS; r++) assertFalse(DevTools.appDetail(r).isEmpty(), "row " + r);
     }

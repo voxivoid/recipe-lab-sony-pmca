@@ -22,6 +22,15 @@ final class DevTools {
     /** app menu rows, in display order */
     static final int APP_BROWSE = 0, APP_NEW = 1, APP_PANEL = 2, APP_LANG = 3, APP_RESET = 4, APP_ABOUT = 5, APP_DEV = 6, APP_ROWS = 7;
 
+    /** the icons the menus draw beside their rows (MenuView draws them: the camera font has no symbol glyphs) */
+    static final int IC_BROWSE = 0, IC_NEW = 1, IC_PANEL = 2, IC_LANGUAGE = 3, IC_RESET = 4, IC_ABOUT = 5, IC_DEV = 6,
+            IC_SNAPSHOT = 7, IC_LOCK = 8, IC_SAMPLES = 9, IC_CLOCK = 10, IC_KEYS = 11;
+    private static final int[] APP_ICONS = { IC_BROWSE, IC_NEW, IC_PANEL, IC_LANGUAGE, IC_RESET, IC_ABOUT, IC_DEV };
+    private static final int[] DEV_ICONS = { IC_SNAPSHOT, IC_LOCK, IC_SAMPLES, IC_CLOCK, IC_KEYS };
+
+    /** the icon of each row of a level, in row order */
+    static int[] icons(int level) { return (level == LEVEL_APP ? APP_ICONS : DEV_ICONS).clone(); }
+
     /** developer menu rows, in display order */
     static final int ROW_SNAPSHOT = 0, ROW_LOCKS = 1, ROW_SAMPLES = 2, ROW_SETTLE = 3, ROW_KEYS = 4, ROWS = 5;
 

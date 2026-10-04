@@ -498,7 +498,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             if (app) faces[DevTools.APP_LANG] = UiFont.of(this, Lang.choiceScript(langChoice));   // 简体中文 in its own font, whatever the menu's
             boolean value = values[menuSel] != null;
             int legend = app ? (value ? Keys.H_MENU_TOP_VALUE : Keys.H_MENU_TOP) : (value ? Keys.H_MENU_SUB_VALUE : Keys.H_MENU_SUB);
-            menu.set(app ? DevTools.APP_TITLE : DevTools.title(), labels, details, values, faces, menuSel, Keys.hints(legend, caps));
+            menu.set(app ? DevTools.APP_TITLE : DevTools.title(), labels, details, values, faces, DevTools.icons(menuLevel), menuSel, Keys.hints(legend, caps));
         }
         menu.setVisibility(View.VISIBLE);
     }
