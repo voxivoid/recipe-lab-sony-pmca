@@ -2,7 +2,6 @@ package com.voxivoid.recipelab;
 
 import android.content.Context;
 import android.graphics.Canvas;
-import android.graphics.DashPathEffect;
 import android.graphics.Paint;
 import android.graphics.RectF;
 import android.graphics.Typeface;
@@ -14,8 +13,8 @@ import java.util.List;
 
 /**
  * Two-column recipe browser: groups left, recipes of the highlighted group right. Canvas-drawn.
- * The first group is Favourites (the marked recipes, in marking order), the second Custom (a "+ New recipe" row, then
- * the custom recipes from the memory card, A to Z); the rest are the brands.
+ * The first group is Favourites (the marked recipes, in marking order), the second Custom (the custom recipes from the
+ * memory card, A to Z); the rest are the brands.
  */
 public class PickerView extends View {
     private static final int ACCENT = 0xFFF2B85C, INK = 0xFF1A1208;
@@ -23,7 +22,7 @@ public class PickerView extends View {
     private final Paint bg = new Paint(Paint.ANTI_ALIAS_FLAG), edge = new Paint(Paint.ANTI_ALIAS_FLAG), sel = new Paint(Paint.ANTI_ALIAS_FLAG),
             head = new Paint(Paint.ANTI_ALIAS_FLAG), item = new Paint(Paint.ANTI_ALIAS_FLAG), small = new Paint(Paint.ANTI_ALIAS_FLAG), rule = new Paint(),
             track = new Paint(Paint.ANTI_ALIAS_FLAG), thumb = new Paint(Paint.ANTI_ALIAS_FLAG), tagBg = new Paint(Paint.ANTI_ALIAS_FLAG),
-            star = new Paint(Paint.ANTI_ALIAS_FLAG), plus = new Paint(Paint.ANTI_ALIAS_FLAG), dashed = new Paint(Paint.ANTI_ALIAS_FLAG);
+            star = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final RectF r = new RectF();
     private final float d;
     private final Legend legend;
@@ -47,10 +46,6 @@ public class PickerView extends View {
         small.setColor(0x99FFFFFF); small.setTextSize(10 * d);
         rule.setColor(0x33FFFFFF);
         track.setColor(0x26FFFFFF); thumb.setColor(0xCCF2B85C);
-        plus.setStyle(Paint.Style.STROKE); plus.setStrokeWidth(1.5f * d);
-        // the New row's frame: dashed and dim, an "add" slot — the cursor is the only solid amber outline in the list
-        dashed.setStyle(Paint.Style.STROKE); dashed.setStrokeWidth(d); dashed.setColor(0x66FFFFFF);
-        dashed.setPathEffect(new DashPathEffect(new float[] { 4 * d, 3 * d }, 0));
     }
 
     /** what the key probe found; until it is set only the universal keys are named */
@@ -60,7 +55,7 @@ public class PickerView extends View {
     public void setTypeface(Typeface tf) { head.setTypeface(tf); item.setTypeface(tf); small.setTypeface(tf); legend.setTypeface(tf); invalidate(); }
 
     /**
-     * The highlighted recipe (or Favourites.NEW), the active column, the group the left column is on, the favourites in
+     * The highlighted recipe, the active column, the group the left column is on, the favourites in
      * marking order, the recipes with the custom ones, and whether a memory card is in.
      */
     public void set(int recipe, int col, int grp, List<Integer> favourites, Library library, boolean cardIn) {
@@ -74,9 +69,9 @@ public class PickerView extends View {
 
         int g = group;
         boolean favGroup = g == Favourites.GROUP;
-        int count = Favourites.rows(g, favs, lib);
+        int count = Favourites.groupCount(g, favs, lib);
         float colX = w * 0.30f;                                 // divider
-        int mode = column == 0 ? Keys.H_BRANDS : selected == Favourites.NEW ? Keys.H_NEW : lib.isCustom(selected) ? Keys.H_RECIPES_CUSTOM : Keys.H_RECIPES;
+        int mode = column == 0 ? Keys.H_BRANDS : lib.isCustom(selected) ? Keys.H_RECIPES_CUSTOM : Keys.H_RECIPES;
         Keys.Hints hints = Keys.hints(mode, caps);
         float legTop = h - pad - legend.height(legend.lines(w - 2 * pad, hints)) + 2 * d;   // the legend, on as many lines as it needs
         float top = pad + 12 * d, bottom = legTop - 6 * d;      // header / footer reserved
@@ -115,11 +110,11 @@ public class PickerView extends View {
 
         // ---- right: the group's recipes, windowed around the highlight
         float x = colX + pad;
-        if (count == 0) {                                       // an empty Favourites group says so, and how to fill it
+        if (count == 0) {                                       // an empty Favourites or Custom group says so, and how to fill it
             item.setColor(0xCCFFFFFF);
-            c.drawText(Favourites.emptyTitle(), x, listTop + 20 * d, item);
+            c.drawText(Favourites.emptyTitle(g, card), x, listTop + 20 * d, item);
             small.setColor(0x99FFFFFF);
-            c.drawText(Favourites.emptyHint(), x, listTop + 36 * d, small);
+            c.drawText(Favourites.emptyHint(g), x, listTop + 36 * d, small);
         } else {
             float rh = 26 * d;
             int visible = Math.max(1, (int) (listH / rh));
@@ -133,20 +128,6 @@ public class PickerView extends View {
                 int idx = Favourites.recipeAt(g, k, favs, lib);
                 boolean on = idx == selected, active = on && column == 1;
                 if (on) { r.set(x - 4 * d, y, xr, y + rh); c.drawRoundRect(r, 3 * d, 3 * d, active ? sel : outline); }
-                if (idx == Favourites.NEW) {                    // the Custom group's first row, an "add" slot: keep the camera's settings
-                    if (!on) { r.set(x - 4 * d, y + 1.5f * d, xr, y + rh - 1.5f * d); c.drawRoundRect(r, 3 * d, 3 * d, dashed); }
-                    float pr = 6 * d, pcx = x + pr, pcy = y + rh / 2;   // a plus in a ring
-                    plus.setColor(active ? INK : on ? ACCENT : 0xCCFFFFFF);
-                    c.drawCircle(pcx, pcy, pr, plus);
-                    c.drawLine(pcx - pr * 0.5f, pcy, pcx + pr * 0.5f, pcy, plus);
-                    c.drawLine(pcx, pcy - pr * 0.5f, pcx, pcy + pr * 0.5f, plus);
-                    float tx = x + 2 * pr + 6 * d;
-                    item.setColor(active ? INK : on ? ACCENT : 0xFFFFFFFF); item.setFakeBoldText(true);
-                    c.drawText(Lang.t("custom_new"), tx, y + 13 * d, item);
-                    small.setColor(active ? 0xAA1A1208 : 0x99FFFFFF);
-                    c.drawText(card ? Lang.t("custom_new_detail") : Lang.t("custom_no_card"), tx, y + 22 * d, small);
-                    continue;
-                }
                 Recipes.Recipe rc = lib.get(idx);
                 item.setColor(active ? INK : on ? ACCENT : 0xFFFFFFFF); item.setFakeBoldText(on);
                 // under the name only what tells recipes apart: the brand in Favourites, the canonical name under a translated
@@ -162,10 +143,6 @@ public class PickerView extends View {
             }
             item.setFakeBoldText(false);
             if (scroll) scrollbar(c, w - pad - sbW, listTop, listH, sbW, first, visible, count);
-            if (g == Favourites.CUSTOM && lib.customCount() == 0 && card) {   // only the New row: say the other way in
-                small.setColor(0x99FFFFFF);
-                c.drawText(Lang.t("custom_empty_hint"), x, y + 16 * d, small);
-            }
         }
 
         // ---- footer: icon legend

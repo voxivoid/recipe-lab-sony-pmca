@@ -68,9 +68,8 @@ final class TextEn {
 
         // ---- custom recipes (CustomRecipes): the Custom group, the questions, the name editor, the messages
         { "group_custom", "Custom" },
-        { "custom_new", "New recipe" },
-        { "custom_new_detail", "from the camera's current settings" },
-        { "custom_empty_hint", "Or change a recipe's values and save them" },
+        { "custom_empty_title", "No custom recipes yet" },
+        { "custom_empty_hint", "Hold MENU → New recipe, or change a recipe and press Copy" },
         { "custom_no_card", "No memory card — custom recipes are kept on it, in RECIPES" },
         { "custom_options_body", "Custom recipe, on the memory card as %1$s" },
         { "custom_delete_title", "Delete %1$s?" },
@@ -128,7 +127,6 @@ final class TextEn {
         { "action_confirm", "confirm" },
         { "action_cancel", "cancel" },
         { "action_options_hold", "options (hold)" },
-        { "action_new", "new" },
         { "action_type", "type" },
         { "action_delete_char", "delete" },
         { "keys_notice", "Hold MENU for the menu  ·  trash hides the panel  ·  hold trash to reset" },
@@ -152,6 +150,8 @@ final class TextEn {
         // ---- the app menu
         { "menu_browse", "Browse recipes" },
         { "menu_browse_detail", "Brands and favourites" },
+        { "menu_new", "New recipe" },
+        { "menu_new_detail", "Saves the camera's current settings as a custom recipe" },
         { "menu_panel", "Panel visibility" },
         { "menu_panel_detail", "What stays over the live image — left / right to change" },
         { "menu_language", "Language" },

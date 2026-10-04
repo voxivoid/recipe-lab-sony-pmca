@@ -21,7 +21,7 @@ public class MenuView extends View {
     private final Paint bg = new Paint(Paint.ANTI_ALIAS_FLAG), head = new Paint(Paint.ANTI_ALIAS_FLAG),
             item = new Paint(Paint.ANTI_ALIAS_FLAG), small = new Paint(Paint.ANTI_ALIAS_FLAG), row = new Paint(Paint.ANTI_ALIAS_FLAG),
             key = new Paint(Paint.ANTI_ALIAS_FLAG), value = new Paint(Paint.ANTI_ALIAS_FLAG), arrow = new Paint(Paint.ANTI_ALIAS_FLAG),
-            rule = new Paint();
+            rule = new Paint(), track = new Paint(Paint.ANTI_ALIAS_FLAG), thumb = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final RectF r = new RectF();
     private final Path tri = new Path();
     private final Legend legend;
@@ -46,6 +46,7 @@ public class MenuView extends View {
         value.setTextSize(13 * d); value.setFakeBoldText(true); value.setTextAlign(Paint.Align.CENTER);
         arrow.setStyle(Paint.Style.FILL);
         rule.setColor(0x33FFFFFF);
+        track.setColor(0x26FFFFFF); thumb.setColor(0xCCF2B85C);
     }
 
     /** the display language's typeface ({@link UiFont}) */
@@ -95,6 +96,8 @@ public class MenuView extends View {
         float y = top + 8 * d, rh = rowHeight();
         int visible = Math.max(1, (int) ((bottom - y) / rh)), n = labels.length;
         int first = n > visible && selected >= 0 ? Math.max(0, Math.min(selected - visible / 2, n - visible)) : 0;
+        boolean scroll = n > visible && !page;                     // more rows than fit: a scrollbar, as in the brand list
+        float sbW = 4 * d, right = w - pad - (scroll ? sbW + 8 * d : 0), listTop = y;
         if (page) {
             float kc = keyColumn();
             small.setColor(0xDDFFFFFF);
@@ -105,16 +108,17 @@ public class MenuView extends View {
         } else {
             for (int i = first; i < Math.min(n, first + visible); i++, y += rh) {
                 boolean on = i == selected;
-                if (on) { r.set(pad - 6 * d, y, w - pad + 6 * d, y + rh - 3 * d); row.setColor(ACCENT); c.drawRoundRect(r, 4 * d, 4 * d, row); }
+                if (on) { r.set(pad - 6 * d, y, right + 6 * d, y + rh - 3 * d); row.setColor(ACCENT); c.drawRoundRect(r, 4 * d, 4 * d, row); }
                 item.setColor(on ? INK : 0xFFFFFFFF);
                 c.drawText(labels[i], pad, y + 16 * d, item);
                 small.setColor(on ? 0xCC1A1208 : 0x99FFFFFF);
                 c.drawText(details[i], pad, y + 29 * d, small);
                 if (values[i] != null) {
                     value.setTypeface(valueFaces[i] != null ? valueFaces[i] : face);
-                    drawValue(c, values[i], w - pad, y + rh / 2 - 1.5f * d, on);
+                    drawValue(c, values[i], right, y + rh / 2 - 1.5f * d, on);
                 }
             }
+            if (scroll) scrollbar(c, w - pad - sbW + 4 * d, listTop, visible * rh, sbW, first, visible, n);
         }
         c.drawLine(pad, legTop - 2 * d, w - pad, legTop - 2 * d, rule);
         legend.drawWrapped(c, pad, legTop, w - 2 * pad, hints);
@@ -129,6 +133,14 @@ public class MenuView extends View {
         triangle(c, lx, cy, lx + a, cy - a, lx + a, cy + a);                        // left
         triangle(c, rx, cy, rx - a, cy - a, rx - a, cy + a);                        // right
         c.drawText(text, lx + a + gap + tw / 2, cy - (value.ascent() + value.descent()) / 2f, value);
+    }
+
+    /** vertical scrollbar: track + thumb proportional to the visible window, as PickerView draws it */
+    private void scrollbar(Canvas c, float x, float top, float height, float width, int first, int visible, int total) {
+        r.set(x, top, x + width, top + height); c.drawRoundRect(r, width / 2, width / 2, track);
+        float thumbH = Math.max(12 * d, height * visible / total);
+        float thumbY = top + (height - thumbH) * first / Math.max(1, total - visible);
+        r.set(x, thumbY, x + width, thumbY + thumbH); c.drawRoundRect(r, width / 2, width / 2, thumb);
     }
 
     private void triangle(Canvas c, float x1, float y1, float x2, float y2, float x3, float y3) {

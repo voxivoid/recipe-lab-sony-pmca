@@ -54,7 +54,7 @@ src/com/voxivoid/recipelab/
   TextZhHans.java, TextZhHant.java   Simplified and Traditional Chinese, plus the recipe / brand / style names
   UiFont.java                  the typeface of each language: the camera's for English, assets/fonts for Chinese
   res/raw/ids.txt              every settings entry of 16 bytes or less, used by the snapshot/diff tool
-  PickerView.java              Canvas-drawn brand browser (Favourites, Custom with its "New recipe" row, then the brands)
+  PickerView.java              Canvas-drawn brand browser (Favourites, Custom, then the brands; an empty group says how to fill it)
   KeyboardView.java            Canvas-drawn name editor: the field and NameEntry's keyboard grid
   MenuView.java                Canvas-drawn full-screen list: the app menu, the developer menu (rows, some with a
                                value left / right change in place, between drawn arrows), and read-only pages
@@ -107,6 +107,7 @@ down or the wheel move, the centre button runs a row, a short MENU goes back a l
 | row | what it does |
 |---|---|
 | **Browse recipes** | the brand list, as Fn opens it |
+| **New recipe** | the name editor, then the camera's current *stored* settings become a custom recipe ([Custom recipes](#custom-recipes)) |
 | **Panel visibility** | a value — *Full* / *No keys* / *Label* / *Hidden* (`DevTools.PANELS`) — that left / right step through in place, wrapping, with the menu left open; centre steps forward. The same states trash cycles. *No keys* (`OV_QUIET`) is the full panel, chips and all (`Params.panelUp`), without the `HintBar` legend; closing the browser returns to it if it was left on it |
 | **Language** | a value — *Auto* / *English* / *简体中文* / *繁體中文* — stepped the same way, kept in the app's preferences under `language` by code (`Lang.CODES`). The app redraws in it at once. *Auto* follows the camera's locale (`Lang.fromLocale`); each language's name is drawn in its own script and font. See [LOCALIZATION.md](LOCALIZATION.md) |
 | **Reset settings** | asks `DevTools.resetTitle()` (Cancel highlighted), then stages `Recipes.FACTORY` and stores it (`writeAll`, so the quality prompt still asks when it must). The same look as **Factory**, the first Sony recipe, which is in the list like the others (it was hidden once, and users went looking for it) |
@@ -283,7 +284,7 @@ leaves the old file or the new one.
 | a write succeeded after edits (**Apply**; badges **ACTIVE** **EDITED**) | the chips keep what was written (`load()` only) instead of re-staging the recipe; a refused write re-stages the recipe |
 | centre on the recipe line with edits | *Discard edits to Velvia?* — **Discard** re-stages the recipe and writes it (the pick it asked for), **Cancel** highlighted. Saving and copying live only in the button row |
 | leaving an edited recipe — wheel / left / right on the recipe line, Fn or Browse recipes, MENU out of the app — with edits neither saved nor applied (`editsAtRisk`) | the same question; **Discard** goes on with the move (`unlessEditsLost`). After Apply the camera has the edits, so nothing is asked |
-| Custom → **New recipe** | name editor, then the camera's *stored* rows (`cur`) become the recipe — set a look in Sony's menus, bottle it. An unidentified style refuses with a toast before the editor opens |
+| app menu → **New recipe** (`APP_NEW`, below Browse recipes) | name editor, then the camera's *stored* rows (`cur`) become the recipe — set a look in Sony's menus, bottle it. An unidentified style refuses with a toast before the editor opens |
 | hold MENU on a custom recipe in the brand list (`onCustomRow`) | **Rename**, **Delete** (asks again), **Cancel** — Cancel highlighted. MENU is press / hold there: the release closes the list, the hold (`HOLD_MS`) opens the options. Hold centre marks a favourite on every recipe, custom ones included. On the live screen hold MENU stays the app menu |
 
 The name editor (`NameEntry`, `KeyboardView`) is a key grid on universal keys: four-way moves (wrapping, keeping the

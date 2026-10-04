@@ -121,7 +121,6 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private final TextView[] actionBtn = new TextView[4];
     private int browserCol = COL_RECIPES;                 // browser: Params.COL_GROUPS or COL_RECIPES
     private int browserGroup = 0;                     // browser: the group the brand column is on — Favourites.GROUP, .CUSTOM or a brand
-    private boolean onNew = false;                    // browser: the Custom group's "+ New recipe" row is highlighted
     private int lastChip = 0;                         // chip to return to when leaving the recipe line
     private final int[] cur = new int[N], edit = new int[N];
     private boolean previewOk = false;
@@ -523,6 +522,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         if (menuLevel == DevTools.LEVEL_APP) {
             switch (menuSel) {
                 case DevTools.APP_BROWSE: closeMenu(); browse(); break;
+                case DevTools.APP_NEW: closeMenu(); openName(NAME_NEW); break;   // the camera's current settings, kept as a recipe
                 case DevTools.APP_PANEL: case DevTools.APP_LANG: stepMenuValue(+1); break;
                 case DevTools.APP_RESET: closeMenu(); askReset(); break;
                 case DevTools.APP_ABOUT: menuPage = PAGE_ABOUT; renderMenu(); break;
@@ -805,7 +805,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         if (bad != null) { nameEntry.setError(bad); renderName(); return; }
         closeName();
         switch (nameFor) {
-            case NAME_NEW: if (saveNew(name, cur)) onNew = false; break;
+            case NAME_NEW: saveNew(name, cur); break;
             case NAME_COPY: focus = false; if (saveNew(name, edit)) writeAll(); break;   // the copy is the look now: stored too
             case NAME_RENAME: renameCustom(name); break;
         }
@@ -863,7 +863,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             int next = Favourites.afterRemoval(favs, favPos);
             if (next < 0) browserCol = COL_GROUPS; else recipe = next;
         } else if (library.customCount() > 0) recipe = Library.BASE + Math.min(k, library.customCount() - 1);
-        else if (overlay == OV_BROWSER && browserGroup == Favourites.CUSTOM) onNew = true;
+        else if (overlay == OV_BROWSER && browserGroup == Favourites.CUSTOM) browserCol = COL_GROUPS;   // nothing left to highlight
         stageRecipe(); applyPreview();
         showToast(Lang.t("custom_deleted", e.recipe.name), 3000);
         render();
@@ -960,7 +960,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         String pos = library.position(recipe);
         String grp = Recipes.groupLabel(r.group).toUpperCase();
         picker.setVisibility(overlay == OV_BROWSER ? View.VISIBLE : View.GONE);
-        if (overlay == OV_BROWSER) { panel.setVisibility(View.GONE); mini.setVisibility(View.GONE); picker.set(onNew ? Favourites.NEW : recipe, browserCol, browserGroup, favs, library, cardDir != null); return; }
+        if (overlay == OV_BROWSER) { panel.setVisibility(View.GONE); mini.setVisibility(View.GONE); picker.set(recipe, browserCol, browserGroup, favs, library, cardDir != null); return; }
         if (panelUp(overlay)) {
             panel.setVisibility(View.VISIBLE); mini.setVisibility(View.GONE);
             name.setText(Recipes.displayName(r));
@@ -1047,48 +1047,41 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     }
 
     /**
-     * Brand column: the group above / below, its first recipe previewed. An empty Favourites list leaves the recipe
-     * alone; so does a Custom group with nothing but its New row, which is then the row the column enters on.
+     * Brand column: the group above / below, its first recipe previewed. An empty Favourites or Custom list leaves the
+     * recipe alone.
      */
     private void nextGroup(int dir) {
         browserGroup = Favourites.nextGroup(browserGroup, dir);
         int land = Favourites.landing(browserGroup, favs, library);
         if (land >= 0) { recipe = land; stageRecipe(); applyPreview(); }
-        onNew = browserGroup == Favourites.CUSTOM && land < 0;
         if (browserGroup == Favourites.CUSTOM) reportSkipped();
         render();
     }
 
     private void openBrowser(boolean open) {
         if (open) panelBefore = overlay;
-        overlay = open ? OV_BROWSER : fullPanel(); row = 0; focus = false; onNew = false;
+        overlay = open ? OV_BROWSER : fullPanel(); row = 0; focus = false;
         browserGroup = Favourites.openingGroup(favs, recipe, library);
         browserCol = COL_RECIPES;
         if (open && browserGroup == Favourites.CUSTOM) reportSkipped();
         render();
     }
 
-    /** recipe column: the next / previous row of the group the browser is on, wrapping; Custom's New row previews nothing */
+    /** recipe column: the next / previous recipe of the group the browser is on, wrapping */
     private void nextInGroup(int dir) {
-        if (browserGroup == Favourites.CUSTOM) {
-            int to = Favourites.nextCustom(onNew ? Favourites.NEW : recipe, dir, library);
-            onNew = to == Favourites.NEW;
-            if (onNew) { render(); return; }
-            recipe = to;
-        } else recipe = browserGroup == Favourites.GROUP ? Favourites.next(favs, recipe, dir) : Recipes.nextInGroup(recipe, dir);
+        if (browserGroup == Favourites.CUSTOM) { int to = Favourites.nextCustom(recipe, dir, library); if (to < 0) return; recipe = to; }
+        else recipe = browserGroup == Favourites.GROUP ? Favourites.next(favs, recipe, dir) : Recipes.nextInGroup(recipe, dir);
         stageRecipe(); applyPreview(); render();
     }
 
-    /** the recipe column is not reachable while the Favourites list is empty; Custom enters on its New row when the recipe is not one of its own */
+    /** the recipe column is not reachable while the Favourites or Custom list is empty */
     private boolean enterRecipeColumn() {
-        if (!Favourites.hasRecipes(browserGroup, favs, library)) { showToast(Favourites.emptyHint(), 3000); return false; }
-        if (browserGroup == Favourites.CUSTOM && !library.isCustom(recipe)) onNew = true;
+        if (!Favourites.hasRecipes(browserGroup, favs, library)) { showToast(Favourites.emptyHint(browserGroup), 3000); return false; }
         browserCol = COL_RECIPES; render(); return true;
     }
 
-    /** the centre button on a recipe in the browser: close it, leaving that recipe previewed; on New, name the camera's look */
+    /** the centre button on a recipe in the browser: close it, leaving that recipe previewed */
     private void pickInBrowser() {
-        if (onNew) { openName(NAME_NEW); render(); return; }
         openBrowser(false); showToast(Lang.t("status_recipe_previewed", Recipes.displayName(library.get(recipe))), 3000);
     }
 
@@ -1116,7 +1109,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     }
 
     /** the brand list's highlight is on a custom recipe, whose options a MENU hold opens */
-    private boolean onCustomRow() { return overlay == OV_BROWSER && browserCol == COL_RECIPES && !onNew && library.isCustom(recipe); }
+    private boolean onCustomRow() { return overlay == OV_BROWSER && browserCol == COL_RECIPES && library.isCustom(recipe); }
 
     /** trash held past HOLD_MS: ask to reset — unless the camera says the key is already up, and its release got lost */
     private void trashHoldFired() {
@@ -1164,8 +1157,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     /** the centre button pressed: the short action waits for the release, a hold becomes "favourite" (a custom recipe's options) */
     private void enterDown(int repeat) {
         if (enter.down(repeat) != Keys.Hold.ARM) return;          // key repeat while held
-        boolean onRow = !(overlay == OV_BROWSER && onNew);        // the New row is not a recipe
-        if (holdMarksFavourite() && onRow && Favourites.markable(recipe)) handler.postDelayed(enterHold, HOLD_MS);
+        if (holdMarksFavourite()) handler.postDelayed(enterHold, HOLD_MS);
     }
 
     /** the centre button released before the hold fired: what ENTER used to do on the press */

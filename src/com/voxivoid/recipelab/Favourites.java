@@ -6,7 +6,7 @@ import java.util.List;
 /**
  * The favourites list and the browser's group order, without the camera: which recipes are marked, in the order
  * they were marked, how the list is kept in the app's preferences, and how the browser walks it — the Favourites
- * group, then the Custom group (a "+ New recipe" row, then the custom recipes), then the brands.
+ * group, then the Custom group (the custom recipes, A to Z), then the brands.
  *
  * A favourite is remembered by recipe <em>name</em>, not index, so the marks survive a build that inserts a recipe
  * in the middle of the table; a built-in name the table no longer has is dropped on load. A custom recipe is stored as
@@ -23,15 +23,15 @@ final class Favourites {
     static final int GROUP = -1;
     /** the browser group that lists the custom recipes */
     static final int CUSTOM = Recipes.CUSTOM;
-    /** the Custom group's first row, "+ New recipe": a row of the list, not a recipe */
-    static final int NEW = -3;
     /** separates names in the stored string; no recipe name contains it (RecipesTest, CustomRecipes.nameChar) */
     static final String SEP = "|";
     /** marks a custom recipe's name in the stored string */
     static final String CUSTOM_PREFIX = "custom:";
-    /** the right column of an empty Favourites group */
-    static String emptyTitle() { return Lang.t("favourite_empty_title"); }
-    static String emptyHint() { return Lang.t("favourite_empty_hint"); }
+    /** the right column of an empty Favourites or Custom group; Custom without a card says so */
+    static String emptyTitle(int group, boolean card) {
+        return group != CUSTOM ? Lang.t("favourite_empty_title") : card ? Lang.t("custom_empty_title") : Lang.t("custom_no_card");
+    }
+    static String emptyHint(int group) { return Lang.t(group == CUSTOM ? "custom_empty_hint" : "favourite_empty_hint"); }
 
     // ------------------------------------------------------------ storage
     /** how a recipe is kept in the stored string */
@@ -46,7 +46,7 @@ final class Favourites {
         if (stored == null || stored.isEmpty()) return favs;
         for (String name : stored.split("\\" + SEP)) {
             int i = indexOf(name, lib);
-            if (i >= 0 && markable(i) && !favs.contains(i)) favs.add(i);
+            if (i >= 0 && !favs.contains(i)) favs.add(i);
         }
         return favs;
     }
@@ -93,12 +93,8 @@ final class Favourites {
     }
 
     // ------------------------------------------------------------ marking
-    /** whether a recipe can be a favourite: every one — the New row of the Custom group is not a recipe */
-    static boolean markable(int recipe) { return recipe != NEW; }
-
     /** marks an unmarked recipe (at the end) or unmarks a marked one; returns whether it is a favourite now */
     static boolean toggle(List<Integer> favs, int recipe) {
-        if (!markable(recipe)) return false;
         int pos = favs.indexOf(recipe);
         if (pos >= 0) { favs.remove(pos); return false; }
         favs.add(recipe);
@@ -130,10 +126,7 @@ final class Favourites {
         return groupAt((groupRow(group) + n + dir) % n);
     }
 
-    /**
-     * The recipe the highlight lands on when the brand column moves onto {@code group}; -1 when there is nothing to land
-     * on — an empty Favourites list, or a Custom group with only its New row.
-     */
+    /** the recipe the highlight lands on when the brand column moves onto {@code group}; -1 when that group is empty */
     static int landing(int group, List<Integer> favs, Library lib) {
         if (group == GROUP) return favs.isEmpty() ? -1 : favs.get(0);
         if (group == CUSTOM) return lib.customCount() == 0 ? -1 : Library.BASE;
@@ -148,11 +141,12 @@ final class Favourites {
         return favs.get((pos + favs.size() + dir) % favs.size());
     }
 
-    /** the Custom group's row after / before {@code sel} (NEW or a custom recipe), wrapping over the New row and the recipes */
-    static int nextCustom(int sel, int dir, Library lib) {
-        int n = lib.customCount() + 1, pos = sel == NEW || !lib.isCustom(sel) ? 0 : sel - Library.BASE + 1;
-        int to = (pos + n + dir) % n;
-        return to == 0 ? NEW : Library.BASE + to - 1;
+    /** the custom recipe after / before {@code recipe}, A to Z, wrapping; the first one from anywhere else; -1 when none */
+    static int nextCustom(int recipe, int dir, Library lib) {
+        int n = lib.customCount();
+        if (n == 0) return -1;
+        if (!lib.isCustom(recipe)) return Library.BASE;
+        return Library.BASE + (recipe - Library.BASE + n + dir) % n;
     }
 
     /** the group the browser opens on: Favourites when the recipe is one, else Custom or its brand */
@@ -169,23 +163,20 @@ final class Favourites {
         return group == GROUP ? favs.size() : group == CUSTOM ? lib.customCount() : Recipes.GROUP_COUNT[group];
     }
 
-    /** how many rows the recipe column has: the recipes, and the Custom group's New row */
-    static int rows(int group, List<Integer> favs, Library lib) { return groupCount(group, favs, lib) + (group == CUSTOM ? 1 : 0); }
+    /** whether a group has anything in its recipe column — an empty Favourites or Custom list has not */
+    static boolean hasRecipes(int group, List<Integer> favs, Library lib) { return groupCount(group, favs, lib) > 0; }
 
-    /** whether a group has anything in its recipe column — an empty Favourites list has not; Custom always has its New row */
-    static boolean hasRecipes(int group, List<Integer> favs, Library lib) { return rows(group, favs, lib) > 0; }
-
-    /** the recipe on row k of a group's column, or NEW */
+    /** the recipe on row k of a group's column */
     static int recipeAt(int group, int k, List<Integer> favs, Library lib) {
         if (group == GROUP) return favs.get(k);
-        if (group == CUSTOM) return k == 0 ? NEW : Library.BASE + k - 1;
+        if (group == CUSTOM) return Library.BASE + k;
         return Recipes.GROUP_START[group] + k;
     }
 
-    /** the row of a recipe (or NEW) inside a group's column, -1 when it is not there */
+    /** the row of a recipe inside a group's column, -1 when it is not there */
     static int positionIn(int group, int sel, List<Integer> favs, Library lib) {
         if (group == GROUP) return favs.indexOf(sel);
-        if (group == CUSTOM) return sel == NEW ? 0 : lib.isCustom(sel) ? sel - Library.BASE + 1 : -1;
+        if (group == CUSTOM) return lib.isCustom(sel) ? sel - Library.BASE : -1;
         return sel >= 0 && sel < Library.BASE && Recipes.ALL[sel].group == group ? sel - Recipes.GROUP_START[group] : -1;
     }
 }

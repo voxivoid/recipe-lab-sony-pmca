@@ -136,7 +136,6 @@ class FavouritesTest {
         assertTrue(Favourites.hasRecipes(Favourites.GROUP, f, LIB));
         assertFalse(Favourites.hasRecipes(Favourites.GROUP, new ArrayList<Integer>(), LIB));
         assertTrue(Favourites.hasRecipes(0, new ArrayList<Integer>(), LIB), "a brand always has recipes");
-        assertTrue(Favourites.hasRecipes(Favourites.CUSTOM, f, LIB), "Custom always has its New row");
     }
 
     @Test void aGroupListsItsRecipesByPosition() {
@@ -151,28 +150,32 @@ class FavouritesTest {
         assertEquals(-1, Favourites.positionIn(3, Recipes.GROUP_START[0], f, LIB), "a recipe of another brand");
     }
 
-    @Test void theCustomGroupIsItsNewRowThenItsRecipes() {
+    @Test void theCustomGroupListsTheCustomRecipesAToZ() {
         Library lib = custom("Beta", "Alpha");
         List<Integer> f = new ArrayList<Integer>();
-        assertEquals(2, Favourites.groupCount(Favourites.CUSTOM, f, lib), "the brand column counts recipes");
-        assertEquals(3, Favourites.rows(Favourites.CUSTOM, f, lib), "the recipe column has the New row too");
-        assertEquals(Favourites.NEW, Favourites.recipeAt(Favourites.CUSTOM, 0, f, lib));
-        assertEquals(Library.BASE + 1, Favourites.recipeAt(Favourites.CUSTOM, 2, f, lib));
-        assertEquals("Beta", lib.get(Favourites.recipeAt(Favourites.CUSTOM, 2, f, lib)).name, "A to Z");
-        assertEquals(0, Favourites.positionIn(Favourites.CUSTOM, Favourites.NEW, f, lib));
-        assertEquals(2, Favourites.positionIn(Favourites.CUSTOM, Library.BASE + 1, f, lib));
+        assertEquals(2, Favourites.groupCount(Favourites.CUSTOM, f, lib));
+        assertEquals(Library.BASE + 1, Favourites.recipeAt(Favourites.CUSTOM, 1, f, lib));
+        assertEquals("Beta", lib.get(Favourites.recipeAt(Favourites.CUSTOM, 1, f, lib)).name, "A to Z");
+        assertEquals(1, Favourites.positionIn(Favourites.CUSTOM, Library.BASE + 1, f, lib));
         assertEquals(-1, Favourites.positionIn(Favourites.CUSTOM, indexOf("Velvia"), f, lib));
         assertEquals(-1, Favourites.positionIn(3, Library.BASE, f, lib), "a custom recipe is in no brand");
+        assertFalse(Favourites.hasRecipes(Favourites.CUSTOM, f, LIB), "an empty Custom group has no recipe column, like Favourites");
     }
 
-    @Test void theCustomColumnWalksTheNewRowAndTheRecipesAndWraps() {
+    @Test void theCustomColumnWalksItsRecipesAndWraps() {
         Library lib = custom("A", "B");
-        assertEquals(Library.BASE, Favourites.nextCustom(Favourites.NEW, +1, lib));
         assertEquals(Library.BASE + 1, Favourites.nextCustom(Library.BASE, +1, lib));
-        assertEquals(Favourites.NEW, Favourites.nextCustom(Library.BASE + 1, +1, lib), "past the last recipe, back onto New");
-        assertEquals(Library.BASE + 1, Favourites.nextCustom(Favourites.NEW, -1, lib));
-        assertEquals(Favourites.NEW, Favourites.nextCustom(Favourites.NEW, +1, LIB), "with no recipes, New is all there is");
-        assertEquals(Library.BASE, Favourites.nextCustom(indexOf("Velvia"), +1, lib), "from outside the group: as from New");
+        assertEquals(Library.BASE, Favourites.nextCustom(Library.BASE + 1, +1, lib), "past the last one, back to the first");
+        assertEquals(Library.BASE + 1, Favourites.nextCustom(Library.BASE, -1, lib));
+        assertEquals(Library.BASE, Favourites.nextCustom(indexOf("Velvia"), +1, lib), "from outside the group: the first one");
+        assertEquals(-1, Favourites.nextCustom(Library.BASE, +1, LIB), "none at all");
+    }
+
+    @Test void anEmptyGroupSaysHowToFillIt() {
+        assertEquals("No custom recipes yet", Favourites.emptyTitle(Favourites.CUSTOM, true));
+        assertTrue(Favourites.emptyHint(Favourites.CUSTOM).contains("New recipe"), "the app menu row");
+        assertTrue(Favourites.emptyTitle(Favourites.CUSTOM, false).startsWith("No memory card"));
+        assertEquals("No favourites yet", Favourites.emptyTitle(Favourites.GROUP, true));
     }
 
     @Test void everyListedRecipeCanBeMarkedAndReadBack() {
@@ -183,11 +186,9 @@ class FavouritesTest {
         assertEquals(two, Favourites.decode(Favourites.encode(two, LIB, ""), LIB));
     }
 
-    @Test void theFactoryLookCanBeAFavouriteButTheNewRowCannot() {
+    @Test void theFactoryLookCanBeAFavourite() {
         List<Integer> favs = new ArrayList<Integer>();
         assertTrue(Favourites.toggle(favs, Recipes.FACTORY), "a recipe like the others");
-        assertFalse(Favourites.markable(Favourites.NEW));
-        assertFalse(Favourites.toggle(favs, Favourites.NEW), "a row of the list, not a recipe");
         assertEquals(Arrays.asList(Recipes.FACTORY), favs);
     }
 

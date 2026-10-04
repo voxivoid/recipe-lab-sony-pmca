@@ -75,7 +75,7 @@ up for on the A6000.
 ## Can I make my own recipes and save them?
 
 Yes. Change a recipe's chips and the app offers to save the result as a **custom recipe**, under a name you type on
-an on-screen keyboard; **Custom → New recipe** in the brand list keeps whatever the camera has stored right now. They
+an on-screen keyboard; **hold MENU → New recipe** keeps whatever the camera has stored right now. They
 are text files in a `RECIPES` folder on the memory card, so you can back them up, edit them on a computer and share
 them by copying the files. See [Custom recipes](../README.md#custom-recipes).
 

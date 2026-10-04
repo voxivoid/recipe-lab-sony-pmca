@@ -61,7 +61,8 @@ class DevToolsTest {
         assertEquals(DevTools.ROWS, DevTools.rows(DevTools.LEVEL_DEV));
         String[] labels = new String[DevTools.APP_ROWS];
         for (int r = 0; r < DevTools.APP_ROWS; r++) labels[r] = DevTools.appLabel(r);
-        assertEquals(Arrays.asList("Browse recipes", "Panel visibility", "Language", "Reset settings", "About", "Developer  >"), Arrays.asList(labels));
+        assertEquals(Arrays.asList("Browse recipes", "New recipe", "Panel visibility", "Language", "Reset settings", "About", "Developer  >"), Arrays.asList(labels));
+        assertTrue(DevTools.appDetail(DevTools.APP_NEW).contains("current settings"), "the row says what it keeps");
         assertEquals(DevTools.APP_BROWSE, 0, "the menu opens on Browse, so a body without Fn is one press from the list");
     }
 

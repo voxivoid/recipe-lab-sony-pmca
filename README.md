@@ -270,7 +270,8 @@ Open **Recipe Lab** from the Application List. The live view shows the look. The
 
 **Menu** — **hold MENU**
 
-- **Browse recipes** · **Panel visibility** · **Language** · **Reset settings** · **About** · **Developer**.
+- **Browse recipes** · **New recipe** · **Panel visibility** · **Language** · **Reset settings** · **About** · **Developer**.
+- **New recipe** saves the camera's current settings as a [custom recipe](#custom-recipes).
 - Languages: *Auto*, English, 简体中文, 繁體中文.
 
 ## Custom recipes
@@ -280,7 +281,7 @@ Keep your own looks next to the built-in ones. They live on the **memory card**,
 ### Making one
 
 - **From a recipe:** change its chips, then press **Copy** in the buttons under the chips.
-- **From the camera:** Browse → Custom → **New recipe** saves the camera's current settings.
+- **From the camera:** **hold MENU → New recipe** saves the camera's current settings.
 - A keyboard opens to name it. Just type — it replaces *Untitled*. **OK** saves.
 
 ### The edit buttons
