@@ -218,10 +218,10 @@ class LangTest {
 
     @Test void favouritesAreStoredByTheCanonicalNameInAnyLanguage() {
         List<Integer> favs = new ArrayList<Integer>(Arrays.asList(Fixtures.indexOf("Velvia")));
-        String en = Favourites.encode(favs);
+        String en = Favourites.encode(favs, new Library(), "");
         Lang.use(Lang.ZH_HANS);
-        assertEquals(en, Favourites.encode(favs));
-        assertEquals(favs, Favourites.decode(en));
+        assertEquals(en, Favourites.encode(favs, new Library(), ""));
+        assertEquals(favs, Favourites.decode(en, new Library()));
     }
 
     // ---- fonts

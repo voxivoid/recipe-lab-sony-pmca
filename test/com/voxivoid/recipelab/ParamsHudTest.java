@@ -45,11 +45,18 @@ class ParamsHudTest {
         int[] cur = factoryRows();
         int i = indexOf("Kodak Portra 400");
         int[] e = staged(Recipes.ALL[i], cur, Q_FINE);
-        assertEquals("CS  Kodak Portra 400   " + (i + 1) + " / 77   · preview", miniLine(i, cur, e, true));
-        assertEquals("CS  Kodak Portra 400   " + (i + 1) + " / 77   · active", miniLine(i, cur, e, false));
+        String pos = Recipes.position(i);
+        assertEquals("CS  Kodak Portra 400   " + i + " / 76   · preview", miniLine(Recipes.ALL[i], pos, cur, e, true), "counted as the panel counts");
+        assertEquals("CS  Kodak Portra 400   " + i + " / 76   · active", miniLine(Recipes.ALL[i], pos, cur, e, false));
         i = indexOf("GR Retro"); cur[R_QUAL] = Q_RAW;
         e = staged(Recipes.ALL[i], cur, Q_RAW);
-        assertEquals("PE  GR Retro   " + (i + 1) + " / 77   · preview   · quality → JPG Fine", miniLine(i, cur, e, true));
+        assertEquals("PE  GR Retro   " + i + " / 76   · preview   · quality → JPG Fine", miniLine(Recipes.ALL[i], Recipes.position(i), cur, e, true));
+    }
+
+    @Test void miniPillOfACustomRecipe() {
+        int[] cur = factoryRows();
+        Recipes.Recipe mine = CustomRecipes.recipe("Golden Hour", cur);
+        assertEquals("CS  Golden Hour   2 / 5   · active", miniLine(mine, "2 / 5", cur, cur, false));
     }
 
     @Test void qualityPromptExplainsWhyTheQualityMoves() {

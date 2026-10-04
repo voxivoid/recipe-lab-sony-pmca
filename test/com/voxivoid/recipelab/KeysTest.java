@@ -11,7 +11,8 @@ import org.junit.jupiter.api.Test;
 class KeysTest {
     private static final Keys.Caps NONE = new Keys.Caps(false), FN = new Keys.Caps(true);
     private static final int[] EVERY_MODE = { Keys.H_RECIPE, Keys.H_CHIPS, Keys.H_EDIT, Keys.H_BRANDS, Keys.H_RECIPES,
-            Keys.H_MENU_TOP, Keys.H_MENU_SUB, Keys.H_PAGE, Keys.H_LOGGER, Keys.H_MENU_TOP_VALUE, Keys.H_MENU_SUB_VALUE };
+            Keys.H_MENU_TOP, Keys.H_MENU_SUB, Keys.H_PAGE, Keys.H_LOGGER, Keys.H_MENU_TOP_VALUE, Keys.H_MENU_SUB_VALUE,
+            Keys.H_RECIPE_CUSTOM, Keys.H_RECIPES_CUSTOM, Keys.H_NEW, Keys.H_NAME };
 
     // ---- press / hold
     @Test void aPressReleasedBeforeTheHoldIsShort() {
@@ -126,6 +127,19 @@ class KeysTest {
         assertEquals(Arrays.asList("pick", "fav (hold)", "menu (hold)", "hide", "exit"), Arrays.asList(Keys.hints(Keys.H_RECIPE, NONE).labels),
                 "without Fn, browse is in the app menu, and the rest keep their order");
         assertEquals(Arrays.asList("edit", "browse", "menu (hold)", "hide", "exit"), Arrays.asList(Keys.hints(Keys.H_CHIPS, FN).labels));
+    }
+
+    @Test void onACustomRecipeTheHoldOpensItsOptions() {
+        assertEquals(Arrays.asList("pick", "browse", "options (hold)", "menu (hold)", "hide", "exit"), Arrays.asList(Keys.hints(Keys.H_RECIPE_CUSTOM, FN).labels));
+        assertEquals(Arrays.asList("pick", "options (hold)", "close"), Arrays.asList(Keys.hints(Keys.H_RECIPES_CUSTOM, NONE).labels));
+        assertEquals(Arrays.asList("new", "close"), Arrays.asList(Keys.hints(Keys.H_NEW, NONE).labels));
+    }
+
+    @Test void theNameEditorNamesTypeDeleteAndCancel() {
+        Keys.Hints h = Keys.hints(Keys.H_NAME, FN);
+        assertEquals(Arrays.asList("move", "type", "delete", "cancel"), Arrays.asList(h.labels));
+        assertEquals(Keys.I_TRASH, h.icons[2], "trash deletes a character, on every body");
+        assertEquals(Keys.I_MENU, h.icons[3]);
     }
 
     @Test void fnJoinsTheLegendWhenTheBodyHasIt() {

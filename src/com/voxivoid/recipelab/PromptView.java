@@ -11,7 +11,10 @@ import android.view.View;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Modal question: title and explanation (word-wrapped to the box), option pills, icon legend. Canvas-drawn. */
+/**
+ * Modal question: title and explanation (word-wrapped to the box), two or more option pills that left / right walk,
+ * icon legend. Canvas-drawn. Pills that would overflow the box are drawn smaller rather than cut.
+ */
 public class PromptView extends View {
     private static final int ACCENT = 0xFFF2B85C, INK = 0xFF1A1208;
     private static final int[] LEGEND_ICONS = { Legend.ENTER, Legend.MENU };
@@ -96,19 +99,26 @@ public class PromptView extends View {
         for (String l : bodyLines) { c.drawText(l, pad, y, body); y += bodyStep(); }
         y -= bodyStep() - 12 * d;
 
-        // option pills, centred
-        float total = 0; for (String o : options) total += opt.measureText(o) + 28 * d;
-        total += (options.length - 1) * 8 * d;
+        // option pills, centred, smaller when they would not fit
+        float k = 1f, total;
+        while (true) {
+            opt.setTextSize(13 * d * k);
+            total = 0; for (String o : options) total += opt.measureText(o) + 28 * d * k;
+            total += (options.length - 1) * 8 * d * k;
+            if (total <= w - 2 * 8 * d || k <= 0.6f) break;
+            k -= 0.05f;
+        }
         float x = (w - total) / 2, ph = 24 * d, py = y + 3 * d;
         for (int i = 0; i < options.length; i++) {
-            float pw = opt.measureText(options[i]) + 28 * d;
+            float pw = opt.measureText(options[i]) + 28 * d * k;
             r.set(x, py, x + pw, py + ph);
             pill.setColor(i == selected ? ACCENT : 0x33FFFFFF);
             c.drawRoundRect(r, 5 * d, 5 * d, pill);
             opt.setColor(i == selected ? INK : 0xFFFFFFFF);
             c.drawText(options[i], x + pw / 2, py + ph / 2 - (opt.ascent() + opt.descent()) / 2, opt);
-            x += pw + 8 * d;
+            x += pw + 8 * d * k;
         }
+        opt.setTextSize(13 * d);
         y = py + ph + 14 * d;
         if (noteText != null) {
             float ns = 10 * d, avail = w - 2 * pad;

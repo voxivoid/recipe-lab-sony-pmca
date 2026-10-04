@@ -283,6 +283,23 @@ final class Params {
         edit[R_PE] = r.pe; edit[R_EV] = r.ev; edit[R_DRO] = r.dro; edit[R_SUB] = r.sub;
     }
 
+    /**
+     * Whether the staged rows hold a look the recipe does not: what makes an edit worth keeping as a custom recipe.
+     * Quality is not part of a recipe (it follows the Factory base) and neither is PP; the kelvin row only counts in
+     * kelvin mode, and the sub-setting only for an effect that has one — a chip the recipe would not show.
+     */
+    static boolean differsFromRecipe(Recipes.Recipe r, int[] edit) {
+        int[] want = edit.clone();
+        stage(r, want);
+        for (int i = 1; i < N; i++) {
+            if (i == R_QUAL || i == R_PP) continue;
+            if (i == R_KELVIN && want[R_WBMODE] != WB_KELVIN) continue;
+            if (i == R_SUB && Recipes.subValues(want[R_PE]) == null) continue;
+            if (want[i] != edit[i]) return true;
+        }
+        return false;
+    }
+
     // ------------------------------------------------------------ live preview
     private static int clamp(int v, int lo, int hi) { return Math.max(lo, Math.min(hi, v)); }
 
@@ -426,9 +443,9 @@ final class Params {
         return m.toString();
     }
 
-    /** the one-line pill of the minimal overlay */
-    static String miniLine(int recipe, int[] cur, int[] edit, boolean dirty) {
-        return (edit[R_PE] != 0 ? "PE  " : "CS  ") + Recipes.displayName(Recipes.ALL[recipe]) + "   " + (recipe + 1) + " / " + Recipes.ALL.length
+    /** the one-line pill of the minimal overlay; {@code position} as the panel counts it (Library.position) */
+    static String miniLine(Recipes.Recipe recipe, String position, int[] cur, int[] edit, boolean dirty) {
+        return (edit[R_PE] != 0 ? "PE  " : "CS  ") + Recipes.displayName(recipe) + "   " + position
                 + "   · " + Lang.t(dirty ? "mini_preview" : "mini_active")
                 + (edit[R_QUAL] != cur[R_QUAL] ? "   · " + Lang.t("mini_quality", qualityLabel(edit[R_QUAL])) : "");
     }

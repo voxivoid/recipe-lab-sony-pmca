@@ -115,9 +115,14 @@ final class Keys {
     static final int I_NONE = -1, I_WHEEL = 0, I_UPDOWN = 1, I_LEFTRIGHT = 2, I_DIAL = 3, I_ENTER = 4, I_TRASH = 6,
             I_MENU = 7, I_FN = 9;
 
-    /** the legend rows: the main panel's three, the browser's two columns, and the menu's — *_VALUE on a row left / right change */
+    /**
+     * The legend rows: the main panel's three, the browser's two columns, and the menu's — *_VALUE on a row left / right
+     * change. *_CUSTOM where the recipe is a custom one, whose hold opens its options rather than marking it; H_NEW on
+     * the Custom group's "+ New recipe" row; H_NAME under the name editor.
+     */
     static final int H_RECIPE = 0, H_CHIPS = 1, H_EDIT = 2, H_BRANDS = 3, H_RECIPES = 4, H_MENU_TOP = 5, H_MENU_SUB = 6,
-            H_PAGE = 7, H_LOGGER = 8, H_MENU_TOP_VALUE = 9, H_MENU_SUB_VALUE = 10;
+            H_PAGE = 7, H_LOGGER = 8, H_MENU_TOP_VALUE = 9, H_MENU_SUB_VALUE = 10, H_RECIPE_CUSTOM = 11, H_RECIPES_CUSTOM = 12,
+            H_NEW = 13, H_NAME = 14;
 
     /** one legend row: per item an icon, an optional shortcut icon drawn before it (I_NONE for none), and a label */
     static final class Hints {
@@ -149,10 +154,11 @@ final class Keys {
     static Hints hints(int mode, Caps caps) {
         int fn = caps.hasFn() ? I_FN : I_NONE;
         switch (mode) {
-            case H_RECIPE: {
+            case H_RECIPE: case H_RECIPE_CUSTOM: {
                 Row r = new Row().add(I_ENTER, Lang.t("action_pick"));
                 if (caps.hasFn()) r.add(I_FN, Lang.t("action_browse"));
-                return r.add(I_ENTER, Lang.t("action_favourite_hold")).add(I_MENU, Lang.t("action_menu_hold")).add(I_TRASH, Lang.t("action_hide")).add(I_MENU, Lang.t("action_exit")).done();
+                r.add(I_ENTER, mode == H_RECIPE ? Lang.t("action_favourite_hold") : Lang.t("action_options_hold"));
+                return r.add(I_MENU, Lang.t("action_menu_hold")).add(I_TRASH, Lang.t("action_hide")).add(I_MENU, Lang.t("action_exit")).done();
             }
             case H_CHIPS: {
                 Row r = new Row().add(I_ENTER, Lang.t("action_edit"));
@@ -162,6 +168,9 @@ final class Keys {
             case H_EDIT: return new Row().add(I_ENTER, Lang.t("action_done")).done();
             case H_BRANDS: return new Row().add(I_ENTER, Lang.t("action_recipes")).add(I_MENU, fn, Lang.t("action_close")).done();
             case H_RECIPES: return new Row().add(I_ENTER, Lang.t("action_pick")).add(I_ENTER, Lang.t("action_favourite_hold")).add(I_MENU, fn, Lang.t("action_close")).done();
+            case H_RECIPES_CUSTOM: return new Row().add(I_ENTER, Lang.t("action_pick")).add(I_ENTER, Lang.t("action_options_hold")).add(I_MENU, fn, Lang.t("action_close")).done();
+            case H_NEW: return new Row().add(I_ENTER, Lang.t("action_new")).add(I_MENU, fn, Lang.t("action_close")).done();
+            case H_NAME: return new Row().add(I_UPDOWN, Lang.t("action_move")).add(I_ENTER, Lang.t("action_type")).add(I_TRASH, Lang.t("action_delete_char")).add(I_MENU, Lang.t("action_cancel")).done();
             case H_MENU_TOP: return new Row().add(I_UPDOWN, Lang.t("action_move")).add(I_ENTER, Lang.t("action_select")).add(I_MENU, Lang.t("action_close")).done();
             case H_MENU_SUB: return new Row().add(I_UPDOWN, Lang.t("action_move")).add(I_ENTER, Lang.t("action_select")).add(I_MENU, Lang.t("action_back")).done();
             case H_MENU_TOP_VALUE: return new Row().add(I_UPDOWN, Lang.t("action_move")).add(I_LEFTRIGHT, Lang.t("action_change")).add(I_MENU, Lang.t("action_close")).done();

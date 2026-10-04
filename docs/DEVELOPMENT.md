@@ -13,6 +13,7 @@ see [CONTRIBUTING.md](CONTRIBUTING.md).
 - [App menu and developer menu](#app-menu-and-developer-menu)
 - [Exit rule](#exit-rule)
 - [Live preview](#live-preview)
+- [Custom recipes](#custom-recipes)
 - [Keys on every body](#keys-on-every-body)
 - [Developing on WSL](#developing-on-wsl)
 - [Building](#building)
@@ -34,7 +35,13 @@ src/com/voxivoid/recipelab/
   Recipes.java                 the 77-entry table (76 recipes + the factory look, FACTORY, which only Reset settings
                                reaches), brands, GROUP_START / GROUP_COUNT, list navigation that skips FACTORY
   Favourites.java              the favourites list: stored by name in the app's preferences, and how the browser
-                               walks the Favourites group — pure functions, no Android, covered by test/
+                               walks the Favourites and Custom groups — pure functions, no Android, covered by test/
+  CustomRecipes.java           custom recipes on the memory card: the versioned file format, what a file may hold,
+                               names, file names, and reading / writing the RECIPELAB folder — no Android, covered by test/
+  Library.java                 one index over the table's recipes and the custom ones after it: the wheel, the panel's
+                               count — no Android, covered by test/
+  NameEntry.java               the name editor: placeholder, capitals, delete, walking the keyboard grid — no Android,
+                               covered by test/
   DevTools.java                the app menu and developer menu rows, the About and key-logger lines, and the sample
                                run's delays, messages and manifest — pure functions, no Android, covered by test/
   Keys.java                    scan codes, the press / hold gesture, the trash-hold guard, and the legend for the
@@ -47,7 +54,8 @@ src/com/voxivoid/recipelab/
   TextZhHans.java, TextZhHant.java   Simplified and Traditional Chinese, plus the recipe / brand / style names
   UiFont.java                  the typeface of each language: the camera's for English, assets/fonts for Chinese
   res/raw/ids.txt              every settings entry of 16 bytes or less, used by the snapshot/diff tool
-  PickerView.java              Canvas-drawn brand browser (Favourites first, then the brands)
+  PickerView.java              Canvas-drawn brand browser (Favourites, Custom with its "+ New recipe" row, then the brands)
+  KeyboardView.java            Canvas-drawn name editor: the field and NameEntry's keyboard grid
   MenuView.java                Canvas-drawn full-screen list: the app menu, the developer menu (rows, some with a
                                value left / right change in place, between drawn arrows), and read-only pages
                                (About, the key logger)
@@ -207,6 +215,79 @@ Goes through `Camera.Parameters`: `color-mode`, `saturation`, `contrast`, `sharp
 108 / 105 / 106, centre 232, MENU 514 (SK1 229 on the NEX bodies), trash 595 (SK2 513), shutter 516 / 518, Fn 520.
 Read but not bound: AEL 532, C1 622, DISP 608, PLAY 207 (all swallowed), MOVIE 515 and the zoom lever 610 / 611 (passed on).
 
+## Custom recipes
+
+Issues [#14](https://github.com/voxivoid/recipe-lab-sony-pmca/issues/14) and
+[#15](https://github.com/voxivoid/recipe-lab-sony-pmca/issues/15). The user's own recipes are files on the memory card,
+not app storage: they survive an uninstall, show up over USB Mass Storage, and travel by copying. Formatting the card
+deletes them.
+
+**Where.** `RECIPELAB/` at the root of `Environment.getExternalStorageDirectory()` (hence `WRITE_EXTERNAL_STORAGE` in the
+manifest), one file per recipe, `<name>.txt`, `-2`, `-3` … when a file already has that name (compared ignoring case, as
+FAT does). The folder is read again on every `onResume`, so a card edited on a computer or swapped is picked up. No card
+(`getExternalStorageState() != MEDIA_MOUNTED`): the Custom group says so and saving refuses with a toast.
+
+**Index.** `Library` puts them after the table: `recipe` in `0 .. BASE-1` is `Recipes.ALL`, `BASE ..` a custom recipe, A
+to Z. An index moves when a recipe is added, renamed or deleted, so nothing persistent holds one: the last recipe is
+kept as `customRecipe` (its name) beside `recipe`, and favourites by name.
+
+**The file.** `key = value`, `#` comments, UTF-8 (a BOM is ignored), English always. `CustomRecipes.encode` writes:
+
+| key | values | missing → |
+|---|---|---|
+| `format` | the reader to use; this build writes and reads `1` | 1 |
+| `name` | 1–24 of `A–Z a–z 0–9` and ` -.'()&+` — what the name editor can type and every bundled font can draw | the file name |
+| `made-on` | the model it was saved on (`model.name`), informational — setting ids differ across bodies | — |
+| `style` | a runtime name from `Recipes.STYLE_NAMES` (only identified styles) | standard |
+| `saturation`, `contrast`, `sharpness` | -3 .. +3 | 0 |
+| `effect` | a runtime name from `Recipes.PE_KEYS` | off |
+| `effect-option` | one of `Recipes.subValues(effect)`; only read for an effect that has options | the first |
+| `white-balance` | `auto`, `keep` (leave the camera's alone — what a preset captured by *+ New recipe* becomes), or `2500K` .. `9900K` in hundreds | auto |
+| `amber-blue`, `green-magenta` | -7 .. +7, amber / green positive | 0 |
+| `exposure` | -5.0 .. +5.0 in thirds, as the chip shows it: `+0.7`, `-1.3`, `0` | 0 |
+| `dro` | `off`, `auto`, `1` .. `5` | auto |
+
+Quality is not part of a recipe: it follows the Factory base like every other recipe.
+
+**Versions.** The rules that keep old files readable:
+
+- A key a reader does not know is ignored. **Adding** a key never needs a new format; give it a default that means
+  "what an older file meant".
+- **Changing what a key means** (units, a renamed value) bumps `CustomRecipes.FORMAT`, and `parse` gains a case for the
+  new number while the old case stays: every file once written keeps loading.
+- A file whose `format` is newer than the build is skipped as a whole (*made by a newer Recipe Lab*), never half-read —
+  its values end up in the settings store.
+
+**Untrusted input.** A file may come from anyone. Every value is checked against what the store takes
+(`CustomRecipes.problem`, the same ranges as the chips); one bad value skips the file with the reason, nothing is
+clamped. A second file with a name already loaded is skipped too, so a card brought in never replaces a recipe. Files
+over 8 KB, hidden files and anything but `*.txt` are ignored. Skipped files are toasted once, when the Custom group is
+first shown after a load.
+
+**Writing.** `CustomRecipes.save` writes a hidden `.<file>.tmp`, `fsync`s it, then renames it over the target; an edit
+or a rename that changes only case deletes the old file first (FAT sees it as the target), any other rename deletes it
+after. A camera switched off mid-write leaves the old file or the new one.
+
+**The flows** (`MainActivity`, question text in `CustomRecipes`):
+
+| | |
+|---|---|
+| a chip edit on a built-in recipe finishes (centre) | the first time since it was staged: *Save as a custom recipe?* — **Save as new** → name editor; **Not now** keeps the edit as a preview, and the meta line says *edited — not saved to a recipe*. MENU out of a chip never asks |
+| picking (centre on the recipe line) with such edits | *Apply without saving?* — **Save & apply** (name, save, then the usual write and quality question), **Apply only**, **Cancel** |
+| a chip edit on a custom recipe finishes (centre or MENU) | its file is rewritten in place |
+| Custom → **+ New recipe** | name editor, then the camera's *stored* rows (`cur`) become the recipe — set a look in Sony's menus, bottle it. An unidentified style refuses with a toast before the editor opens |
+| hold centre on a custom recipe | **Favourite / Unfavourite**, **Rename**, **Delete** (asks again), **Cancel** — Cancel highlighted. Built-in recipes keep hold = favourite |
+
+The name editor (`NameEntry`, `KeyboardView`) is a key grid on universal keys: four-way moves (wrapping, keeping the
+column across rows of different widths), wheel / dial walk cell by cell, centre types, trash deletes, MENU cancels, the
+**OK** cell saves. A new recipe opens on `CustomRecipes.defaultName` (*Untitled*, *Untitled 2* …) drawn dimmed: the
+first character replaces it, delete clears it, OK keeps it. A rename opens on the real name. The first letter is a
+capital, then lower case; the shift cell gives one more capital. Names are unique ignoring case.
+
+**On the camera, still to prove:** that `getExternalStorageDirectory()` is the memory card on every body, that the folder
+is visible over USB Mass Storage, that `fsync` + rename survive a power-off mid-save, and — as always — that a custom
+recipe picked, then power-cycled, is still the camera's look.
+
 ## Keys on every body
 
 Issue #18. The A6000 has Fn, AEL and C1; the A5100 and A5000 have none of them, the A7S II's AEL did nothing in both
@@ -260,8 +341,10 @@ On the first launch of a build with these keys a toast says where things went (`
 `keysNoticeSeen`).
 
 Favourites live in `getPreferences(MODE_PRIVATE)` under `favourites`, as recipe **names** joined with `|` (so a table
-that gains a recipe does not shift the marks); a name the table no longer has is dropped on load. They are app storage,
-not the camera settings store: a power cycle keeps them, an uninstall does not.
+that gains a recipe does not shift the marks); a name the table no longer has is dropped on load. A custom recipe is
+stored as `custom:<name>`, and its mark is kept while its card is out (`Favourites.encode` carries over the custom names
+it cannot resolve); rename moves it, delete drops it. They are app storage, not the camera settings store: a power cycle
+keeps them, an uninstall does not.
 
 ## Developing on WSL
 
@@ -390,8 +473,8 @@ with the JUnit 5 console launcher, one jar fetched from Maven Central into `out/
 against a SHA-256 pinned in the script (`JUNIT_JAR=<path>` points it at a copy when offline). Reports land in
 `out/test/reports/`.
 
-**What is covered.** Everything that decides without the camera lives in `Params`, `Recipes` and `Favourites`, and the
-tests pin it down:
+**What is covered.** Everything that decides without the camera lives in `Params`, `Recipes`, `Favourites`,
+`CustomRecipes`, `Library` and `NameEntry`, and the tests pin it down:
 
 | | |
 |---|---|
@@ -406,11 +489,14 @@ tests pin it down:
 | `KeysTest` | the press / hold gesture, the trash-hold guard, and that the legend never names a key the body lacks — every function on a universal key, Fn only when reported, the order pick · browse · fav · menu · hide · exit, the reset hold never hinted |
 | `KeyProbeTest` | that the key probe answers "unknown" off the camera instead of throwing |
 | `KeyProbeCameraTest` | the key probe against test doubles of Sony's `ScalarInput`, `KeyStatus` and `ScalarProperties` (`test/com/sony/scalar/sysutil/`, shaped like the OpenMemories-Framework stubs): the reflection finds the real signatures, only `valid == 1` is a key, only `status == 1` is a press. The doubles throw for anything a test did not set up, which is how the "off the camera" answers stay null |
-| `FavouritesTest` | the favourites list — stored by name, unknown names dropped, marking order kept, toggle, the highlight after a removal — and the browser's group order with Favourites first |
+| `FavouritesTest` | the favourites list — stored by name, unknown names dropped, marking order kept, toggle, the highlight after a removal, custom recipes as `custom:<name>` kept while their card is out — and the browser's group order: Favourites, Custom with its New row, the brands |
+| `CustomRecipesTest` | the recipe file: every built-in look survives a round trip, hand-edited files (BOM, CRLF, case, comments, unknown keys) still read, a newer format or any out-of-range value skips the file with the reason, names and default names, file names, and save / edit / rename / delete / load against a temporary folder |
+| `LibraryTest` | one index over the table and the custom recipes: the wheel walks into them and wraps, the panel counts them among themselves |
+| `NameEntryTest` | the name editor: the placeholder the first character replaces, capitals, delete, the length limit, walking the grid with the four-way and the wheel |
 | `LangTest` | the display language: every table has every key and keeps English's placeholders, every key the code asks for exists, the Language row's choices and what Auto resolves to, that samples.txt, locks.txt and favourites stay English in any language, and that each bundled font has a glyph for every character its table uses (read from the font's own cmap) |
 
 **What is not, and cannot be.** `MainActivity` (key dispatch, overlays, the camera and the JNI store), the
-Canvas views (`PickerView`, `PromptView`, `MenuView`, `HintBar`, `Legend`), `UiFont` and `jni/jni.cpp` need a running camera or an
+Canvas views (`PickerView`, `PromptView`, `MenuView`, `KeyboardView`, `HintBar`, `Legend`), `UiFont` and `jni/jni.cpp` need a running camera or an
 Android runtime; there is no Gradle and no Robolectric here, and a mock of `CameraEx` would prove nothing. Those
 stay on the [on-camera checklist](CONTRIBUTING.md#on-the-camera). Likewise the slot ids themselves: a
 test can show that the app writes `0x01070175 = 6`, not that the camera means B&W by it.

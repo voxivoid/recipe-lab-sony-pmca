@@ -219,7 +219,7 @@ Open **Recipe Lab** from the Application List. You get the live image with a pan
 | **wheel** | scroll recipes, from anywhere — the live image changes at once, and that is what the camera will write |
 | **left / right**, **top dial** | scroll recipes too, but only on the recipe line; on the chip row they walk the chips |
 | **centre** | pick the recipe you are looking at — the camera keeps it. A message confirms it |
-| **hold centre** | mark the recipe as a favourite, or unmark it. Works on the main screen and inside the brand list |
+| **hold centre** | mark the recipe as a favourite, or unmark it. Works on the main screen and inside the brand list. On a [custom recipe](#custom-recipes) it opens its options instead: favourite, rename, delete |
 | **up / down** | move between the recipe line and the row of value chips |
 | **TRASH** | hide the panel — once for a small label, twice for nothing, a third time to bring it back. The wheel still works |
 | **hold TRASH** | reset to the factory look — the app asks first |
@@ -234,7 +234,7 @@ bottom of the screen only names it when the camera reports it. **AEL**, **C1** a
 **The menu.** Hold **MENU** for a moment and the menu fills the screen; a short press still leaves the app. Up / down
 or the wheel move, centre picks, **MENU** goes back.
 
-- **Browse recipes** opens the brand list: **Favourites** first, then the brands, on the left; recipes on the right.
+- **Browse recipes** opens the brand list: **Favourites** first, then **Custom**, then the brands, on the left; recipes on the right.
   Left / right switches column (the active one is amber), wheel or up / down scrolls, centre picks.
 - **Panel visibility** — *Full*, *Label* or *Hidden* — changes with left / right, right there in the menu.
 - **Language** — *Auto*, *English*, *简体中文* (Simplified Chinese) or *繁體中文* (Traditional Chinese) — changes the
@@ -252,13 +252,52 @@ the app closed, and the app reopens on that recipe.
 **Favourites.** Hold the **centre button** on a recipe and it joins the **Favourites** group at the top of the brand
 list, with a star next to its name; hold again to drop it. The group lists your picks in the order you marked them,
 and the brand list opens straight on it whenever the recipe you are on is one of them. The wheel on the main screen
-still walks all 76 — favourites shorten the list in the browser, not the scroll. The marks are kept by the app, not in
+still walks all 76, then your custom recipes — favourites shorten the list in the browser, not the scroll. The marks are kept by the app, not in
 the camera's settings, so they survive a power cycle but go with the app if you remove it.
 
 **The chips.** In the chip row, **left / right** walks the chips, **centre** focuses one (it turns amber),
-**up / down** changes its value, **centre** leaves it. The wheel keeps changing recipes throughout. A recipe only shows the chips it uses: **CS** recipes show style,
+**up / down** changes its value, **centre** leaves it. Leaving a changed chip on one of the app's own recipes asks
+whether to save your values as a [custom recipe](#custom-recipes); on a custom recipe they are saved straight away. The wheel keeps changing recipes throughout. A recipe only shows the chips it uses: **CS** recipes show style,
 saturation, contrast and sharpness; **PE** recipes show the effect and its sub-setting. Quality, white
 balance, EV and DRO are always there. The legend at the bottom of the screen follows whatever you are doing.
+
+### Custom recipes
+
+The built-in recipes cannot change, but you can keep your own versions of them — or of anything you set up in the
+camera's menus — on the memory card.
+
+- **From a recipe.** Change any chip on a built-in recipe and press **centre** to finish. The app asks *Save as a
+  custom recipe?* Choose **Save as new** and name it. If you choose **Not now**, the change still previews and can
+  still be picked, but nothing keeps it — and picking asks once more, offering **Save & apply**.
+- **From the camera.** In the brand list, open **Custom** and pick **+ New recipe**: it keeps whatever the camera has
+  stored right now, so you can set a look up in Sony's own menus and bottle it.
+- **Naming.** A keyboard fills the screen. The four-way and the wheel move, **centre** types, **trash** deletes,
+  **MENU** cancels, **OK** saves. A new recipe starts as *Untitled* (or *Untitled 2* …): the first letter you type
+  replaces it, and **OK** straight away keeps it.
+- **Changing one.** Edit its chips as usual — a custom recipe takes the new values the moment you leave the chip.
+  **Hold centre** on it for **Favourite**, **Rename** and **Delete** (which asks again).
+
+Custom recipes appear in the **Custom** group of the brand list, A to Z, and the wheel reaches them after the
+built-in ones. Picking one stores it in the camera exactly like any other recipe.
+
+**On the card.** Each recipe is one small text file in a `RECIPELAB` folder at the top of the memory card, named
+after the recipe — `RECIPELAB/Golden Hour.txt`. Connect the camera as *Mass Storage* (or put the card in a reader)
+to back them up, edit them, or share them: copy a file into someone else's `RECIPELAB` folder and it shows up the
+next time they open the app. The file says what each value may be:
+
+```
+format = 1
+name = Golden Hour
+style = portrait            # standard vivid neutral portrait …
+saturation = -1             # -3 .. +3
+white-balance = 5600K       # auto, keep, or 2500K .. 9900K in 100K steps
+exposure = +0.7             # -5.0 .. +5.0 in thirds: .0 .3 .7
+…
+```
+
+A file with a value the camera would not accept, a name another file already uses, or a format from a newer
+version of the app is skipped, never half-read — the app says which file and why when you open **Custom**.
+**Formatting the card deletes them**, like your photos: copy the folder off first.
 
 **The badge** next to the recipe name says where you stand:
 
@@ -300,6 +339,7 @@ without the app. It is not permanent in the sense of damage. Undo it any time, t
 **Worth knowing:**
 
 - The preview inside the app is temporary; closing the app removes it. Only what you *picked* stays.
+- Removing the app leaves your custom recipes on the memory card, in `RECIPELAB`; formatting the card does not.
 - Built and tested on the A6000 with firmware 3.21. Several other bodies have been reported working — see
   [Compatibility](#compatibility) — but on anything still marked ❔ there, compare what the chips show with your menus
   before picking a recipe.

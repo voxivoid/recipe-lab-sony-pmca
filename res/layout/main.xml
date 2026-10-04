@@ -152,6 +152,13 @@
         android:layout_height="fill_parent"
         android:visibility="gone" />
 
+    <!-- name editor for custom recipes: full screen -->
+    <com.voxivoid.recipelab.KeyboardView
+        android:id="@+id/keyboard"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:visibility="gone" />
+
     <!-- transient status -->
     <TextView
         android:id="@+id/toast"
