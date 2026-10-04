@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.util.AttributeSet;
 import android.view.View;
@@ -14,16 +15,19 @@ import android.view.View;
  * an emoji or a ♥ glyph. The About page lists the addresses (DevTools.about).
  */
 public class SponsorLine extends View {
-    private final Paint text = new Paint(Paint.ANTI_ALIAS_FLAG), heart = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint text = new Paint(Paint.ANTI_ALIAS_FLAG), heart = new Paint(Paint.ANTI_ALIAS_FLAG), bg = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Path path = new Path();
+    private final RectF r = new RectF();
+    /** padding inside the dark pill, in dp */
+    private static final float PAD = 6;
     private final float d;
     private String line = "";
 
     public SponsorLine(Context c, AttributeSet a) {
         super(c, a);
         d = c.getResources().getDisplayMetrics().density;
-        text.setColor(0xB3FFFFFF); text.setTextSize(9 * d);
-        text.setShadowLayer(2 * d, 0, d, 0xAA000000);
+        text.setColor(0xDDFFFFFF); text.setTextSize(9 * d);
+        bg.setColor(0x99000000);                                    // a dark pill, see-through: readable over a bright scene
         heart.setColor(0xFFDB61A2);                                 // the pink of the README's sponsor badge
     }
 
@@ -33,12 +37,14 @@ public class SponsorLine extends View {
 
     @Override
     protected void onMeasure(int w, int h) {
-        setMeasuredDimension((int) (14 * d + text.measureText(line)) + 1, (int) (14 * d));
+        setMeasuredDimension((int) (2 * PAD * d + 14 * d + text.measureText(line)) + 1, (int) (16 * d));
     }
 
     @Override
     protected void onDraw(Canvas c) {
-        float s = 4 * d, cx = s + d, cy = getHeight() / 2f;
+        r.set(0, 0, getWidth(), getHeight());
+        c.drawRoundRect(r, getHeight() / 2f, getHeight() / 2f, bg);
+        float s = 4 * d, cx = PAD * d + s + d, cy = getHeight() / 2f;
         // a heart: two lobes and a point, from a path
         path.reset();
         path.moveTo(cx, cy + s);
@@ -46,6 +52,6 @@ public class SponsorLine extends View {
         path.cubicTo(cx + 0.9f * s, cy - 1.6f * s, cx + 2.2f * s, cy - 0.2f * s, cx, cy + s);
         path.close();
         c.drawPath(path, heart);
-        c.drawText(line, 14 * d, cy - (text.ascent() + text.descent()) / 2, text);
+        c.drawText(line, PAD * d + 14 * d, cy - (text.ascent() + text.descent()) / 2, text);
     }
 }
