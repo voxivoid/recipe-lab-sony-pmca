@@ -433,17 +433,17 @@ final class CustomRecipes {
     static String path(String file) { return DIR + "/" + file; }
 
     /**
-     * The button row under the chips while a recipe is edited: what can be done with the edits. Every recipe gets Save
-     * (a built-in one as a new custom recipe, under a name; a custom one over itself), Apply (write them to the camera,
-     * keep nothing — left out once the camera has them) and Restore (the recipe's own values again); a custom one also
-     * Copy (the edits as a new custom recipe, under a name).
+     * The button row under the chips while a recipe is edited: what can be done with the edits. Every recipe gets Copy
+     * (the edits as a new custom recipe, under a name, then stored in the camera — the original untouched), Apply (write
+     * them to the camera, keep nothing — left out once the camera has them) and Restore (the recipe's own values again);
+     * a custom one also Save (the edits over itself). A built-in recipe never changes, so it has no Save.
      */
     static final int EDIT_SAVE = 0, EDIT_COPY = 1, EDIT_APPLY = 2, EDIT_RESTORE = 3;
     static int[] editActions(boolean custom, boolean applied) {
         List<Integer> a = new ArrayList<Integer>();
-        a.add(EDIT_SAVE);
-        if (custom) a.add(EDIT_COPY);
+        if (custom) a.add(EDIT_SAVE);                       // in this order: Save · Apply · Copy · Restore
         if (!applied) a.add(EDIT_APPLY);
+        a.add(EDIT_COPY);
         a.add(EDIT_RESTORE);
         int[] out = new int[a.size()];
         for (int i = 0; i < out.length; i++) out[i] = a.get(i);
@@ -468,11 +468,18 @@ final class CustomRecipes {
     static String[] discardOptions() { return new String[] { Lang.t("button_discard"), Lang.t("button_cancel") }; }
     static final int DISCARD = 0, DISCARD_DEFAULT = 1;
 
-    /** the name a copy starts with: "Golden Hour 2", then 3 …, the name shortened to leave room within NAME_MAX */
+    /**
+     * The name a copy starts with: "Golden Hour 2", then 3 … — what a name may not hold left out ("Polaroid / Instax" →
+     * "Polaroid Instax 2"), shortened to leave room within NAME_MAX.
+     */
     static String copyName(String name, Collection<String> taken) {
         Set<String> lower = lower(taken);
+        StringBuilder b = new StringBuilder();
+        for (char c : name.toCharArray()) if (nameChar(c) && !(c == ' ' && (b.length() == 0 || b.charAt(b.length() - 1) == ' '))) b.append(c);
+        String clean = b.toString().trim();
+        if (clean.isEmpty()) clean = UNTITLED;
         for (int n = 2; ; n++) {
-            String suffix = " " + n, base = name.trim();
+            String suffix = " " + n, base = clean;
             if (base.length() + suffix.length() > NAME_MAX) base = base.substring(0, NAME_MAX - suffix.length()).trim();
             String c = base + suffix;
             if (!lower.contains(c.toLowerCase(Locale.US))) return c;

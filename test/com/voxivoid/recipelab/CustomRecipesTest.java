@@ -332,13 +332,13 @@ class CustomRecipesTest {
         return l;
     }
 
-    @Test void everyEditedRecipeGetsSaveApplyRestoreAndACustomOneCopy() {
-        assertEquals(Arrays.asList("Save", "Apply", "Restore"), labels(CustomRecipes.editActions(false, false)));
-        assertEquals(Arrays.asList("Save", "Copy", "Apply", "Restore"), labels(CustomRecipes.editActions(true, false)));
+    @Test void everyEditedRecipeGetsCopyApplyRestoreAndACustomOneSave() {
+        assertEquals(Arrays.asList("Apply", "Copy", "Restore"), labels(CustomRecipes.editActions(false, false)), "a built-in recipe never changes: no Save");
+        assertEquals(Arrays.asList("Save", "Apply", "Copy", "Restore"), labels(CustomRecipes.editActions(true, false)));
     }
 
     @Test void applyGoesOnceTheCameraHasTheEdits() {
-        assertEquals(Arrays.asList("Save", "Restore"), labels(CustomRecipes.editActions(false, true)), "nothing left to write");
+        assertEquals(Arrays.asList("Copy", "Restore"), labels(CustomRecipes.editActions(false, true)), "nothing left to write");
         assertEquals(Arrays.asList("Save", "Copy", "Restore"), labels(CustomRecipes.editActions(true, true)));
     }
 
@@ -349,6 +349,11 @@ class CustomRecipesTest {
         String c = CustomRecipes.copyName(long24, Arrays.asList(long24));
         assertEquals("abcdefghijklmnopqrstuv 2", c);
         assertNull(CustomRecipes.nameProblem(c, Arrays.asList(long24), null), "a copy's name is always one the editor accepts");
+        assertEquals("Polaroid Instax 2", CustomRecipes.copyName("Polaroid / Instax", Arrays.<String>asList()), "what a name may not hold goes");
+        for (Recipes.Recipe r : Recipes.ALL) {
+            String n = CustomRecipes.copyName(r.name, Arrays.<String>asList());
+            assertNull(CustomRecipes.nameProblem(n, Arrays.<String>asList(), null), r.name + " → " + n);
+        }
     }
 
     @Test void theQuestionsHighlightTheHarmlessAnswer() {

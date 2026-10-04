@@ -65,13 +65,12 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
      */
     private static final int P_QUALITY = 0, P_RESET = 1, P_DISCARD = 2, P_OPTIONS = 3, P_DELETE = 4;
     private Runnable afterDiscard;                               // what the discard question goes on to do when answered Discard
-    // the name editor, and what its OK does: keep what the screen shows as a new recipe, keep the camera's settings, rename,
-    // keep a custom recipe's edits as a copy
+    // the name editor, and what its OK does: keep a recipe's edits as a copy and store it, keep the camera's settings, rename
     private KeyboardView keyboard;
     private NameEntry nameEntry;
     private boolean nameOpen = false;
-    private int nameFor = NAME_SAVE;
-    private static final int NAME_SAVE = 0, NAME_NEW = 1, NAME_RENAME = 2, NAME_COPY = 3;
+    private int nameFor = NAME_COPY;
+    private static final int NAME_COPY = 0, NAME_NEW = 1, NAME_RENAME = 2;
     // custom recipes: the card's folder (null without a card), the files a load skipped, and whether they were reported
     private final Library library = new Library();
     private File cardDir;
@@ -806,7 +805,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         closeName();
         switch (nameFor) {
             case NAME_NEW: if (saveNew(name, cur)) onNew = false; break;
-            case NAME_SAVE: case NAME_COPY: focus = false; saveNew(name, edit); break;
+            case NAME_COPY: focus = false; if (saveNew(name, edit)) writeAll(); break;   // the copy is the look now: stored too
             case NAME_RENAME: renameCustom(name); break;
         }
         render();
@@ -901,7 +900,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     /** centre on an edit button */
     private void doAction(int action) {
         switch (action) {
-            case CustomRecipes.EDIT_SAVE: if (library.isCustom(recipe)) saveInPlace(); else openName(NAME_SAVE); break;
+            case CustomRecipes.EDIT_SAVE: saveInPlace(); break;     // custom recipes only: a built-in one has Copy
             case CustomRecipes.EDIT_COPY: openName(NAME_COPY); break;
             case CustomRecipes.EDIT_APPLY: writeAll(); break;
             case CustomRecipes.EDIT_RESTORE: {                      // the recipe's own values; written too when the camera had the edits
