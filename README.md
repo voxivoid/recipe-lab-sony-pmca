@@ -274,7 +274,7 @@ balance, EV and DRO are always there. The legend at the bottom of the screen fol
 |---|---|
 | **ACTIVE** | the camera already has these values |
 | **PREVIEW** | you are only looking; press **centre** to pick it |
-| **EDITED** | the camera has this recipe *with your changes* (you chose **Apply**); **Copy** (or **Save**, on a custom recipe) keeps them, **Restore** goes back to the recipe |
+| **EDITED** | shown *next to* the other one: the values are not the recipe's own — you changed them. **PREVIEW EDITED**: changed, not stored yet; **ACTIVE EDITED**: the camera has your changed version (you chose **Apply**). **Copy** (or **Save**, on a custom recipe) keeps the changes, **Restore** goes back to the recipe |
 
 ## Custom recipes
 

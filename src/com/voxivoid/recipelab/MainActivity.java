@@ -56,7 +56,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private PickerView picker;
     private HorizontalScrollView chipScroll;
     private boolean swallowMenuUp = false;
-    private TextView name, nameOriginal, badge, tag, count, meta, mini, toast;
+    private TextView name, nameOriginal, badge, editedBadge, tag, count, meta, mini, toast;
     private StarView fav;
     private PromptView prompt;
     private int promptSel = 0, promptKind = P_QUALITY; private boolean promptOpen = false;
@@ -143,6 +143,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         name = (TextView) findViewById(R.id.name);
         nameOriginal = (TextView) findViewById(R.id.name_original);
         badge = (TextView) findViewById(R.id.badge);
+        editedBadge = (TextView) findViewById(R.id.edited);
         tag = (TextView) findViewById(R.id.tag);
         fav = (StarView) findViewById(R.id.fav);
         count = (TextView) findViewById(R.id.count);
@@ -971,9 +972,11 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             tag.setText(edit[R_PE] != 0 ? "PE" : "CS");
             tag.setTextColor(edit[R_PE] != 0 ? ACCENT : 0xDDFFFFFF);
             fav.setVisibility(favs.contains(recipe) ? View.VISIBLE : View.GONE);
+            // two questions, two badges: does the camera have what you see (ACTIVE / PREVIEW), and is it the recipe as it was (EDITED)
             if (dirty) { badge.setText(Lang.t("state_preview")); badge.setBackgroundResource(R.drawable.badge_warn); }
-            else if (edited()) { badge.setText(Lang.t("state_edited")); badge.setBackgroundResource(R.drawable.badge_edited); }   // stored, but not the recipe's own values
             else { badge.setText(Lang.t("state_active")); badge.setBackgroundResource(R.drawable.badge_ok); }
+            editedBadge.setText(Lang.t("state_edited"));
+            editedBadge.setVisibility(edited() ? View.VISIBLE : View.GONE);
             String m = Params.metaLine(cur, edit, previewOk ? null : previewErr);
             meta.setText(edited() ? m + "  ·  " + Lang.t("meta_unsaved") : m);
             int[] acts = actions();
