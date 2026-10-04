@@ -275,6 +275,7 @@ balance, EV and DRO are always there. The legend at the bottom of the screen fol
 |---|---|
 | **ACTIVE** | the camera already has these values |
 | **PREVIEW** | you are only looking; press **centre** to pick it |
+| **EDITED** | the camera has this recipe *with your changes* (you chose **Apply only**); press **centre** to restore the recipe's own values |
 
 ## Custom recipes
 
@@ -296,7 +297,9 @@ gives another one. Up to 24 letters, digits, spaces and `- . ' ( ) & +`; two rec
 - **Change a built-in recipe.** Edit any chip and press **centre** to finish. Since a built-in recipe cannot change,
   the app asks *Save as a custom recipe?*
   - **Save & apply** — name it, keep it on the card, and store it in the camera.
-  - **Apply only** — store your values in the camera this once, without keeping a recipe.
+  - **Apply only** — store your values in the camera this once, without keeping a recipe. The badge then reads
+    **EDITED**; to go back, press **centre** on the recipe line — *Restore Velvia?* → **Restore & apply** puts the
+    recipe's own values back and stores them, without leaving the recipe.
   - **Cancel** — your values stay on screen as a preview; nothing is stored or kept.
 
   It asks after every change, and again if you pick the recipe with edits that nothing has kept.

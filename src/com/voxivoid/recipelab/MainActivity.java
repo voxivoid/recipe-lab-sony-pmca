@@ -61,8 +61,11 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private StarView fav;
     private PromptView prompt;
     private int promptSel = 0, promptKind = P_QUALITY; private boolean promptOpen = false;
-    /** the questions the prompt asks: quality change, reset, keep or apply an edit of a built-in recipe, a custom recipe's options, delete it */
-    private static final int P_QUALITY = 0, P_RESET = 1, P_FORK = 2, P_OPTIONS = 3, P_DELETE = 4;
+    /**
+     * the questions the prompt asks: quality change, reset, keep or apply an edit of a built-in recipe, a custom recipe's
+     * options, delete it, put a built-in recipe's own values back over an applied edit
+     */
+    private static final int P_QUALITY = 0, P_RESET = 1, P_FORK = 2, P_OPTIONS = 3, P_DELETE = 4, P_RESTORE = 5;
     // the name editor, and what its OK does: keep an edit as a new recipe and store it, keep the camera's settings, rename,
     // keep what the screen shows
     private KeyboardView keyboard;
@@ -341,6 +344,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             case P_RESET: prompt.set(DevTools.resetTitle(), DevTools.resetBody(), DevTools.resetOptions(), promptSel, null); break;
             case P_FORK: prompt.set(CustomRecipes.forkTitle(), CustomRecipes.forkBody(Recipes.displayName(r)), CustomRecipes.forkOptions(), promptSel, null); break;
             case P_OPTIONS: prompt.set(r.name, CustomRecipes.optionsBody(library.entry(recipe).file), CustomRecipes.options(favs.contains(recipe)), promptSel, null); break;
+            case P_RESTORE: { String n = Recipes.displayName(r); prompt.set(CustomRecipes.restoreTitle(n), CustomRecipes.restoreBody(n), CustomRecipes.restoreOptions(), promptSel, null); break; }
             case P_DELETE: prompt.set(CustomRecipes.deleteTitle(r.name), CustomRecipes.deleteBody(library.entry(recipe).file), CustomRecipes.deleteOptions(), promptSel, null); break;
             default: {
                 String[] q = Params.qualityPrompt(cur, edit);
@@ -389,6 +393,10 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
                 else if (promptSel == CustomRecipes.OPT_DELETE) openPrompt(P_DELETE, CustomRecipes.DELETE_DEFAULT);
                 return;
             case P_DELETE: if (promptSel == 0) deleteCustom(); return;
+            case P_RESTORE:
+                if (promptSel == CustomRecipes.RESTORE_APPLY) { stageRecipe(); applyPreview(); writeAll(); }   // the recipe's values, then the usual write
+                else showToast(Lang.t("status_not_picked"), 2000);
+                return;
             default: if (promptSel == 0) writeAll(true); else showToast(Lang.t("status_not_picked"), 2000);   // cancel: recipe stays previewed only
         }
     }
@@ -876,7 +884,11 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
 
     /** the centre button on the recipe line: unsaved edits ask first, then the store is written */
     private void pick() {
-        if (unsavedEdits() && dirty()) { openPrompt(P_FORK, CustomRecipes.FORK_SAVE_APPLY); return; }   // already stored: nothing to ask
+        if (unsavedEdits()) {
+            if (dirty()) openPrompt(P_FORK, CustomRecipes.FORK_SAVE_APPLY);           // edits not stored yet: keep them, apply them, or not
+            else openPrompt(P_RESTORE, CustomRecipes.RESTORE_APPLY);                  // edits already stored: the way back to the recipe
+            return;
+        }
         writeAll();
     }
 
@@ -917,6 +929,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             tag.setTextColor(edit[R_PE] != 0 ? ACCENT : 0xDDFFFFFF);
             fav.setVisibility(favs.contains(recipe) ? View.VISIBLE : View.GONE);
             if (dirty) { badge.setText(Lang.t("state_preview")); badge.setBackgroundResource(R.drawable.badge_warn); }
+            else if (unsavedEdits()) { badge.setText(Lang.t("state_edited")); badge.setBackgroundResource(R.drawable.badge_edited); }   // stored, but not the recipe's own values
             else { badge.setText(Lang.t("state_active")); badge.setBackgroundResource(R.drawable.badge_ok); }
             String m = Params.metaLine(cur, edit, previewOk ? null : previewErr);
             meta.setText(unsavedEdits() ? m + "  ·  " + Lang.t("meta_unsaved") : m);

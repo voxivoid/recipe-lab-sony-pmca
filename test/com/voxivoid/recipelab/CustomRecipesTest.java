@@ -335,6 +335,9 @@ class CustomRecipesTest {
                 "one question after an edit and before a pick: keep and store it, store it this once, or neither");
         assertEquals("Save & apply", CustomRecipes.forkOptions()[CustomRecipes.FORK_SAVE_APPLY]);
         assertEquals("Apply only", CustomRecipes.forkOptions()[CustomRecipes.FORK_APPLY]);
+        assertEquals(java.util.Arrays.asList("Restore & apply", "Cancel"), java.util.Arrays.asList(CustomRecipes.restoreOptions()));
+        assertEquals("Restore & apply", CustomRecipes.restoreOptions()[CustomRecipes.RESTORE_APPLY]);
+        assertEquals("Restore Velvia?", CustomRecipes.restoreTitle("Velvia"));
         assertEquals("Removes RECIPES/MINE.TXT from the memory card. This cannot be undone.", CustomRecipes.deleteBody("MINE.TXT"));
     }
 }

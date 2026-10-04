@@ -28,6 +28,7 @@ final class TextEn {
         // ---- the panel, the pill and the line under the recipe name
         { "state_preview", "PREVIEW" },
         { "state_active", "ACTIVE" },
+        { "state_edited", "EDITED" },
         { "mini_preview", "preview" },
         { "mini_active", "active" },
         { "mini_quality", "quality → %1$s" },
@@ -80,6 +81,9 @@ final class TextEn {
         { "custom_no_card", "No memory card — custom recipes are kept on it, in RECIPES" },
         { "custom_fork_title", "Save as a custom recipe?" },
         { "custom_fork_body", "%1$s comes with the app and cannot change. Save your edits as a new custom recipe to keep them, or apply them just this once." },
+        { "custom_restore_title", "Restore %1$s?" },
+        { "custom_restore_body", "The camera has your edited version of %1$s. Put back the recipe's own values and apply them?" },
+        { "button_restore_apply", "Restore & apply" },
         { "custom_options_body", "Custom recipe, on the memory card as %1$s" },
         { "custom_delete_title", "Delete %1$s?" },
         { "custom_delete_body", "Removes %1$s from the memory card. This cannot be undone." },

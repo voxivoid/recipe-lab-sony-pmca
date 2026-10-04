@@ -443,6 +443,15 @@ final class CustomRecipes {
     }
     static final int FORK_SAVE_APPLY = 0, FORK_APPLY = 1;
 
+    /**
+     * Centre on a built-in recipe whose edited values are what the camera has stored ("Apply only"): put the recipe's own
+     * values back, and store them. Asked where the user is — no need to walk to another recipe and back.
+     */
+    static String restoreTitle(String recipeName) { return Lang.t("custom_restore_title", recipeName); }
+    static String restoreBody(String recipeName) { return Lang.t("custom_restore_body", recipeName); }
+    static String[] restoreOptions() { return new String[] { Lang.t("button_restore_apply"), Lang.t("button_cancel") }; }
+    static final int RESTORE_APPLY = 0;
+
     /** a hold on a custom recipe: what can be done with it. Cancel is highlighted, so a stray centre press does nothing */
     static String optionsBody(String file) { return Lang.t("custom_options_body", path(file)); }
     static String[] options(boolean favourite) {
