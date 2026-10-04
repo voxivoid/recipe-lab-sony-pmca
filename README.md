@@ -44,8 +44,9 @@
 - [Using it](#using-it)
 - [Custom recipes](#custom-recipes)
   - [Making one](#making-one)
-  - [Changing, renaming, deleting](#changing-renaming-deleting)
-  - [Sharing: export and import](#sharing-export-and-import)
+  - [The edit buttons](#the-edit-buttons)
+  - [Rename, delete, favourite](#rename-delete-favourite)
+  - [Sharing](#sharing)
 - [What it changes](#what-it-changes)
 - [Uninstalling](#uninstalling)
 - [Troubleshooting](#troubleshooting)
@@ -274,98 +275,51 @@ Open **Recipe Lab** from the Application List. The live view shows the look. The
 
 ## Custom recipes
 
-The 77 built-in recipes never change, but you can keep your own looks next to them: a built-in recipe with your
-tweaks, something you set up in the camera's own menus, or a recipe someone else made. They live on the **memory
-card**, one small text file each, and show up in the **Custom** group of the brand list, A to Z. The wheel reaches
-them after the built-in recipes, and picking one stores it in the camera exactly like any other recipe.
-
-Without a memory card in the camera there is nowhere to keep them: the Custom group says so, and saving refuses.
+Keep your own looks next to the built-in ones. They live on the **memory card**, under **Custom** in the brand list.
 
 ### Making one
 
-Every way ends on the **name editor**: a keyboard fills the screen. The four-way and the wheel move, **centre** types
-the highlighted key, **trash** deletes the last letter, **MENU** cancels, and the **OK** key saves. A new recipe starts
-as *Untitled* (or *Untitled 2*, *Untitled 3* … when that is taken), drawn dimmed: the first letter you type replaces it,
-so there is nothing to delete, and **OK** straight away keeps the name. The first letter is a capital; the arrow key
-gives another one. Up to 24 letters, digits, spaces and `- . ' ( ) & +`; two recipes cannot share a name.
+- **From a recipe:** change its chips, then press **Copy** in the buttons under the chips.
+- **From the camera:** Browse → Custom → **New recipe** saves the camera's current settings.
+- A keyboard opens to name it. Just type — it replaces *Untitled*. **OK** saves.
 
-- **Change a recipe and press Copy.** Edit any chips — they preview as you go, the **EDITED** badge appears,
-  and a row of buttons appears under the chips. Press **down** from the chips to reach it,
-  **left / right** to choose, **centre** to press:
-  - **Save** *(custom recipes)* — keep the changes in the recipe. The app's own recipes never change, so they have no
-    Save.
-  - **Apply** — store your values in the camera this once, without keeping a recipe. The badge then reads **EDITED**,
-    and the button goes away: the camera has them.
-  - **Copy** — name it and keep the changes as a new custom recipe (*Velvia 2*, *Golden Hour 2* …), leaving the
-    original as it was. The copy is then stored in the camera too.
-  - **Restore** — drop your changes and go back to the recipe's own values (stored again too, if you had applied them).
+### The edit buttons
 
-  **Save** keeps a custom recipe without storing it in the camera — **Apply**, or **centre** on the recipe name, does that.
-  Pressing **centre** on the name of a recipe you have changed asks *Discard edits?*: **Discard** goes back to the
-  recipe's own values and picks them. Turning the wheel, opening the brand list or leaving the app with changes you have
-  neither saved nor applied asks the same, with **Cancel** highlighted.
-- **Browse → Custom → New recipe** — keeps what the camera has **stored** right now, so you can set a look up in
-  Sony's own menus (Creative Style, white balance, DRO …) and bottle it.
+Change any chip and buttons appear under the chips. Press **down** to reach them.
 
-### Changing, renaming, deleting
+| button | does |
+|---|---|
+| **Save** | keeps the changes *(your own recipes only)* |
+| **Apply** | stores the changes in the camera, without saving |
+| **Copy** | saves the changes as a new recipe, and stores it |
+| **Restore** | back to the recipe's own values |
 
-- **Edit a custom recipe's chips** as usual, then press **Save** in the row under the chips (or **Copy** to keep the
-  original too). Until you do, the card still has the old values.
-- **Hold MENU** on a custom recipe in the brand list for its options: **Rename** (the name editor, on its current
-  name), **Delete** (asks again, with *Cancel* highlighted) and **Cancel**. A short MENU press still closes the list.
-- **Hold centre** marks it a favourite, as on any recipe.
+Leaving a changed recipe asks first: **Discard** or **Cancel**.
 
-### Sharing: export and import
+### Rename, delete, favourite
 
-There is no export button because there is nothing to convert: each recipe already *is* a file, in a `RECIPES`
-folder at the top of the memory card. The camera only handles short, old-style file names, so the app names each file
-after the first eight letters and digits of the recipe — *Golden Hour* is `RECIPES/GOLDENHO.TXT` — and keeps the real
-name inside the file.
+- In the brand list, **hold MENU** on a custom recipe → **Rename** or **Delete**.
+- **Hold centre** → favourite, as on any recipe.
 
-**Export** — get the files onto a computer:
+### Sharing
 
-1. Set `Setup → USB Connection` to **Mass Storage** and connect the camera (or put the card in a card reader).
-2. Open the card, then the `RECIPES` folder, and copy out the `.TXT` files you want to keep or share.
-
-**Import** — use someone else's:
-
-1. Copy their file into `RECIPES` on your card. If the folder is not there yet, create it at the top of the card,
-   next to `DCIM`, with exactly that name. Give the file a **short name**: up to eight letters or digits, then `.TXT`
-   — `PORTRA.TXT`, not `Kodak Portra look (v2).txt`. The camera cannot be relied on to see longer names; the name the
-   app shows comes from the `name =` line inside, not from the file name.
-2. Eject, put the card back, and open Recipe Lab: the recipe is in **Custom**. Nothing needs restarting beyond
-   reopening the app.
-
-The files are plain text you can read and edit in any text editor. Each line says which values are allowed:
+- Each recipe is a small text file in `RECIPES` on the card — e.g. `RECIPES/GOLDENHO.TXT`.
+- **Export:** connect the camera as *Mass Storage*. Copy the files out.
+- **Import:** copy a file into `RECIPES`. Keep its name short: up to 8 letters, then `.TXT`. Reopen the app.
+- Edit them in any text editor. Each line lists its allowed values:
 
 ```
-# Recipe Lab custom recipe. Keep it in the RECIPES folder of a memory card, under a name of
-# up to eight letters or digits and .TXT: the camera reads no longer file names. Its own name is below.
-format = 1
 name = Golden Hour
-made-on = ILCE-6000          # the camera it was saved on
 style = portrait             # standard vivid neutral portrait …
 saturation = -1              # -3 .. +3
-contrast = -1                # -3 .. +3
-sharpness = 0                # -3 .. +3
-effect = off                 # off toy-camera pop-color …
-white-balance = 5600K        # auto, keep, or 2500K .. 9900K in 100K steps
-amber-blue = +2              # -7 (blue) .. +7 (amber)
-green-magenta = 0            # -7 (magenta) .. +7 (green)
-exposure = +0.7              # -5.0 .. +5.0 in thirds: .0 .3 .7
-dro = auto                   # off, auto, 1 .. 5
+white-balance = 5600K        # auto, keep, or 2500K .. 9900K
+exposure = +0.7              # -5.0 .. +5.0 in thirds
 ```
 
-A line you leave out takes the factory value; a line the app does not know is ignored. Because the file ends up in
-your camera's settings, the app is strict about the rest: a file with a value outside its range, a name another recipe
-already has, or a `format` from a newer version of Recipe Lab is **skipped as a whole**, never half-read — opening
-**Custom** tells you which file and why. Nothing you import ever replaces a recipe you already have.
+- A file with a bad value is skipped. The app says which and why.
+- **Formatting the card deletes them.** Back up `RECIPES` first.
 
-`made-on` says which camera a recipe was saved on. Settings sit in the same places across the A6000 family, but a
-recipe made on a different body may not look the same on yours — see [Compatibility](#compatibility).
-
-**Worth knowing:** custom recipes stay on the card when you remove the app, but **formatting the card deletes
-them**, like your photos — copy the folder off first. A different card has its own set.
+Full file format: [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#custom-recipes).
 
 ## What it changes
 
