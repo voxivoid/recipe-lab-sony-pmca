@@ -272,10 +272,10 @@ after. A camera switched off mid-write leaves the old file or the new one.
 
 | | |
 |---|---|
-| a chip edit on a built-in recipe finishes (centre) | the first time since it was staged: *Save as a custom recipe?* — **Save & apply** (name editor, save, then the usual write and quality question), **Apply only** (the write alone), **Cancel** (the edit stays a preview; the meta line says *edited — not saved to a recipe*). MENU out of a chip never asks |
+| a chip edit on a built-in recipe finishes (centre) | every time it changed a value (compared with the values when the chip was focused): *Save as a custom recipe?* — **Save & apply** (name editor, save, then the usual write and quality question), **Apply only** (the write alone), **Cancel** (the edit stays a preview; the meta line says *edited — not saved to a recipe*). MENU out of a chip never asks |
 | picking (centre on the recipe line) with such edits | the same question, every time |
 | after any successful write | the chips keep what was written (`load()` only) instead of re-staging the recipe, so edits applied with **Apply only** stay on screen; a refused write re-stages the recipe |
-| a chip edit on a custom recipe finishes (centre or MENU) | its file is rewritten in place |
+| a chip edit on a custom recipe finishes (centre or MENU) | its file is rewritten in place, when the value changed |
 | Custom → **+ New recipe** | name editor, then the camera's *stored* rows (`cur`) become the recipe — set a look in Sony's menus, bottle it. An unidentified style refuses with a toast before the editor opens |
 | hold centre on a custom recipe | **Favourite / Unfavourite**, **Rename**, **Delete** (asks again), **Cancel** — Cancel highlighted. Built-in recipes keep hold = favourite |
 

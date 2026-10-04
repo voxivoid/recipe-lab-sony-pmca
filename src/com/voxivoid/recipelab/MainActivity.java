@@ -73,7 +73,6 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private File cardDir;
     private List<String> skipped = new ArrayList<String>();
     private boolean skippedShown = false;
-    private boolean forkAsked = false;                           // the keep-this-edit question was answered for this staging
     private SharedPreferences prefs;
     private MenuView menu;
     private boolean menuOpen = false;
@@ -112,6 +111,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private Object cameraEx; private Camera camera; private String origFlat;
     private int row = 0, recipe = 0, overlay = OV_FULL;   // Params.OV_*: the full panel, the pill, nothing, the browser
     private boolean focus = false;                        // a chip is focused: UP/DOWN change its value
+    private final int[] focusStart = new int[N];          // the values when the chip was focused: leaving it unchanged is no edit
     private int browserCol = COL_RECIPES;                 // browser: Params.COL_GROUPS or COL_RECIPES
     private int browserGroup = 0;                     // browser: the group the brand column is on — Favourites.GROUP, .CUSTOM or a brand
     private boolean onNew = false;                    // browser: the Custom group's "+ New recipe" row is highlighted
@@ -253,7 +253,6 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         Recipes.Recipe r = library.get(recipe);
         Params.stage(r, edit);
         edit[R_QUAL] = recipeQuality(r);
-        forkAsked = false;
         // reopen on the last selected recipe: a custom one by name, as its index moves; the table's one stays as the fallback
         if (r.isCustom()) prefs.edit().putString("customRecipe", r.name).commit();
         else prefs.edit().putInt("recipe", recipe).remove("customRecipe").commit();
@@ -854,14 +853,16 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     }
 
     /**
-     * A chip edit finished — centre, or MENU with {@code ask} false. A custom recipe takes the new values at once; a
-     * built-in one cannot change, so the first finished edit since it was staged asks whether to keep it as a new one.
+     * A chip edit finished — centre, or MENU with {@code ask} false. Only an edit that changed the value counts. A custom
+     * recipe takes the new values at once; a built-in one cannot change, so every such edit asks whether to keep it as a
+     * new recipe and apply it, or only apply it.
      */
     private void editDone(boolean ask) {
+        if (java.util.Arrays.equals(focusStart, edit)) return;      // focused and left without a change
         Recipes.Recipe r = library.get(recipe);
         if (!Params.differsFromRecipe(r, edit)) return;
         if (r.isCustom()) { saveInPlace(); return; }
-        if (ask && !forkAsked) { forkAsked = true; openPrompt(P_FORK, CustomRecipes.FORK_SAVE_APPLY); }
+        if (ask) openPrompt(P_FORK, CustomRecipes.FORK_SAVE_APPLY);
     }
 
     /** edits of a built-in recipe that no recipe holds: what picking asks about, and what the panel says */
@@ -957,7 +958,11 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         render();
     }
 
-    private void setFocus(boolean f) { focus = f && row != 0; render(); }
+    private void setFocus(boolean f) {
+        focus = f && row != 0;
+        if (focus) System.arraycopy(edit, 0, focusStart, 0, N);
+        render();
+    }
 
     private void nextRecipe(int dir) { recipe = library.next(recipe, dir); stageRecipe(); applyPreview(); render(); }
 
