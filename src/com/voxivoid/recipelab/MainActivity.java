@@ -184,7 +184,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         }
     }
 
-    /** the edit buttons under the chips (Save, Copy, Apply, Restore — CustomRecipes.editActions), drawn like chips */
+    /** the edit buttons under the chips (Save, Apply, Copy, Discard — CustomRecipes.editActions), drawn like chips */
     private void buildActions() {
         for (int i = 0; i < actionBtn.length; i++) {
             TextView b = new TextView(this);
@@ -904,12 +904,15 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             case CustomRecipes.EDIT_SAVE: saveInPlace(); break;     // custom recipes only: a built-in one has Copy
             case CustomRecipes.EDIT_COPY: openName(NAME_COPY); break;
             case CustomRecipes.EDIT_APPLY: writeAll(); break;
-            case CustomRecipes.EDIT_RESTORE: {                      // the recipe's own values; written too when the camera had the edits
-                boolean applied = !dirty();
-                stageRecipe(); applyPreview();
-                if (applied) writeAll();
+            case CustomRecipes.EDIT_DISCARD:                         // asks first; then the recipe's own values, written too when the camera had the edits
+                afterDiscard = new Runnable() { public void run() {
+                    boolean applied = !dirty();
+                    stageRecipe(); applyPreview();
+                    if (applied) writeAll();
+                    render();
+                } };
+                openPrompt(P_DISCARD, CustomRecipes.DISCARD_DEFAULT);
                 break;
-            }
         }
         render();
     }

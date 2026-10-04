@@ -59,7 +59,6 @@ final class TextZhHant {
         { "custom_delete_body", "將從記憶卡刪除 %1$s，此操作無法復原。" },
         { "button_save", "儲存" },
         { "button_apply", "套用" },
-        { "button_restore", "還原" },
         { "button_copy", "複製" },
         { "button_discard", "放棄" },
         { "custom_discard_title", "放棄對 %1$s 的修改？" },

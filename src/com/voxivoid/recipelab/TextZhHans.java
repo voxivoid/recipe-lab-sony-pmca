@@ -59,7 +59,6 @@ final class TextZhHans {
         { "custom_delete_body", "将从存储卡删除 %1$s，此操作无法撤销。" },
         { "button_save", "保存" },
         { "button_apply", "应用" },
-        { "button_restore", "恢复" },
         { "button_copy", "复制" },
         { "button_discard", "放弃" },
         { "custom_discard_title", "放弃对 %1$s 的修改？" },

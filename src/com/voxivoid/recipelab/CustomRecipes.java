@@ -435,16 +435,17 @@ final class CustomRecipes {
     /**
      * The button row under the chips while a recipe is edited: what can be done with the edits. Every recipe gets Copy
      * (the edits as a new custom recipe, under a name, then stored in the camera — the original untouched), Apply (write
-     * them to the camera, keep nothing — left out once the camera has them) and Restore (the recipe's own values again);
+     * them to the camera, keep nothing — left out once the camera has them) and Discard (the recipe's own values again,
+     * after asking);
      * a custom one also Save (the edits over itself). A built-in recipe never changes, so it has no Save.
      */
-    static final int EDIT_SAVE = 0, EDIT_COPY = 1, EDIT_APPLY = 2, EDIT_RESTORE = 3;
+    static final int EDIT_SAVE = 0, EDIT_COPY = 1, EDIT_APPLY = 2, EDIT_DISCARD = 3;
     static int[] editActions(boolean custom, boolean applied) {
         List<Integer> a = new ArrayList<Integer>();
-        if (custom) a.add(EDIT_SAVE);                       // in this order: Save · Apply · Copy · Restore
+        if (custom) a.add(EDIT_SAVE);                       // in this order: Save · Apply · Copy · Discard
         if (!applied) a.add(EDIT_APPLY);
         a.add(EDIT_COPY);
-        a.add(EDIT_RESTORE);
+        a.add(EDIT_DISCARD);
         int[] out = new int[a.size()];
         for (int i = 0; i < out.length; i++) out[i] = a.get(i);
         return out;
@@ -454,7 +455,7 @@ final class CustomRecipes {
             case EDIT_SAVE: return Lang.t("button_save");
             case EDIT_COPY: return Lang.t("button_copy");
             case EDIT_APPLY: return Lang.t("button_apply");
-            default: return Lang.t("button_restore");
+            default: return Lang.t("button_discard");
         }
     }
 

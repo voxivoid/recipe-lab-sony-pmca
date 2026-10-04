@@ -76,7 +76,6 @@ final class TextEn {
         { "custom_delete_body", "Removes %1$s from the memory card. This cannot be undone." },
         { "button_save", "Save" },
         { "button_apply", "Apply" },
-        { "button_restore", "Restore" },
         { "button_copy", "Copy" },
         { "button_discard", "Discard" },
         { "custom_discard_title", "Discard edits to %1$s?" },
