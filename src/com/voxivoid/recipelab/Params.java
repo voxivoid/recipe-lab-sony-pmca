@@ -437,26 +437,21 @@ final class Params {
         }
     }
 
-    /** the line under the recipe name; {@code previewErr} is null while the live preview works */
-    static String metaLine(int[] cur, int[] edit, String previewErr) {
+    /**
+     * The line under the recipe name: only what the chips cannot say — a Picture Effect that RAW would drop, and a live
+     * preview the camera refused ({@code previewErr}, null while it works). Empty when there is neither, and the line
+     * is hidden; the values themselves are on the chips.
+     */
+    static String metaLine(int[] edit, String previewErr) {
         StringBuilder m = new StringBuilder();
-        if (edit[R_PE] != 0) {
-            String pe = Recipes.peLabel(edit[R_PE]), sl = Recipes.subLabel(edit[R_PE], edit[R_SUB]);
-            m.append(Lang.t("meta_picture_effect", sl == null ? pe : pe + " " + sl)).append(' ').append(Lang.t("meta_effect_note"));
-        } else m.append(Recipes.styleLabel(edit[R_STYLE]));
-        String wb = edit[R_WBMODE] == WB_KELVIN ? (edit[R_KELVIN] * 100) + "K" : edit[R_WBMODE] == WB_AUTO ? Lang.t("value_auto") : Lang.t("meta_wb_mode", edit[R_WBMODE]);
-        m.append("  ·  ").append(Lang.t("meta_white_balance", wb));
-        if (edit[R_EV] != 0) m.append("  ·  ").append(Lang.t("meta_ev", Recipes.evLabel(edit[R_EV])));
-        if (edit[R_DRO] != Recipes.DRO_AUTO) m.append("  ·  ").append(Lang.t("meta_dro", Recipes.droLabel(edit[R_DRO])));
-        if (edit[R_QUAL] != cur[R_QUAL]) m.append("  ·  ").append(Lang.t("meta_quality_change", qualityLabel(edit[R_QUAL]), qualityLabel(cur[R_QUAL])));
-        if (edit[R_PE] != 0 && edit[R_QUAL] <= Q_RAWJPG) m.append("  ·  ").append(Lang.t("meta_raw_effect_ignored"));
-        if (previewErr != null) m.append("  ·  ").append(Lang.t("meta_no_preview", previewErr));
+        if (edit[R_PE] != 0 && edit[R_QUAL] <= Q_RAWJPG) m.append(Lang.t("meta_raw_effect_ignored"));
+        if (previewErr != null) m.append(m.length() > 0 ? "  ·  " : "").append(Lang.t("meta_no_preview", previewErr));
         return m.toString();
     }
 
     /** the one-line pill of the minimal overlay; {@code position} as the panel counts it (Library.position) */
     static String miniLine(Recipes.Recipe recipe, String position, int[] cur, int[] edit, boolean dirty) {
-        return (edit[R_PE] != 0 ? "PE  " : "CS  ") + Recipes.displayName(recipe) + "   " + position
+        return (edit[R_PE] != 0 ? Lang.t("tag_jpeg_only") + "  " : "") + Recipes.displayName(recipe) + "   " + position
                 + "   · " + Lang.t(dirty ? "mini_preview" : "mini_active")
                 + (edit[R_QUAL] != cur[R_QUAL] ? "   · " + Lang.t("mini_quality", qualityLabel(edit[R_QUAL])) : "");
     }

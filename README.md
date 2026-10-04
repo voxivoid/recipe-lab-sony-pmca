@@ -89,8 +89,8 @@ mode**, photo and video, with the app closed. Turn it off and on, it is still th
 **[See every recipe on the same subject →](docs/SAMPLES.md)** — 77 frames, one scene, one exposure, straight out of
 the camera.
 
-Recipes marked **PE** in the app (Acros +R, Tri-X 1600, GR Retro, GR Hi-Contrast B&W, Sony SH, Polaroid) are built on
-a Picture Effect because, against the reference frames, its tone
+Recipes marked **JPEG only** in the app (Acros +R, Tri-X 1600, GR Retro, GR Hi-Contrast B&W, Sony SH, Polaroid) are
+built on a Picture Effect because, against the reference frames, its tone
 curve gets closer than Creative Style can; everything else stays Creative Style on purpose.
 
 Not included, because the camera simply cannot do them: log profiles (S-Log, V-Log, Blackmagic Film, Cinelike D) and
@@ -289,8 +289,8 @@ as *Untitled* (or *Untitled 2*, *Untitled 3* … when that is taken), drawn dimm
 so there is nothing to delete, and **OK** straight away keeps the name. The first letter is a capital; the arrow key
 gives another one. Up to 24 letters, digits, spaces and `- . ' ( ) & +`; two recipes cannot share a name.
 
-- **Change a recipe and press Copy.** Edit any chips — they preview as you go, the line under the name says
-  *edited — not saved*, and a row of buttons appears under the chips. Press **down** from the chips to reach it,
+- **Change a recipe and press Copy.** Edit any chips — they preview as you go, the **EDITED** badge appears,
+  and a row of buttons appears under the chips. Press **down** from the chips to reach it,
   **left / right** to choose, **centre** to press:
   - **Save** *(custom recipes)* — keep the changes in the recipe. The app's own recipes never change, so they have no
     Save.
@@ -372,7 +372,7 @@ them**, like your photos — copy the folder off first. A different card has its
 Only camera settings you could set by hand: Creative Style and its saturation, contrast and sharpness sliders, white
 balance and its fine-tune, exposure compensation, DRO, Picture Effect. No firmware is touched, nothing is unlocked.
 
-**Picture Effect recipes** (marked **PE**) behave like the menu item does: the camera ignores Creative Style while one
+**Picture Effect recipes** (marked **JPEG only**) behave like the menu item does: the camera ignores Creative Style while one
 is on, and it only works with **Quality = JPEG** — set to RAW or RAW+JPEG, the camera drops the effect silently.
 
 **Quality** therefore follows you rather than being dictated by a recipe. The Factory recipe starts as whatever the

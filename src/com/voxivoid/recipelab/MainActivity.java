@@ -969,16 +969,18 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             nameOriginal.setText(original == null ? "" : original);
             nameOriginal.setVisibility(original == null ? View.GONE : View.VISIBLE);
             count.setText(grp + "   " + pos);
-            tag.setText(edit[R_PE] != 0 ? "PE" : "CS");
-            tag.setTextColor(edit[R_PE] != 0 ? ACCENT : 0xDDFFFFFF);
+            tag.setText(Lang.t("tag_jpeg_only"));                    // a Picture Effect: the camera drops it under RAW
+            tag.setTextColor(ACCENT);
+            tag.setVisibility(edit[R_PE] != 0 ? View.VISIBLE : View.GONE);
             fav.setVisibility(favs.contains(recipe) ? View.VISIBLE : View.GONE);
             // two questions, two badges: does the camera have what you see (ACTIVE / PREVIEW), and is it the recipe as it was (EDITED)
             if (dirty) { badge.setText(Lang.t("state_preview")); badge.setBackgroundResource(R.drawable.badge_warn); }
             else { badge.setText(Lang.t("state_active")); badge.setBackgroundResource(R.drawable.badge_ok); }
             editedBadge.setText(Lang.t("state_edited"));
             editedBadge.setVisibility(edited() ? View.VISIBLE : View.GONE);
-            String m = Params.metaLine(cur, edit, previewOk ? null : previewErr);
-            meta.setText(edited() ? m + "  ·  " + Lang.t("meta_unsaved") : m);
+            String m = Params.metaLine(edit, previewOk ? null : previewErr);   // warnings only: the values are on the chips
+            meta.setText(m);
+            meta.setVisibility(m.isEmpty() ? View.GONE : View.VISIBLE);
             int[] acts = actions();
             settleActions(acts.length);
             actionsRow.setVisibility(acts.length > 0 ? View.VISIBLE : View.GONE);

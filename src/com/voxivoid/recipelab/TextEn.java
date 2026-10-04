@@ -29,16 +29,10 @@ final class TextEn {
         { "state_preview", "PREVIEW" },
         { "state_active", "ACTIVE" },
         { "state_edited", "EDITED" },
+        { "tag_jpeg_only", "JPEG only" },
         { "mini_preview", "preview" },
         { "mini_active", "active" },
         { "mini_quality", "quality → %1$s" },
-        { "meta_picture_effect", "Picture Effect %1$s" },
-        { "meta_effect_note", "(Creative Style ignored, JPEG only)" },
-        { "meta_white_balance", "WB %1$s" },
-        { "meta_wb_mode", "mode %1$d" },
-        { "meta_ev", "EV %1$s" },
-        { "meta_dro", "DRO %1$s" },
-        { "meta_quality_change", "QUALITY → %1$s (now %2$s)" },
         { "meta_raw_effect_ignored", "RAW is on: effect ignored" },
         { "meta_no_preview", "no live preview: %1$s" },
 
@@ -114,7 +108,6 @@ final class TextEn {
         { "custom_delete_failed", "Could not delete %1$s: %2$s" },
         { "custom_need_card", "No memory card — insert one to keep custom recipes" },
         { "custom_capture_failed", "The camera's settings cannot be kept as a recipe: %1$s" },
-        { "meta_unsaved", "edited — not saved" },
 
         // ---- the legend
         { "action_pick", "pick" },

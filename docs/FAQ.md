@@ -11,7 +11,7 @@ No. Recipe Lab sets the same camera settings you could set by hand in the menus,
 it always has: the look is baked into the **JPEG**, the RAW stays a RAW. Shoot RAW+JPEG and you get a processed JPEG
 next to an untouched raw file, exactly as before.
 
-The one catch is the recipes marked **PE**, which are built on a Picture Effect. The A6000 refuses to apply a Picture
+The one catch is the recipes marked **JPEG only**, which are built on a Picture Effect. The A6000 refuses to apply a Picture
 Effect unless Quality is a JPEG setting — with RAW or RAW+JPEG selected it silently drops the effect. So when storing
 one of those would change your Quality, the app asks first:
 

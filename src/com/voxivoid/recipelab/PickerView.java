@@ -149,13 +149,15 @@ public class PickerView extends View {
                 }
                 Recipes.Recipe rc = lib.get(idx);
                 item.setColor(active ? INK : on ? ACCENT : 0xFFFFFFFF); item.setFakeBoldText(on);
-                c.drawText(Recipes.displayName(rc), x, y + 13 * d, item);
+                // under the name only what tells recipes apart: the brand in Favourites, the canonical name under a translated
+                // one — the values are on the chips once it is picked. A row with neither centres its name
+                String original = Recipes.originalName(rc), brand = favGroup ? Recipes.groupLabel(rc.group) : null;
+                String detail = brand != null && original != null ? brand + "  ·  " + original : brand != null ? brand : original;
+                c.drawText(Recipes.displayName(rc), x, detail == null ? y + rh / 2 + item.getTextSize() * 0.36f : y + 13 * d, item);
                 small.setColor(active ? 0xAA1A1208 : 0x80FFFFFF);
-                String detail = rc.summary(), original = Recipes.originalName(rc);   // a translated name keeps the canonical one beside it
-                if (original != null) detail = original + "  ·  " + detail;
-                if (favGroup) detail = Recipes.groupLabel(rc.group) + "  ·  " + detail;
-                c.drawText(detail, x, y + 22 * d, small);
-                float tx = tag(c, rc.isEffect() ? "PE" : "CS", xr - 4 * d, y, active, active ? 0x331A1208 : (rc.isEffect() ? 0x55B8741A : 0x33FFFFFF), active ? INK : 0xCCFFFFFF);
+                if (detail != null) c.drawText(detail, x, y + 22 * d, small);
+                // a Picture Effect recipe works only as JPEG: say so; every other recipe needs no tag
+                float tx = rc.isEffect() ? tag(c, Lang.t("tag_jpeg_only"), xr - 4 * d, y, active, active ? 0x331A1208 : 0x55B8741A, active ? INK : 0xCCFFFFFF) : xr;
                 if (!favGroup && favs.contains(idx)) { star.setColor(active ? INK : ACCENT); Legend.star(c, tx - 4 * d - 6 * d, y + 11 * d, 6 * d, star); }
             }
             item.setFakeBoldText(false);
