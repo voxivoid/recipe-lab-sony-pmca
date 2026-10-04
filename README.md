@@ -56,9 +56,11 @@
 
 ## What it is
 
-Recipe Lab is a small app that runs on the Sony A6000 itself. It comes with 76 colour recipes that recreate the looks
-of other cameras — Fuji film simulations, Ricoh GR image controls, Leica, Hasselblad, Canon and Nikon colour, Sony's
-newer Creative Looks — and of classic film stocks from Kodak, Fuji, Cinestill, Agfa and Ilford.
+Recipe Lab is a small app that runs on the camera itself — on Sony cameras that support PlayMemories Camera Apps, such
+as the A6000, A6300, A6500 and A7 II (see [Compatibility](#compatibility)). It comes with 76 colour recipes that
+recreate the looks of other cameras — Fuji film simulations, Ricoh GR image controls, Leica, Hasselblad, Canon and
+Nikon colour, Sony's newer Creative Looks — and of classic film stocks from Kodak, Fuji, Cinestill, Agfa and Ilford.
+You can also make your own, and share them.
 
 You turn the wheel, watch the live image change, press a button. From then on the camera shoots that way in **every
 mode**, photo and video, with the app closed. Turn it off and on, it is still there.
