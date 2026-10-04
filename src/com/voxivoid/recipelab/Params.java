@@ -58,8 +58,10 @@ final class Params {
     static String qualityLabel(int q) { return q >= 0 && q < Q_LABEL.length ? Lang.label("quality_" + Lang.slug(Q_LABEL[q]), Q_LABEL[q]) : "?" + q; }
     /** chip display / navigation order (quality first) */
     static final int[] ORDER = { R_QUAL, R_STYLE, R_SAT, R_CON, R_SHARP, R_PE, R_SUB, R_WBMODE, R_KELVIN, R_AB, R_GM, R_EV, R_DRO };   // R_PP has no chip
-    /** the overlay MainActivity is in: the full panel, the pill, nothing, or the browser */
-    static final int OV_FULL = 0, OV_PILL = 1, OV_HIDDEN = 2, OV_BROWSER = 3;
+    /** the overlay MainActivity is in: the full panel, the pill, nothing, the browser, or the full panel without its key legend */
+    static final int OV_FULL = 0, OV_PILL = 1, OV_HIDDEN = 2, OV_BROWSER = 3, OV_QUIET = 4;
+    /** whether the overlay shows the full panel, with its chips — with or without the key legend under it */
+    static boolean panelUp(int overlay) { return overlay == OV_FULL || overlay == OV_QUIET; }
     /** the browser's two columns */
     static final int COL_GROUPS = 0, COL_RECIPES = 1;
     /** what a short press of the centre button does, by where the user is */
@@ -384,7 +386,7 @@ final class Params {
      * full panel up and the highlight off the recipe line — under the pill, or with the overlay hidden, there are no
      * chips to act on.
      */
-    static boolean onRecipeLine(int overlay, int row) { return row == R_RECIPE || overlay != OV_FULL; }
+    static boolean onRecipeLine(int overlay, int row) { return row == R_RECIPE || !panelUp(overlay); }
 
     /**
      * Whether a hold on the centre button marks a favourite where the user is. It does wherever a recipe is what the

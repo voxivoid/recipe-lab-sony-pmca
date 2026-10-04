@@ -146,7 +146,7 @@ final class Keys {
 
     /**
      * The legend for a screen, for this body. Universal keys carry every function; Fn appears only when the probe
-     * reports it — as "browse", which is also in the app menu, or beside MENU where both close the list — so a body that
+     * reports it — as "browse" and "save (hold)", both also in the app menu, or beside MENU where both close the list — so a body that
      * lacks it (or a probe that failed) still reads a complete legend. The order is fixed: pick, browse, fav, menu, hide,
      * exit. Reset (hold trash) is left out on purpose: it asks before it writes, and a hint would invite it. The labels
      * are in the display language ({@link Lang}).
@@ -156,13 +156,13 @@ final class Keys {
         switch (mode) {
             case H_RECIPE: case H_RECIPE_CUSTOM: {
                 Row r = new Row().add(I_ENTER, Lang.t("action_pick"));
-                if (caps.hasFn()) r.add(I_FN, Lang.t("action_browse"));
+                if (caps.hasFn()) r.add(I_FN, Lang.t("action_browse")).add(I_FN, Lang.t("action_save_hold"));
                 r.add(I_ENTER, mode == H_RECIPE ? Lang.t("action_favourite_hold") : Lang.t("action_options_hold"));
                 return r.add(I_MENU, Lang.t("action_menu_hold")).add(I_TRASH, Lang.t("action_hide")).add(I_MENU, Lang.t("action_exit")).done();
             }
             case H_CHIPS: {
                 Row r = new Row().add(I_ENTER, Lang.t("action_edit"));
-                if (caps.hasFn()) r.add(I_FN, Lang.t("action_browse"));
+                if (caps.hasFn()) r.add(I_FN, Lang.t("action_browse")).add(I_FN, Lang.t("action_save_hold"));
                 return r.add(I_MENU, Lang.t("action_menu_hold")).add(I_TRASH, Lang.t("action_hide")).add(I_MENU, Lang.t("action_exit")).done();
             }
             case H_EDIT: return new Row().add(I_ENTER, Lang.t("action_done")).done();

@@ -61,7 +61,8 @@ class DevToolsTest {
         assertEquals(DevTools.ROWS, DevTools.rows(DevTools.LEVEL_DEV));
         String[] labels = new String[DevTools.APP_ROWS];
         for (int r = 0; r < DevTools.APP_ROWS; r++) labels[r] = DevTools.appLabel(r);
-        assertEquals(Arrays.asList("Browse recipes", "Panel visibility", "Language", "Reset settings", "About", "Developer  >"), Arrays.asList(labels));
+        assertEquals(Arrays.asList("Browse recipes", "Save as new recipe", "Panel visibility", "Language", "Reset settings", "About", "Developer  >"), Arrays.asList(labels),
+                "Save as new recipe is hold Fn's route on a body without Fn");
         assertEquals(DevTools.APP_BROWSE, 0, "the menu opens on Browse, so a body without Fn is one press from the list");
     }
 
@@ -71,6 +72,7 @@ class DevToolsTest {
 
     @Test void onlyThePanelAndLanguageRowsHaveAValue() {
         assertEquals("Full", DevTools.appValue(DevTools.APP_PANEL, Params.OV_FULL, Lang.AUTO));
+        assertEquals("No keys", DevTools.appValue(DevTools.APP_PANEL, Params.OV_QUIET, Lang.AUTO));
         assertEquals("Label", DevTools.appValue(DevTools.APP_PANEL, Params.OV_PILL, Lang.AUTO));
         assertEquals("Hidden", DevTools.appValue(DevTools.APP_PANEL, Params.OV_HIDDEN, Lang.AUTO));
         for (int r = 0; r < DevTools.APP_ROWS; r++)
@@ -87,11 +89,12 @@ class DevToolsTest {
     }
 
     @Test void leftRightWalkThePanelStatesAndWrap() {
-        assertEquals(Params.OV_PILL, DevTools.nextPanel(Params.OV_FULL, +1));
+        assertEquals(Params.OV_QUIET, DevTools.nextPanel(Params.OV_FULL, +1), "the panel without its key legend comes second");
+        assertEquals(Params.OV_PILL, DevTools.nextPanel(Params.OV_QUIET, +1));
         assertEquals(Params.OV_HIDDEN, DevTools.nextPanel(Params.OV_PILL, +1));
         assertEquals(Params.OV_FULL, DevTools.nextPanel(Params.OV_HIDDEN, +1));
         assertEquals(Params.OV_HIDDEN, DevTools.nextPanel(Params.OV_FULL, -1));
-        assertEquals(Params.OV_PILL, DevTools.nextPanel(Params.OV_BROWSER, +1), "never lands on the browser; from it, starts at full");
+        assertEquals(Params.OV_QUIET, DevTools.nextPanel(Params.OV_BROWSER, +1), "never lands on the browser; from it, starts at full");
     }
 
     @Test void theSettleRowShowsItsDelayAsAValue() {

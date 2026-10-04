@@ -123,14 +123,14 @@ class KeysTest {
     }
 
     @Test void theRecipeLineReadsPickBrowseFavMenuHideExit() {
-        assertEquals(Arrays.asList("pick", "browse", "fav (hold)", "menu (hold)", "hide", "exit"), Arrays.asList(Keys.hints(Keys.H_RECIPE, FN).labels));
+        assertEquals(Arrays.asList("pick", "browse", "save (hold)", "fav (hold)", "menu (hold)", "hide", "exit"), Arrays.asList(Keys.hints(Keys.H_RECIPE, FN).labels));
         assertEquals(Arrays.asList("pick", "fav (hold)", "menu (hold)", "hide", "exit"), Arrays.asList(Keys.hints(Keys.H_RECIPE, NONE).labels),
                 "without Fn, browse is in the app menu, and the rest keep their order");
-        assertEquals(Arrays.asList("edit", "browse", "menu (hold)", "hide", "exit"), Arrays.asList(Keys.hints(Keys.H_CHIPS, FN).labels));
+        assertEquals(Arrays.asList("edit", "browse", "save (hold)", "menu (hold)", "hide", "exit"), Arrays.asList(Keys.hints(Keys.H_CHIPS, FN).labels));
     }
 
     @Test void onACustomRecipeTheHoldOpensItsOptions() {
-        assertEquals(Arrays.asList("pick", "browse", "options (hold)", "menu (hold)", "hide", "exit"), Arrays.asList(Keys.hints(Keys.H_RECIPE_CUSTOM, FN).labels));
+        assertEquals(Arrays.asList("pick", "browse", "save (hold)", "options (hold)", "menu (hold)", "hide", "exit"), Arrays.asList(Keys.hints(Keys.H_RECIPE_CUSTOM, FN).labels));
         assertEquals(Arrays.asList("pick", "options (hold)", "close"), Arrays.asList(Keys.hints(Keys.H_RECIPES_CUSTOM, NONE).labels));
         assertEquals(Arrays.asList("new", "close"), Arrays.asList(Keys.hints(Keys.H_NEW, NONE).labels));
     }
@@ -147,6 +147,8 @@ class KeysTest {
             Keys.Hints h = Keys.hints(mode, FN);
             assertEquals(Keys.I_FN, h.icons[Arrays.asList(h.labels).indexOf("browse")]);
             assertFalse(Arrays.asList(Keys.hints(mode, NONE).labels).contains("browse"), "browse is in the app menu without Fn");
+            assertEquals(Keys.I_FN, h.icons[Arrays.asList(h.labels).indexOf("save (hold)")]);
+            assertFalse(Arrays.asList(Keys.hints(mode, NONE).labels).contains("save (hold)"), "and so is save");
         }
     }
 

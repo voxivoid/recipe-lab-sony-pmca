@@ -107,7 +107,8 @@ down or the wheel move, the centre button runs a row, a short MENU goes back a l
 | row | what it does |
 |---|---|
 | **Browse recipes** | the brand list, as Fn opens it |
-| **Panel visibility** | a value — *Full* / *Label* / *Hidden* — that left / right step through in place, wrapping, with the menu left open; centre steps forward. The same states trash cycles |
+| **Save as new recipe** | the name editor, then the values on screen (`edit`) become a custom recipe — what **hold Fn** does on a body with Fn ([Custom recipes](#custom-recipes)) |
+| **Panel visibility** | a value — *Full* / *No keys* / *Label* / *Hidden* (`DevTools.PANELS`) — that left / right step through in place, wrapping, with the menu left open; centre steps forward. The same states trash cycles. *No keys* (`OV_QUIET`) is the full panel, chips and all (`Params.panelUp`), without the `HintBar` legend; closing the browser returns to it if it was left on it |
 | **Language** | a value — *Auto* / *English* / *简体中文* / *繁體中文* — stepped the same way, kept in the app's preferences under `language` by code (`Lang.CODES`). The app redraws in it at once. *Auto* follows the camera's locale (`Lang.fromLocale`); each language's name is drawn in its own script and font. See [LOCALIZATION.md](LOCALIZATION.md) |
 | **Reset settings** | asks `DevTools.resetTitle()` (Cancel highlighted), then stages `Recipes.FACTORY` and stores it (`writeAll`, so the quality prompt still asks when it must). The only way to the factory look besides holding trash: it is not in the list |
 | **About** | the installed version (from `PackageManager` — never a string in the source, `tools/check-version.sh`), `model.name`, `version.platform`, and the source URL |
@@ -278,6 +279,7 @@ after. A camera switched off mid-write leaves the old file or the new one.
 | a chip edit on a custom recipe finishes (centre or MENU) | its file is rewritten in place, when the value changed |
 | Custom → **+ New recipe** | name editor, then the camera's *stored* rows (`cur`) become the recipe — set a look in Sony's menus, bottle it. An unidentified style refuses with a toast before the editor opens |
 | hold centre on a custom recipe | **Favourite / Unfavourite**, **Rename**, **Delete** (asks again), **Cancel** — Cancel highlighted. Built-in recipes keep hold = favourite |
+| hold Fn on the live screen, or app menu → **Save as new recipe** | name editor, then the values on screen (`edit`) become a custom recipe, not written to the camera. Fn is a press / hold key now: the brand list opens on the release, the hold (`HOLD_MS`) saves; in the browser Fn still closes it on the press |
 
 The name editor (`NameEntry`, `KeyboardView`) is a key grid on universal keys: four-way moves (wrapping, keeping the
 column across rows of different widths), wheel / dial walk cell by cell, centre types, trash deletes, MENU cancels, the
@@ -487,7 +489,7 @@ against a SHA-256 pinned in the script (`JUNIT_JAR=<path>` points it at a copy w
 | `ParamsHudTest` | the meta line, the minimal pill, the quality prompt |
 | `ParamsToolsTest` | the snapshot tool's id list — including that `res/raw/ids.txt` is well formed and lists every slot the app writes — and its diff lines |
 | `DevToolsTest` | the app menu and developer menu rows, About and the key logger's lines, settle delays, the sample run's progress / finish lines, and its manifest — a parsable line per recipe, in run order |
-| `KeysTest` | the press / hold gesture, the trash-hold guard, and that the legend never names a key the body lacks — every function on a universal key, Fn only when reported, the order pick · browse · fav · menu · hide · exit, the reset hold never hinted |
+| `KeysTest` | the press / hold gesture, the trash-hold guard, and that the legend never names a key the body lacks — every function on a universal key, Fn only when reported, the order pick · browse · save · fav · menu · hide · exit, the reset hold never hinted |
 | `KeyProbeTest` | that the key probe answers "unknown" off the camera instead of throwing |
 | `KeyProbeCameraTest` | the key probe against test doubles of Sony's `ScalarInput`, `KeyStatus` and `ScalarProperties` (`test/com/sony/scalar/sysutil/`, shaped like the OpenMemories-Framework stubs): the reflection finds the real signatures, only `valid == 1` is a key, only `status == 1` is a press. The doubles throw for anything a test did not set up, which is how the "off the camera" answers stay null |
 | `FavouritesTest` | the favourites list — stored by name, unknown names dropped, marking order kept, toggle, the highlight after a removal, custom recipes as `custom:<name>` kept while their card is out — and the browser's group order: Favourites, Custom with its New row, the brands |

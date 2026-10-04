@@ -36,6 +36,7 @@ import static com.voxivoid.recipelab.Params.*;
  *
  * Keys (issue #18 — every function on keys every body has; Fn is a shortcut where it exists, see {@link Keys}):
  *       wheel / LEFT / RIGHT recipe · UP / DOWN parameter · top dial adjust · ENTER pick · hold ENTER favourite
+ *       hold Fn save what is on screen as a custom recipe (also an app menu row, for bodies without Fn)
  *       TRASH overlay: full → pill → hidden · hold TRASH reset (asks first) · hold MENU app menu (browse, panel,
  *       language, reset, about, developer) · SHUTTER photo · MENU exit · Fn brand browser
  *       hold ENTER on a custom recipe: its options (favourite, rename, delete) instead of the favourite mark
@@ -62,12 +63,13 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private int promptSel = 0, promptKind = P_QUALITY; private boolean promptOpen = false;
     /** the questions the prompt asks: quality change, reset, keep or apply an edit of a built-in recipe, a custom recipe's options, delete it */
     private static final int P_QUALITY = 0, P_RESET = 1, P_FORK = 2, P_OPTIONS = 3, P_DELETE = 4;
-    // the name editor, and what its OK does: keep an edit as a new recipe and store it, keep the camera's settings, rename
+    // the name editor, and what its OK does: keep an edit as a new recipe and store it, keep the camera's settings, rename,
+    // keep what the screen shows
     private KeyboardView keyboard;
     private NameEntry nameEntry;
     private boolean nameOpen = false;
     private int nameFor = NAME_APPLY;
-    private static final int NAME_APPLY = 0, NAME_NEW = 1, NAME_RENAME = 2;
+    private static final int NAME_APPLY = 0, NAME_NEW = 1, NAME_RENAME = 2, NAME_SAVE = 3;
     // custom recipes: the card's folder (null without a card), the files a load skipped, and whether they were reported
     private final Library library = new Library();
     private File cardDir;
@@ -88,10 +90,11 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private final Handler handler = new Handler();
     private final Runnable hideToast = new Runnable() { public void run() { toast.setVisibility(View.GONE); } };
     // press / hold of the three keys that have both: centre (pick / favourite), MENU (exit / app menu), trash (hide / factory)
-    private final Keys.Hold enter = new Keys.Hold(), menuKeyHold = new Keys.Hold(), trash = new Keys.Hold();
+    private final Keys.Hold enter = new Keys.Hold(), menuKeyHold = new Keys.Hold(), trash = new Keys.Hold(), fn = new Keys.Hold();
     private final Runnable enterHold = new Runnable() { public void run() { if (enter.fire() == Keys.Hold.HOLD) holdCentre(); } };
     private final Runnable menuHold = new Runnable() { public void run() { menuHoldFired(); } };
     private final Runnable trashHold = new Runnable() { public void run() { trashHoldFired(); } };
+    private final Runnable fnHold = new Runnable() { public void run() { fnHoldFired(); } };
     private int trashScan = K_DELETE;                           // which of trash / SK2 the held press came from
     // the key logger (developer menu): every key event on screen and into keys.txt, until MENU is held
     private boolean logging = false;
@@ -109,7 +112,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
 
     private SurfaceHolder holder;
     private Object cameraEx; private Camera camera; private String origFlat;
-    private int row = 0, recipe = 0, overlay = OV_FULL;   // Params.OV_*: the full panel, the pill, nothing, the browser
+    private int row = 0, recipe = 0, overlay = OV_FULL;   // Params.OV_*: the full panel, the pill, nothing, the browser, the panel without keys
+    private int panelBefore = OV_FULL;                    // the overlay the browser was opened from
     private boolean focus = false;                        // a chip is focused: UP/DOWN change its value
     private final int[] focusStart = new int[N];          // the values when the chip was focused: leaving it unchanged is no edit
     private int browserCol = COL_RECIPES;                 // browser: Params.COL_GROUPS or COL_RECIPES
@@ -216,8 +220,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         if (promptOpen && promptKind >= P_FORK) closePrompt();  // about a custom recipe: the card is read again on the way back
         stopLogger();
         handler.removeCallbacks(hideToast);
-        handler.removeCallbacks(enterHold); handler.removeCallbacks(menuHold); handler.removeCallbacks(trashHold);
-        enter.reset(); menuKeyHold.reset(); trash.reset();
+        handler.removeCallbacks(enterHold); handler.removeCallbacks(menuHold); handler.removeCallbacks(trashHold); handler.removeCallbacks(fnHold);
+        enter.reset(); menuKeyHold.reset(); trash.reset(); fn.reset();
         holder.removeCallback(this);
         // leave the live parameters equal to what is STORED (not to the launch snapshot): the camera writes some live
         // values (exposure bias, WB fine-tune) straight back into the settings store, which would undo a fresh store
@@ -501,6 +505,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         if (menuLevel == DevTools.LEVEL_APP) {
             switch (menuSel) {
                 case DevTools.APP_BROWSE: closeMenu(); openBrowser(true); break;
+                case DevTools.APP_SAVE: closeMenu(); openName(NAME_SAVE); break;
                 case DevTools.APP_PANEL: case DevTools.APP_LANG: stepMenuValue(+1); break;
                 case DevTools.APP_RESET: closeMenu(); askReset(); break;
                 case DevTools.APP_ABOUT: menuPage = PAGE_ABOUT; renderMenu(); break;
@@ -741,8 +746,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     /** the name editor for one of the NAME_* purposes; refused without a card, as nothing could be kept */
     private void openName(int purpose) {
         if (cardDir == null) { showToast(Lang.t("custom_need_card"), 4000); return; }
-        if (purpose == NAME_NEW) {                               // nothing to name if the camera's look is not one a file can hold
-            String bad = CustomRecipes.problem(CustomRecipes.recipe(CustomRecipes.UNTITLED, cur));
+        if (purpose == NAME_NEW || purpose == NAME_SAVE) {       // nothing to name if the look is not one a file can hold
+            String bad = CustomRecipes.problem(CustomRecipes.recipe(CustomRecipes.UNTITLED, purpose == NAME_NEW ? cur : edit));
             if (bad != null) { showToast(Lang.t("custom_capture_failed", bad), 0); return; }
         }
         nameFor = purpose;
@@ -790,6 +795,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         switch (nameFor) {
             case NAME_APPLY: if (saveNew(name, edit)) writeAll(); break;
             case NAME_NEW: if (saveNew(name, cur)) onNew = false; break;
+            case NAME_SAVE: focus = false; saveNew(name, edit); break;
             case NAME_RENAME: renameCustom(name); break;
         }
         render();
@@ -899,7 +905,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         String grp = Recipes.groupLabel(r.group).toUpperCase();
         picker.setVisibility(overlay == OV_BROWSER ? View.VISIBLE : View.GONE);
         if (overlay == OV_BROWSER) { panel.setVisibility(View.GONE); mini.setVisibility(View.GONE); picker.set(onNew ? Favourites.NEW : recipe, browserCol, browserGroup, favs, library, cardDir != null); return; }
-        if (overlay == OV_FULL) {
+        if (panelUp(overlay)) {
             panel.setVisibility(View.VISIBLE); mini.setVisibility(View.GONE);
             name.setText(Recipes.displayName(r));
             name.setTextColor(row == 0 ? ACCENT : WHITE);
@@ -931,6 +937,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
                     if (l < sx) chipScroll.smoothScrollTo(l - dp(8), 0); else if (rgt > sx + w) chipScroll.smoothScrollTo(rgt - w + dp(8), 0);
                 } });
             }
+            hints.setVisibility(overlay == OV_QUIET ? View.GONE : View.VISIBLE);
             hints.setMode(row == 0 ? (r.isCustom() ? Keys.H_RECIPE_CUSTOM : HintBar.RECIPE) : focus ? HintBar.EDIT : HintBar.CHIPS);
         } else if (overlay == OV_PILL) {
             panel.setVisibility(View.GONE); mini.setVisibility(View.VISIBLE);
@@ -980,7 +987,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     }
 
     private void openBrowser(boolean open) {
-        overlay = open ? OV_BROWSER : OV_FULL; row = 0; focus = false; onNew = false;
+        if (open) panelBefore = overlay;
+        overlay = open ? OV_BROWSER : fullPanel(); row = 0; focus = false; onNew = false;
         browserGroup = Favourites.openingGroup(favs, recipe, library);
         browserCol = COL_RECIPES;
         if (open && recipe == Recipes.FACTORY) { recipe = Favourites.landing(browserGroup, favs, library); stageRecipe(); applyPreview(); }   // the list has no factory look to highlight
@@ -1014,13 +1022,23 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
 
     /** the reset question answered Reset: the factory look, stored — the same store as a centre press */
     private void storeFactory() {
-        overlay = OV_FULL; row = 0; focus = false;
+        overlay = fullPanel(); row = 0; focus = false;
         recipe = Recipes.FACTORY; stageRecipe(); applyPreview(); render();
         writeAll();
     }
 
     /** trash: full panel → pill → hidden → full; the browser is not in the cycle */
-    private void cycleOverlay() { overlay = (overlay + 1) % 3; render(); }
+    private void cycleOverlay() { overlay = DevTools.nextPanel(overlay, +1); render(); }
+
+    /** the full panel to come back to from the browser: without its legend if that is how it was left, else with it */
+    private int fullPanel() { return overlay == OV_QUIET || (overlay == OV_BROWSER && panelBefore == OV_QUIET) ? OV_QUIET : OV_FULL; }
+
+    /** Fn held past HOLD_MS on the live screen: keep what the screen shows as a custom recipe (APP_SAVE without Fn) */
+    private void fnHoldFired() {
+        if (fn.fire() != Keys.Hold.HOLD) return;
+        if (running || promptOpen || menuOpen || nameOpen || overlay == OV_BROWSER) return;
+        openName(NAME_SAVE);
+    }
 
     /** MENU held past HOLD_MS: the app menu, or out of the key logger; its release is swallowed either way */
     private void menuHoldFired() {
@@ -1126,11 +1144,11 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
                 return true;
             }
             case K_UP: case K_DOWN: {
-                if (overlay != OV_FULL) return true;
+                if (!panelUp(overlay)) return true;
                 if (focus) stepValue(e.getScanCode() == K_UP ? +1 : -1); else toggleLine();
                 return true;
             }
-            case K_FN: openBrowser(true); return true;
+            case K_FN: if (fn.down(0) == Keys.Hold.ARM) handler.postDelayed(fnHold, HOLD_MS); return true;   // browse on the release, save on a hold
             case K_DELETE: case K_SK2: armTrash(sc); return true;       // hides on the release; a hold asks to reset
             case K_S1: try { camera.autoFocus(null); } catch (Throwable t) {} return true;
             case K_S2: try { camera.takePicture(null, null, null); } catch (Throwable t) {} return true;
@@ -1151,6 +1169,10 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         // the hold bookkeeping runs on every release, whatever is on screen, or a lost release would block the next press
         if (isTrash(sc)) { handler.removeCallbacks(trashHold); if (trash.up() == Keys.Hold.SHORT) trashPress(); }
         if (isMenu(sc)) { handler.removeCallbacks(menuHold); menuKeyHold.up(); }
+        if (sc == K_FN) {
+            handler.removeCallbacks(fnHold);
+            if (fn.up() == Keys.Hold.SHORT && !running && !promptOpen && !menuOpen && !nameOpen && overlay != OV_BROWSER) openBrowser(true);
+        }
         if (sc == K_ENTER && (promptOpen || nameOpen || running)) { handler.removeCallbacks(enterHold); enter.reset(); }
         if (promptOpen || nameOpen) { if (isMenu(sc)) swallowMenuUp = false; return true; }
         if (running) return true;                               // the release of whatever key started or stopped the run

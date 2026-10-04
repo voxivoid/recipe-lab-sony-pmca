@@ -119,6 +119,7 @@ final class TextEn {
         // ---- the legend
         { "action_pick", "pick" },
         { "action_browse", "browse" },
+        { "action_save_hold", "save (hold)" },
         { "action_favourite_hold", "fav (hold)" },
         { "action_menu_hold", "menu (hold)" },
         { "action_hide", "hide" },
@@ -159,6 +160,8 @@ final class TextEn {
         // ---- the app menu
         { "menu_browse", "Browse recipes" },
         { "menu_browse_detail", "Brands and favourites" },
+        { "menu_save", "Save as new recipe" },
+        { "menu_save_detail", "Keep the values on screen as a custom recipe on the memory card" },
         { "menu_panel", "Panel visibility" },
         { "menu_panel_detail", "What stays over the live image — left / right to change" },
         { "menu_language", "Language" },
@@ -170,6 +173,7 @@ final class TextEn {
         { "menu_dev", "Developer  >" },
         { "menu_dev_detail", "Settings snapshot, read-only check, samples, key logger" },
         { "panel_full", "Full" },
+        { "panel_no_keys", "No keys" },
         { "panel_label", "Label" },
         { "panel_hidden", "Hidden" },
         { "about_title", "ABOUT" },

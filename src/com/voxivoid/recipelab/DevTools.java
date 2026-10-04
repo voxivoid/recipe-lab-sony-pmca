@@ -20,7 +20,7 @@ final class DevTools {
     static final int LEVEL_APP = 0, LEVEL_DEV = 1;
 
     /** app menu rows, in display order */
-    static final int APP_BROWSE = 0, APP_PANEL = 1, APP_LANG = 2, APP_RESET = 3, APP_ABOUT = 4, APP_DEV = 5, APP_ROWS = 6;
+    static final int APP_BROWSE = 0, APP_SAVE = 1, APP_PANEL = 2, APP_LANG = 3, APP_RESET = 4, APP_ABOUT = 5, APP_DEV = 6, APP_ROWS = 7;
 
     /** developer menu rows, in display order */
     static final int ROW_SNAPSHOT = 0, ROW_LOCKS = 1, ROW_SAMPLES = 2, ROW_SETTLE = 3, ROW_KEYS = 4, ROWS = 5;
@@ -52,6 +52,7 @@ final class DevTools {
     static String appLabel(int row) {
         switch (row) {
             case APP_BROWSE: return Lang.t("menu_browse");
+            case APP_SAVE: return Lang.t("menu_save");
             case APP_PANEL: return Lang.t("menu_panel");
             case APP_LANG: return Lang.t("menu_language");
             case APP_RESET: return Lang.t("menu_reset");
@@ -65,6 +66,7 @@ final class DevTools {
     static String appDetail(int row) {
         switch (row) {
             case APP_BROWSE: return Lang.t("menu_browse_detail");
+            case APP_SAVE: return Lang.t("menu_save_detail");
             case APP_PANEL: return Lang.t("menu_panel_detail");
             case APP_LANG: return Lang.t("menu_language_detail");
             case APP_RESET: return Lang.t("menu_reset_detail");
@@ -91,16 +93,21 @@ final class DevTools {
     static String panelLabel(int overlay) {
         switch (overlay) {
             case Params.OV_FULL: return Lang.t("panel_full");
+            case Params.OV_QUIET: return Lang.t("panel_no_keys");
             case Params.OV_PILL: return Lang.t("panel_label");
             case Params.OV_HIDDEN: return Lang.t("panel_hidden");
             default: return "?";
         }
     }
 
-    /** the panel state left / right lands on: full → label → hidden, wrapping; the browser is never one of them */
+    /** the panel states in the order trash and the Panel visibility row walk them */
+    static final int[] PANELS = { Params.OV_FULL, Params.OV_QUIET, Params.OV_PILL, Params.OV_HIDDEN };
+
+    /** the panel state trash or left / right lands on: full → no keys → label → hidden, wrapping; the browser is never one of them */
     static int nextPanel(int overlay, int dir) {
-        int o = overlay >= Params.OV_FULL && overlay <= Params.OV_HIDDEN ? overlay : Params.OV_FULL;
-        return (o + 3 + dir) % 3;
+        int pos = 0;                                              // from anything else — the browser — as from full
+        for (int i = 0; i < PANELS.length; i++) if (PANELS[i] == overlay) pos = i;
+        return PANELS[(pos + PANELS.length + dir) % PANELS.length];
     }
 
     /** the About page: {name, value}. The version comes from the installed package at runtime, never from here. */
