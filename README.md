@@ -255,7 +255,7 @@ Open **Recipe Lab** from the Application List. The live view shows the look. The
 
 - Go **down** to the chips. **centre** a chip. **up / down** changes it. **centre** again to finish.
 - It is only a preview until you choose.
-- Buttons appear under the chips: **Apply**, **Copy**, **Discard** — and **Save** on your own recipes.
+- Buttons appear under the chips: **Apply**, **Save as new**, **Discard** — and **Save** on your own recipes.
 - See [Custom recipes](#custom-recipes).
 
 **Brand list** — **Fn**, or **hold MENU → Browse recipes**
@@ -280,7 +280,7 @@ Keep your own looks next to the built-in ones. They live on the **memory card**,
 
 ### Making one
 
-- **From a recipe:** change its chips, then press **Copy** in the buttons under the chips.
+- **From a recipe:** change its chips, then press **Save as new** in the buttons under the chips.
 - **From the camera:** **hold MENU → New recipe** saves the camera's current settings.
 - A keyboard opens to name it. Just type — it replaces *Untitled*. **OK** saves.
 
@@ -292,7 +292,7 @@ Change any chip and buttons appear under the chips. Press **down** to reach them
 |---|---|
 | **Save** | keeps the changes, and stores them *(your own recipes only)* |
 | **Apply** | stores the changes in the camera, without saving |
-| **Copy** | saves the changes as a new recipe, and stores it |
+| **Save as new** | saves the changes as a new recipe, and stores it |
 | **Discard** | back to the recipe's own values (asks first) |
 
 Leaving a changed recipe asks first: **Discard** or **Cancel**.

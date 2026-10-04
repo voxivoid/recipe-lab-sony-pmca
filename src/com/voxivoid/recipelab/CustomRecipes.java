@@ -295,7 +295,7 @@ final class CustomRecipes {
     static String path(String file) { return DIR + "/" + file; }
 
     /**
-     * The button row under the chips while a recipe is edited: what can be done with the edits. Every recipe gets Copy
+     * The button row under the chips while a recipe is edited: what can be done with the edits. Every recipe gets Save as new
      * (the edits as a new custom recipe, under a name, then stored in the camera — the original untouched), Apply (write
      * them to the camera, keep nothing — left out once the camera has them) and Discard (the recipe's own values again,
      * after asking);
@@ -305,7 +305,7 @@ final class CustomRecipes {
     static final int EDIT_SAVE = 0, EDIT_COPY = 1, EDIT_APPLY = 2, EDIT_DISCARD = 3;
     static int[] editActions(boolean custom, boolean applied) {
         List<Integer> a = new ArrayList<Integer>();
-        if (custom) a.add(EDIT_SAVE);                       // in this order: Save · Apply · Copy · Discard
+        if (custom) a.add(EDIT_SAVE);                       // in this order: Save · Apply · Save as new · Discard
         if (!applied) a.add(EDIT_APPLY);
         a.add(EDIT_COPY);
         a.add(EDIT_DISCARD);
@@ -316,7 +316,7 @@ final class CustomRecipes {
     static String editLabel(int action) {
         switch (action) {
             case EDIT_SAVE: return Lang.t("button_save");
-            case EDIT_COPY: return Lang.t("button_copy");
+            case EDIT_COPY: return Lang.t("button_save_new");
             case EDIT_APPLY: return Lang.t("button_apply");
             default: return Lang.t("button_discard");
         }

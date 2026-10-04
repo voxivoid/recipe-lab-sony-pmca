@@ -332,14 +332,14 @@ class CustomRecipesTest {
         return l;
     }
 
-    @Test void everyEditedRecipeGetsApplyCopyDiscardAndACustomOneSave() {
-        assertEquals(Arrays.asList("Apply", "Copy", "Discard"), labels(CustomRecipes.editActions(false, false)), "a built-in recipe never changes: no Save");
-        assertEquals(Arrays.asList("Save", "Apply", "Copy", "Discard"), labels(CustomRecipes.editActions(true, false)));
+    @Test void everyEditedRecipeGetsApplySaveAsNewDiscardAndACustomOneSave() {
+        assertEquals(Arrays.asList("Apply", "Save as new", "Discard"), labels(CustomRecipes.editActions(false, false)), "a built-in recipe never changes: no Save");
+        assertEquals(Arrays.asList("Save", "Apply", "Save as new", "Discard"), labels(CustomRecipes.editActions(true, false)));
     }
 
     @Test void applyGoesOnceTheCameraHasTheEdits() {
-        assertEquals(Arrays.asList("Copy", "Discard"), labels(CustomRecipes.editActions(false, true)), "nothing left to write");
-        assertEquals(Arrays.asList("Save", "Copy", "Discard"), labels(CustomRecipes.editActions(true, true)));
+        assertEquals(Arrays.asList("Save as new", "Discard"), labels(CustomRecipes.editActions(false, true)), "nothing left to write");
+        assertEquals(Arrays.asList("Save", "Save as new", "Discard"), labels(CustomRecipes.editActions(true, true)));
     }
 
     @Test void aCopyIsNumberedAndFitsTheNameLimit() {

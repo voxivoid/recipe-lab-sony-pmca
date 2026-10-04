@@ -186,7 +186,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         }
     }
 
-    /** the edit buttons under the chips (Save, Apply, Copy, Discard — CustomRecipes.editActions), drawn like chips */
+    /** the edit buttons under the chips (Save, Apply, Save as new, Discard — CustomRecipes.editActions), drawn like chips */
     private void buildActions() {
         for (int i = 0; i < actionBtn.length; i++) {
             TextView b = new TextView(this);
