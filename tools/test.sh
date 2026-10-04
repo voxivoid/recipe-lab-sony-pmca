@@ -29,6 +29,9 @@ UNITS=(
   src/com/voxivoid/recipelab/Params.java
   src/com/voxivoid/recipelab/Favourites.java
   src/com/voxivoid/recipelab/CustomRecipes.java
+  src/com/voxivoid/recipelab/RecipeFormat.java
+  src/com/voxivoid/recipelab/RecipeFormats.java
+  src/com/voxivoid/recipelab/RecipeFormatV1.java
   src/com/voxivoid/recipelab/Library.java
   src/com/voxivoid/recipelab/NameEntry.java
   src/com/voxivoid/recipelab/DevTools.java

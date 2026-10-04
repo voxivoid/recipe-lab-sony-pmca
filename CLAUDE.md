@@ -73,7 +73,7 @@ Closes #123
   submodule dirty is a bug.
 - `./tools/test.sh` runs the unit tests: the `test` CI job, also run by `dev-build` and `create-release`; JDK 17 only, no SDK. Logic that needs no camera
   goes in `Params.java`, `Recipes.java`, `Favourites.java`, `DevTools.java`, `Keys.java`, `KeyProbe.java`, `Lang.java`,
-  `CustomRecipes.java`, `Library.java` or `NameEntry.java`
+  `CustomRecipes.java`, `RecipeFormats.java` (and its `RecipeFormat*` versions), `Library.java` or `NameEntry.java`
   **with a test**, never into `MainActivity`. All of them are compiled there **without** `android.jar`, so an `android.*` import
   in any of them breaks the job.
 - **Every word on screen goes through `Lang`** (`Lang.t` with a key in `TextEn`, or `Lang.label` for names whose English

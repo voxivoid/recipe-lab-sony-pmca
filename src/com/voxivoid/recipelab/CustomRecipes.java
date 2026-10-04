@@ -25,16 +25,10 @@ import static com.voxivoid.recipelab.Params.*;
  * Custom recipes (issues #14 and #15): the user's own looks, one text file each in {@link #DIR} on the memory card, so
  * they survive an uninstall, show up when the camera is mounted over USB, and can be copied from one card to another.
  *
- * <h3>The file</h3>
- * {@code key = value} lines, {@code #} starts a comment, English whatever the menu shows — people diff, edit and trade
- * these. {@link #encode} writes every key with its allowed range beside it. The values are the ones the chips show:
- * style and effect by their runtime names, exposure in thirds as "+0.7", white balance as "auto", "keep" or "5600K".
- *
- * <h3>Versions</h3>
- * {@code format} says which reader understands a file; {@link #FORMAT} is the newest this build writes. A file without
- * it is format 1. A key a reader does not know is ignored, so adding one never needs a new format; changing what an
- * existing key means does, and then {@link #parse} gains a case that reads the old format — a file once written keeps
- * loading. A file from a newer format is skipped, never half-read: it ends up in the camera's settings store.
+ * <h3>The file and its versions</h3>
+ * Reading and writing the file is {@link RecipeFormats}' job: one {@link RecipeFormat} per version of the format, each
+ * with its own reader and writer, the newest the one the app writes. This class keeps what does not change with the
+ * format — names, file names, the folder, and the ranges every format's values must fall in.
  *
  * <h3>Untrusted input</h3>
  * A file may come from anyone. Every value must be one the store accepts ({@link #problem}); a file with one that is not
@@ -57,8 +51,6 @@ final class CustomRecipes {
     static final String EXT = ".TXT";
     /** the file a save writes before it takes the recipe's name; 8.3 like every name on the card, and never read as a recipe */
     static final String TMP = "SAVING.TMP";
-    /** the newest file format this build reads and the one it writes */
-    static final int FORMAT = 1;
     /** a recipe file is a few hundred bytes; anything far bigger is not one */
     static final int MAX_BYTES = 8192;
     /** the longest name the name editor takes, and that a file may carry */
@@ -89,6 +81,8 @@ final class CustomRecipes {
         final Recipes.Recipe recipe;
         final String error;
         private Parsed(Recipes.Recipe recipe, String error) { this.recipe = recipe; this.error = error; }
+        static Parsed ok(Recipes.Recipe r) { return new Parsed(r, null); }
+        static Parsed fail(String why) { return new Parsed(null, why); }
     }
 
     // ------------------------------------------------------------ recipes from rows
@@ -126,9 +120,9 @@ final class CustomRecipes {
         return null;
     }
 
-    private static boolean in(int v, int lo, int hi) { return v >= lo && v <= hi; }
-    private static boolean kelvinOk(int k) { return k % 100 == 0 && in(k / 100, ROW_MIN[R_KELVIN], ROW_MAX[R_KELVIN]); }
-    private static String bad(String key, Object value) { return Lang.t("custom_bad_value", key, String.valueOf(value)); }
+    static boolean in(int v, int lo, int hi) { return v >= lo && v <= hi; }
+    static boolean kelvinOk(int k) { return k % 100 == 0 && in(k / 100, ROW_MIN[R_KELVIN], ROW_MAX[R_KELVIN]); }
+    static String bad(String key, Object value) { return Lang.t("custom_bad_value", key, String.valueOf(value)); }
 
     // ------------------------------------------------------------ names
     /** whether a character may be part of a name */
@@ -180,153 +174,20 @@ final class CustomRecipes {
         return out;
     }
 
-    // ------------------------------------------------------------ the file
-    /** the file text of a recipe; {@code madeOn} is the camera model it was saved on, null when unknown */
-    static String encode(Recipes.Recipe r, String madeOn) {
-        StringBuilder s = new StringBuilder();
-        s.append("# Recipe Lab custom recipe. Keep it in the ").append(DIR).append(" folder of a memory card, under a name of\n");
-        s.append("# up to eight letters or digits and .TXT: the camera reads no longer file names. Its own name is below.\n");
-        s.append("# Edit with care: a value outside the range beside it makes the app skip this file.\n");
-        line(s, "format", String.valueOf(FORMAT), null);
-        line(s, "name", r.name, null);
-        if (madeOn != null && !madeOn.trim().isEmpty()) line(s, "made-on", madeOn.trim().replace('#', ' '), "the camera it was saved on");
-        line(s, "style", Recipes.STYLE_NAMES[r.style], knownStyles());
-        line(s, "saturation", signed(r.sat), "-3 .. +3");
-        line(s, "contrast", signed(r.con), "-3 .. +3");
-        line(s, "sharpness", signed(r.sharp), "-3 .. +3");
-        line(s, "effect", Recipes.PE_KEYS[r.pe], join(Recipes.PE_KEYS));
-        String[] sv = Recipes.subValues(r.pe);
-        if (sv != null) line(s, "effect-option", sv[r.sub], join(sv));
-        line(s, "white-balance", r.wbMode == WB_KELVIN ? r.kelvin + "K" : r.wbMode == WB_AUTO ? "auto" : "keep", "auto, keep, or 2500K .. 9900K in 100K steps");
-        line(s, "amber-blue", signed(r.ab), "-7 (blue) .. +7 (amber)");
-        line(s, "green-magenta", signed(r.gm), "-7 (magenta) .. +7 (green)");
-        line(s, "exposure", r.ev == 0 ? "0" : evText(r.ev), "-5.0 .. +5.0 in thirds: .0 .3 .7");
-        line(s, "dro", r.dro == Recipes.DRO_AUTO ? "auto" : r.dro == 0 ? "off" : String.valueOf(r.dro), "off, auto, 1 .. 5");
-        return s.toString();
-    }
-
-    private static void line(StringBuilder s, String key, String value, String comment) {
-        int at = s.length();
-        s.append(key).append(" = ").append(value);
-        if (comment != null) { while (s.length() - at < 28) s.append(' '); s.append(" # ").append(comment); }
-        s.append('\n');
-    }
-
-    private static String signed(int v) { return v > 0 ? "+" + v : String.valueOf(v); }
-    /** exposure in thirds as the file spells it, "+0.7" — Recipes.evLabel, which the chip shows too */
-    private static String evText(int ev) { return Recipes.evLabel(ev); }
-
-    private static String knownStyles() {
-        List<String> k = new ArrayList<String>();
-        for (int i = 0; i < Recipes.STYLE_NAMES.length; i++) if (Recipes.styleKnown(i)) k.add(Recipes.STYLE_NAMES[i]);
-        return join(k.toArray(new String[0]));
-    }
-
-    private static String join(String[] v) {
-        StringBuilder b = new StringBuilder();
-        for (String x : v) { if (b.length() > 0) b.append(' '); b.append(x); }
-        return b.toString();
-    }
-
-    /**
-     * Reads one file's text. {@code fileName} names a recipe whose file has no name line. The format line picks the
-     * reader; there is one so far.
-     */
-    static Parsed parse(String text, String fileName) {
-        Map<String, String> kv = new HashMap<String, String>();
-        if (text.startsWith("﻿")) text = text.substring(1);       // the byte-order mark some Windows editors add
-        for (String raw : text.split("\r\n|\r|\n")) {
-            int hash = raw.indexOf('#');
-            String line = (hash >= 0 ? raw.substring(0, hash) : raw).trim();
-            int eq = line.indexOf('=');
-            if (eq <= 0) continue;                                    // not a setting: a later format may know what it is
-            String key = line.substring(0, eq).trim().toLowerCase(Locale.US), value = line.substring(eq + 1).trim();
-            if (kv.put(key, value) != null) return fail(Lang.t("custom_twice", key));
-        }
-        String f = kv.get("format");
-        int format;
-        if (f == null) format = 1;
-        else if (f.matches("\\d{1,4}")) format = Integer.parseInt(f);
-        else return fail(bad("format", f));
-        if (format > FORMAT) return fail(Lang.t("custom_newer", format));
-        switch (format) {
-            case 1: return v1(kv, fileName);
-            default: return fail(bad("format", f));
-        }
-    }
-
-    /** format 1: the keys {@link #encode} writes; a missing one takes the factory look's value */
-    private static Parsed v1(Map<String, String> kv, String fileName) {
-        String name = kv.get("name");
-        if (name == null || name.isEmpty()) name = stem(fileName);
-        String np = nameProblem(name, Collections.<String>emptyList(), null);
-        if (np != null) return fail(np);
-
-        String v;
-        int style = Recipes.STD;
-        if ((v = kv.get("style")) != null && (style = indexOf(Recipes.STYLE_NAMES, v)) < 0) return fail(bad("style", v));
-        int[] adj = new int[3];
-        String[] adjKeys = { "saturation", "contrast", "sharpness" };
-        for (int i = 0; i < 3; i++) {
-            if ((v = kv.get(adjKeys[i])) == null) continue;
-            Integer n = integer(v);
-            if (n == null || !in(n, -3, 3)) return fail(bad(adjKeys[i], v));
-            adj[i] = n;
-        }
-        int pe = 0;
-        if ((v = kv.get("effect")) != null && (pe = indexOf(Recipes.PE_KEYS, v)) < 0) return fail(bad("effect", v));
-        int sub = 0;
-        String[] sv = Recipes.subValues(pe);
-        if (sv != null && (v = kv.get("effect-option")) != null && (sub = indexOf(sv, v)) < 0) return fail(bad("effect-option", v));
-        int wb = WB_AUTO, kelvin = 0;
-        if ((v = kv.get("white-balance")) != null) {
-            String w = v.toLowerCase(Locale.US).replace(" ", "");
-            if (w.equals("auto")) wb = WB_AUTO;
-            else if (w.equals("keep")) wb = 0;
-            else if (w.matches("\\d{4}k?") && kelvinOk(Integer.parseInt(w.replace("k", "")))) { wb = WB_KELVIN; kelvin = Integer.parseInt(w.replace("k", "")); }
-            else return fail(bad("white-balance", v));
-        }
-        int[] fine = new int[2];
-        String[] fineKeys = { "amber-blue", "green-magenta" };
-        for (int i = 0; i < 2; i++) {
-            if ((v = kv.get(fineKeys[i])) == null) continue;
-            Integer n = integer(v);
-            if (n == null || !in(n, -7, 7)) return fail(bad(fineKeys[i], v));
-            fine[i] = n;
-        }
-        int ev = 0;
-        if ((v = kv.get("exposure")) != null) {
-            Integer t = thirds(v);
-            if (t == null || !in(t, ROW_MIN[R_EV], ROW_MAX[R_EV])) return fail(bad("exposure", v));
-            ev = t;
-        }
-        int dro = Recipes.DRO_AUTO;
-        if ((v = kv.get("dro")) != null) {
-            String d = v.toLowerCase(Locale.US);
-            if (d.equals("auto")) dro = Recipes.DRO_AUTO;
-            else if (d.equals("off")) dro = 0;
-            else if (d.matches("[1-5]")) dro = Integer.parseInt(d);
-            else return fail(bad("dro", v));
-        }
-        Recipes.Recipe r = new Recipes.Recipe(Recipes.CUSTOM, name.trim(), style, adj[0], adj[1], adj[2], wb, kelvin, fine[0], fine[1], pe, ev, dro, sub);
-        String p = problem(r);                                        // the reader above and the store's ranges must agree
-        return p != null ? fail(p) : new Parsed(r, null);
-    }
-
-    private static Parsed fail(String why) { return new Parsed(null, why); }
-
-    private static String stem(String fileName) {
+    // ------------------------------------------------------------ helpers the file formats share (RecipeFormat*)
+    static String stem(String fileName) {
         if (fileName == null) return "";
         return fileName.toLowerCase(Locale.US).endsWith(EXT.toLowerCase(Locale.US)) ? fileName.substring(0, fileName.length() - EXT.length()) : fileName;
     }
 
     /** the position of {@code v} in a table of runtime names, ignoring case; -1 for a name it does not hold */
-    private static int indexOf(String[] names, String v) {
+    static int indexOf(String[] names, String v) {
         for (int i = 0; i < names.length; i++) if (names[i] != null && names[i].equalsIgnoreCase(v)) return i;
         return -1;
     }
 
-    private static Integer integer(String v) { return v.matches("[+-]?\\d{1,3}") ? Integer.parseInt(v.startsWith("+") ? v.substring(1) : v) : null; }
+    /** a signed whole number of up to three digits, "+2" or "-3"; null for anything else */
+    static Integer integer(String v) { return v.matches("[+-]?\\d{1,3}") ? Integer.parseInt(v.startsWith("+") ? v.substring(1) : v) : null; }
 
     /** "+0.7" → 2, "-1" → -3, "1.3" → 4: whole stops and a third digit of 0, 3 or 7; null for anything else */
     static Integer thirds(String v) {
@@ -353,14 +214,14 @@ final class CustomRecipes {
             String fn = f.getName();
             if (fn.startsWith(".") || !fn.toLowerCase(Locale.US).endsWith(EXT.toLowerCase(Locale.US)) || !f.isFile()) continue;
             Parsed p;
-            if (f.length() > MAX_BYTES) p = fail(Lang.t("custom_too_large"));
+            if (f.length() > MAX_BYTES) p = Parsed.fail(Lang.t("custom_too_large"));
             else {
-                try { p = parse(new String(read(f), UTF8), fn); }
-                catch (IOException e) { p = fail(Lang.t("custom_unreadable", String.valueOf(e.getMessage()))); }
+                try { p = RecipeFormats.parse(new String(read(f), UTF8), fn); }
+                catch (IOException e) { p = Parsed.fail(Lang.t("custom_unreadable", String.valueOf(e.getMessage()))); }
             }
             if (p.error == null) {
                 String other = byName.get(p.recipe.name.toLowerCase(Locale.US));
-                if (other != null) p = fail(Lang.t("custom_duplicate", p.recipe.name, other));
+                if (other != null) p = Parsed.fail(Lang.t("custom_duplicate", p.recipe.name, other));
             }
             if (p.error != null) { skipped.add(fn + ": " + p.error); continue; }
             byName.put(p.recipe.name.toLowerCase(Locale.US), fn);
@@ -401,7 +262,7 @@ final class CustomRecipes {
         if (tmp.exists()) remove(tmp);                                  // left by a save the camera was switched off in
         FileOutputStream out = new FileOutputStream(tmp);
         try {
-            out.write(encode(r, madeOn).getBytes(UTF8));
+            out.write(RecipeFormats.write(r, madeOn).getBytes(UTF8));
             out.flush();
             try { out.getFD().sync(); } catch (IOException noSync) {}   // Sony's FUSE layer has no fsync
         } catch (IOException e) {

@@ -36,8 +36,10 @@ src/com/voxivoid/recipelab/
                                GROUP_START / GROUP_COUNT, list navigation
   Favourites.java              the favourites list: stored by name in the app's preferences, and how the browser
                                walks the Favourites and Custom groups — pure functions, no Android, covered by test/
-  CustomRecipes.java           custom recipes on the memory card: the versioned file format, what a file may hold,
-                               names, file names, and reading / writing the RECIPES folder — no Android, covered by test/
+  CustomRecipes.java           custom recipes on the memory card: what a recipe may hold, names, file names, and reading /
+                               writing the RECIPES folder — no Android, covered by test/
+  RecipeFormats.java           the custom recipe file's versions: which RecipeFormat reads a file (its format line) and
+                               which writes one (the newest); RecipeFormat.java is a version, RecipeFormatV1.java format 1
   Library.java                 one index over the table's recipes and the custom ones after it: the wheel, the panel's
                                count — no Android, covered by test/
   NameEntry.java               the name editor: placeholder, capitals, delete, walking the keyboard grid — no Android,
@@ -239,7 +241,7 @@ write to the card, PMCADemo, uses `PMCADEMO/LOG.TXT`. A first build that used `R
 to Z. An index moves when a recipe is added, renamed or deleted, so nothing persistent holds one: the last recipe is
 kept as `customRecipe` (its name) beside `recipe`, and favourites by name.
 
-**The file.** `key = value`, `#` comments, UTF-8 (a BOM is ignored), English always. `CustomRecipes.encode` writes:
+**The file.** `key = value`, `#` comments, UTF-8 (a BOM is ignored), English always. Format 1 (`RecipeFormatV1`) writes:
 
 | key | values | missing → |
 |---|---|---|
@@ -257,12 +259,17 @@ kept as `customRecipe` (its name) beside `recipe`, and favourites by name.
 
 Quality is not part of a recipe: it follows the Factory base like every other recipe.
 
-**Versions.** The rules that keep old files readable:
+**Versions.** Each version of the format is a `RecipeFormat` — its number, a reader and a writer — and
+`RecipeFormats.ALL` lists them, oldest first. A file is read by the version its `format` line names (no line: 1); the
+app writes with the newest (`RecipeFormats.current()`). The `key = value` envelope every version shares is
+`RecipeFormats.keys`. The rules that keep old files readable:
 
-- A key a reader does not know is ignored. **Adding** a key never needs a new format; give it a default that means
+- A key a reader does not know is ignored. **Adding** a key never needs a new version; give it a default that means
   "what an older file meant".
-- **Changing what a key means** (units, a renamed value) bumps `CustomRecipes.FORMAT`, and `parse` gains a case for the
-  new number while the old case stays: every file once written keeps loading.
+- **Changing what a key means** (units, a renamed value) is a new version: add `RecipeFormatV2` with its reader and
+  writer, append it to `RecipeFormats.ALL`, and leave V1 as it is — every file once written keeps loading with the reader
+  it was written for. `RecipeFormatsTest` checks the versions are numbered 1, 2, 3 … and that every writer reads back
+  through its own reader.
 - A file whose `format` is newer than the build is skipped as a whole (*made by a newer Recipe Lab*), never half-read —
   its values end up in the settings store.
 
@@ -502,6 +509,7 @@ against a SHA-256 pinned in the script (`JUNIT_JAR=<path>` points it at a copy w
 | `KeyProbeTest` | that the key probe answers "unknown" off the camera instead of throwing |
 | `KeyProbeCameraTest` | the key probe against test doubles of Sony's `ScalarInput`, `KeyStatus` and `ScalarProperties` (`test/com/sony/scalar/sysutil/`, shaped like the OpenMemories-Framework stubs): the reflection finds the real signatures, only `valid == 1` is a key, only `status == 1` is a press. The doubles throw for anything a test did not set up, which is how the "off the camera" answers stay null |
 | `FavouritesTest` | the favourites list — stored by name, unknown names dropped, marking order kept, toggle, the highlight after a removal, custom recipes as `custom:<name>` kept while their card is out — and the browser's group order: Favourites, Custom with its New row, the brands |
+| `RecipeFormatsTest` | the file's versions: numbered 1, 2, 3 … with the newest written, every writer read back by its own reader, each file read by the version it names (a stand-in version 2 beside format 1), unknown versions skipped whole, the shared envelope |
 | `CustomRecipesTest` | the recipe file: every built-in look survives a round trip, hand-edited files (BOM, CRLF, case, comments, unknown keys) still read, a newer format or any out-of-range value skips the file with the reason, names and default names, file names, and save / edit / rename / delete / load against a temporary folder |
 | `LibraryTest` | one index over the table and the custom recipes: the wheel walks into them and wraps, the panel counts them among themselves |
 | `NameEntryTest` | the name editor: the placeholder the first character replaces, capitals, delete, the length limit, walking the grid with the four-way and the wheel |

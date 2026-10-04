@@ -27,13 +27,13 @@ class CustomRecipesTest {
     private static Recipes.Recipe mine(String name, String builtIn) { return CustomRecipes.renamed(recipe(builtIn), name); }
 
     private static Recipes.Recipe parse(String text) {
-        CustomRecipes.Parsed p = CustomRecipes.parse(text, "file.txt");
+        CustomRecipes.Parsed p = RecipeFormats.parse(text, "file.txt");
         assertNull(p.error, text);
         return p.recipe;
     }
 
     private static String error(String text) {
-        CustomRecipes.Parsed p = CustomRecipes.parse(text, "file.txt");
+        CustomRecipes.Parsed p = RecipeFormats.parse(text, "file.txt");
         assertNull(p.recipe, text);
         return p.error;
     }
@@ -47,7 +47,7 @@ class CustomRecipesTest {
     @Test void everyBuiltInLookSurvivesAFileRoundTrip() {
         for (Recipes.Recipe r : Recipes.ALL) {
             Recipes.Recipe c = CustomRecipes.renamed(r, "Copy");
-            Recipes.Recipe back = parse(CustomRecipes.encode(c, "ILCE-6000"));
+            Recipes.Recipe back = parse(RecipeFormats.write(c, "ILCE-6000"));
             assertEquals("Copy", back.name);
             assertTrue(back.isCustom());
             assertSameLook(c, back);
@@ -55,7 +55,7 @@ class CustomRecipesTest {
     }
 
     @Test void theFileReadsLikeTheChips() {
-        String text = CustomRecipes.encode(mine("Golden Hour", "Kodak Vision 200T (Asteroid City)"), "ILCE-6000");
+        String text = RecipeFormats.write(mine("Golden Hour", "Kodak Vision 200T (Asteroid City)"), "ILCE-6000");
         assertTrue(text.startsWith("# Recipe Lab custom recipe"), text);
         for (String line : new String[] { "format = 1", "name = Golden Hour", "made-on = ILCE-6000", "style = neutral",
                 "saturation = -2", "contrast = -3", "effect = off", "white-balance = 5000K", "amber-blue = +2",
@@ -66,7 +66,7 @@ class CustomRecipesTest {
 
     @Test void anEffectWritesItsOptionByName() {
         Recipes.Recipe r = mine("Pink", "Sony SH (soft high-key)");
-        String text = CustomRecipes.encode(r, null);
+        String text = RecipeFormats.write(r, null);
         assertTrue(text.contains("\neffect = soft-high-key"), text);
         assertTrue(text.contains("\neffect-option = blue"), text);
         assertFalse(text.contains("made-on"), "an unknown camera is left out, not written as null");
@@ -75,7 +75,7 @@ class CustomRecipesTest {
     @Test void aMinimalHandWrittenFileTakesTheFactoryLookForWhatItLeavesOut() {
         Recipes.Recipe r = parse("name = Plain\n");
         assertSameLook(CustomRecipes.renamed(Recipes.ALL[Recipes.FACTORY], "Plain"), r);
-        assertEquals("Mine", CustomRecipes.parse("style = vivid", "Mine.txt").recipe.name, "no name line: the file's name");
+        assertEquals("Mine", RecipeFormats.parse("style = vivid", "Mine.txt").recipe.name, "no name line: the file's name");
     }
 
     @Test void handEditingIsForgiving() {
@@ -92,7 +92,7 @@ class CustomRecipesTest {
     @Test void whiteBalanceKeepLeavesTheCamerasAlone() {
         Recipes.Recipe r = parse("name = Keep\nwhite-balance = keep\n");
         assertEquals(0, r.wbMode);
-        assertTrue(CustomRecipes.encode(r, null).contains("\nwhite-balance = keep"));
+        assertTrue(RecipeFormats.write(r, null).contains("\nwhite-balance = keep"));
     }
 
     // ---- versions
@@ -107,7 +107,7 @@ class CustomRecipesTest {
         assertEquals("format = 0 is not allowed", error("format = 0\nname = x"));
     }
 
-    @Test void theWrittenFormatIsTheNewestReadOne() { assertTrue(CustomRecipes.encode(mine("x", "Velvia"), null).contains("\nformat = " + CustomRecipes.FORMAT + "\n")); }
+    @Test void theWrittenFormatIsTheNewestReadOne() { assertTrue(RecipeFormats.write(mine("x", "Velvia"), null).contains("\nformat = " + RecipeFormats.current().version() + "\n")); }
 
     // ---- untrusted input
     @Test void aValueTheStoreWouldNotTakeSkipsTheFile() {
