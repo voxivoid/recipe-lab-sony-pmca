@@ -34,7 +34,8 @@ src/com/voxivoid/recipelab/
   Recipes.java                 the 77-entry table (76 recipes + the factory look, FACTORY, which only Reset settings
                                reaches), brands, GROUP_START / GROUP_COUNT, list navigation that skips FACTORY
   Favourites.java              the favourites list: stored by name in the app's preferences, and how the browser
-                               walks the Favourites group — pure functions, no Android, covered by test/
+                               walks the special groups — pure functions, no Android, covered by test/
+  RecentRecipes.java            the last 10 successful picks, stored by name in app preferences
   DevTools.java                the app menu and developer menu rows, the About and key-logger lines, and the sample
                                run's delays, messages and manifest — pure functions, no Android, covered by test/
   Keys.java                    scan codes, the press / hold gesture, the trash-hold guard, and the legend for the
@@ -47,7 +48,7 @@ src/com/voxivoid/recipelab/
   TextZhHans.java, TextZhHant.java   Simplified and Traditional Chinese, plus the recipe / brand / style names
   UiFont.java                  the typeface of each language: the camera's for English, assets/fonts for Chinese
   res/raw/ids.txt              every settings entry of 16 bytes or less, used by the snapshot/diff tool
-  PickerView.java              Canvas-drawn brand browser (Favourites first, then the brands)
+  PickerView.java              Canvas-drawn brand browser (Recent, Favourites, then the brands)
   MenuView.java                Canvas-drawn full-screen list: the app menu, the developer menu (rows, some with a
                                value left / right change in place, between drawn arrows), and read-only pages
                                (About, the key logger)

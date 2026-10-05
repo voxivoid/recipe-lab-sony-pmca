@@ -65,6 +65,9 @@ final class TextEn {
         { "lock_report_unreadable", "  ·  %1$d would not answer" },
 
         // ---- favourites and the brand list
+        { "group_recent", "Recent" },
+        { "recent_empty_title", "No recent recipes yet" },
+        { "recent_empty_hint", "Store a recipe to see it here" },
         { "group_favourites", "Favourites" },
         { "favourite_added", "%1$s added to Favourites" },
         { "favourite_removed", "%1$s removed from Favourites" },

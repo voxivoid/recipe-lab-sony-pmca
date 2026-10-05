@@ -78,6 +78,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private boolean logging = false;
     private final List<String[]> logLines = new ArrayList<String[]>();
     private List<Integer> favs = new ArrayList<Integer>();      // marked recipes, in marking order (Favourites decides, this holds)
+    private List<Integer> recent = new ArrayList<Integer>();    // successful picks, newest first
 
     // the sample run (developer menu): one frame per recipe, driven by the handler — stage, settle, shutter, next
     private boolean running = false;
@@ -92,7 +93,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private int row = 0, recipe = 0, overlay = OV_FULL;   // Params.OV_*: the full panel, the pill, nothing, the browser
     private boolean focus = false;                        // a chip is focused: UP/DOWN change its value
     private int browserCol = COL_RECIPES;                 // browser: Params.COL_GROUPS or COL_RECIPES
-    private int browserGroup = 0;                     // browser: the group the brand column is on — Favourites.GROUP or a brand
+    private int browserGroup = 0;                     // browser: RecentRecipes.GROUP, Favourites.GROUP or a brand
     private int lastChip = 0;                         // chip to return to when leaving the recipe line
     private final int[] cur = new int[N], edit = new int[N];
     private boolean previewOk = false;
@@ -105,6 +106,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         prefs = getPreferences(MODE_PRIVATE);
         recipe = Math.max(0, Math.min(Recipes.ALL.length - 1, prefs.getInt("recipe", 0)));
         favs = Favourites.decode(prefs.getString("favourites", ""));
+        recent = RecentRecipes.decode(prefs.getString("recent", ""));
         settleIdx = DevTools.clampSettle(prefs.getInt("settle", DevTools.SETTLE_DEFAULT));
         langChoice = Lang.parseChoice(prefs.getString("language", null));
         panel = findViewById(R.id.panel);
@@ -286,7 +288,13 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         }
         if (written > 0) NativeBackup.sync();                    // Backup_sync_all is void: nothing to catch, nothing to report
         boolean ok = msg == null;
-        if (ok) msg = Lang.t(n == 1 ? "status_picked_one" : "status_picked_many", n);
+        if (ok) {
+            msg = Lang.t(n == 1 ? "status_picked_one" : "status_picked_many", n);
+            if (recipe != Recipes.FACTORY) {
+                RecentRecipes.record(recent, recipe);
+                prefs.edit().putString("recent", RecentRecipes.encode(recent)).commit();
+            }
+        }
         load(); stageRecipe();
         showToast(msg, ok ? 5000 : 0); render();
     }
@@ -652,7 +660,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         String pos = Recipes.position(recipe);
         String grp = Recipes.groupLabel(r.group).toUpperCase();
         picker.setVisibility(overlay == OV_BROWSER ? View.VISIBLE : View.GONE);
-        if (overlay == OV_BROWSER) { panel.setVisibility(View.GONE); mini.setVisibility(View.GONE); picker.set(recipe, browserCol, browserGroup, favs); return; }
+        if (overlay == OV_BROWSER) { panel.setVisibility(View.GONE); mini.setVisibility(View.GONE); picker.set(recipe, browserCol, browserGroup, favs, recent); return; }
         if (overlay == OV_FULL) {
             panel.setVisibility(View.VISIBLE); mini.setVisibility(View.GONE);
             name.setText(Recipes.displayName(r));
@@ -715,31 +723,35 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
 
     private void nextRecipe(int dir) { recipe = Recipes.next(recipe, dir); stageRecipe(); applyPreview(); render(); }
 
-    /** brand column: the group above / below, its first recipe previewed (an empty Favourites list leaves the recipe alone) */
+    /** brand column: the group above / below, its first recipe previewed (an empty special list leaves the recipe alone) */
     private void nextGroup(int dir) {
         browserGroup = Favourites.nextGroup(browserGroup, dir);
-        int land = Favourites.landing(browserGroup, favs);
+        int land = Favourites.landing(browserGroup, favs, recent);
         if (land >= 0) { recipe = land; stageRecipe(); applyPreview(); }
         render();
     }
 
     private void openBrowser(boolean open) {
         overlay = open ? OV_BROWSER : OV_FULL; row = 0; focus = false;
-        browserGroup = Favourites.openingGroup(favs, recipe);
+        browserGroup = Favourites.openingGroup(favs, recent, recipe);
         browserCol = COL_RECIPES;
-        if (open && recipe == Recipes.FACTORY) { recipe = Favourites.landing(browserGroup, favs); stageRecipe(); applyPreview(); }   // the list has no factory look to highlight
+        if (open && recipe == Recipes.FACTORY) { recipe = Favourites.landing(browserGroup, favs, recent); stageRecipe(); applyPreview(); }   // the list has no factory look to highlight
         render();
     }
 
     /** recipe column: the next / previous recipe of the group the browser is on, wrapping */
     private void nextInGroup(int dir) {
-        recipe = browserGroup == Favourites.GROUP ? Favourites.next(favs, recipe, dir) : Recipes.nextInGroup(recipe, dir);
+        recipe = browserGroup == RecentRecipes.GROUP ? Favourites.next(recent, recipe, dir)
+                : browserGroup == Favourites.GROUP ? Favourites.next(favs, recipe, dir) : Recipes.nextInGroup(recipe, dir);
         stageRecipe(); applyPreview(); render();
     }
 
-    /** the recipe column is not reachable while the Favourites list is empty */
+    /** the recipe column is not reachable while Recent or Favourites is empty */
     private boolean enterRecipeColumn() {
-        if (!Favourites.hasRecipes(browserGroup, favs)) { showToast(Favourites.emptyHint(), 3000); return false; }
+        if (!Favourites.hasRecipes(browserGroup, favs, recent)) {
+            showToast(browserGroup == RecentRecipes.GROUP ? RecentRecipes.emptyHint() : Favourites.emptyHint(), 3000);
+            return false;
+        }
         browserCol = COL_RECIPES; render(); return true;
     }
 

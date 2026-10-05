@@ -73,23 +73,29 @@ class FavouritesTest {
         assertEquals("Velvia removed from Favourites", Favourites.toggleMessage("Velvia", false));
     }
 
-    @Test void favouritesSitFirstInTheBrandColumnAndTheColumnWraps() {
+    @Test void recentAndFavouritesPrecedeBrandsAndTheColumnWraps() {
         int last = Recipes.GROUPS.length - 1;
         assertEquals(0, Favourites.nextGroup(Favourites.GROUP, +1), "down from Favourites is the first brand");
         assertEquals(Favourites.GROUP, Favourites.nextGroup(0, -1), "up from the first brand is Favourites");
-        assertEquals(Favourites.GROUP, Favourites.nextGroup(last, +1), "down from the last brand wraps to Favourites");
-        assertEquals(last, Favourites.nextGroup(Favourites.GROUP, -1));
-        assertEquals(0, Favourites.groupRow(Favourites.GROUP));
-        assertEquals(1, Favourites.groupRow(0));
+        assertEquals(RecentRecipes.GROUP, Favourites.nextGroup(last, +1), "down from the last brand wraps to Recent");
+        assertEquals(last, Favourites.nextGroup(RecentRecipes.GROUP, -1));
+        assertEquals(RecentRecipes.GROUP, Favourites.nextGroup(Favourites.GROUP, -1));
+        assertEquals(0, Favourites.groupRow(RecentRecipes.GROUP));
+        assertEquals(1, Favourites.groupRow(Favourites.GROUP));
+        assertEquals(2, Favourites.groupRow(0));
+        assertEquals("Recent", Favourites.groupName(RecentRecipes.GROUP));
         assertEquals("Favourites", Favourites.groupName(Favourites.GROUP));
         assertEquals(Recipes.GROUPS[3], Favourites.groupName(3));
     }
 
     @Test void landingOnAGroupHighlightsItsFirstRecipe() {
         List<Integer> f = favs("Acros", "Velvia");
-        assertEquals(indexOf("Acros"), Favourites.landing(Favourites.GROUP, f), "the first marked, not the first in the table");
-        assertEquals(Recipes.GROUP_START[3], Favourites.landing(3, f));
-        assertEquals(-1, Favourites.landing(Favourites.GROUP, new ArrayList<Integer>()), "nothing to land on: the highlight stays put");
+        List<Integer> recent = favs("Velvia", "Acros");
+        assertEquals(indexOf("Acros"), Favourites.landing(Favourites.GROUP, f, recent), "the first marked, not the first in the table");
+        assertEquals(indexOf("Velvia"), Favourites.landing(RecentRecipes.GROUP, f, recent));
+        assertEquals(Recipes.GROUP_START[3], Favourites.landing(3, f, recent));
+        assertEquals(-1, Favourites.landing(Favourites.GROUP, new ArrayList<Integer>(), recent));
+        assertEquals(-1, Favourites.landing(RecentRecipes.GROUP, f, new ArrayList<Integer>()));
     }
 
     @Test void nextWalksTheMarkingOrderAndWraps() {
@@ -104,28 +110,36 @@ class FavouritesTest {
 
     @Test void theBrowserOpensOnFavouritesWhenTheRecipeIsOne() {
         List<Integer> f = favs("Velvia");
-        assertEquals(Favourites.GROUP, Favourites.openingGroup(f, indexOf("Velvia")));
-        assertEquals(Recipes.ALL[indexOf("Acros")].group, Favourites.openingGroup(f, indexOf("Acros")));
-        assertEquals(0, Favourites.openingGroup(new ArrayList<Integer>(), 0));
+        List<Integer> recent = favs("Velvia", "Acros");
+        assertEquals(Favourites.GROUP, Favourites.openingGroup(f, recent, indexOf("Velvia")));
+        assertEquals(RecentRecipes.GROUP, Favourites.openingGroup(f, recent, indexOf("Acros")));
+        assertEquals(Recipes.ALL[indexOf("Provia")].group, Favourites.openingGroup(f, recent, indexOf("Provia")));
+        assertEquals(0, Favourites.openingGroup(new ArrayList<Integer>(), recent, 0));
     }
 
     @Test void onlyANonEmptyGroupHasARecipeColumn() {
         List<Integer> f = favs("Velvia");
-        assertTrue(Favourites.hasRecipes(Favourites.GROUP, f));
-        assertFalse(Favourites.hasRecipes(Favourites.GROUP, new ArrayList<Integer>()));
-        assertTrue(Favourites.hasRecipes(0, new ArrayList<Integer>()), "a brand always has recipes");
+        List<Integer> empty = new ArrayList<Integer>();
+        assertTrue(Favourites.hasRecipes(Favourites.GROUP, f, empty));
+        assertFalse(Favourites.hasRecipes(Favourites.GROUP, empty, empty));
+        assertFalse(Favourites.hasRecipes(RecentRecipes.GROUP, f, empty));
+        assertTrue(Favourites.hasRecipes(0, empty, empty), "a brand always has recipes");
     }
 
     @Test void aGroupListsItsRecipesByPosition() {
         List<Integer> f = favs("Velvia", "Acros");
-        assertEquals(2, Favourites.groupCount(Favourites.GROUP, f));
-        assertEquals(Recipes.GROUP_COUNT[0], Favourites.groupCount(0, f));
-        assertEquals(indexOf("Acros"), Favourites.recipeAt(Favourites.GROUP, 1, f));
-        assertEquals(Recipes.GROUP_START[3] + 2, Favourites.recipeAt(3, 2, f));
-        assertEquals(1, Favourites.positionIn(Favourites.GROUP, indexOf("Acros"), f));
-        assertEquals(-1, Favourites.positionIn(Favourites.GROUP, indexOf("Provia"), f));
-        assertEquals(2, Favourites.positionIn(3, Recipes.GROUP_START[3] + 2, f));
-        assertEquals(-1, Favourites.positionIn(3, Recipes.GROUP_START[0], f), "a recipe of another brand");
+        List<Integer> recent = favs("Acros", "Velvia");
+        assertEquals(2, Favourites.groupCount(Favourites.GROUP, f, recent));
+        assertEquals(2, Favourites.groupCount(RecentRecipes.GROUP, f, recent));
+        assertEquals(Recipes.GROUP_COUNT[0], Favourites.groupCount(0, f, recent));
+        assertEquals(indexOf("Acros"), Favourites.recipeAt(Favourites.GROUP, 1, f, recent));
+        assertEquals(indexOf("Velvia"), Favourites.recipeAt(RecentRecipes.GROUP, 1, f, recent));
+        assertEquals(Recipes.GROUP_START[3] + 2, Favourites.recipeAt(3, 2, f, recent));
+        assertEquals(1, Favourites.positionIn(Favourites.GROUP, indexOf("Acros"), f, recent));
+        assertEquals(0, Favourites.positionIn(RecentRecipes.GROUP, indexOf("Acros"), f, recent));
+        assertEquals(-1, Favourites.positionIn(Favourites.GROUP, indexOf("Provia"), f, recent));
+        assertEquals(2, Favourites.positionIn(3, Recipes.GROUP_START[3] + 2, f, recent));
+        assertEquals(-1, Favourites.positionIn(3, Recipes.GROUP_START[0], f, recent), "a recipe of another brand");
     }
 
     @Test void everyListedRecipeCanBeMarkedAndReadBack() {

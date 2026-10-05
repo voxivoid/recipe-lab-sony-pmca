@@ -5,7 +5,7 @@ import java.util.List;
 
 /**
  * The favourites list and the browser's group order, without the camera: which recipes are marked, in the order
- * they were marked, how the list is kept in the app's preferences, and how the browser walks it.
+ * they were marked, how the list is kept in the app's preferences, and how the browser walks Recent, Favourites and brands.
  *
  * A favourite is remembered by recipe <em>name</em>, not index, so the marks survive a build that inserts a recipe
  * in the middle of the table; a name the table no longer has is dropped on load. The list lives in the app's own
@@ -71,17 +71,18 @@ final class Favourites {
     static String toggleMessage(String recipeName, boolean on) { return Lang.t(on ? "favourite_added" : "favourite_removed", recipeName); }
 
     // ------------------------------------------------------------ browser navigation
-    /** the group above / below in the brand column: Favourites sits first, everything wraps */
+    /** the group above / below in the brand column: Recent, Favourites, then brands */
     static int nextGroup(int group, int dir) {
-        int n = Recipes.GROUPS.length + 1, pos = group + 1;      // Favourites -> 0, brand g -> g + 1
-        return (pos + n + dir) % n - 1;
+        int n = Recipes.GROUPS.length + 2, pos = group + 2;
+        return (pos + n + dir) % n - 2;
     }
 
-    /** the brand column's row for a group, Favourites first */
-    static int groupRow(int group) { return group + 1; }
+    /** the brand column's row for a group */
+    static int groupRow(int group) { return group + 2; }
 
     /** the recipe the highlight lands on when the brand column moves onto {@code group}; -1 when there is nothing to land on */
-    static int landing(int group, List<Integer> favs) {
+    static int landing(int group, List<Integer> favs, List<Integer> recent) {
+        if (group == RecentRecipes.GROUP) return recent.isEmpty() ? -1 : recent.get(0);
         if (group == GROUP) return favs.isEmpty() ? -1 : favs.get(0);
         return Recipes.GROUP_START[group];
     }
@@ -94,23 +95,32 @@ final class Favourites {
         return favs.get((pos + favs.size() + dir) % favs.size());
     }
 
-    /** the group the browser opens on: Favourites when the recipe is one, else its brand */
-    static int openingGroup(List<Integer> favs, int recipe) { return favs.contains(recipe) ? GROUP : Recipes.ALL[recipe].group; }
+    /** open on Favourites for a marked recipe, else Recent for a recent pick, else its brand */
+    static int openingGroup(List<Integer> favs, List<Integer> recent, int recipe) {
+        return favs.contains(recipe) ? GROUP : recent.contains(recipe) ? RecentRecipes.GROUP : Recipes.ALL[recipe].group;
+    }
 
     /** the group's name as the brand column shows it, in the display language */
-    static String groupName(int group) { return group == GROUP ? Lang.t("group_favourites") : Recipes.groupLabel(group); }
+    static String groupName(int group) {
+        return group == RecentRecipes.GROUP ? Lang.t("group_recent") : group == GROUP ? Lang.t("group_favourites") : Recipes.groupLabel(group);
+    }
 
     /** how many recipes a group lists */
-    static int groupCount(int group, List<Integer> favs) { return group == GROUP ? favs.size() : Recipes.GROUP_COUNT[group]; }
+    static int groupCount(int group, List<Integer> favs, List<Integer> recent) {
+        return group == RecentRecipes.GROUP ? recent.size() : group == GROUP ? favs.size() : Recipes.GROUP_COUNT[group];
+    }
 
     /** whether a group has anything in its recipe column — an empty Favourites list has not */
-    static boolean hasRecipes(int group, List<Integer> favs) { return groupCount(group, favs) > 0; }
+    static boolean hasRecipes(int group, List<Integer> favs, List<Integer> recent) { return groupCount(group, favs, recent) > 0; }
 
     /** the k-th recipe of a group */
-    static int recipeAt(int group, int k, List<Integer> favs) { return group == GROUP ? favs.get(k) : Recipes.GROUP_START[group] + k; }
+    static int recipeAt(int group, int k, List<Integer> favs, List<Integer> recent) {
+        return group == RecentRecipes.GROUP ? recent.get(k) : group == GROUP ? favs.get(k) : Recipes.GROUP_START[group] + k;
+    }
 
     /** the position of a recipe inside a group's list, -1 when it is not there */
-    static int positionIn(int group, int recipe, List<Integer> favs) {
+    static int positionIn(int group, int recipe, List<Integer> favs, List<Integer> recent) {
+        if (group == RecentRecipes.GROUP) return recent.indexOf(recipe);
         if (group == GROUP) return favs.indexOf(recipe);
         return Recipes.ALL[recipe].group == group ? recipe - Recipes.GROUP_START[group] : -1;
     }

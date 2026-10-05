@@ -234,7 +234,7 @@ bottom of the screen only names it when the camera reports it. **AEL**, **C1** a
 **The menu.** Hold **MENU** for a moment and the menu fills the screen; a short press still leaves the app. Up / down
 or the wheel move, centre picks, **MENU** goes back.
 
-- **Browse recipes** opens the brand list: **Favourites** first, then the brands, on the left; recipes on the right.
+- **Browse recipes** opens the brand list: **Recent**, **Favourites**, then the brands, on the left; recipes on the right.
   Left / right switches column (the active one is amber), wheel or up / down scrolls, centre picks.
 - **Panel visibility** — *Full*, *Label* or *Hidden* — changes with left / right, right there in the menu.
 - **Language** — *Auto*, *English*, *简体中文* (Simplified Chinese) or *繁體中文* (Traditional Chinese) — changes the
@@ -249,11 +249,15 @@ or the wheel move, centre picks, **MENU** goes back.
 Then **turn the camera off and on**. The look is now the camera's default in every mode — P, A, S, M, movie — with
 the app closed, and the app reopens on that recipe.
 
-**Favourites.** Hold the **centre button** on a recipe and it joins the **Favourites** group at the top of the brand
+**Favourites.** Hold the **centre button** on a recipe and it joins the **Favourites** group near the top of the brand
 list, with a star next to its name; hold again to drop it. The group lists your picks in the order you marked them,
 and the brand list opens straight on it whenever the recipe you are on is one of them. The wheel on the main screen
 still walks all 76 — favourites shorten the list in the browser, not the scroll. The marks are kept by the app, not in
 the camera's settings, so they survive a power cycle but go with the app if you remove it.
+
+**Recent.** The browser also keeps up to 10 recipes you successfully picked, newest first. Previewing a look or a
+failed write does not add it. Picking one again moves it to the top. The list survives a power cycle, but is kept in
+the app's own storage and disappears if you uninstall the app.
 
 **The chips.** In the chip row, **left / right** walks the chips, **centre** focuses one (it turns amber),
 **up / down** changes its value, **centre** leaves it. The wheel keeps changing recipes throughout. A recipe only shows the chips it uses: **CS** recipes show style,
