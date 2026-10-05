@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 class RecipesTest {
 
     @Test void hasTheDocumentedNumberOfRecipes() {
-        assertEquals(77, Recipes.ALL.length,
+        assertEquals(78, Recipes.ALL.length,
                 "README.md, CLAUDE.md, docs/DEVELOPMENT.md and docs/FAQ.md quote the recipe count -- update them together with this number");
     }
 
@@ -235,8 +235,8 @@ class RecipesTest {
     }
 
     @Test void thePanelCountsTheListAndNamesTheFactoryLook() {
-        assertEquals("1 / 76", Recipes.position(1));
-        assertEquals("76 / 76", Recipes.position(Recipes.ALL.length - 1));
+        assertEquals("1 / 77", Recipes.position(1));
+        assertEquals("77 / 77", Recipes.position(Recipes.ALL.length - 1));
         assertEquals("factory", Recipes.position(Recipes.FACTORY));
     }
 
@@ -244,7 +244,7 @@ class RecipesTest {
         int sony = 0, lastBrand = Recipes.GROUPS.length - 1;
         assertEquals(Recipes.GROUP_START[1], Recipes.nextGroupStart(Recipes.GROUP_START[sony] + 3, +1));
         assertEquals(Recipes.GROUP_START[lastBrand], Recipes.nextGroupStart(sony, -1));
-        assertEquals(1, Recipes.nextGroupStart(Recipes.GROUP_START[lastBrand] + 1, +1), "Sony's first listed recipe, past the factory look");
+        assertEquals(1, Recipes.nextGroupStart(Recipes.GROUP_START[lastBrand], +1), "Sony's first listed recipe, past the factory look");
     }
 
     @Test void nextInGroupWrapsInsideTheBrand() {

@@ -9,7 +9,7 @@
   <sub>
     <img src="https://img.shields.io/github/v/release/voxivoid/recipe-lab-sony-pmca?label=version" alt="version"> ·
     <a href="https://github.com/voxivoid/recipe-lab-sony-pmca/releases/latest/download/RecipeLab.apk">Download the app</a> ·
-    <a href="docs/SAMPLES.md">See every recipe</a>
+    <a href="docs/SAMPLES.md">See sample photos</a>
   </sub>
 </p>
 
@@ -52,9 +52,10 @@
 
 ## What it is
 
-Recipe Lab is a small app that runs on the Sony A6000 itself. It comes with 76 colour recipes that recreate the looks
+Recipe Lab is a small app that runs on the Sony A6000 itself. It comes with 77 colour recipes that recreate the looks
 of other cameras — Fuji film simulations, Ricoh GR image controls, Leica, Hasselblad, Canon and Nikon colour, Sony's
-newer Creative Looks — and of classic film stocks from Kodak, Fuji, Cinestill, Agfa and Ilford.
+newer Creative Looks — and of classic film stocks from Kodak, Fuji, Cinestill, Agfa and Ilford. It also includes an
+original Blue Hour look for cool, muted dusk scenes.
 
 You turn the wheel, watch the live image change, press a button. From then on the camera shoots that way in **every
 mode**, photo and video, with the app closed. Turn it off and on, it is still there.
@@ -79,9 +80,10 @@ mode**, photo and video, with the app closed. Turn it off and on, it is still th
 | **Panasonic / Olympus** | L.Monochrome D, L.ClassicNeo, Pop Art, Pale & Light |
 | **Other stocks** | Agfa Vista 200, Agfa Ultra 100, Polaroid / Instax |
 | **Ilford** | HP5, FP4, Delta 100, Delta 3200, Pan F 50 |
+| **Original** | Blue Hour — Neutral, saturation -1, contrast +1, 4300K, B2/M1, EV -0.3, DRO Lv3 |
 
-**[See every recipe on the same subject →](docs/SAMPLES.md)** — 77 frames, one scene, one exposure, straight out of
-the camera.
+**[See the sample gallery →](docs/SAMPLES.md)** — 77 earlier frames, one scene, one exposure, straight out of
+the camera. Blue Hour does not have a sample frame yet.
 
 Recipes marked **PE** in the app (Acros +R, Tri-X 1600, GR Retro, GR Hi-Contrast B&W, Sony SH, Polaroid) are built on
 a Picture Effect because, against the reference frames, its tone
@@ -252,7 +254,7 @@ the app closed, and the app reopens on that recipe.
 **Favourites.** Hold the **centre button** on a recipe and it joins the **Favourites** group at the top of the brand
 list, with a star next to its name; hold again to drop it. The group lists your picks in the order you marked them,
 and the brand list opens straight on it whenever the recipe you are on is one of them. The wheel on the main screen
-still walks all 76 — favourites shorten the list in the browser, not the scroll. The marks are kept by the app, not in
+still walks all 77 — favourites shorten the list in the browser, not the scroll. The marks are kept by the app, not in
 the camera's settings, so they survive a power cycle but go with the app if you remove it.
 
 **The chips.** In the chip row, **left / right** walks the chips, **centre** focuses one (it turns amber),

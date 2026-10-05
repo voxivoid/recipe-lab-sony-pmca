@@ -209,6 +209,7 @@ final class TextZhHant {
         { "group_pana_olympus", "松下 / 奧林巴斯" },
         { "group_other_stocks", "其他底片" },
         { "group_ilford", "伊爾福" },
+        { "group_original", "原創" },
 
         // ---- recipes: the display name; the canonical English stays the identifier
         { "recipe_factory_st", "出廠標準" },
@@ -288,5 +289,6 @@ final class TextZhHant {
         { "recipe_ilford_delta_100", "伊爾福 Delta 100" },
         { "recipe_ilford_delta_3200", "伊爾福 Delta 3200" },
         { "recipe_ilford_pan_f_50", "伊爾福 Pan F 50" },
+        { "recipe_blue_hour", "藍調時刻" },
     };
 }

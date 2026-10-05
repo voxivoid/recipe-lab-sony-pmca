@@ -45,11 +45,11 @@ class ParamsHudTest {
         int[] cur = factoryRows();
         int i = indexOf("Kodak Portra 400");
         int[] e = staged(Recipes.ALL[i], cur, Q_FINE);
-        assertEquals("CS  Kodak Portra 400   " + (i + 1) + " / 77   · preview", miniLine(i, cur, e, true));
-        assertEquals("CS  Kodak Portra 400   " + (i + 1) + " / 77   · active", miniLine(i, cur, e, false));
+        assertEquals("CS  Kodak Portra 400   " + (i + 1) + " / 78   · preview", miniLine(i, cur, e, true));
+        assertEquals("CS  Kodak Portra 400   " + (i + 1) + " / 78   · active", miniLine(i, cur, e, false));
         i = indexOf("GR Retro"); cur[R_QUAL] = Q_RAW;
         e = staged(Recipes.ALL[i], cur, Q_RAW);
-        assertEquals("PE  GR Retro   " + (i + 1) + " / 77   · preview   · quality → JPG Fine", miniLine(i, cur, e, true));
+        assertEquals("PE  GR Retro   " + (i + 1) + " / 78   · preview   · quality → JPG Fine", miniLine(i, cur, e, true));
     }
 
     @Test void qualityPromptExplainsWhyTheQualityMoves() {

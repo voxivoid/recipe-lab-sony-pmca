@@ -1,6 +1,7 @@
 # Sample frames
 
-Every one of the 77 recipes, on the same subject, in the same light, straight out of the camera.
+These 77 frames were shot before Blue Hour was added. They show the earlier recipes on the same subject,
+in the same light, straight out of the camera; Blue Hour has no sample frame yet.
 
 One frame per recipe, shot in one run by the app's own [sample run](DEVELOPMENT.md#sample-run): it applies recipe *n*,
 waits for the preview pipeline, fires the shutter, moves on. Nothing here is edited. The frames are downscaled to

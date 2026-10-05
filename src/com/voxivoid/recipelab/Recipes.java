@@ -89,8 +89,8 @@ public class Recipes {
     }
 
     // ---- groups (brands) — recipes below MUST be listed in group order
-    public static final String[] GROUPS = { "Sony", "Fuji Sim", "Fuji Film", "Kodak", "Cine", "Ricoh GR", "Leica", "Hasselblad", "Canon / Nikon", "Pana / Olympus", "Other Stocks", "Ilford" };
-    private static final int SONY = 0, FSIM = 1, FFILM = 2, KODAK = 3, CINE = 4, RICOH = 5, LEICA = 6, HASSEL = 7, CANIK = 8, PANOLY = 9, OTHER = 10, ILFORD = 11;
+    public static final String[] GROUPS = { "Sony", "Fuji Sim", "Fuji Film", "Kodak", "Cine", "Ricoh GR", "Leica", "Hasselblad", "Canon / Nikon", "Pana / Olympus", "Other Stocks", "Ilford", "Original" };
+    private static final int SONY = 0, FSIM = 1, FFILM = 2, KODAK = 3, CINE = 4, RICOH = 5, LEICA = 6, HASSEL = 7, CANIK = 8, PANOLY = 9, OTHER = 10, ILFORD = 11, ORIGINAL = 12;
 
     public static final Recipe[] ALL = {
         // ---- Sony (Creative Looks from newer bodies — same pipeline, best fidelity)
@@ -182,6 +182,8 @@ public class Recipes {
         new Recipe(ILFORD,"Ilford Delta 100",                    MONO,     0,  1,  1, AUTO, 0,     0,  0),
         new Recipe(ILFORD,"Ilford Delta 3200",                   MONO,     0,  3, -2, AUTO, 0,     0,  0,  0,  2, 6),
         new Recipe(ILFORD,"Ilford Pan F 50",                     MONO,     0,  2,  2, AUTO, 0,     0,  0),
+        // ---- Original looks
+        new Recipe(ORIGINAL, "Blue Hour",                         NEUTRAL, -1,  1,  0, K,    4300, -2, -1,  0, -1, 3),   // cool dusk, muted colours, restrained highlights
     };
 
     /**
@@ -221,7 +223,7 @@ public class Recipes {
         return start + ((i - start + n + dir) % n);
     }
 
-    /** where a recipe sits in the list, as the panel shows it: "12 / 76", or "factory" for the look Reset stores */
+    /** where a recipe sits in the list, as the panel shows it: "12 / 77", or "factory" for the look Reset stores */
     public static String position(int i) { return i == FACTORY ? Lang.t("position_factory") : i + " / " + LISTED; }
 
     // ---- names on screen: the display language's, where it has one. The canonical English above stays the identifier
