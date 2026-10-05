@@ -250,6 +250,7 @@ final class TextZhHans {
         { "group_pana_olympus", "松下 / 奥林巴斯" },
         { "group_other_stocks", "其他胶片" },
         { "group_ilford", "伊尔福" },
+        { "group_fuji_mono", "富士黑白" },
 
         // ---- recipes: the display name; the canonical English stays the identifier
         { "recipe_factory_st", "出厂标准" },
@@ -275,6 +276,10 @@ final class TextZhHans {
         { "recipe_acros_ye_yellow_filter", "ACROS +Ye（黄色滤镜）" },
         { "recipe_acros_r_red_filter", "ACROS +R（红色滤镜）" },
         { "recipe_acros_g_green_filter", "ACROS +G（绿色滤镜）" },
+        { "recipe_monochrome", "黑白" },
+        { "recipe_monochrome_ye_yellow_filter", "黑白 +Ye（黄色滤镜）" },
+        { "recipe_monochrome_r_red_filter", "黑白 +R（红色滤镜）" },
+        { "recipe_monochrome_g_green_filter", "黑白 +G（绿色滤镜）" },
         { "recipe_sepia", "棕褐色" },
         { "recipe_fuji_pro_400h", "富士 Pro 400H" },
         { "recipe_fuji_fortia_50", "富士 Fortia 50" },

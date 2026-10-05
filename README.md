@@ -9,7 +9,7 @@
   <sub>
     <img src="https://img.shields.io/github/v/release/voxivoid/recipe-lab-sony-pmca?label=version" alt="version"> ·
     <a href="https://github.com/voxivoid/recipe-lab-sony-pmca/releases/latest/download/RecipeLab.apk">Download the app</a> ·
-    <a href="docs/SAMPLES.md">See every recipe</a>
+    <a href="docs/SAMPLES.md">See sample photos</a>
   </sub>
 </p>
 
@@ -58,7 +58,7 @@
 ## What it is
 
 Recipe Lab is a small app that runs on the camera itself — on Sony cameras that support PlayMemories Camera Apps, such
-as the A6000, A6300, A6500 and A7 II (see [Compatibility](#compatibility)). It comes with 76 colour recipes that
+as the A6000, A6300, A6500 and A7 II (see [Compatibility](#compatibility)). It comes with 80 colour and monochrome recipes that
 recreate the looks of other cameras — Fuji film simulations, Ricoh GR image controls, Leica, Hasselblad, Canon and
 Nikon colour, Sony's newer Creative Looks — and of classic film stocks from Kodak, Fuji, Cinestill, Agfa and Ilford.
 You can also make your own, and share them.
@@ -86,9 +86,15 @@ mode**, photo and video, with the app closed. Turn it off and on, it is still th
 | **Panasonic / Olympus** | L.Monochrome D, L.ClassicNeo, Pop Art, Pale & Light |
 | **Other stocks** | Agfa Vista 200, Agfa Ultra 100, Polaroid / Instax |
 | **Ilford** | HP5, FP4, Delta 100, Delta 3200, Pan F 50 |
+| **Fuji Mono** | Monochrome, Monochrome +Ye / +R / +G |
 
-**[See every recipe on the same subject →](docs/SAMPLES.md)** — 77 frames, one scene, one exposure, straight out of
-the camera.
+**[See the sample gallery →](docs/SAMPLES.md)** — 77 earlier frames, one scene, one exposure, straight out of
+the camera. The four Monochrome variants do not have sample frames yet.
+
+The Monochrome family sits last so existing saved recipe positions stay stable. It uses a smoother B&W Creative Style
+than Acros; its filter variants approximate Fuji's tonal changes with contrast and white balance. Sony has no
+equivalent per-colour black-and-white filter, so compare the looks on a camera before treating them as matches to
+Fuji's filters.
 
 Recipes marked **JPEG only** in the app (Acros +R, Tri-X 1600, GR Retro, GR Hi-Contrast B&W, Sony SH, Polaroid) are
 built on a Picture Effect because, against the reference frames, its tone

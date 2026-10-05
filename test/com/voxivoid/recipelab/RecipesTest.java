@@ -12,8 +12,23 @@ import org.junit.jupiter.api.Test;
 class RecipesTest {
 
     @Test void hasTheDocumentedNumberOfRecipes() {
-        assertEquals(77, Recipes.ALL.length,
+        assertEquals(81, Recipes.ALL.length,
                 "README.md, CLAUDE.md, docs/DEVELOPMENT.md and docs/FAQ.md quote the recipe count -- update them together with this number");
+    }
+
+    @Test void fujiMonochromeFamilyUsesCreativeStyleAndGentlerTonesThanAcros() {
+        Recipes.Recipe base = recipe("Monochrome");
+        Recipes.Recipe yellow = recipe("Monochrome +Ye (yellow filter)");
+        Recipes.Recipe red = recipe("Monochrome +R (red filter)");
+        Recipes.Recipe green = recipe("Monochrome +G (green filter)");
+        for (Recipes.Recipe r : new Recipes.Recipe[] { base, yellow, red, green }) {
+            assertEquals("Fuji Mono", Recipes.GROUPS[r.group]);
+            assertEquals(Recipes.MONO, r.style);
+            assertFalse(r.isEffect(), r.name + " should keep RAW available");
+            assertEquals(0, r.sharp, r.name + " should stay smoother than Acros");
+        }
+        assertTrue(base.con < yellow.con && yellow.con < red.con, "yellow and red filters grow progressively stronger");
+        assertTrue(green.con < base.con, "the portrait variant has softer contrast");
     }
 
     @Test void namesArePresentAndUnique() {
@@ -22,6 +37,11 @@ class RecipesTest {
             assertFalse(r.name.trim().isEmpty(), "unnamed recipe");
             assertTrue(seen.add(r.name), "duplicate recipe name: " + r.name);
         }
+    }
+
+    @Test void addingMonochromeDoesNotMoveExistingSavedRecipeIndexes() {
+        assertEquals(76, indexOf("Ilford Pan F 50"));
+        assertEquals(77, indexOf("Monochrome"));
     }
 
     @Test void recipesAreListedInGroupOrderAndEveryBrandHasSome() {
@@ -227,9 +247,9 @@ class RecipesTest {
     }
 
     @Test void thePanelCountsTheWholeList() {
-        assertEquals("1 / 77", Recipes.position(Recipes.FACTORY));
-        assertEquals("2 / 77", Recipes.position(1));
-        assertEquals("77 / 77", Recipes.position(Recipes.ALL.length - 1));
+        assertEquals("1 / 81", Recipes.position(Recipes.FACTORY));
+        assertEquals("2 / 81", Recipes.position(1));
+        assertEquals("81 / 81", Recipes.position(Recipes.ALL.length - 1));
     }
 
     @Test void nextGroupStartLandsOnTheFirstRecipeOfTheNeighbouringBrand() {
