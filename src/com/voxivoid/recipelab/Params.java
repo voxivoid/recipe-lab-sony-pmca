@@ -293,13 +293,39 @@ final class Params {
     static boolean differsFromRecipe(Recipes.Recipe r, int[] edit) {
         int[] want = edit.clone();
         stage(r, want);
+        return !sameLook(want, edit);
+    }
+
+    /**
+     * Whether two sets of rows are the same look: every row a recipe holds, quality and PP aside, the kelvin row only in
+     * kelvin mode and the sub-setting only for an effect that has one — both read from {@code a}.
+     */
+    static boolean sameLook(int[] a, int[] b) {
         for (int i = 1; i < N; i++) {
             if (i == R_QUAL || i == R_PP) continue;
-            if (i == R_KELVIN && want[R_WBMODE] != WB_KELVIN) continue;
-            if (i == R_SUB && Recipes.subValues(want[R_PE]) == null) continue;
-            if (want[i] != edit[i]) return true;
+            if (i == R_KELVIN && a[R_WBMODE] != WB_KELVIN) continue;
+            if (i == R_SUB && Recipes.subValues(a[R_PE]) == null) continue;
+            if (a[i] != b[i]) return false;
         }
-        return false;
+        return true;
+    }
+
+    /** rows as the app's preferences keep them: "0,2,-1,…", one value per row */
+    static String rowsText(int[] rows) {
+        StringBuilder s = new StringBuilder();
+        for (int i = 0; i < rows.length; i++) { if (i > 0) s.append(','); s.append(rows[i]); }
+        return s.toString();
+    }
+
+    /** the rows {@link #rowsText} wrote; null for anything else — a stored string from a build with other rows is no look */
+    static int[] rowsFrom(String s) {
+        if (s == null) return null;
+        String[] parts = s.split(",");
+        if (parts.length != N) return null;
+        int[] rows = new int[N];
+        try { for (int i = 0; i < N; i++) rows[i] = Integer.parseInt(parts[i].trim()); }
+        catch (NumberFormatException e) { return null; }
+        return rows;
     }
 
     // ------------------------------------------------------------ live preview

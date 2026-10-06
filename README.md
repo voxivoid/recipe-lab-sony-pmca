@@ -249,7 +249,7 @@ Open **Recipe Lab** from the Application List. The live view shows the look. The
 |---|---|
 | **ACTIVE** | the camera has this look |
 | **PREVIEW** | only a preview. **centre** picks it |
-| **EDITED** | you changed values |
+| **EDITED** | you changed values — still shown after reopening the app, once applied |
 
 **Change a value**
 

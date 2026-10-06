@@ -225,7 +225,9 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             holder.addCallback(this);
             previewOk = true;
         } catch (Throwable t) { previewOk = false; previewErr = String.valueOf(t); }
-        stageRecipe(); applyPreview(); render();
+        stageRecipe();
+        restoreAppliedEdit();                                    // the camera still holds the edits last applied: show them
+        applyPreview(); render();
         if (!prefs.getBoolean("keysNoticeSeen", false)) {               // the keys moved in this build (issue #18): say so once
             showToast(Keys.notice(), 8000);
             prefs.edit().putBoolean("keysNoticeSeen", true).commit();
@@ -346,8 +348,30 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         // what was written is now the look: keep it on the chips — re-staging the recipe would drop edits just applied
         // to a built-in one ("Apply only"); after a refusal, the recipe is staged again, ready to retry
         load();
-        if (!ok) stageRecipe();
+        if (!ok) stageRecipe(); else rememberAppliedEdit();
         showToast(msg, ok ? 5000 : 0); render();
+    }
+
+    /**
+     * After a write: when what the camera now holds is the recipe with edits (Apply), keep which recipe and which values,
+     * so reopening the app can show them as they are — ACTIVE EDITED — rather than stage the recipe's own values over
+     * them. Anything else written forgets it.
+     */
+    private void rememberAppliedEdit() {
+        if (edited()) prefs.edit().putString("appliedRecipe", Favourites.key(recipe, library)).putString("appliedRows", Params.rowsText(cur)).commit();
+        else prefs.edit().remove("appliedRecipe").remove("appliedRows").commit();
+    }
+
+    /**
+     * On opening: if the last write was an edit of this recipe and the camera still holds exactly those values, they
+     * replace the staged recipe — same look, so ACTIVE, and not the recipe's own, so EDITED. A camera changed since (in
+     * its own menus, or by another recipe) shows the recipe as before.
+     */
+    private void restoreAppliedEdit() {
+        int[] rows = Params.rowsFrom(prefs.getString("appliedRows", null));
+        String key = prefs.getString("appliedRecipe", null);
+        if (rows == null || key == null || !key.equals(Favourites.key(recipe, library)) || !Params.sameLook(rows, cur)) return;
+        System.arraycopy(cur, 0, edit, 0, N);
     }
 
     // ------------------------------------------------------------ the questions: quality, reset, and the custom recipe ones
