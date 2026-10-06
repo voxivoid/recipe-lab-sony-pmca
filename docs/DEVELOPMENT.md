@@ -238,8 +238,9 @@ write to the card, PMCADemo, uses `PMCADEMO/LOG.TXT`. A first build that used `R
 (`getExternalStorageState() != MEDIA_MOUNTED`): the Custom group says so and saving refuses with a toast.
 
 **Index.** `Library` puts them after the table: `recipe` in `0 .. BASE-1` is `Recipes.ALL`, `BASE ..` a custom recipe, A
-to Z. An index moves when a recipe is added, renamed or deleted, so nothing persistent holds one: the last recipe is
-kept as `customRecipe` (its name) beside `recipe`, and favourites by name.
+to Z. An index moves when a recipe is added, renamed or deleted, so nothing persistent holds one: the recipe the app
+reopens on — the last one selected (centre in the brand list) or applied (a successful write, New recipe), whichever
+came last, never just the last one the wheel scrolled past (`rememberReopen`) — is kept as `customRecipe` (its name) beside `recipe`, and favourites by name.
 
 **The file.** YAML — a flat mapping, one `key: value` per line, `#` comments, values plain or quoted — UTF-8 (a BOM is
 ignored), English always, `.YML`. Anything else YAML allows (lists, nesting) and any line that is not `key: value` (an

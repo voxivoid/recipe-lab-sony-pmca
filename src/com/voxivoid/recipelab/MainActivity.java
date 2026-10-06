@@ -280,9 +280,6 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         Recipes.Recipe r = library.get(recipe);
         Params.stage(r, edit);
         edit[R_QUAL] = recipeQuality(r);
-        // reopen on the last selected recipe: a custom one by name, as its index moves; the table's one stays as the fallback
-        if (r.isCustom()) prefs.edit().putString("customRecipe", r.name).commit();
-        else prefs.edit().putInt("recipe", recipe).remove("customRecipe").commit();
     }
 
     /** quality from the two stored bytes; falls back to the runtime value when the slots are not known yet */
@@ -348,8 +345,19 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         // what was written is now the look: keep it on the chips — re-staging the recipe would drop edits just applied
         // to a built-in one ("Apply only"); after a refusal, the recipe is staged again, ready to retry
         load();
-        if (!ok) stageRecipe(); else rememberAppliedEdit();
+        if (!ok) stageRecipe(); else { rememberReopen(); rememberAppliedEdit(); }
         showToast(msg, ok ? 5000 : 0); render();
+    }
+
+    /**
+     * The recipe the app reopens on: the last one selected (centre in the brand list) or applied (any write, New recipe),
+     * whichever came last — never just the last one the wheel scrolled past. A custom one is kept by name, as its index
+     * moves; the table's index stays as the fallback when its card is out.
+     */
+    private void rememberReopen() {
+        Recipes.Recipe r = library.get(recipe);
+        if (r.isCustom()) prefs.edit().putString("customRecipe", r.name).commit();
+        else prefs.edit().putInt("recipe", recipe).remove("customRecipe").commit();
     }
 
     /**
@@ -831,7 +839,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         if (bad != null) { nameEntry.setError(bad); renderName(); return; }
         closeName();
         switch (nameFor) {
-            case NAME_NEW: saveNew(name, cur); break;
+            case NAME_NEW: if (saveNew(name, cur)) rememberReopen(); break;   // the camera's own look: the one it holds
             case NAME_COPY: focus = false; if (saveNew(name, edit)) writeAll(); break;   // the copy is the look now: stored too
             case NAME_RENAME: renameCustom(name); break;
         }
@@ -868,6 +876,9 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         catch (Throwable t) { showToast(Lang.t("custom_save_failed", String.valueOf(t.getMessage())), 0); return; }
         favStored = Favourites.renameCustom(favStored, e.recipe.name, name);
         prefs.edit().putString("favourites", favStored).commit();
+        if (e.recipe.name.equalsIgnoreCase(prefs.getString("customRecipe", ""))) prefs.edit().putString("customRecipe", name).commit();
+        if (Favourites.key(recipe, library).equals(prefs.getString("appliedRecipe", null)))
+            prefs.edit().putString("appliedRecipe", Favourites.CUSTOM_PREFIX + name).commit();   // its applied edit moves with it
         reloadCustoms();
         follow(name);
         stageRecipe();
@@ -1114,6 +1125,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
 
     /** the centre button on a recipe in the browser: close it, leaving that recipe previewed */
     private void pickInBrowser() {
+        rememberReopen();                                        // a recipe chosen in the list is where the app reopens
         openBrowser(false); showToast(Lang.t("status_recipe_previewed", Recipes.displayName(library.get(recipe))), 3000);
     }
 
