@@ -146,6 +146,7 @@ final class TextZhHans {
         { "about_title", "关于" },
         { "about_version", "版本" },
         { "about_camera", "相机" },
+        { "about_firmware", "固件" },
         { "about_platform", "平台" },
         { "about_source", "源代码" },
         { "about_love", "喜欢这个项目吗？欢迎赞助！" },

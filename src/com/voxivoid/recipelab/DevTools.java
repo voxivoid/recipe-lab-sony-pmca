@@ -123,10 +123,11 @@ final class DevTools {
      * The About page: {name, value}. The version comes from the installed package at runtime, never from here. The sponsor
      * ask goes under it ({@link #aboutFooter}).
      */
-    static String[][] about(String version, String model, String platform) {
+    static String[][] about(String version, String model, String firmware, String platform) {
         return new String[][] {
             { Lang.t("about_version"), orShown(version) },
             { Lang.t("about_camera"), orShown(model) },
+            { Lang.t("about_firmware"), orShown(firmware) },
             { Lang.t("about_platform"), orShown(platform) },
             { Lang.t("about_source"), "github.com/voxivoid/recipe-lab-sony-pmca" },
         };

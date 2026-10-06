@@ -49,6 +49,17 @@ final class KeyProbe {
     }
 
     /**
+     * The camera's firmware version, e.g. "3.21" — not a property but ScalarProperties.getFirmwareVersion() (seen in the
+     * A6000 firmware's framework); null when unavailable, as off the camera.
+     */
+    static String firmware() {
+        try {
+            Object v = Class.forName(PROPS).getMethod("getFirmwareVersion").invoke(null);
+            return v == null || String.valueOf(v).trim().isEmpty() ? null : String.valueOf(v).trim();
+        } catch (Throwable t) { return null; }
+    }
+
+    /**
      * The function the firmware assigns to a key, as Sony's KeyLogicCode (e.g. 1081 DISP, 1073 Fn, 1103 delete), for
      * the key logger only; {@code mode} is Sony's key-logic mode (0 P … 4 other shooting). null before platform API 3,
      * which is every NEX body.

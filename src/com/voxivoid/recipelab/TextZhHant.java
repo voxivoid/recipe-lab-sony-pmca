@@ -146,6 +146,7 @@ final class TextZhHant {
         { "about_title", "關於" },
         { "about_version", "版本" },
         { "about_camera", "相機" },
+        { "about_firmware", "韌體" },
         { "about_platform", "平台" },
         { "about_source", "原始碼" },
         { "about_love", "喜歡這個專案嗎？歡迎贊助！" },

@@ -168,6 +168,7 @@ final class TextEn {
         { "about_title", "ABOUT" },
         { "about_version", "version" },
         { "about_camera", "camera" },
+        { "about_firmware", "firmware" },
         { "about_platform", "platform" },
         { "about_source", "source" },
         { "about_love", "Do you love this project? Sponsor it!" },

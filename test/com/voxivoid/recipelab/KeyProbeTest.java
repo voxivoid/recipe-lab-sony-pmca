@@ -19,6 +19,7 @@ class KeyProbeTest {
 
     @Test void withoutTheCameraThereIsNoModelAndNoLogicCode() {
         assertNull(KeyProbe.prop("model.name"));
+        assertNull(KeyProbe.firmware(), "no firmware version off the camera");
         assertNull(KeyProbe.logic(Keys.K_FN, 0));
     }
 

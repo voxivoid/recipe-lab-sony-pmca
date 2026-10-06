@@ -9,6 +9,16 @@ public class ScalarProperties {
 
     public static void set(String key, String value) { PROPS.put(key, value); }
 
+    private static String firmware;
+    private static boolean firmwareSet;
+    public static void setFirmware(String v) { firmware = v; firmwareSet = true; }
+    public static void clearFirmware() { firmware = null; firmwareSet = false; }
+
+    public static String getFirmwareVersion() {
+        if (!firmwareSet) throw new UnsupportedOperationException("no firmware version");
+        return firmware;
+    }
+
     public static String getString(String key) {
         if (!PROPS.containsKey(key)) throw new UnsupportedOperationException("no property " + key);
         return PROPS.get(key);
