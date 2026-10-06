@@ -57,4 +57,16 @@ class ParamsLookTest {
         int[] cameraAfterRestart = rowsFrom(rowsText(applied));
         assertTrue(sameLook(applied, cameraAfterRestart), "ACTIVE: the camera still holds it");
     }
+
+    @Test void anAppliedEditShowsOnlyOnItsRecipeWhileTheCameraHoldsIt() {
+        int[] applied = staged(recipe("Velvia"), factoryRows(), Q_FINE);
+        applied[R_SAT] = 1;
+        int[] camera = applied.clone();
+        assertTrue(showsAppliedEdit("Velvia", applied, "Velvia", camera), "back on Velvia: ACTIVE EDITED");
+        assertFalse(showsAppliedEdit("Velvia", applied, "Provia", camera), "another recipe shows its own values");
+        camera[R_CON] = camera[R_CON] + 1;
+        assertFalse(showsAppliedEdit("Velvia", applied, "Velvia", camera), "the camera changed since: the recipe as before");
+        assertFalse(showsAppliedEdit(null, applied, "Velvia", applied), "nothing applied");
+        assertFalse(showsAppliedEdit("Velvia", null, "Velvia", applied), "a stored look this build cannot read");
+    }
 }

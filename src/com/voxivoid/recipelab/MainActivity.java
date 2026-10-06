@@ -225,8 +225,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             holder.addCallback(this);
             previewOk = true;
         } catch (Throwable t) { previewOk = false; previewErr = String.valueOf(t); }
-        stageRecipe();
-        restoreAppliedEdit();                                    // the camera still holds the edits last applied: show them
+        showRecipe();                                            // with the edits last applied, when the camera still holds them
         applyPreview(); render();
         if (!prefs.getBoolean("keysNoticeSeen", false)) {               // the keys moved in this build (issue #18): say so once
             showToast(Keys.notice(), 8000);
@@ -371,16 +370,20 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     }
 
     /**
-     * On opening: if the last write was an edit of this recipe and the camera still holds exactly those values, they
-     * replace the staged recipe — same look, so ACTIVE, and not the recipe's own, so EDITED. A camera changed since (in
-     * its own menus, or by another recipe) shows the recipe as before.
+     * When the recipe shown is the one whose edits were last applied, and the camera still holds exactly those values,
+     * they replace the staged recipe — same look, so ACTIVE, and not the recipe's own, so EDITED. On opening the app and
+     * on coming back to it with the wheel or the brand list; a camera changed since shows the recipe as before.
      */
     private void restoreAppliedEdit() {
-        int[] rows = Params.rowsFrom(prefs.getString("appliedRows", null));
-        String key = prefs.getString("appliedRecipe", null);
-        if (rows == null || key == null || !key.equals(Favourites.key(recipe, library)) || !Params.sameLook(rows, cur)) return;
-        System.arraycopy(cur, 0, edit, 0, N);
+        if (Params.showsAppliedEdit(prefs.getString("appliedRecipe", null), Params.rowsFrom(prefs.getString("appliedRows", null)),
+                Favourites.key(recipe, library), cur)) System.arraycopy(cur, 0, edit, 0, N);
     }
+
+    /** a recipe to look at — the wheel, the brand list, a neighbour: staged, with its applied edits when the camera holds them */
+    private void showRecipe() { stageRecipe(); restoreAppliedEdit(); }
+
+    /** selecting another recipe in the brand list lets go of the applied edits: coming back shows the recipe's own values */
+    private void forgetAppliedEdit() { prefs.edit().remove("appliedRecipe").remove("appliedRows").commit(); }
 
     // ------------------------------------------------------------ the questions: quality, reset, and the custom recipe ones
     private void openPrompt(int kind, int sel) { promptOpen = true; promptKind = kind; promptSel = sel; renderPrompt(); }
@@ -707,7 +710,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         handler.removeCallbacks(runStage); handler.removeCallbacks(runShoot); handler.removeCallbacks(runNext);
         cancelCapture();
         String failed = writeManifest();
-        recipe = runReturnTo; stageRecipe(); applyPreview();
+        recipe = runReturnTo; showRecipe(); applyPreview();
         if (msg != null) showToast(msg + failed, 0);
         render();
     }
@@ -749,7 +752,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             // unmarked inside the Favourites list: the highlight moves to a neighbour, or back to the brand column when the list is empty
             int next = Favourites.afterRemoval(favs, pos);
             if (next < 0) browserCol = COL_GROUPS;
-            else { recipe = next; stageRecipe(); applyPreview(); }
+            else { recipe = next; showRecipe(); applyPreview(); }
         }
         render();
     }
@@ -902,7 +905,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             if (next < 0) browserCol = COL_GROUPS; else recipe = next;
         } else if (library.customCount() > 0) recipe = Library.BASE + Math.min(k, library.customCount() - 1);
         else if (overlay == OV_BROWSER && browserGroup == Favourites.CUSTOM) browserCol = COL_GROUPS;   // nothing left to highlight
-        stageRecipe(); applyPreview();
+        showRecipe(); applyPreview();
         showToast(Lang.t("custom_deleted", e.recipe.name), 3000);
         render();
     }
@@ -1086,7 +1089,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
 
     /** the wheel, or left / right on the recipe line: the next recipe — after asking, when that would drop edits */
     private void nextRecipe(final int dir) {
-        unlessEditsLost(new Runnable() { public void run() { recipe = library.next(recipe, dir); stageRecipe(); applyPreview(); render(); } });
+        unlessEditsLost(new Runnable() { public void run() { recipe = library.next(recipe, dir); showRecipe(); applyPreview(); render(); } });
     }
 
     /**
@@ -1096,7 +1099,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private void nextGroup(int dir) {
         browserGroup = Favourites.nextGroup(browserGroup, dir);
         int land = Favourites.landing(browserGroup, favs, library);
-        if (land >= 0) { recipe = land; stageRecipe(); applyPreview(); }
+        if (land >= 0) { recipe = land; showRecipe(); applyPreview(); }
         if (browserGroup == Favourites.CUSTOM) reportSkipped();
         render();
     }
@@ -1114,7 +1117,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private void nextInGroup(int dir) {
         if (browserGroup == Favourites.CUSTOM) { int to = Favourites.nextCustom(recipe, dir, library); if (to < 0) return; recipe = to; }
         else recipe = browserGroup == Favourites.GROUP ? Favourites.next(favs, recipe, dir) : Recipes.nextInGroup(recipe, dir);
-        stageRecipe(); applyPreview(); render();
+        showRecipe(); applyPreview(); render();
     }
 
     /** the recipe column is not reachable while the Favourites or Custom list is empty */
@@ -1125,6 +1128,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
 
     /** the centre button on a recipe in the browser: close it, leaving that recipe previewed */
     private void pickInBrowser() {
+        if (!Favourites.key(recipe, library).equals(prefs.getString("appliedRecipe", null))) forgetAppliedEdit();   // a new one chosen
         rememberReopen();                                        // a recipe chosen in the list is where the app reopens
         openBrowser(false); showToast(Lang.t("status_recipe_previewed", Recipes.displayName(library.get(recipe))), 3000);
     }

@@ -310,6 +310,14 @@ final class Params {
         return true;
     }
 
+    /**
+     * Whether the recipe shown ({@code key}, Favourites.key) should show the edits last applied rather than its own
+     * values: it is the recipe they were applied to ({@code appliedKey}), and the camera ({@code cur}) still holds them.
+     */
+    static boolean showsAppliedEdit(String appliedKey, int[] appliedRows, String key, int[] cur) {
+        return appliedKey != null && appliedRows != null && appliedKey.equals(key) && sameLook(appliedRows, cur);
+    }
+
     /** rows as the app's preferences keep them: "0,2,-1,…", one value per row */
     static String rowsText(int[] rows) {
         StringBuilder s = new StringBuilder();
