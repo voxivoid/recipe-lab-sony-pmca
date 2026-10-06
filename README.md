@@ -41,7 +41,12 @@
   - [Cameras that run PlayMemories apps](#cameras-that-run-playmemories-apps)
   - [Cameras that cannot run camera apps](#cameras-that-cannot-run-camera-apps)
 - [Installing](#installing)
-- [Using it](#using-it)
+- [How to use](#how-to-use)
+- [Custom recipes](#custom-recipes)
+  - [Making one](#making-one)
+  - [The edit buttons](#the-edit-buttons)
+  - [Rename, delete, favourite](#rename-delete-favourite)
+  - [Sharing](#sharing)
 - [What it changes](#what-it-changes)
 - [Uninstalling](#uninstalling)
 - [Troubleshooting](#troubleshooting)
@@ -52,9 +57,11 @@
 
 ## What it is
 
-Recipe Lab is a small app that runs on the Sony A6000 itself. It comes with 76 colour recipes that recreate the looks
-of other cameras — Fuji film simulations, Ricoh GR image controls, Leica, Hasselblad, Canon and Nikon colour, Sony's
-newer Creative Looks — and of classic film stocks from Kodak, Fuji, Cinestill, Agfa and Ilford.
+Recipe Lab is a small app that runs on the camera itself — on Sony cameras that support PlayMemories Camera Apps, such
+as the A6000, A6300, A6500 and A7 II (see [Compatibility](#compatibility)). It comes with 76 colour recipes that
+recreate the looks of other cameras — Fuji film simulations, Ricoh GR image controls, Leica, Hasselblad, Canon and
+Nikon colour, Sony's newer Creative Looks — and of classic film stocks from Kodak, Fuji, Cinestill, Agfa and Ilford.
+You can also make your own, and share them.
 
 You turn the wheel, watch the live image change, press a button. From then on the camera shoots that way in **every
 mode**, photo and video, with the app closed. Turn it off and on, it is still there.
@@ -67,7 +74,7 @@ mode**, photo and video, with the app closed. Turn it off and on, it is still th
 
 | brand | recipes |
 |---|---|
-| **Sony** | PT, NT, VV, VV2, FL, IN, SH — plus the factory look, under **Reset settings** |
+| **Sony** | Factory (the camera's own look), PT, NT, VV, VV2, FL, IN, SH |
 | **Fuji simulations** | Provia, Velvia, Astia, Classic Chrome, Classic Negative, Nostalgic Neg, Reala Ace, Pro Neg Std / Hi, Eterna, Eterna Bleach Bypass, Acros, Acros +Ye / +R / +G, Sepia |
 | **Fuji film** | Pro 400H, Fortia 50, Superia 400, C200, Natura 1600 |
 | **Kodak** | Portra 160 / 400 / 800, Gold 200, Ultra Max 400, Color Plus 200, Ektar 100, Ektachrome E100, Kodachrome 64, Vision3 500T, Vision 200T (Asteroid City), Tri-X 400, Tri-X 1600 (pushed), T-Max |
@@ -83,8 +90,8 @@ mode**, photo and video, with the app closed. Turn it off and on, it is still th
 **[See every recipe on the same subject →](docs/SAMPLES.md)** — 77 frames, one scene, one exposure, straight out of
 the camera.
 
-Recipes marked **PE** in the app (Acros +R, Tri-X 1600, GR Retro, GR Hi-Contrast B&W, Sony SH, Polaroid) are built on
-a Picture Effect because, against the reference frames, its tone
+Recipes marked **JPEG only** in the app (Acros +R, Tri-X 1600, GR Retro, GR Hi-Contrast B&W, Sony SH, Polaroid) are
+built on a Picture Effect because, against the reference frames, its tone
 curve gets closer than Creative Style can; everything else stays Creative Style on purpose.
 
 Not included, because the camera simply cannot do them: log profiles (S-Log, V-Log, Blackmagic Film, Cinelike D) and
@@ -210,69 +217,117 @@ is usually left on its own `Application Download / Connecting via USB...` screen
 **5. Unplug, then turn the camera off and on.** The app now lives under
 `MENU → Application → Application List → Recipe Lab`.
 
-## Using it
+## How to use
 
-Open **Recipe Lab** from the Application List. You get the live image with a panel at the bottom, then:
+Open **Recipe Lab** from the Application List. The live view shows the look. The panel at the bottom names the recipe.
 
-| key | what it does |
+**The basics**
+
+- Turn the **wheel** to change recipe. The live view updates at once.
+- Press **centre** to pick it. The camera keeps it — every mode, even with the app closed.
+- Press **MENU** to leave.
+
+**Keys**
+
+| key | does |
 |---|---|
-| **wheel** | scroll recipes, from anywhere — the live image changes at once, and that is what the camera will write |
-| **left / right**, **top dial** | scroll recipes too, but only on the recipe line; on the chip row they walk the chips |
-| **centre** | pick the recipe you are looking at — the camera keeps it. A message confirms it |
-| **hold centre** | mark the recipe as a favourite, or unmark it. Works on the main screen and inside the brand list |
-| **up / down** | move between the recipe line and the row of value chips |
-| **TRASH** | hide the panel — once for a small label, twice for nothing, a third time to bring it back. The wheel still works |
-| **hold TRASH** | reset to the factory look — the app asks first |
-| **hold MENU** | open the menu: browse recipes, panel visibility, language, reset settings, about |
-| **shutter** | take a picture of what you are previewing |
-| **MENU** | leave the app |
-| **Fn** *(if your camera has one)* | open the brand list — the same as **hold MENU → Browse recipes** |
+| **wheel** | next / previous recipe |
+| **left / right**, **top dial** | next recipe on the name line · next chip on the chip row |
+| **up / down** | move between name, chips and edit buttons |
+| **centre** | pick the recipe · edit a chip · press a button |
+| **hold centre** | favourite on / off |
+| **TRASH** | panel: full → no keys → label → hidden |
+| **hold TRASH** | back to the factory look (asks first) |
+| **MENU** | leave the app · close a list |
+| **hold MENU** | app menu · in the brand list, a custom recipe's options |
+| **Fn** | brand list *(if your camera has Fn — everything works without it)* |
+| **shutter** | take a photo |
 
-Every function works on keys every camera has; **Fn** is a shortcut on the bodies that have it, and the legend at the
-bottom of the screen only names it when the camera reports it. **AEL**, **C1** and **DISP** do nothing in the app.
+**Badges**
 
-**The menu.** Hold **MENU** for a moment and the menu fills the screen; a short press still leaves the app. Up / down
-or the wheel move, centre picks, **MENU** goes back.
-
-- **Browse recipes** opens the brand list: **Favourites** first, then the brands, on the left; recipes on the right.
-  Left / right switches column (the active one is amber), wheel or up / down scrolls, centre picks.
-- **Panel visibility** — *Full*, *Label* or *Hidden* — changes with left / right, right there in the menu.
-- **Language** — *Auto*, *English*, *简体中文* (Simplified Chinese) or *繁體中文* (Traditional Chinese) — changes the
-  same way, and the whole app switches at once. *Auto* follows the camera's own language and falls back to English.
-  Recipe names are translated too, with the original name kept in small type underneath; favourites and everything the
-  app writes to the memory card stay the same in every language.
-- **Reset settings** puts the camera back on its factory look, after asking. The factory look is not in the recipe
-  list; this is the way to it.
-- **About** shows the app version, the camera model, its platform version and where the source lives.
-- **Developer** holds tools for testing and for compatibility reports.
-
-Then **turn the camera off and on**. The look is now the camera's default in every mode — P, A, S, M, movie — with
-the app closed, and the app reopens on that recipe.
-
-**Favourites.** Hold the **centre button** on a recipe and it joins the **Favourites** group at the top of the brand
-list, with a star next to its name; hold again to drop it. The group lists your picks in the order you marked them,
-and the brand list opens straight on it whenever the recipe you are on is one of them. The wheel on the main screen
-still walks all 76 — favourites shorten the list in the browser, not the scroll. The marks are kept by the app, not in
-the camera's settings, so they survive a power cycle but go with the app if you remove it.
-
-**The chips.** In the chip row, **left / right** walks the chips, **centre** focuses one (it turns amber),
-**up / down** changes its value, **centre** leaves it. The wheel keeps changing recipes throughout. A recipe only shows the chips it uses: **CS** recipes show style,
-saturation, contrast and sharpness; **PE** recipes show the effect and its sub-setting. Quality, white
-balance, EV and DRO are always there. The legend at the bottom of the screen follows whatever you are doing.
-
-**The badge** next to the recipe name says where you stand:
-
-| badge | meaning |
+| badge | means |
 |---|---|
-| **ACTIVE** | the camera already has these values |
-| **PREVIEW** | you are only looking; press **centre** to pick it |
+| **ACTIVE** | the camera has this look |
+| **PREVIEW** | only a preview. **centre** picks it |
+| **EDITED** | you changed values — still shown after reopening the app, once applied |
+
+**Change a value**
+
+- Go **down** to the chips. **centre** a chip. **up / down** changes it. **centre** again to finish.
+- It is only a preview until you choose.
+- Buttons appear under the chips: **Apply**, **Save as new**, **Discard** — and **Save** on your own recipes.
+- See [Custom recipes](#custom-recipes).
+
+**Brand list** — **Fn**, or **hold MENU → Browse recipes**
+
+- Left column: **Favourites**, **Custom**, then the brands. Right column: their recipes.
+- **left / right** switches column. **centre** picks.
+
+**Favourites**
+
+- **Hold centre** on a recipe. A star appears.
+- They wait under **Favourites**, in the order you marked them.
+
+**Menu** — **hold MENU**
+
+- **Browse recipes** · **New recipe** · **Panel visibility** · **Language** · **Reset settings** · **About** · **Developer**.
+- **New recipe** saves the camera's current settings as a [custom recipe](#custom-recipes).
+- Languages: *Auto*, English, 简体中文, 繁體中文.
+
+## Custom recipes
+
+Keep your own looks next to the built-in ones. They live on the **memory card**, under **Custom** in the brand list.
+
+### Making one
+
+- **From a recipe:** change its chips, then press **Save as new** in the buttons under the chips.
+- **From the camera:** **hold MENU → New recipe** saves the camera's current settings.
+- A keyboard opens to name it. Just type — it replaces *Untitled*. **OK** saves.
+
+### The edit buttons
+
+Change any chip and buttons appear under the chips. Press **down** to reach them.
+
+| button | does |
+|---|---|
+| **Save** | keeps the changes, and stores them *(your own recipes only)* |
+| **Apply** | stores the changes in the camera, without saving |
+| **Save as new** | saves the changes as a new recipe, and stores it |
+| **Discard** | back to the recipe's own values (asks first) |
+
+Leaving a changed recipe asks first: **Discard** or **Cancel**.
+
+### Rename, delete, favourite
+
+- In the brand list, **hold MENU** on a custom recipe → **Rename** or **Delete**.
+- **Hold centre** → favourite, as on any recipe.
+
+### Sharing
+
+- Each recipe is a small YAML file in `RECIPES` on the card — e.g. `RECIPES/GOLDENHO.YML`.
+- **Export:** connect the camera as *Mass Storage*. Copy the files out.
+- **Import:** copy a file into `RECIPES`. Keep its name short: up to 8 letters, then `.YML`. Reopen the app.
+- Edit them in any text editor. Each line lists its allowed values:
+
+```yaml
+name: "Golden Hour"
+style: portrait              # standard vivid neutral portrait …
+saturation: -1               # -3 .. +3
+white-balance: 5600K         # auto, keep, or 2500K .. 9900K
+exposure: +0.7               # -5.0 .. +5.0 in thirds
+```
+
+- A file with a bad value is skipped. The app says which and why.
+- **Formatting the card deletes them.** Back up `RECIPES` first.
+
+Full file format: [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#custom-recipes).
 
 ## What it changes
 
 Only camera settings you could set by hand: Creative Style and its saturation, contrast and sharpness sliders, white
 balance and its fine-tune, exposure compensation, DRO, Picture Effect. No firmware is touched, nothing is unlocked.
 
-**Picture Effect recipes** (marked **PE**) behave like the menu item does: the camera ignores Creative Style while one
+**Picture Effect recipes** (marked **JPEG only**) behave like the menu item does: the camera ignores Creative Style while one
 is on, and it only works with **Quality = JPEG** — set to RAW or RAW+JPEG, the camera drops the effect silently.
 
 **Quality** therefore follows you rather than being dictated by a recipe. The Factory recipe starts as whatever the
@@ -290,7 +345,7 @@ Quality: RAW+JPG → JPG Fine — JPEG is needed to apply this recipe
 **Is it permanent?** The look stays until you change it — on purpose, that is what makes it work in every mode
 without the app. It is not permanent in the sense of damage. Undo it any time, three ways:
 
-- In the app: **hold TRASH** (or **hold MENU → Reset settings**), confirm, then turn the camera off and on.
+- In the app: pick **Factory** (first in Sony), or **hold TRASH** / **hold MENU → Reset settings** and confirm.
 - In the menus: set Creative Style back to *Standard* 0 / 0 / 0 and White Balance to *Auto*.
 - Or use the camera's own `Setup → Setting Reset → Camera Settings Reset`.
 
@@ -300,6 +355,7 @@ without the app. It is not permanent in the sense of damage. Undo it any time, t
 **Worth knowing:**
 
 - The preview inside the app is temporary; closing the app removes it. Only what you *picked* stays.
+- Removing the app leaves your custom recipes on the memory card, in `RECIPES`; formatting the card does not.
 - Built and tested on the A6000 with firmware 3.21. Several other bodies have been reported working — see
   [Compatibility](#compatibility) — but on anything still marked ❔ there, compare what the chips show with your menus
   before picking a recipe.

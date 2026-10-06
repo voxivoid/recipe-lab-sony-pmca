@@ -5,6 +5,7 @@ import android.content.SharedPreferences;
 import android.graphics.Typeface;
 import android.hardware.Camera;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.view.Gravity;
 import android.view.KeyEvent;
@@ -37,6 +38,11 @@ import static com.voxivoid.recipelab.Params.*;
  *       wheel / LEFT / RIGHT recipe · UP / DOWN parameter · top dial adjust · ENTER pick · hold ENTER favourite
  *       TRASH overlay: full → pill → hidden · hold TRASH reset (asks first) · hold MENU app menu (browse, panel,
  *       language, reset, about, developer) · SHUTTER photo · MENU exit · Fn brand browser
+ *       hold MENU on a custom recipe in the brand list: its options (rename, delete); a short MENU still closes the list
+ *
+ * Custom recipes ({@link CustomRecipes}) live on the memory card; {@link Library} gives them indexes after the table's.
+ * Finishing an edit of a built-in recipe offers to keep it as a new custom recipe; an edit of a custom one is saved in
+ * place. Names are typed on the name editor ({@link NameEntry}, {@link KeyboardView}).
  *
  * This class holds the state and talks to the camera, the store and the views. What a value means, how the store
  * encodes it, what the preview sets and where a key press lands is decided in {@link Params}, {@link Keys} and
@@ -50,10 +56,26 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private PickerView picker;
     private HorizontalScrollView chipScroll;
     private boolean swallowMenuUp = false;
-    private TextView name, nameOriginal, badge, tag, count, meta, mini, toast;
+    private TextView name, nameOriginal, badge, editedBadge, tag, count, meta, mini, toast;
     private StarView fav;
     private PromptView prompt;
-    private int promptSel = 0; private boolean promptOpen = false, promptReset = false;   // promptReset: the reset question, not the quality one
+    private int promptSel = 0, promptKind = P_QUALITY; private boolean promptOpen = false;
+    /**
+     * the questions the prompt asks: quality change, reset, discard a recipe's edits, a custom recipe's options, delete it
+     */
+    private static final int P_QUALITY = 0, P_RESET = 1, P_DISCARD = 2, P_OPTIONS = 3, P_DELETE = 4;
+    private Runnable afterDiscard;                               // what the discard question goes on to do when answered Discard
+    // the name editor, and what its OK does: keep a recipe's edits as a copy and store it, keep the camera's settings, rename
+    private KeyboardView keyboard;
+    private NameEntry nameEntry;
+    private boolean nameOpen = false;
+    private int nameFor = NAME_COPY;
+    private static final int NAME_COPY = 0, NAME_NEW = 1, NAME_RENAME = 2;
+    // custom recipes: the card's folder (null without a card), the files a load skipped, and whether they were reported
+    private final Library library = new Library();
+    private File cardDir;
+    private List<String> skipped = new ArrayList<String>();
+    private boolean skippedShown = false;
     private SharedPreferences prefs;
     private MenuView menu;
     private boolean menuOpen = false;
@@ -63,6 +85,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private static final int PAGE_ROWS = 0, PAGE_ABOUT = 1;
     private Keys.Caps caps = Keys.Caps.UNKNOWN;                 // the shortcut keys this body reports (KeyProbe)
     private HintBar hints;
+    private SponsorLine sponsor;
     private LinearLayout chips;
     private final TextView[] chipLabel = new TextView[N], chipValue = new TextView[N];
     private final View[] chip = new View[N];
@@ -78,6 +101,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private boolean logging = false;
     private final List<String[]> logLines = new ArrayList<String[]>();
     private List<Integer> favs = new ArrayList<Integer>();      // marked recipes, in marking order (Favourites decides, this holds)
+    private String favStored = "";                              // the same as stored, with the marks of custom recipes not loaded
 
     // the sample run (developer menu): one frame per recipe, driven by the handler — stage, settle, shutter, next
     private boolean running = false;
@@ -89,10 +113,15 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
 
     private SurfaceHolder holder;
     private Object cameraEx; private Camera camera; private String origFlat;
-    private int row = 0, recipe = 0, overlay = OV_FULL;   // Params.OV_*: the full panel, the pill, nothing, the browser
+    private int row = 0, recipe = 0, overlay = OV_FULL;   // Params.OV_*: the full panel, the pill, nothing, the browser, the panel without keys
+    private int panelBefore = OV_FULL;                    // the overlay the browser was opened from
     private boolean focus = false;                        // a chip is focused: UP/DOWN change its value
+    private boolean onActions = false;                    // the highlight is on the edit buttons under the chips
+    private int actionSel = 0;                            // which of them
+    private LinearLayout actionsRow;
+    private final TextView[] actionBtn = new TextView[4];
     private int browserCol = COL_RECIPES;                 // browser: Params.COL_GROUPS or COL_RECIPES
-    private int browserGroup = 0;                     // browser: the group the brand column is on — Favourites.GROUP or a brand
+    private int browserGroup = 0;                     // browser: the group the brand column is on — Favourites.GROUP, .CUSTOM or a brand
     private int lastChip = 0;                         // chip to return to when leaving the recipe line
     private final int[] cur = new int[N], edit = new int[N];
     private boolean previewOk = false;
@@ -104,7 +133,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         setContentView(R.layout.main);
         prefs = getPreferences(MODE_PRIVATE);
         recipe = Math.max(0, Math.min(Recipes.ALL.length - 1, prefs.getInt("recipe", 0)));
-        favs = Favourites.decode(prefs.getString("favourites", ""));
+        favStored = prefs.getString("favourites", "");
+        favs = Favourites.decode(favStored, library);
         settleIdx = DevTools.clampSettle(prefs.getInt("settle", DevTools.SETTLE_DEFAULT));
         langChoice = Lang.parseChoice(prefs.getString("language", null));
         panel = findViewById(R.id.panel);
@@ -113,17 +143,22 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         name = (TextView) findViewById(R.id.name);
         nameOriginal = (TextView) findViewById(R.id.name_original);
         badge = (TextView) findViewById(R.id.badge);
+        editedBadge = (TextView) findViewById(R.id.edited);
         tag = (TextView) findViewById(R.id.tag);
         fav = (StarView) findViewById(R.id.fav);
         count = (TextView) findViewById(R.id.count);
         meta = (TextView) findViewById(R.id.meta);
         hints = (HintBar) findViewById(R.id.hints);
+        sponsor = (SponsorLine) findViewById(R.id.sponsor);
         mini = (TextView) findViewById(R.id.mini);
         toast = (TextView) findViewById(R.id.toast);
         prompt = (PromptView) findViewById(R.id.prompt);
         menu = (MenuView) findViewById(R.id.menu);
+        keyboard = (KeyboardView) findViewById(R.id.keyboard);
         chips = (LinearLayout) findViewById(R.id.chips);
         buildChips();
+        actionsRow = (LinearLayout) findViewById(R.id.actions);
+        buildActions();
         applyLanguage();
         caps = KeyProbe.caps();
         hints.setCaps(caps); picker.setCaps(caps);
@@ -151,19 +186,36 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         }
     }
 
+    /** the edit buttons under the chips (Save, Apply, Save as new, Discard — CustomRecipes.editActions), drawn like chips */
+    private void buildActions() {
+        for (int i = 0; i < actionBtn.length; i++) {
+            TextView b = new TextView(this);
+            b.setTextSize(12); b.setTypeface(Typeface.DEFAULT_BOLD); b.setSingleLine(true);
+            b.setPadding(dp(12), dp(4), dp(12), dp(4));
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+            lp.rightMargin = dp(6);
+            b.setLayoutParams(lp);
+            actionsRow.addView(b);
+            actionBtn[i] = b;
+        }
+    }
+
     /** the language the Language row resolves to on this camera, in every view, with its font */
     private void applyLanguage() {
         java.util.Locale l = getResources().getConfiguration().locale;
         Lang.use(Lang.resolve(langChoice, l == null ? null : l.getLanguage(), l == null ? null : l.getCountry()));
         Typeface tf = UiFont.of(this, Lang.current());
         UiFont.apply(findViewById(android.R.id.content), tf);
-        picker.setTypeface(tf); prompt.setTypeface(tf); menu.setTypeface(tf); hints.setTypeface(tf);
+        picker.setTypeface(tf); prompt.setTypeface(tf); menu.setTypeface(tf); hints.setTypeface(tf); keyboard.setTypeface(tf); sponsor.setTypeface(tf);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         load();
+        reloadCustoms();                                         // the card may have been edited over USB, or swapped
+        int last = library.indexOfCustom(prefs.getString("customRecipe", null));
+        if (last >= 0) recipe = last;
         try {
             Class<?> cx = Class.forName("com.sony.scalar.hardware.CameraEx");
             Method open = cx.getMethod("open", int.class, Class.forName("com.sony.scalar.hardware.CameraEx$OpenOptions"));
@@ -173,7 +225,9 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             holder.addCallback(this);
             previewOk = true;
         } catch (Throwable t) { previewOk = false; previewErr = String.valueOf(t); }
-        stageRecipe(); applyPreview(); render();
+        stageRecipe();
+        restoreAppliedEdit();                                    // the camera still holds the edits last applied: show them
+        applyPreview(); render();
         if (!prefs.getBoolean("keysNoticeSeen", false)) {               // the keys moved in this build (issue #18): say so once
             showToast(Keys.notice(), 8000);
             prefs.edit().putBoolean("keysNoticeSeen", true).commit();
@@ -185,6 +239,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         super.onPause();
         stopRun(false);                                          // a run cannot outlive the camera it shoots with
         closeMenu();
+        closeName();
+        if (promptOpen && promptKind >= P_DISCARD) { closePrompt(); afterDiscard = null; }   // about this recipe: the card is read again on the way back
         stopLogger();
         handler.removeCallbacks(hideToast);
         handler.removeCallbacks(enterHold); handler.removeCallbacks(menuHold); handler.removeCallbacks(trashHold);
@@ -221,10 +277,9 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     }
 
     private void stageRecipe() {
-        Recipes.Recipe r = Recipes.ALL[recipe];
+        Recipes.Recipe r = library.get(recipe);
         Params.stage(r, edit);
         edit[R_QUAL] = recipeQuality(r);
-        prefs.edit().putInt("recipe", recipe).commit();          // reopen on the last selected recipe
     }
 
     /** quality from the two stored bytes; falls back to the runtime value when the slots are not known yet */
@@ -245,7 +300,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private int recipeQuality(Recipes.Recipe r) { return Params.recipeQuality(r, baseQuality()); }
     /** user changed quality on the current recipe: CS recipes and JPEG choices on PE recipes redefine the Factory quality */
     private void qualityChanged() {
-        if (Params.redefinesBaseQuality(Recipes.ALL[recipe], edit[R_QUAL])) prefs.edit().putInt("baseQuality", edit[R_QUAL]).commit();
+        if (Params.redefinesBaseQuality(library.get(recipe), edit[R_QUAL])) prefs.edit().putInt("baseQuality", edit[R_QUAL]).commit();
     }
     private boolean qualityPersistent() { return ID_QFMT != 0; }
 
@@ -270,7 +325,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     }
 
     private void writeAll(boolean confirmed) {
-        if (!confirmed && qualityChanges()) { openPrompt(); return; }
+        if (!confirmed && qualityChanges()) { openPrompt(P_QUALITY, 0); return; }
         if (!dirty()) { showToast(Lang.t("status_already_picked"), 2500); return; }
         int storedSub = storedSub();
         int n = Params.dirtyRows(cur, edit, storedSub);
@@ -287,39 +342,106 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         if (written > 0) NativeBackup.sync();                    // Backup_sync_all is void: nothing to catch, nothing to report
         boolean ok = msg == null;
         if (ok) msg = Lang.t(n == 1 ? "status_picked_one" : "status_picked_many", n);
-        load(); stageRecipe();
+        // what was written is now the look: keep it on the chips — re-staging the recipe would drop edits just applied
+        // to a built-in one ("Apply only"); after a refusal, the recipe is staged again, ready to retry
+        load();
+        if (!ok) stageRecipe(); else { rememberReopen(); rememberAppliedEdit(); }
         showToast(msg, ok ? 5000 : 0); render();
     }
 
-    // ------------------------------------------------------------ the two questions: RAW vs Picture Effect, and reset to factory
-    private void openPrompt() { promptOpen = true; promptReset = false; promptSel = 0; renderPrompt(); }
+    /**
+     * The recipe the app reopens on: the last one selected (centre in the brand list) or applied (any write, New recipe),
+     * whichever came last — never just the last one the wheel scrolled past. A custom one is kept by name, as its index
+     * moves; the table's index stays as the fallback when its card is out.
+     */
+    private void rememberReopen() {
+        Recipes.Recipe r = library.get(recipe);
+        if (r.isCustom()) prefs.edit().putString("customRecipe", r.name).commit();
+        else prefs.edit().putInt("recipe", recipe).remove("customRecipe").commit();
+    }
+
+    /**
+     * After a write: when what the camera now holds is the recipe with edits (Apply), keep which recipe and which values,
+     * so reopening the app can show them as they are — ACTIVE EDITED — rather than stage the recipe's own values over
+     * them. Anything else written forgets it.
+     */
+    private void rememberAppliedEdit() {
+        if (edited()) prefs.edit().putString("appliedRecipe", Favourites.key(recipe, library)).putString("appliedRows", Params.rowsText(cur)).commit();
+        else prefs.edit().remove("appliedRecipe").remove("appliedRows").commit();
+    }
+
+    /**
+     * On opening: if the last write was an edit of this recipe and the camera still holds exactly those values, they
+     * replace the staged recipe — same look, so ACTIVE, and not the recipe's own, so EDITED. A camera changed since (in
+     * its own menus, or by another recipe) shows the recipe as before.
+     */
+    private void restoreAppliedEdit() {
+        int[] rows = Params.rowsFrom(prefs.getString("appliedRows", null));
+        String key = prefs.getString("appliedRecipe", null);
+        if (rows == null || key == null || !key.equals(Favourites.key(recipe, library)) || !Params.sameLook(rows, cur)) return;
+        System.arraycopy(cur, 0, edit, 0, N);
+    }
+
+    // ------------------------------------------------------------ the questions: quality, reset, and the custom recipe ones
+    private void openPrompt(int kind, int sel) { promptOpen = true; promptKind = kind; promptSel = sel; renderPrompt(); }
 
     /** hold trash, or Reset settings in the app menu: ask before the factory look replaces the current one */
-    private void askReset() { promptOpen = true; promptReset = true; promptSel = DevTools.RESET_DEFAULT; renderPrompt(); }
+    private void askReset() { openPrompt(P_RESET, DevTools.RESET_DEFAULT); }
 
     private void renderPrompt() {
-        if (promptReset) prompt.set(DevTools.resetTitle(), DevTools.resetBody(), DevTools.resetOptions(), promptSel, null);
-        else {
-            String[] q = Params.qualityPrompt(cur, edit);
-            String[] opts = { Lang.t("button_accept"), Lang.t("button_cancel") };
-            prompt.set(q[0], q[1], opts, promptSel, qualityPersistent() ? null : Lang.t("quality_slot_note"));
+        Recipes.Recipe r = library.get(recipe);
+        switch (promptKind) {
+            case P_RESET: prompt.set(DevTools.resetTitle(), DevTools.resetBody(), DevTools.resetOptions(), promptSel, null); break;
+            case P_DISCARD: prompt.set(CustomRecipes.discardTitle(Recipes.displayName(r)), CustomRecipes.discardBody(), CustomRecipes.discardOptions(), promptSel, null); break;
+            case P_OPTIONS: prompt.set(r.name, CustomRecipes.optionsBody(library.entry(recipe).file), CustomRecipes.options(), promptSel, null); break;
+            case P_DELETE: prompt.set(CustomRecipes.deleteTitle(r.name), CustomRecipes.deleteBody(library.entry(recipe).file), CustomRecipes.deleteOptions(), promptSel, null); break;
+            default: {
+                String[] q = Params.qualityPrompt(cur, edit);
+                String[] opts = { Lang.t("button_accept"), Lang.t("button_cancel") };
+                prompt.set(q[0], q[1], opts, promptSel, qualityPersistent() ? null : Lang.t("quality_slot_note"));
+            }
         }
         prompt.setVisibility(View.VISIBLE);
     }
 
     private void closePrompt() { prompt.setVisibility(View.GONE); promptOpen = false; }
 
+    private int promptOptions() {
+        switch (promptKind) {
+            case P_OPTIONS: return CustomRecipes.options().length;
+            default: return 2;
+        }
+    }
+
     private boolean promptKey(int sc) {
         switch (sc) {
-            case K_LEFT: case K_WHEEL_CCW: case K_DIAL_CCW: case K_RIGHT: case K_WHEEL_CW: case K_DIAL_CW: promptSel ^= 1; renderPrompt(); return true;
-            case K_ENTER:
-                closePrompt();
-                if (promptReset) { if (promptSel == 0) storeFactory(); else showToast(Lang.t("status_not_reset"), 2000); render(); return true; }
-                if (promptSel == 0) writeAll(true); else showToast(Lang.t("status_not_picked"), 2000);   // cancel: recipe stays previewed only
+            case K_LEFT: case K_WHEEL_CCW: case K_DIAL_CCW: promptSel = (promptSel + promptOptions() - 1) % promptOptions(); renderPrompt(); return true;
+            case K_RIGHT: case K_WHEEL_CW: case K_DIAL_CW: promptSel = (promptSel + 1) % promptOptions(); renderPrompt(); return true;
+            case K_ENTER: closePrompt(); promptAnswered(); render(); return true;
+            case K_MENU: case K_SK1:
+                swallowMenuUp = true; closePrompt();
+                if (promptKind == P_DISCARD) afterDiscard = null;
                 render(); return true;
-            case K_MENU: case K_SK1: swallowMenuUp = true; closePrompt(); render(); return true;
         }
         return true;
+    }
+
+    /** the centre button on a highlighted answer */
+    private void promptAnswered() {
+        switch (promptKind) {
+            case P_RESET: if (promptSel == 0) storeFactory(); else showToast(Lang.t("status_not_reset"), 2000); return;
+            case P_DISCARD: {
+                Runnable then = afterDiscard; afterDiscard = null;
+                if (promptSel == CustomRecipes.DISCARD && then != null) then.run();
+                return;
+            }
+            case P_OPTIONS:
+                if (promptSel == CustomRecipes.OPT_RENAME) openName(NAME_RENAME);
+                else if (promptSel == CustomRecipes.OPT_DELETE) openPrompt(P_DELETE, CustomRecipes.DELETE_DEFAULT);
+                return;
+            case P_DELETE: if (promptSel == 0) deleteCustom(); return;
+            default: if (promptSel == 0) writeAll(true); else showToast(Lang.t("status_not_picked"), 2000);   // cancel: recipe stays previewed only
+        }
     }
 
     private void cycleQuality() {
@@ -396,7 +518,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
 
     private void renderMenu() {
         if (menuPage == PAGE_ABOUT) menu.setPage(DevTools.aboutTitle(), DevTools.about(versionName(), KeyProbe.prop("model.name"),
-                KeyProbe.prop("version.platform")), Keys.hints(Keys.H_PAGE, caps));
+                KeyProbe.firmware(), KeyProbe.prop("version.platform")), DevTools.aboutFooter(), Keys.hints(Keys.H_PAGE, caps));
         else {
             int n = DevTools.rows(menuLevel);
             boolean app = menuLevel == DevTools.LEVEL_APP, snapshotTaken = !app && snapFile().exists();
@@ -410,7 +532,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             if (app) faces[DevTools.APP_LANG] = UiFont.of(this, Lang.choiceScript(langChoice));   // 简体中文 in its own font, whatever the menu's
             boolean value = values[menuSel] != null;
             int legend = app ? (value ? Keys.H_MENU_TOP_VALUE : Keys.H_MENU_TOP) : (value ? Keys.H_MENU_SUB_VALUE : Keys.H_MENU_SUB);
-            menu.set(app ? DevTools.APP_TITLE : DevTools.title(), labels, details, values, faces, menuSel, Keys.hints(legend, caps));
+            menu.set(app ? DevTools.APP_TITLE : DevTools.title(), labels, details, values, faces, DevTools.icons(menuLevel), menuSel, Keys.hints(legend, caps));
         }
         menu.setVisibility(View.VISIBLE);
     }
@@ -433,7 +555,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private void pickMenuRow() {
         if (menuLevel == DevTools.LEVEL_APP) {
             switch (menuSel) {
-                case DevTools.APP_BROWSE: closeMenu(); openBrowser(true); break;
+                case DevTools.APP_BROWSE: closeMenu(); browse(); break;
+                case DevTools.APP_NEW: closeMenu(); openName(NAME_NEW); break;   // the camera's current settings, kept as a recipe
                 case DevTools.APP_PANEL: case DevTools.APP_LANG: stepMenuValue(+1); break;
                 case DevTools.APP_RESET: closeMenu(); askReset(); break;
                 case DevTools.APP_ABOUT: menuPage = PAGE_ABOUT; renderMenu(); break;
@@ -611,14 +734,17 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private void resumePreview() { try { if (camera != null) camera.startPreview(); } catch (Throwable t) {} }
 
     // ------------------------------------------------------------ favourites (app storage, not the camera store: lost on uninstall)
-    private void saveFavourites() { prefs.edit().putString("favourites", Favourites.encode(favs)).commit(); }
+    private void saveFavourites() {
+        favStored = Favourites.encode(favs, library, favStored);
+        prefs.edit().putString("favourites", favStored).commit();
+    }
 
-    /** hold on the centre button: mark / unmark the highlighted recipe */
+    /** hold on the centre button: mark / unmark the highlighted recipe, built-in or custom */
     private void toggleFavourite() {
         int pos = favs.indexOf(recipe);
         boolean on = Favourites.toggle(favs, recipe);
         saveFavourites();
-        showToast(Favourites.toggleMessage(Recipes.displayName(Recipes.ALL[recipe]), on), 2500);
+        showToast(Favourites.toggleMessage(Recipes.displayName(library.get(recipe)), on), 2500);
         if (overlay == OV_BROWSER && browserGroup == Favourites.GROUP && !on) {
             // unmarked inside the Favourites list: the highlight moves to a neighbour, or back to the brand column when the list is empty
             int next = Favourites.afterRemoval(favs, pos);
@@ -626,6 +752,229 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             else { recipe = next; stageRecipe(); applyPreview(); }
         }
         render();
+    }
+
+
+    // ------------------------------------------------------------ custom recipes (the memory card, RECIPES)
+    /** the card's recipe folder; null when no card is in or the camera will not say */
+    private static File findCardDir() {
+        try {
+            if (!Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState())) return null;
+            return new File(Environment.getExternalStorageDirectory(), CustomRecipes.DIR);
+        } catch (Throwable t) { return null; }
+    }
+
+    /** the model a saved file says it was made on */
+    private static String madeOn() { return KeyProbe.prop("model.name"); }
+
+    /**
+     * Reads the card's recipes again. The highlighted custom recipe is followed by name, as its index can move; when it
+     * is gone the first listed recipe takes its place. The favourites are decoded again for the new indexes.
+     */
+    private void reloadCustoms() {
+        String keep = library.isCustom(recipe) ? library.get(recipe).name : null;
+        cardDir = findCardDir();
+        CustomRecipes.Loaded l = CustomRecipes.load(cardDir);
+        library.set(l.entries);
+        if (!l.skipped.equals(skipped)) { skipped = l.skipped; skippedShown = false; }
+        favs = Favourites.decode(favStored, library);
+        if (keep != null) recipe = library.indexOfCustom(keep);
+        if (!library.valid(recipe)) recipe = 0;
+    }
+
+    /** the files the last load skipped, said once, the first time the Custom group is shown after it */
+    private void reportSkipped() {
+        if (skippedShown || skipped.isEmpty()) return;
+        skippedShown = true;
+        showToast(CustomRecipes.skippedMessage(skipped), 0);
+    }
+
+    /** the name editor for one of the NAME_* purposes; refused without a card, as nothing could be kept */
+    private void openName(int purpose) {
+        if (cardDir == null) { showToast(Lang.t("custom_need_card"), 4000); return; }
+        if (purpose != NAME_RENAME) {                           // nothing to name if the look is not one a file can hold
+            String bad = CustomRecipes.problem(CustomRecipes.recipe(CustomRecipes.UNTITLED, purpose == NAME_NEW ? cur : edit));
+            if (bad != null) { showToast(Lang.t("custom_capture_failed", bad), 0); return; }
+        }
+        nameFor = purpose;
+        nameEntry = purpose == NAME_RENAME ? NameEntry.of(library.get(recipe).name)
+                : NameEntry.blank(purpose == NAME_COPY ? CustomRecipes.copyName(library.get(recipe).name, library.customNames()) : CustomRecipes.defaultName(library.customNames()));
+        nameOpen = true;
+        renderName();
+    }
+
+    private void renderName() {
+        String title = nameFor == NAME_RENAME ? Lang.t("name_title_rename", library.get(recipe).name) : Lang.t("name_title_new");
+        keyboard.set(title, nameEntry, Keys.hints(Keys.H_NAME, caps));
+        keyboard.setVisibility(View.VISIBLE);
+    }
+
+    private void closeName() { if (keyboard != null) keyboard.setVisibility(View.GONE); nameOpen = false; }
+
+    /** keys while the name editor is up: the four-way and the dials move, centre types, trash deletes, MENU cancels */
+    private boolean nameKey(int sc) {
+        switch (sc) {
+            case K_UP: nameEntry.move(-1, 0); break;
+            case K_DOWN: nameEntry.move(+1, 0); break;
+            case K_LEFT: nameEntry.move(0, -1); break;
+            case K_RIGHT: nameEntry.move(0, +1); break;
+            case K_WHEEL_CW: case K_DIAL_CW: nameEntry.step(+1); break;
+            case K_WHEEL_CCW: case K_DIAL_CCW: nameEntry.step(-1); break;
+            case K_ENTER: if (nameEntry.press() == NameEntry.DONE) { nameDone(); return true; } break;
+            case K_DELETE: case K_SK2: nameEntry.backspace(); break;
+            case K_MENU: case K_SK1:
+                swallowMenuUp = true; closeName();
+                render(); return true;
+            default: return true;
+        }
+        renderName();
+        return true;
+    }
+
+    /** OK on the name editor: a name nobody has is kept, anything else says why under the field */
+    private void nameDone() {
+        String name = nameEntry.value();
+        String self = nameFor == NAME_RENAME ? library.get(recipe).name : null;
+        String bad = CustomRecipes.nameProblem(name, library.customNames(), self);
+        if (bad != null) { nameEntry.setError(bad); renderName(); return; }
+        closeName();
+        switch (nameFor) {
+            case NAME_NEW: if (saveNew(name, cur)) rememberReopen(); break;   // the camera's own look: the one it holds
+            case NAME_COPY: focus = false; if (saveNew(name, edit)) writeAll(); break;   // the copy is the look now: stored too
+            case NAME_RENAME: renameCustom(name); break;
+        }
+        render();
+    }
+
+    /** keeps {@code rows} as a new custom recipe and highlights it; false when the card refused */
+    private boolean saveNew(String name, int[] rows) {
+        CustomRecipes.Entry e;
+        try { e = CustomRecipes.save(cardDir, CustomRecipes.recipe(name, rows), madeOn(), null); }
+        catch (Throwable t) { showToast(Lang.t("custom_save_failed", String.valueOf(t.getMessage())), 0); return false; }
+        reloadCustoms();
+        follow(name);
+        stageRecipe(); applyPreview();
+        showToast(Lang.t("custom_created", name, CustomRecipes.path(e.file)), 5000);
+        return true;
+    }
+
+    /** an edit of a custom recipe finished: its file takes the new values */
+    private boolean saveInPlace() {
+        CustomRecipes.Entry e = library.entry(recipe);
+        if (cardDir == null) { showToast(Lang.t("custom_need_card"), 4000); return false; }
+        try { CustomRecipes.save(cardDir, CustomRecipes.recipe(e.recipe.name, edit), madeOn(), e.file); }
+        catch (Throwable t) { showToast(Lang.t("custom_save_failed", String.valueOf(t.getMessage())), 0); return false; }
+        reloadCustoms();
+        showToast(Lang.t("custom_saved", e.recipe.name), 2500);
+        return true;
+    }
+
+    private void renameCustom(String name) {
+        CustomRecipes.Entry e = library.entry(recipe);
+        if (name.equals(e.recipe.name)) return;
+        try { CustomRecipes.save(cardDir, CustomRecipes.renamed(e.recipe, name), madeOn(), e.file); }
+        catch (Throwable t) { showToast(Lang.t("custom_save_failed", String.valueOf(t.getMessage())), 0); return; }
+        favStored = Favourites.renameCustom(favStored, e.recipe.name, name);
+        prefs.edit().putString("favourites", favStored).commit();
+        if (e.recipe.name.equalsIgnoreCase(prefs.getString("customRecipe", ""))) prefs.edit().putString("customRecipe", name).commit();
+        if (Favourites.key(recipe, library).equals(prefs.getString("appliedRecipe", null)))
+            prefs.edit().putString("appliedRecipe", Favourites.CUSTOM_PREFIX + name).commit();   // its applied edit moves with it
+        reloadCustoms();
+        follow(name);
+        stageRecipe();
+        showToast(Lang.t("custom_renamed", name), 3000);
+    }
+
+    /** highlights the custom recipe just written — unless the reload could not read it back, which leaves the highlight where it is */
+    private void follow(String name) { int i = library.indexOfCustom(name); if (i >= 0) recipe = i; }
+
+    /** the delete question answered Delete: the file goes, and its favourite mark; the highlight moves to a neighbour */
+    private void deleteCustom() {
+        CustomRecipes.Entry e = library.entry(recipe);
+        int k = recipe - Library.BASE, favPos = favs.indexOf(recipe);
+        try { CustomRecipes.delete(cardDir, e.file); }
+        catch (Throwable t) { showToast(Lang.t("custom_delete_failed", e.recipe.name, String.valueOf(t.getMessage())), 0); return; }
+        favStored = Favourites.forgetCustom(favStored, e.recipe.name);
+        prefs.edit().putString("favourites", favStored).commit();
+        reloadCustoms();                                         // the recipe is gone: the first one stands in
+        if (overlay == OV_BROWSER && browserGroup == Favourites.GROUP) {
+            int next = Favourites.afterRemoval(favs, favPos);
+            if (next < 0) browserCol = COL_GROUPS; else recipe = next;
+        } else if (library.customCount() > 0) recipe = Library.BASE + Math.min(k, library.customCount() - 1);
+        else if (overlay == OV_BROWSER && browserGroup == Favourites.CUSTOM) browserCol = COL_GROUPS;   // nothing left to highlight
+        stageRecipe(); applyPreview();
+        showToast(Lang.t("custom_deleted", e.recipe.name), 3000);
+        render();
+    }
+
+    /** the staged values are not the recipe's own: its edits, saved nowhere yet (the line under the name says so) */
+    private boolean edited() { return Params.differsFromRecipe(library.get(recipe), edit); }
+
+    /** edits that would be lost by leaving the recipe: neither saved nor applied — after Apply the camera has them */
+    private boolean editsAtRisk() { return edited() && dirty(); }
+
+    /** goes on with {@code go} — leaving the recipe — after asking, when that would drop edits nothing keeps */
+    private void unlessEditsLost(Runnable go) {
+        if (!editsAtRisk()) { go.run(); return; }
+        afterDiscard = go;
+        openPrompt(P_DISCARD, CustomRecipes.DISCARD_DEFAULT);
+    }
+
+    /**
+     * The centre button on the recipe line: pick it. With edits on it, that means going back to the recipe, so ask first —
+     * Discard puts its own values back and picks them; saving, copying and applying edits are the buttons under the chips.
+     */
+    private void pick() {
+        if (!edited()) { writeAll(); return; }
+        afterDiscard = new Runnable() { public void run() { stageRecipe(); applyPreview(); writeAll(); } };
+        openPrompt(P_DISCARD, CustomRecipes.DISCARD_DEFAULT);
+    }
+
+    /** the edit buttons that make sense now: none without edits, or without the full panel to show them on */
+    private int[] actions() {
+        if (!panelUp(overlay) || !edited()) return new int[0];
+        return CustomRecipes.editActions(library.isCustom(recipe), !dirty());
+    }
+
+    /** centre on an edit button */
+    private void doAction(int action) {
+        switch (action) {
+            case CustomRecipes.EDIT_SAVE: if (saveInPlace() && dirty()) writeAll(); break;   // custom only; stored too, unless the camera has it already
+            case CustomRecipes.EDIT_COPY: openName(NAME_COPY); break;
+            case CustomRecipes.EDIT_APPLY: writeAll(); break;
+            case CustomRecipes.EDIT_DISCARD:                         // asks first; then the recipe's own values, written too when the camera had the edits
+                afterDiscard = new Runnable() { public void run() {
+                    boolean applied = !dirty();
+                    stageRecipe(); applyPreview();
+                    if (applied) writeAll();
+                    render();
+                } };
+                openPrompt(P_DISCARD, CustomRecipes.DISCARD_DEFAULT);
+                break;
+        }
+        render();
+    }
+
+    /** the highlight is on the edit buttons and they are on screen — not under the pill, or after the edits went */
+    private boolean onButtons() { return onActions && actions().length > 0; }
+
+    /** the panel's line the highlight is on (Params.LINE_*) */
+    private int line() { return onButtons() ? LINE_ACTIONS : row == 0 ? LINE_RECIPE : LINE_CHIPS; }
+
+    /** UP / DOWN: recipe name → chips → edit buttons (while there are edits) → recipe name */
+    private void moveLine(int dir) {
+        int to = Params.nextLine(line(), dir, actions().length > 0);
+        if (row != 0) lastChip = row;
+        if (to == LINE_RECIPE) { row = 0; onActions = false; }
+        else if (to == LINE_CHIPS) { row = Params.enterChips(lastChip, edit); onActions = false; }
+        else { row = Params.enterChips(lastChip, edit); onActions = true; actionSel = 0; }   // row stays off the recipe line
+        render();
+    }
+
+    /** the buttons went away (saved, restored, another recipe): the highlight goes back to the chips */
+    private void settleActions(int count) {
+        if (onActions && count == 0) { onActions = false; row = Params.enterChips(lastChip, edit); }
+        if (actionSel >= count) actionSel = Math.max(0, count - 1);
     }
 
     // ------------------------------------------------------------ live preview (runtime params)
@@ -647,13 +996,15 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     }
 
     private void render() {
-        Recipes.Recipe r = Recipes.ALL[recipe];
+        Recipes.Recipe r = library.get(recipe);
         boolean dirty = dirty();
-        String pos = Recipes.position(recipe);
+        String pos = library.position(recipe);
         String grp = Recipes.groupLabel(r.group).toUpperCase();
         picker.setVisibility(overlay == OV_BROWSER ? View.VISIBLE : View.GONE);
-        if (overlay == OV_BROWSER) { panel.setVisibility(View.GONE); mini.setVisibility(View.GONE); picker.set(recipe, browserCol, browserGroup, favs); return; }
-        if (overlay == OV_FULL) {
+        sponsor.setText(DevTools.sponsorLine());                     // the README's ask, small, over the live view
+        sponsor.setVisibility(panelUp(overlay) ? View.VISIBLE : View.GONE);   // Full and No keys; Label and Hidden hide it
+        if (overlay == OV_BROWSER) { panel.setVisibility(View.GONE); mini.setVisibility(View.GONE); picker.set(recipe, browserCol, browserGroup, favs, library, cardDir != null); return; }
+        if (panelUp(overlay)) {
             panel.setVisibility(View.VISIBLE); mini.setVisibility(View.GONE);
             name.setText(Recipes.displayName(r));
             name.setTextColor(row == 0 ? ACCENT : WHITE);
@@ -661,15 +1012,32 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             nameOriginal.setText(original == null ? "" : original);
             nameOriginal.setVisibility(original == null ? View.GONE : View.VISIBLE);
             count.setText(grp + "   " + pos);
-            tag.setText(edit[R_PE] != 0 ? "PE" : "CS");
-            tag.setTextColor(edit[R_PE] != 0 ? ACCENT : 0xDDFFFFFF);
+            tag.setText(Lang.t("tag_jpeg_only"));                    // a Picture Effect: the camera drops it under RAW
+            tag.setTextColor(ACCENT);
+            tag.setVisibility(edit[R_PE] != 0 ? View.VISIBLE : View.GONE);
             fav.setVisibility(favs.contains(recipe) ? View.VISIBLE : View.GONE);
+            // two questions, two badges: does the camera have what you see (ACTIVE / PREVIEW), and is it the recipe as it was (EDITED)
             if (dirty) { badge.setText(Lang.t("state_preview")); badge.setBackgroundResource(R.drawable.badge_warn); }
             else { badge.setText(Lang.t("state_active")); badge.setBackgroundResource(R.drawable.badge_ok); }
-            meta.setText(Params.metaLine(cur, edit, previewOk ? null : previewErr));
+            editedBadge.setText(Lang.t("state_edited"));
+            editedBadge.setVisibility(edited() ? View.VISIBLE : View.GONE);
+            String m = Params.metaLine(edit, previewOk ? null : previewErr);   // warnings only: the values are on the chips
+            meta.setText(m);
+            meta.setVisibility(m.isEmpty() ? View.GONE : View.VISIBLE);
+            int[] acts = actions();
+            settleActions(acts.length);
+            actionsRow.setVisibility(acts.length > 0 ? View.VISIBLE : View.GONE);
+            for (int i = 0; i < actionBtn.length; i++) {
+                if (i >= acts.length) { actionBtn[i].setVisibility(View.GONE); continue; }
+                boolean on = onActions && i == actionSel;
+                actionBtn[i].setVisibility(View.VISIBLE);
+                actionBtn[i].setText(CustomRecipes.editLabel(acts[i]));
+                actionBtn[i].setBackgroundResource(on ? R.drawable.chip_sel : R.drawable.chip);
+                actionBtn[i].setTextColor(on ? INK : WHITE);
+            }
             for (int i : ORDER) {
                 chip[i].setVisibility(rowVisible(i) ? View.VISIBLE : View.GONE);
-                boolean sel = i == row, ch = rowDirty(i), foc = sel && focus;
+                boolean sel = i == row && !onActions, ch = rowDirty(i), foc = sel && focus;
                 chip[i].setBackgroundResource(foc ? R.drawable.chip_sel : sel ? R.drawable.chip_hi : R.drawable.chip);
                 chipLabel[i].setText(Params.rowName(i));
                 chipLabel[i].setTextColor(foc ? INK : sel ? ACCENT : DIM);
@@ -684,10 +1052,11 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
                     if (l < sx) chipScroll.smoothScrollTo(l - dp(8), 0); else if (rgt > sx + w) chipScroll.smoothScrollTo(rgt - w + dp(8), 0);
                 } });
             }
-            hints.setMode(row == 0 ? HintBar.RECIPE : focus ? HintBar.EDIT : HintBar.CHIPS);
+            hints.setVisibility(overlay == OV_QUIET ? View.GONE : View.VISIBLE);
+            hints.setMode(onActions ? Keys.H_ACTIONS : row == 0 ? HintBar.RECIPE : focus ? HintBar.EDIT : HintBar.CHIPS);
         } else if (overlay == OV_PILL) {
             panel.setVisibility(View.GONE); mini.setVisibility(View.VISIBLE);
-            mini.setText(Params.miniLine(recipe, cur, edit, dirty));
+            mini.setText(Params.miniLine(r, pos, cur, edit, dirty));
         } else {
             panel.setVisibility(View.GONE); mini.setVisibility(View.GONE);
         }
@@ -697,79 +1066,99 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     /** change the value of the focused chip */
     private void stepValue(int dir) {
         if (row == 0) return;
-        if (Params.step(edit, row, dir, recipeQuality(Recipes.ALL[recipe]))) qualityChanged();
+        if (Params.step(edit, row, dir, recipeQuality(library.get(recipe)))) qualityChanged();
         applyPreview(); render();
     }
+
+    /** left / right on the edit buttons, wrapping */
+    private void moveAction(int dir) { int n = actions().length; if (n > 0) actionSel = (actionSel + n + dir) % n; render(); }
+
+    /** Fn, or Browse recipes: the brand list, whose highlight previews other recipes — after asking, when that would drop edits */
+    private void browse() { unlessEditsLost(new Runnable() { public void run() { openBrowser(true); } }); }
+
+    /** MENU: out of the app — after asking, when that would drop edits */
+    private void leave() { unlessEditsLost(new Runnable() { public void run() { finish(); } }); }
 
     /** LEFT/RIGHT inside the chip strip: next / previous visible chip, wrapping */
     private void moveChip(int dir) { row = Params.nextChip(row, dir, edit); lastChip = row; render(); }
 
-    /** UP/DOWN: switch between the recipe line and the chip strip */
-    private void toggleLine() {
-        if (row == 0) row = Params.enterChips(lastChip, edit);
-        else { lastChip = row; row = 0; }
-        render();
+    private void setFocus(boolean f) { focus = f && row != 0 && !onButtons(); render(); }
+
+    /** the wheel, or left / right on the recipe line: the next recipe — after asking, when that would drop edits */
+    private void nextRecipe(final int dir) {
+        unlessEditsLost(new Runnable() { public void run() { recipe = library.next(recipe, dir); stageRecipe(); applyPreview(); render(); } });
     }
 
-    private void setFocus(boolean f) { focus = f && row != 0; render(); }
-
-    private void nextRecipe(int dir) { recipe = Recipes.next(recipe, dir); stageRecipe(); applyPreview(); render(); }
-
-    /** brand column: the group above / below, its first recipe previewed (an empty Favourites list leaves the recipe alone) */
+    /**
+     * Brand column: the group above / below, its first recipe previewed. An empty Favourites or Custom list leaves the
+     * recipe alone.
+     */
     private void nextGroup(int dir) {
         browserGroup = Favourites.nextGroup(browserGroup, dir);
-        int land = Favourites.landing(browserGroup, favs);
+        int land = Favourites.landing(browserGroup, favs, library);
         if (land >= 0) { recipe = land; stageRecipe(); applyPreview(); }
+        if (browserGroup == Favourites.CUSTOM) reportSkipped();
         render();
     }
 
     private void openBrowser(boolean open) {
-        overlay = open ? OV_BROWSER : OV_FULL; row = 0; focus = false;
-        browserGroup = Favourites.openingGroup(favs, recipe);
+        if (open) panelBefore = overlay;
+        overlay = open ? OV_BROWSER : fullPanel(); row = 0; focus = false;
+        browserGroup = Favourites.openingGroup(favs, recipe, library);
         browserCol = COL_RECIPES;
-        if (open && recipe == Recipes.FACTORY) { recipe = Favourites.landing(browserGroup, favs); stageRecipe(); applyPreview(); }   // the list has no factory look to highlight
+        if (open && browserGroup == Favourites.CUSTOM) reportSkipped();
         render();
     }
 
     /** recipe column: the next / previous recipe of the group the browser is on, wrapping */
     private void nextInGroup(int dir) {
-        recipe = browserGroup == Favourites.GROUP ? Favourites.next(favs, recipe, dir) : Recipes.nextInGroup(recipe, dir);
+        if (browserGroup == Favourites.CUSTOM) { int to = Favourites.nextCustom(recipe, dir, library); if (to < 0) return; recipe = to; }
+        else recipe = browserGroup == Favourites.GROUP ? Favourites.next(favs, recipe, dir) : Recipes.nextInGroup(recipe, dir);
         stageRecipe(); applyPreview(); render();
     }
 
-    /** the recipe column is not reachable while the Favourites list is empty */
+    /** the recipe column is not reachable while the Favourites or Custom list is empty */
     private boolean enterRecipeColumn() {
-        if (!Favourites.hasRecipes(browserGroup, favs)) { showToast(Favourites.emptyHint(), 3000); return false; }
+        if (!Favourites.hasRecipes(browserGroup, favs, library)) { showToast(Favourites.emptyHint(browserGroup), 3000); return false; }
         browserCol = COL_RECIPES; render(); return true;
     }
 
     /** the centre button on a recipe in the browser: close it, leaving that recipe previewed */
     private void pickInBrowser() {
-        openBrowser(false); showToast(Lang.t("status_recipe_previewed", Recipes.displayName(Recipes.ALL[recipe])), 3000);
+        rememberReopen();                                        // a recipe chosen in the list is where the app reopens
+        openBrowser(false); showToast(Lang.t("status_recipe_previewed", Recipes.displayName(library.get(recipe))), 3000);
     }
 
     /** the reset question answered Reset: the factory look, stored — the same store as a centre press */
     private void storeFactory() {
-        overlay = OV_FULL; row = 0; focus = false;
+        overlay = fullPanel(); row = 0; focus = false;
         recipe = Recipes.FACTORY; stageRecipe(); applyPreview(); render();
         writeAll();
     }
 
     /** trash: full panel → pill → hidden → full; the browser is not in the cycle */
-    private void cycleOverlay() { overlay = (overlay + 1) % 3; render(); }
+    private void cycleOverlay() { overlay = DevTools.nextPanel(overlay, +1); render(); }
+
+    /** the full panel to come back to from the browser: without its legend if that is how it was left, else with it */
+    private int fullPanel() { return overlay == OV_QUIET || (overlay == OV_BROWSER && panelBefore == OV_QUIET) ? OV_QUIET : OV_FULL; }
 
     /** MENU held past HOLD_MS: the app menu, or out of the key logger; its release is swallowed either way */
     private void menuHoldFired() {
         if (menuKeyHold.fire() != Keys.Hold.HOLD) return;
         swallowMenuUp = true;
         if (logging) { stopLogger(); showToast(Lang.t("status_logger_stopped", DevTools.KEY_LOG), 4000); return; }
-        if (!running && !promptOpen && !menuOpen && menuHoldArms(overlay, focus)) openMenu(DevTools.LEVEL_APP);
+        if (running || promptOpen || menuOpen || nameOpen) return;
+        if (overlay == OV_BROWSER) { if (onCustomRow()) openPrompt(P_OPTIONS, CustomRecipes.OPT_DEFAULT); return; }
+        if (menuHoldArms(overlay, focus)) openMenu(DevTools.LEVEL_APP);
     }
+
+    /** the brand list's highlight is on a custom recipe, whose options a MENU hold opens */
+    private boolean onCustomRow() { return overlay == OV_BROWSER && browserCol == COL_RECIPES && library.isCustom(recipe); }
 
     /** trash held past HOLD_MS: ask to reset — unless the camera says the key is already up, and its release got lost */
     private void trashHoldFired() {
         if (trash.fire() != Keys.Hold.HOLD) return;
-        if (running || promptOpen || menuOpen) { trash.reset(); return; }
+        if (running || promptOpen || menuOpen || nameOpen) { trash.reset(); return; }
         if (!trashHoldActs(KeyProbe.isDown(trashScan))) { trash.reset(); trashPress(); return; }   // a press whose release never came
         if (overlay == OV_BROWSER) openBrowser(false);
         askReset();
@@ -777,7 +1166,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
 
     /** trash pressed and released before the hold: close the brand list, or step the panel full → label → hidden → full */
     private void trashPress() {
-        if (running || promptOpen || menuOpen) return;
+        if (running || promptOpen || menuOpen || nameOpen) return;
         if (overlay == OV_BROWSER) openBrowser(false); else cycleOverlay();
     }
 
@@ -786,7 +1175,10 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             case K_UP: case K_WHEEL_CCW: case K_DIAL_CCW: if (browserCol == COL_GROUPS) nextGroup(-1); else nextInGroup(-1); return true;
             case K_DOWN: case K_WHEEL_CW: case K_DIAL_CW: if (browserCol == COL_GROUPS) nextGroup(+1); else nextInGroup(+1); return true;
             case K_LEFT: case K_RIGHT: if (browserCol == COL_RECIPES) { browserCol = COL_GROUPS; render(); } else enterRecipeColumn(); return true;
-            case K_MENU: case K_SK1: swallowMenuUp = true; openBrowser(false); return true;
+            case K_MENU: case K_SK1:
+                // on a custom recipe MENU is press / hold: the release closes the list, a hold opens the recipe's options
+                if (onCustomRow()) { if (menuKeyHold.down(0) == Keys.Hold.ARM) handler.postDelayed(menuHold, HOLD_MS); return true; }
+                swallowMenuUp = true; openBrowser(false); return true;
             case K_FN: openBrowser(false); return true;
             case K_DELETE: case K_SK2: armTrash(sc); return true;       // closes the list on the release; a hold asks to reset
             case K_S1: try { camera.autoFocus(null); } catch (Throwable t) {} return true;
@@ -806,10 +1198,10 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     /** whether a hold on the centre button marks a favourite where the user is now */
     private boolean holdMarksFavourite() { return Params.holdMarksFavourite(overlay, row, browserCol); }
 
-    /** the centre button pressed: the short action waits for the release, a hold becomes "favourite" */
+    /** the centre button pressed: the short action waits for the release, a hold becomes "favourite" (a custom recipe's options) */
     private void enterDown(int repeat) {
         if (enter.down(repeat) != Keys.Hold.ARM) return;          // key repeat while held
-        if (holdMarksFavourite() && Favourites.markable(recipe)) handler.postDelayed(enterHold, HOLD_MS);
+        if (holdMarksFavourite()) handler.postDelayed(enterHold, HOLD_MS);
     }
 
     /** the centre button released before the hold fired: what ENTER used to do on the press */
@@ -819,8 +1211,11 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         switch (Params.enterAction(overlay, row, browserCol)) {
             case ENTER_BROWSER_COLUMN: enterRecipeColumn(); break;
             case ENTER_BROWSER_PICK: pickInBrowser(); break;
-            case ENTER_PICK: writeAll(); break;
-            default: setFocus(!focus); break;
+            case ENTER_PICK: pick(); break;
+            default: {
+                if (onButtons()) { int[] acts = actions(); if (actionSel < acts.length) doAction(acts[actionSel]); break; }
+                setFocus(!focus); break;
+            }
         }
     }
 
@@ -839,6 +1234,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         if (isTrash(sc) && trash.isDown()) return true;          // still the press that hid the panel
         if (running) return runKey(sc);
         if (promptOpen) return promptKey(sc);
+        if (nameOpen) return nameKey(sc);
         if (menuOpen) return menuKey(sc);
         if (sc == K_ENTER) { enterDown(e.getRepeatCount()); return true; }
         if (sc == K_AEL || sc == K_C1 || sc == K_DISP) return true;   // not bound on any screen (issue #18)
@@ -846,7 +1242,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         switch (sc) {
             case K_LEFT: case K_RIGHT: {
                 int dir = e.getScanCode() == K_RIGHT ? +1 : -1;
-                if (focus) stepValue(dir); else if (Params.onRecipeLine(overlay, row)) nextRecipe(dir); else moveChip(dir);
+                if (focus) stepValue(dir); else if (onButtons()) moveAction(dir); else if (Params.onRecipeLine(overlay, row)) nextRecipe(dir); else moveChip(dir);
                 return true;
             }
             case K_WHEEL_CW: case K_WHEEL_CCW: {
@@ -856,15 +1252,15 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             }
             case K_DIAL_CW: case K_DIAL_CCW: {
                 int dir = e.getScanCode() == K_DIAL_CW ? +1 : -1;
-                if (focus) stepValue(dir); else if (Params.onRecipeLine(overlay, row)) nextRecipe(dir); else moveChip(dir);
+                if (focus) stepValue(dir); else if (onButtons()) moveAction(dir); else if (Params.onRecipeLine(overlay, row)) nextRecipe(dir); else moveChip(dir);
                 return true;
             }
             case K_UP: case K_DOWN: {
-                if (overlay != OV_FULL) return true;
-                if (focus) stepValue(e.getScanCode() == K_UP ? +1 : -1); else toggleLine();
+                if (!panelUp(overlay)) return true;
+                if (focus) stepValue(e.getScanCode() == K_UP ? +1 : -1); else moveLine(e.getScanCode() == K_DOWN ? +1 : -1);
                 return true;
             }
-            case K_FN: openBrowser(true); return true;
+            case K_FN: browse(); return true;
             case K_DELETE: case K_SK2: armTrash(sc); return true;       // hides on the release; a hold asks to reset
             case K_S1: try { camera.autoFocus(null); } catch (Throwable t) {} return true;
             case K_S2: try { camera.takePicture(null, null, null); } catch (Throwable t) {} return true;
@@ -874,7 +1270,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
                 return true;                                     // exit waits for the release, unless the hold fires first
             case K_PLAY: return true;
         }
-        if (keyCode == KeyEvent.KEYCODE_BACK) { finish(); return true; }
+        if (keyCode == KeyEvent.KEYCODE_BACK) { leave(); return true; }
         return super.onKeyDown(keyCode, e);
     }
 
@@ -885,13 +1281,16 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         // the hold bookkeeping runs on every release, whatever is on screen, or a lost release would block the next press
         if (isTrash(sc)) { handler.removeCallbacks(trashHold); if (trash.up() == Keys.Hold.SHORT) trashPress(); }
         if (isMenu(sc)) { handler.removeCallbacks(menuHold); menuKeyHold.up(); }
-        if (sc == K_ENTER && (promptOpen || running)) { handler.removeCallbacks(enterHold); enter.reset(); }
-        if (promptOpen) { if (isMenu(sc)) swallowMenuUp = false; return true; }
+        if (sc == K_ENTER && (promptOpen || nameOpen || running)) { handler.removeCallbacks(enterHold); enter.reset(); }
+        if (promptOpen || nameOpen) { if (isMenu(sc)) swallowMenuUp = false; return true; }
         if (running) return true;                               // the release of whatever key started or stopped the run
         switch (sc) {
             case K_ENTER: enterUp(); return true;
             case K_FN: return true;
-            case K_MENU: case K_SK1: if (swallowMenuUp) { swallowMenuUp = false; return true; } finish(); return true;
+            case K_MENU: case K_SK1:
+                if (swallowMenuUp) { swallowMenuUp = false; return true; }
+                if (overlay == OV_BROWSER) { openBrowser(false); return true; }   // a short press on a custom recipe's row
+                leave(); return true;
             case K_S1: try { camera.cancelAutoFocus(); } catch (Throwable t) {} return true;
             case K_S2: cancelCapture(); return true;
             case K_UP: case K_DOWN: case K_LEFT: case K_RIGHT: case K_PLAY: case K_DISP:

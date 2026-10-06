@@ -119,9 +119,9 @@ class LangTest {
 
     // ---- lookups
     @Test void textFollowsTheCurrentLanguageAndFallsBackToEnglish() {
-        assertEquals("Picked — 3 values written, power-cycle the camera to apply everywhere", Lang.t("status_picked_many", 3));
+        assertEquals("Picked — 3 values written", Lang.t("status_picked_many", 3));
         Lang.use(Lang.ZH_HANS);
-        assertEquals("已选用——写入 3 项；重启相机后将全面生效", Lang.t("status_picked_many", 3));
+        assertEquals("已选用——写入 3 项", Lang.t("status_picked_many", 3));
         assertEquals("no_such_key", Lang.t("no_such_key"), "a missing key shows itself rather than crashing the camera app");
     }
 
@@ -143,11 +143,12 @@ class LangTest {
     @Test void theHudAndTheLegendFollowTheLanguage() {
         int[] cur = Fixtures.factoryRows();
         Lang.use(Lang.ZH_HANS);
-        assertEquals("标准  ·  白平衡 自动", Params.metaLine(cur, cur.clone(), null));
+        int[] raw = cur.clone(); raw[Params.R_PE] = Recipes.PE_RETRO; raw[Params.R_QUAL] = Params.Q_RAW;
+        assertEquals("RAW 已开启：照片效果不会生效", Params.metaLine(raw, null));
         assertEquals("选用", Keys.hints(Keys.H_RECIPE, Keys.Caps.UNKNOWN).labels[0]);
         assertEquals("收藏", Favourites.groupName(Favourites.GROUP));
         Lang.use(Lang.ZH_HANT);
-        assertEquals("標準  ·  白平衡 自動", Params.metaLine(cur, cur.clone(), null));
+        assertEquals("RAW 已開啟：相片效果不會生效", Params.metaLine(raw, null));
     }
 
     @Test void slugsAreStableKeys() {
@@ -218,10 +219,10 @@ class LangTest {
 
     @Test void favouritesAreStoredByTheCanonicalNameInAnyLanguage() {
         List<Integer> favs = new ArrayList<Integer>(Arrays.asList(Fixtures.indexOf("Velvia")));
-        String en = Favourites.encode(favs);
+        String en = Favourites.encode(favs, new Library(), "");
         Lang.use(Lang.ZH_HANS);
-        assertEquals(en, Favourites.encode(favs));
-        assertEquals(favs, Favourites.decode(en));
+        assertEquals(en, Favourites.encode(favs, new Library(), ""));
+        assertEquals(favs, Favourites.decode(en, new Library()));
     }
 
     // ---- fonts

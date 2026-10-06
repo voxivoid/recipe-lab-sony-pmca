@@ -9,47 +9,43 @@ import org.junit.jupiter.api.Test;
 /** The overlay text: the meta line under the recipe name, the minimal pill, the quality prompt. */
 class ParamsHudTest {
 
-    @Test void metaLineForACreativeStyleRecipe() {
+    @Test void theMetaLineIsEmptyWhenTheChipsSayItAll() {
         int[] cur = factoryRows();
-        assertEquals("Standard  ·  WB auto", metaLine(cur, cur.clone(), null));
-        int[] e = staged(recipe("Kodak Portra 400"), cur, Q_FINE);
-        assertEquals("Portrait  ·  WB auto  ·  EV +0.7", metaLine(cur, e, null));
-        e = staged(recipe("Velvia"), cur, Q_FINE);
-        assertEquals("Vivid  ·  WB auto", metaLine(cur, e, null));
-        e = staged(recipe("Kodak Vision3 500T (daylight)"), cur, Q_FINE);
-        assertEquals("Neutral  ·  WB 3200K  ·  EV +0.3  ·  DRO Lv3", metaLine(cur, e, null));
+        for (String r : new String[] { "Kodak Portra 400", "Velvia", "Kodak Vision3 500T (daylight)", "Sony SH (soft high-key)" })
+            assertEquals("", metaLine(staged(recipe(r), cur, Q_FINE), null), r);
     }
 
-    @Test void metaLineForAnEffectRecipe() {
-        int[] cur = factoryRows();
-        int[] e = staged(recipe("Sony SH (soft high-key)"), cur, Q_FINE);
-        assertEquals("Picture Effect High-key blue (Creative Style ignored, JPEG only)  ·  WB auto  ·  EV +1.0", metaLine(cur, e, null));
-        e = staged(recipe("Acros +R (red filter)"), cur, Q_FINE);
-        assertEquals("Picture Effect HC mono (Creative Style ignored, JPEG only)  ·  WB 2500K", metaLine(cur, e, null));
-    }
-
-    @Test void metaLineAnnouncesAQualityChangeAndRawUnderAnEffect() {
+    @Test void theMetaLineWarnsOfAnEffectRawWouldDrop() {
         int[] cur = factoryRows(); cur[R_QUAL] = Q_RAW;
         int[] e = staged(recipe("GR Retro"), cur, Q_RAW);
-        assertEquals("Picture Effect Retro (Creative Style ignored, JPEG only)  ·  WB auto  ·  QUALITY → JPG Fine (now RAW)", metaLine(cur, e, null));
+        assertEquals("", metaLine(e, null), "the recipe switches to JPEG on its own");
         e[R_QUAL] = Q_RAW;   // the user forced RAW back on
-        assertEquals("Picture Effect Retro (Creative Style ignored, JPEG only)  ·  WB auto  ·  RAW is on: effect ignored", metaLine(cur, e, null));
+        assertEquals("RAW is on: effect ignored", metaLine(e, null));
     }
 
-    @Test void metaLineShowsAnUnknownWhiteBalanceModeAndThePreviewError() {
-        int[] cur = factoryRows(); int[] e = cur.clone(); e[R_WBMODE] = 3;
-        assertEquals("Standard  ·  WB mode 3  ·  no live preview: CameraEx not found", metaLine(cur, e, "CameraEx not found"));
+    @Test void theMetaLineShowsThePreviewError() {
+        int[] e = factoryRows();
+        assertEquals("no live preview: CameraEx not found", metaLine(e, "CameraEx not found"));
+        e[R_PE] = Recipes.PE_RETRO; e[R_QUAL] = Q_RAW;
+        assertEquals("RAW is on: effect ignored  ·  no live preview: x", metaLine(e, "x"));
     }
 
     @Test void miniPill() {
         int[] cur = factoryRows();
         int i = indexOf("Kodak Portra 400");
         int[] e = staged(Recipes.ALL[i], cur, Q_FINE);
-        assertEquals("CS  Kodak Portra 400   " + (i + 1) + " / 77   · preview", miniLine(i, cur, e, true));
-        assertEquals("CS  Kodak Portra 400   " + (i + 1) + " / 77   · active", miniLine(i, cur, e, false));
+        String pos = Recipes.position(i);
+        assertEquals("Kodak Portra 400   " + (i + 1) + " / 77   · preview", miniLine(Recipes.ALL[i], pos, cur, e, true), "counted as the panel counts");
+        assertEquals("Kodak Portra 400   " + (i + 1) + " / 77   · active", miniLine(Recipes.ALL[i], pos, cur, e, false));
         i = indexOf("GR Retro"); cur[R_QUAL] = Q_RAW;
         e = staged(Recipes.ALL[i], cur, Q_RAW);
-        assertEquals("PE  GR Retro   " + (i + 1) + " / 77   · preview   · quality → JPG Fine", miniLine(i, cur, e, true));
+        assertEquals("JPEG only  GR Retro   " + (i + 1) + " / 77   · preview   · quality → JPG Fine", miniLine(Recipes.ALL[i], Recipes.position(i), cur, e, true));
+    }
+
+    @Test void miniPillOfACustomRecipe() {
+        int[] cur = factoryRows();
+        Recipes.Recipe mine = CustomRecipes.recipe("Golden Hour", cur);
+        assertEquals("Golden Hour   2 / 5   · active", miniLine(mine, "2 / 5", cur, cur, false));
     }
 
     @Test void qualityPromptExplainsWhyTheQualityMoves() {

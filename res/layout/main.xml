@@ -8,6 +8,16 @@
         android:layout_width="fill_parent"
         android:layout_height="fill_parent" />
 
+    <!-- the sponsor ask, small, at the top of the live view on the Full and No keys panels -->
+    <com.voxivoid.recipelab.SponsorLine
+        android:id="@+id/sponsor"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|left"
+        android:layout_marginLeft="8dp"
+        android:layout_marginTop="6dp"
+        android:visibility="gone" />
+
     <!-- full overlay: bottom panel -->
     <LinearLayout
         android:id="@+id/panel"
@@ -21,8 +31,20 @@
         android:paddingTop="14dp"
         android:paddingBottom="8dp">
 
-        <LinearLayout
+        <!-- brand and position, over the name: "FUJI SIM   2 / 18" -->
+        <TextView
+            android:id="@+id/count"
             android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="-1dp"
+            android:textSize="11sp"
+            android:textColor="#B3FFFFFF"
+            android:singleLine="true" />
+
+        <!-- name, then its badges. The row is as wide as its content, so the badges sit right after a short name; the
+             name alone has a weight, so it alone gives way — cut with an ellipsis — when everything does not fit -->
+        <LinearLayout
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical">
@@ -30,6 +52,8 @@
                 android:id="@+id/name"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:ellipsize="end"
                 android:textSize="21sp"
                 android:textStyle="bold"
                 android:textColor="#FFFFFFFF"
@@ -47,6 +71,19 @@
                 android:textStyle="bold"
                 android:textColor="#FFFFFFFF"
                 android:background="@drawable/badge_ok" />
+            <!-- beside ACTIVE / PREVIEW while the recipe has edits: the two say different things -->
+            <TextView
+                android:id="@+id/edited"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="4dp"
+                android:paddingLeft="7dp" android:paddingRight="7dp"
+                android:paddingTop="2dp" android:paddingBottom="2dp"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFFFF"
+                android:background="@drawable/badge_edited"
+                android:visibility="gone" />
             <TextView
                 android:id="@+id/tag"
                 android:layout_width="wrap_content"
@@ -64,13 +101,6 @@
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="6dp"
                 android:visibility="gone" />
-            <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
-            <TextView
-                android:id="@+id/count"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textSize="12sp"
-                android:textColor="#B3FFFFFF" />
         </LinearLayout>
 
         <!-- the canonical name under a translated one (Recipes.originalName) -->
@@ -108,6 +138,15 @@
                 android:layout_height="wrap_content"
                 android:orientation="horizontal" />
         </HorizontalScrollView>
+
+        <!-- edit buttons, while the recipe has edits: Save, Copy, Apply, Restore -->
+        <LinearLayout
+            android:id="@+id/actions"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:orientation="horizontal"
+            android:visibility="gone" />
 
         <com.voxivoid.recipelab.HintBar
             android:id="@+id/hints"
@@ -148,6 +187,13 @@
     <!-- app menu (hold MENU), developer menu, About / key logger pages: full screen -->
     <com.voxivoid.recipelab.MenuView
         android:id="@+id/menu"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:visibility="gone" />
+
+    <!-- name editor for custom recipes: full screen -->
+    <com.voxivoid.recipelab.KeyboardView
+        android:id="@+id/keyboard"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
         android:visibility="gone" />

@@ -8,7 +8,8 @@ import android.graphics.Typeface;
 
 /**
  * Key legend drawn with Canvas (camera firmware font has no arrow / symbol glyphs).
- * Fits the available width: first squeezes the gaps between items, then scales icons and text down.
+ * A row that does not fit the width at full size wraps onto more lines ({@link Keys#lineCounts}); within a line the
+ * gaps between items squeeze, and only an item wider than the whole line is scaled down.
  */
 public class Legend {
     public static final int WHEEL = Keys.I_WHEEL, UPDOWN = Keys.I_UPDOWN, LEFTRIGHT = Keys.I_LEFTRIGHT, DIAL = Keys.I_DIAL,
@@ -47,8 +48,53 @@ public class Legend {
         c.drawPath(STAR, p);
     }
 
+    private static final Path HEART = new Path();
+
+    /** a heart centred on (cx, cy), about 2 * s across — the sponsor mark: no font the app has carries an emoji or ♥ */
+    public static void heart(Canvas c, float cx, float cy, float s, Paint p) {
+        HEART.reset();
+        HEART.moveTo(cx, cy + s);
+        HEART.cubicTo(cx - 2.2f * s, cy - 0.2f * s, cx - 0.9f * s, cy - 1.6f * s, cx, cy - 0.5f * s);
+        HEART.cubicTo(cx + 0.9f * s, cy - 1.6f * s, cx + 2.2f * s, cy - 0.2f * s, cx, cy + s);
+        HEART.close();
+        c.drawPath(HEART, p);
+    }
+
+    /** the heart's colour: the pink of the README's sponsor badge */
+    public static final int HEART_PINK = 0xFFDB61A2;
+
     /** natural height for a legend row at scale 1 */
     public float height() { return 16 * d; }
+
+    /** the height of a legend of {@code lines} lines */
+    public float height(int lines) { return height() + Math.max(0, lines - 1) * LINE_STEP * d; }
+
+    /** distance between the centres of two wrapped lines, in dp */
+    private static final float LINE_STEP = 18, WRAP_GAP = 8;
+
+    /** how many lines a row needs in {@code width} at full size */
+    public int lines(float width, Keys.Hints h) { return lineCounts(width, h).length; }
+
+    private int[] lineCounts(float width, Keys.Hints h) {
+        setScale(1f);
+        float s = 6 * d, gap = WRAP_GAP * d;
+        float[] w = new float[h.icons.length];
+        for (int i = 0; i < w.length; i++) w[i] = keys(nowhere, h.icons[i], h.alts[i], 0, 0, s, 0, 1f) + 4 * d + text.measureText(h.labels[i]);
+        return Keys.lineCounts(w, width, gap);
+    }
+
+    /** draws a legend row from {@code top}, wrapped onto as many lines as it needs; returns the height used */
+    public float drawWrapped(Canvas c, float x, float top, float width, Keys.Hints h) {
+        int[] counts = lineCounts(width, h);
+        float cy = top + height() / 2;
+        for (int line = 0, at = 0; line < counts.length; at += counts[line], line++, cy += LINE_STEP * d) {
+            int n = counts[line];
+            int[] icons = new int[n], alts = new int[n]; String[] labels = new String[n];
+            System.arraycopy(h.icons, at, icons, 0, n); System.arraycopy(h.alts, at, alts, 0, n); System.arraycopy(h.labels, at, labels, 0, n);
+            draw(c, x, cy, width, icons, alts, labels);
+        }
+        return height(counts.length);
+    }
 
     /** draws a legend row built by {@link Keys#hints}: a shortcut icon, where there is one, goes before its key as "Fn / MENU" */
     public float draw(Canvas c, float x, float cy, float width, Keys.Hints h) { return draw(c, x, cy, width, h.icons, h.alts, h.labels); }

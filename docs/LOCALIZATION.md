@@ -32,7 +32,10 @@ What stays the same in every language:
 - **The recipe identifiers.** `Recipe.name` is the canonical English. Favourites are stored by it, so switching the
   language never loses a mark.
 - **Every file the app writes** — `samples.txt`, `locks.txt`, `keys.txt`, `diff.txt`. Compatibility reports quote them,
-  so they stay English and parsable. The key logger page is English for the same reason.
+  so they stay English and parsable. So do the custom recipe files in `RECIPES`: people trade them, and a file has to
+  read the same on every camera. A custom recipe's name is the user's own and is never translated; the name editor
+  types only what every font the app carries can draw (`CustomRecipes.nameChar`), and the default *Untitled* is data
+  like a recipe name, not text. The key logger page is English for the same reason.
 - **Technical tokens** — `RAW`, `JPEG`, `DRO`, `EV`, `PE` / `CS`, kelvin, the A / B / G / M fine-tune, slot ids.
 - **The app's name**, *RECIPE LAB*.
 

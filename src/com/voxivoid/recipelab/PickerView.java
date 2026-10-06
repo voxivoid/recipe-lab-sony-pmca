@@ -13,7 +13,8 @@ import java.util.List;
 
 /**
  * Two-column recipe browser: groups left, recipes of the highlighted group right. Canvas-drawn.
- * The first group is Favourites (the marked recipes, in marking order); the rest are the brands.
+ * The first group is Favourites (the marked recipes, in marking order), the second Custom (the custom recipes from the
+ * memory card, A to Z); the rest are the brands.
  */
 public class PickerView extends View {
     private static final int ACCENT = 0xFFF2B85C, INK = 0xFF1A1208;
@@ -29,6 +30,8 @@ public class PickerView extends View {
     private final Paint outline = new Paint(Paint.ANTI_ALIAS_FLAG);
     private int selected = 0, column = 1, group = 0;              // column: 0 groups, 1 recipes · group: Favourites.GROUP or a brand
     private List<Integer> favs = new ArrayList<Integer>();
+    private Library lib = new Library();
+    private boolean card = true;                                  // a memory card is in, so custom recipes can be kept
 
     public PickerView(Context c, AttributeSet a) {
         super(c, a);
@@ -51,8 +54,13 @@ public class PickerView extends View {
     /** the display language's typeface ({@link UiFont}) */
     public void setTypeface(Typeface tf) { head.setTypeface(tf); item.setTypeface(tf); small.setTypeface(tf); legend.setTypeface(tf); invalidate(); }
 
-    /** the highlighted recipe, the active column, the group the left column is on, and the favourites in marking order */
-    public void set(int recipe, int col, int grp, List<Integer> favourites) { selected = recipe; column = col; group = grp; favs = favourites; invalidate(); }
+    /**
+     * The highlighted recipe, the active column, the group the left column is on, the favourites in
+     * marking order, the recipes with the custom ones, and whether a memory card is in.
+     */
+    public void set(int recipe, int col, int grp, List<Integer> favourites, Library library, boolean cardIn) {
+        selected = recipe; column = col; group = grp; favs = favourites; lib = library; card = cardIn; invalidate();
+    }
 
     @Override
     protected void onDraw(Canvas c) {
@@ -61,20 +69,23 @@ public class PickerView extends View {
 
         int g = group;
         boolean favGroup = g == Favourites.GROUP;
-        int count = Favourites.groupCount(g, favs);
+        int count = Favourites.groupCount(g, favs, lib);
         float colX = w * 0.30f;                                 // divider
-        float top = pad + 12 * d, bottom = h - pad - 20 * d;    // header / footer reserved
+        int mode = column == 0 ? Keys.H_BRANDS : lib.isCustom(selected) ? Keys.H_RECIPES_CUSTOM : Keys.H_RECIPES;
+        Keys.Hints hints = Keys.hints(mode, caps);
+        float legTop = h - pad - legend.height(legend.lines(w - 2 * pad, hints)) + 2 * d;   // the legend, on as many lines as it needs
+        float top = pad + 12 * d, bottom = legTop - 6 * d;      // header / footer reserved
         float sbW = 4 * d;                                      // scrollbar width
         head.setColor(column == 0 ? ACCENT : 0x99FFFFFF);
         c.drawText(Lang.t("picker_brand"), pad, pad + 7 * d, head);
         head.setColor(column == 1 ? ACCENT : 0x99FFFFFF);
-        c.drawText(Favourites.groupName(g).toUpperCase() + "  ·  " + count, colX + pad, pad + 7 * d, head);
+        c.drawText(Favourites.groupName(g).toUpperCase() + "  ·  " + Favourites.groupCount(g, favs, lib), colX + pad, pad + 7 * d, head);
         head.setColor(0x99FFFFFF);
         c.drawLine(colX, pad, colX, h - pad, rule);
         c.drawLine(pad, top + 3 * d, w - pad, top + 3 * d, rule);
 
-        // ---- left: Favourites, then the brands
-        int ng = Recipes.GROUPS.length + 1, gRow = Favourites.groupRow(g);
+        // ---- left: Favourites, Custom, then the brands
+        int ng = Favourites.groupRows(), gRow = Favourites.groupRow(g);
         float listTop = top + 6 * d, listH = bottom - listTop;
         float rowH = 24 * d;
         int gVisible = Math.max(1, (int) (listH / rowH));
@@ -82,49 +93,52 @@ public class PickerView extends View {
         float gRight = colX - 8 * d - (ng > gVisible ? sbW + 4 * d : 0);
         float y = listTop;
         for (int i = gFirst; i < Math.min(ng, gFirst + gVisible); i++, y += rowH) {
-            int gi = i - 1;                                     // row 0 is Favourites.GROUP
+            int gi = Favourites.groupAt(i);
             boolean on = i == gRow, active = on && column == 0;
             if (on) { r.set(pad - 4 * d, y, gRight, y + rowH); c.drawRoundRect(r, 3 * d, 3 * d, active ? sel : outline); }
-            item.setColor(active ? INK : on ? ACCENT : gi == Favourites.GROUP ? 0xFFF2B85C : 0xCCFFFFFF); item.setFakeBoldText(on);
+            item.setColor(active ? INK : on || gi < 0 ? ACCENT : 0xCCFFFFFF); item.setFakeBoldText(on);   // Favourites and Custom in the accent
             float tx = pad;
             if (gi == Favourites.GROUP) { star.setColor(active ? INK : ACCENT); Legend.star(c, pad + 5 * d, y + rowH / 2, 5.5f * d, star); tx += 14 * d; }
             c.drawText(Favourites.groupName(gi), tx, y + rowH / 2 + item.getTextSize() * 0.36f, item);
             small.setColor(active ? 0xAA1A1208 : 0x66FFFFFF);
-            String n = String.valueOf(Favourites.groupCount(gi, favs));
+            String n = String.valueOf(Favourites.groupCount(gi, favs, lib));
             c.drawText(n, gRight - 6 * d - small.measureText(n), y + rowH / 2 + small.getTextSize() * 0.36f, small);
-            if (i == 0) c.drawLine(pad, y + rowH - d, gRight, y + rowH - d, rule);   // Favourites is set apart from the brands
+            if (i == 1) c.drawLine(pad, y + rowH - d, gRight, y + rowH - d, rule);   // Favourites and Custom are set apart from the brands
         }
         item.setFakeBoldText(false);
         if (ng > gVisible) scrollbar(c, colX - 6 * d - sbW, listTop, listH, sbW, gFirst, gVisible, ng);
 
         // ---- right: the group's recipes, windowed around the highlight
         float x = colX + pad;
-        if (count == 0) {                                       // an empty Favourites group says so, and how to fill it
+        if (count == 0) {                                       // an empty Favourites or Custom group says so, and how to fill it
             item.setColor(0xCCFFFFFF);
-            c.drawText(Favourites.emptyTitle(), x, listTop + 20 * d, item);
+            c.drawText(Favourites.emptyTitle(g, card), x, listTop + 20 * d, item);
             small.setColor(0x99FFFFFF);
-            c.drawText(Favourites.emptyHint(), x, listTop + 36 * d, small);
+            c.drawText(Favourites.emptyHint(g), x, listTop + 36 * d, small);
         } else {
             float rh = 26 * d;
             int visible = Math.max(1, (int) (listH / rh));
-            int selPos = Math.max(0, Favourites.positionIn(g, selected, favs));
+            int selPos = Math.max(0, Favourites.positionIn(g, selected, favs, lib));
             int first = 0;
             boolean scroll = count > visible;
             if (scroll) { first = Math.max(0, Math.min(selPos - visible / 2, count - visible)); }
             float xr = w - pad - (scroll ? sbW + 6 * d : 0);
             y = listTop;
             for (int k = first; k < Math.min(count, first + visible); k++, y += rh) {
-                int idx = Favourites.recipeAt(g, k, favs); Recipes.Recipe rc = Recipes.ALL[idx];
+                int idx = Favourites.recipeAt(g, k, favs, lib);
                 boolean on = idx == selected, active = on && column == 1;
                 if (on) { r.set(x - 4 * d, y, xr, y + rh); c.drawRoundRect(r, 3 * d, 3 * d, active ? sel : outline); }
+                Recipes.Recipe rc = lib.get(idx);
                 item.setColor(active ? INK : on ? ACCENT : 0xFFFFFFFF); item.setFakeBoldText(on);
-                c.drawText(Recipes.displayName(rc), x, y + 13 * d, item);
+                // under the name only what tells recipes apart: the brand in Favourites, the canonical name under a translated
+                // one — the values are on the chips once it is picked. A row with neither centres its name
+                String original = Recipes.originalName(rc), brand = favGroup ? Recipes.groupLabel(rc.group) : null;
+                String detail = brand != null && original != null ? brand + "  ·  " + original : brand != null ? brand : original;
+                c.drawText(Recipes.displayName(rc), x, detail == null ? y + rh / 2 + item.getTextSize() * 0.36f : y + 13 * d, item);
                 small.setColor(active ? 0xAA1A1208 : 0x80FFFFFF);
-                String detail = rc.summary(), original = Recipes.originalName(rc);   // a translated name keeps the canonical one beside it
-                if (original != null) detail = original + "  ·  " + detail;
-                if (favGroup) detail = Recipes.groupLabel(rc.group) + "  ·  " + detail;
-                c.drawText(detail, x, y + 22 * d, small);
-                float tx = tag(c, rc.isEffect() ? "PE" : "CS", xr - 4 * d, y, active, active ? 0x331A1208 : (rc.isEffect() ? 0x55B8741A : 0x33FFFFFF), active ? INK : 0xCCFFFFFF);
+                if (detail != null) c.drawText(detail, x, y + 22 * d, small);
+                // a Picture Effect recipe works only as JPEG: say so; every other recipe needs no tag
+                float tx = rc.isEffect() ? tag(c, Lang.t("tag_jpeg_only"), xr - 4 * d, y, active, active ? 0x331A1208 : 0x55B8741A, active ? INK : 0xCCFFFFFF) : xr;
                 if (!favGroup && favs.contains(idx)) { star.setColor(active ? INK : ACCENT); Legend.star(c, tx - 4 * d - 6 * d, y + 11 * d, 6 * d, star); }
             }
             item.setFakeBoldText(false);
@@ -132,8 +146,8 @@ public class PickerView extends View {
         }
 
         // ---- footer: icon legend
-        c.drawLine(pad, h - pad - 16 * d, w - pad, h - pad - 16 * d, rule);
-        legend.draw(c, pad, h - pad - 6 * d, w - 2 * pad, Keys.hints(column == 0 ? Keys.H_BRANDS : Keys.H_RECIPES, caps));
+        c.drawLine(pad, legTop - 2 * d, w - pad, legTop - 2 * d, rule);
+        legend.drawWrapped(c, pad, legTop, w - 2 * pad, hints);
     }
 
     /** a small pill ending at {@code right} on the row at {@code y}; returns its left edge */

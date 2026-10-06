@@ -11,7 +11,8 @@ import org.junit.jupiter.api.Test;
 class KeysTest {
     private static final Keys.Caps NONE = new Keys.Caps(false), FN = new Keys.Caps(true);
     private static final int[] EVERY_MODE = { Keys.H_RECIPE, Keys.H_CHIPS, Keys.H_EDIT, Keys.H_BRANDS, Keys.H_RECIPES,
-            Keys.H_MENU_TOP, Keys.H_MENU_SUB, Keys.H_PAGE, Keys.H_LOGGER, Keys.H_MENU_TOP_VALUE, Keys.H_MENU_SUB_VALUE };
+            Keys.H_MENU_TOP, Keys.H_MENU_SUB, Keys.H_PAGE, Keys.H_LOGGER, Keys.H_MENU_TOP_VALUE, Keys.H_MENU_SUB_VALUE,
+            Keys.H_RECIPES_CUSTOM, Keys.H_NAME, Keys.H_ACTIONS };
 
     // ---- press / hold
     @Test void aPressReleasedBeforeTheHoldIsShort() {
@@ -128,6 +129,19 @@ class KeysTest {
         assertEquals(Arrays.asList("edit", "browse", "menu (hold)", "hide", "exit"), Arrays.asList(Keys.hints(Keys.H_CHIPS, FN).labels));
     }
 
+    @Test void onACustomRecipeInTheListAMenuHoldOpensItsOptions() {
+        Keys.Hints h = Keys.hints(Keys.H_RECIPES_CUSTOM, NONE);
+        assertEquals(Arrays.asList("pick", "fav (hold)", "options (hold)", "close"), Arrays.asList(h.labels), "centre still marks a favourite");
+        assertEquals(Keys.I_MENU, h.icons[2], "the options are on MENU");
+    }
+
+    @Test void theNameEditorNamesTypeDeleteAndCancel() {
+        Keys.Hints h = Keys.hints(Keys.H_NAME, FN);
+        assertEquals(Arrays.asList("move", "type", "delete", "cancel"), Arrays.asList(h.labels));
+        assertEquals(Keys.I_TRASH, h.icons[2], "trash deletes a character, on every body");
+        assertEquals(Keys.I_MENU, h.icons[3]);
+    }
+
     @Test void fnJoinsTheLegendWhenTheBodyHasIt() {
         for (int mode : new int[] { Keys.H_RECIPE, Keys.H_CHIPS }) {
             Keys.Hints h = Keys.hints(mode, FN);
@@ -187,5 +201,33 @@ class KeysTest {
     @Test void theNoticeUsesOnlyCharactersTheCameraFontHas() {
         // the firmware font has no arrows or symbols (Legend); the notice is plain text in a toast
         for (char ch : Keys.notice().toCharArray()) assertTrue(ch < 0x2190, "U+" + Integer.toHexString(ch) + " in the notice");
+    }
+
+    // ---- wrapping the legend
+    private static float[] w(float... widths) { return widths; }
+
+    @Test void aRowThatFitsStaysOnOneLine() {
+        assertArrayEquals(new int[] { 3 }, Keys.lineCounts(w(10, 10, 10), 40, 5));
+        assertArrayEquals(new int[] { 1 }, Keys.lineCounts(w(10), 5, 5), "one item alone is one line, however wide");
+    }
+
+    @Test void aRowThatDoesNotFitWrapsEvenly() {
+        assertArrayEquals(new int[] { 4, 3 }, Keys.lineCounts(w(10, 10, 10, 10, 10, 10, 10), 85, 5),
+                "greedy would give 6 + 1; the same two lines share the seven items");
+        assertArrayEquals(new int[] { 2, 2, 2 }, Keys.lineCounts(w(10, 10, 10, 10, 10, 10), 25, 5));
+    }
+
+    @Test void unevenWidthsFallBackToFillingLineByLine() {
+        // an even 2 + 2 would put 30 + 5 + 30 = 65 on one line, past 50
+        assertArrayEquals(new int[] { 1, 2, 1 }, Keys.lineCounts(w(30, 30, 10, 30), 50, 5));
+    }
+
+    @Test void everyItemIsPlacedOnceInOrder() {
+        float[] widths = { 12, 40, 7, 33, 21, 9, 50, 14 };
+        for (float width : new float[] { 30, 60, 90, 200 }) {
+            int sum = 0;
+            for (int n : Keys.lineCounts(widths, width, 4)) { assertTrue(n > 0, "no empty line"); sum += n; }
+            assertEquals(widths.length, sum, "width " + width);
+        }
     }
 }

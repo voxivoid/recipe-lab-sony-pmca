@@ -5,6 +5,8 @@
     android:versionName="1.5.0">
     <uses-sdk android:minSdkVersion="10" android:targetSdkVersion="10" />
     <uses-permission android:name="android.permission.CAMERA" />
+    <!-- custom recipes: one file each in RECIPES on the memory card -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <application android:label="@string/app_name" android:icon="@drawable/ic_launcher">
         <activity android:name=".MainActivity" android:label="@string/app_name"
             android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen" android:screenOrientation="landscape">

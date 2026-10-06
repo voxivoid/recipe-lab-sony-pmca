@@ -6,7 +6,7 @@ import android.graphics.Typeface;
 import android.util.AttributeSet;
 import android.view.View;
 
-/** Key legend under the main panel, for the keys this body has ({@link Keys#hints}). */
+/** Key legend under the main panel, for the keys this body has ({@link Keys#hints}), on as many lines as it needs. */
 public class HintBar extends View {
     public static final int RECIPE = Keys.H_RECIPE, CHIPS = Keys.H_CHIPS, EDIT = Keys.H_EDIT;
 
@@ -19,19 +19,22 @@ public class HintBar extends View {
         legend = new Legend(c.getResources().getDisplayMetrics().density);
     }
 
-    public void setMode(int m) { if (mode != m) { mode = m; invalidate(); } }
+    public void setMode(int m) { if (mode != m) { mode = m; requestLayout(); invalidate(); } }   // another row may need another line count
 
     /** what the key probe found; until it is set only the universal keys are named */
-    public void setCaps(Keys.Caps k) { caps = k; invalidate(); }
+    public void setCaps(Keys.Caps k) { caps = k; requestLayout(); invalidate(); }
 
     /** the display language's typeface ({@link UiFont}); the labels themselves come from {@link Keys#hints} as it draws */
-    public void setTypeface(Typeface tf) { legend.setTypeface(tf); invalidate(); }
+    public void setTypeface(Typeface tf) { legend.setTypeface(tf); requestLayout(); invalidate(); }
 
     @Override
-    protected void onMeasure(int w, int h) { setMeasuredDimension(MeasureSpec.getSize(w), (int) legend.height()); }
+    protected void onMeasure(int w, int h) {
+        int width = MeasureSpec.getSize(w);
+        setMeasuredDimension(width, (int) Math.ceil(legend.height(legend.lines(width, Keys.hints(mode, caps)))));
+    }
 
     @Override
     protected void onDraw(Canvas c) {
-        legend.draw(c, 0, getHeight() / 2f, getWidth(), Keys.hints(mode, caps));
+        legend.drawWrapped(c, 0, 0, getWidth(), Keys.hints(mode, caps));
     }
 }

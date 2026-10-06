@@ -11,7 +11,7 @@ No. Recipe Lab sets the same camera settings you could set by hand in the menus,
 it always has: the look is baked into the **JPEG**, the RAW stays a RAW. Shoot RAW+JPEG and you get a processed JPEG
 next to an untouched raw file, exactly as before.
 
-The one catch is the recipes marked **PE**, which are built on a Picture Effect. The A6000 refuses to apply a Picture
+The one catch is the recipes marked **JPEG only**, which are built on a Picture Effect. The A6000 refuses to apply a Picture
 Effect unless Quality is a JPEG setting — with RAW or RAW+JPEG selected it silently drops the effect. So when storing
 one of those would change your Quality, the app asks first:
 
@@ -74,9 +74,13 @@ up for on the A6000.
 
 ## Can I make my own recipes and save them?
 
-Not today. The 77 recipes are built into the app, and you can adjust a recipe's values before storing it — the chips
-in the app row — but there is no way to name and keep your own. It is the most requested feature and it is being
-thought about; nothing is promised.
+Yes. Change a recipe's chips and the app offers to save the result as a **custom recipe**, under a name you type on
+an on-screen keyboard; **hold MENU → New recipe** keeps whatever the camera has stored right now. They
+are YAML files in a `RECIPES` folder on the memory card, so you can back them up, edit them on a computer and share
+them by copying the files. See [Custom recipes](../README.md#custom-recipes).
+
+They live on the card, not in the app: removing the app keeps them, **formatting the card deletes them**, and a
+different card has its own.
 
 ## Can it use LUTs, like JPEG.CAM does?
 

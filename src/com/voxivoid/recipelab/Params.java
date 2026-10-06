@@ -58,8 +58,10 @@ final class Params {
     static String qualityLabel(int q) { return q >= 0 && q < Q_LABEL.length ? Lang.label("quality_" + Lang.slug(Q_LABEL[q]), Q_LABEL[q]) : "?" + q; }
     /** chip display / navigation order (quality first) */
     static final int[] ORDER = { R_QUAL, R_STYLE, R_SAT, R_CON, R_SHARP, R_PE, R_SUB, R_WBMODE, R_KELVIN, R_AB, R_GM, R_EV, R_DRO };   // R_PP has no chip
-    /** the overlay MainActivity is in: the full panel, the pill, nothing, or the browser */
-    static final int OV_FULL = 0, OV_PILL = 1, OV_HIDDEN = 2, OV_BROWSER = 3;
+    /** the overlay MainActivity is in: the full panel, the pill, nothing, the browser, or the full panel without its key legend */
+    static final int OV_FULL = 0, OV_PILL = 1, OV_HIDDEN = 2, OV_BROWSER = 3, OV_QUIET = 4;
+    /** whether the overlay shows the full panel, with its chips — with or without the key legend under it */
+    static boolean panelUp(int overlay) { return overlay == OV_FULL || overlay == OV_QUIET; }
     /** the browser's two columns */
     static final int COL_GROUPS = 0, COL_RECIPES = 1;
     /** what a short press of the centre button does, by where the user is */
@@ -283,6 +285,49 @@ final class Params {
         edit[R_PE] = r.pe; edit[R_EV] = r.ev; edit[R_DRO] = r.dro; edit[R_SUB] = r.sub;
     }
 
+    /**
+     * Whether the staged rows hold a look the recipe does not: what makes an edit worth keeping as a custom recipe.
+     * Quality is not part of a recipe (it follows the Factory base) and neither is PP; the kelvin row only counts in
+     * kelvin mode, and the sub-setting only for an effect that has one — a chip the recipe would not show.
+     */
+    static boolean differsFromRecipe(Recipes.Recipe r, int[] edit) {
+        int[] want = edit.clone();
+        stage(r, want);
+        return !sameLook(want, edit);
+    }
+
+    /**
+     * Whether two sets of rows are the same look: every row a recipe holds, quality and PP aside, the kelvin row only in
+     * kelvin mode and the sub-setting only for an effect that has one — both read from {@code a}.
+     */
+    static boolean sameLook(int[] a, int[] b) {
+        for (int i = 1; i < N; i++) {
+            if (i == R_QUAL || i == R_PP) continue;
+            if (i == R_KELVIN && a[R_WBMODE] != WB_KELVIN) continue;
+            if (i == R_SUB && Recipes.subValues(a[R_PE]) == null) continue;
+            if (a[i] != b[i]) return false;
+        }
+        return true;
+    }
+
+    /** rows as the app's preferences keep them: "0,2,-1,…", one value per row */
+    static String rowsText(int[] rows) {
+        StringBuilder s = new StringBuilder();
+        for (int i = 0; i < rows.length; i++) { if (i > 0) s.append(','); s.append(rows[i]); }
+        return s.toString();
+    }
+
+    /** the rows {@link #rowsText} wrote; null for anything else — a stored string from a build with other rows is no look */
+    static int[] rowsFrom(String s) {
+        if (s == null) return null;
+        String[] parts = s.split(",");
+        if (parts.length != N) return null;
+        int[] rows = new int[N];
+        try { for (int i = 0; i < N; i++) rows[i] = Integer.parseInt(parts[i].trim()); }
+        catch (NumberFormatException e) { return null; }
+        return rows;
+    }
+
     // ------------------------------------------------------------ live preview
     private static int clamp(int v, int lo, int hi) { return Math.max(lo, Math.min(hi, v)); }
 
@@ -354,6 +399,15 @@ final class Params {
         return ORDER[pos];
     }
 
+    /** the panel's lines, top to bottom: the recipe name, the chips, and the edit buttons while the recipe is edited */
+    static final int LINE_RECIPE = 0, LINE_CHIPS = 1, LINE_ACTIONS = 2;
+
+    /** UP / DOWN between the lines, wrapping: down goes recipe → chips → buttons → recipe; without buttons, recipe ↔ chips */
+    static int nextLine(int line, int dir, boolean actions) {
+        int n = actions ? 3 : 2, at = Math.min(line, n - 1);
+        return (at + n + (dir > 0 ? 1 : -1)) % n;
+    }
+
     /** the chip to land on when leaving the recipe line: the last one used if still visible, else the first visible */
     static int enterChips(int lastChip, int[] edit) {
         if (lastChip != R_RECIPE && rowVisible(lastChip, edit)) return lastChip;
@@ -367,7 +421,7 @@ final class Params {
      * full panel up and the highlight off the recipe line — under the pill, or with the overlay hidden, there are no
      * chips to act on.
      */
-    static boolean onRecipeLine(int overlay, int row) { return row == R_RECIPE || overlay != OV_FULL; }
+    static boolean onRecipeLine(int overlay, int row) { return row == R_RECIPE || !panelUp(overlay); }
 
     /**
      * Whether a hold on the centre button marks a favourite where the user is. It does wherever a recipe is what the
@@ -409,26 +463,21 @@ final class Params {
         }
     }
 
-    /** the line under the recipe name; {@code previewErr} is null while the live preview works */
-    static String metaLine(int[] cur, int[] edit, String previewErr) {
+    /**
+     * The line under the recipe name: only what the chips cannot say — a Picture Effect that RAW would drop, and a live
+     * preview the camera refused ({@code previewErr}, null while it works). Empty when there is neither, and the line
+     * is hidden; the values themselves are on the chips.
+     */
+    static String metaLine(int[] edit, String previewErr) {
         StringBuilder m = new StringBuilder();
-        if (edit[R_PE] != 0) {
-            String pe = Recipes.peLabel(edit[R_PE]), sl = Recipes.subLabel(edit[R_PE], edit[R_SUB]);
-            m.append(Lang.t("meta_picture_effect", sl == null ? pe : pe + " " + sl)).append(' ').append(Lang.t("meta_effect_note"));
-        } else m.append(Recipes.styleLabel(edit[R_STYLE]));
-        String wb = edit[R_WBMODE] == WB_KELVIN ? (edit[R_KELVIN] * 100) + "K" : edit[R_WBMODE] == WB_AUTO ? Lang.t("value_auto") : Lang.t("meta_wb_mode", edit[R_WBMODE]);
-        m.append("  ·  ").append(Lang.t("meta_white_balance", wb));
-        if (edit[R_EV] != 0) m.append("  ·  ").append(Lang.t("meta_ev", Recipes.evLabel(edit[R_EV])));
-        if (edit[R_DRO] != Recipes.DRO_AUTO) m.append("  ·  ").append(Lang.t("meta_dro", Recipes.droLabel(edit[R_DRO])));
-        if (edit[R_QUAL] != cur[R_QUAL]) m.append("  ·  ").append(Lang.t("meta_quality_change", qualityLabel(edit[R_QUAL]), qualityLabel(cur[R_QUAL])));
-        if (edit[R_PE] != 0 && edit[R_QUAL] <= Q_RAWJPG) m.append("  ·  ").append(Lang.t("meta_raw_effect_ignored"));
-        if (previewErr != null) m.append("  ·  ").append(Lang.t("meta_no_preview", previewErr));
+        if (edit[R_PE] != 0 && edit[R_QUAL] <= Q_RAWJPG) m.append(Lang.t("meta_raw_effect_ignored"));
+        if (previewErr != null) m.append(m.length() > 0 ? "  ·  " : "").append(Lang.t("meta_no_preview", previewErr));
         return m.toString();
     }
 
-    /** the one-line pill of the minimal overlay */
-    static String miniLine(int recipe, int[] cur, int[] edit, boolean dirty) {
-        return (edit[R_PE] != 0 ? "PE  " : "CS  ") + Recipes.displayName(Recipes.ALL[recipe]) + "   " + (recipe + 1) + " / " + Recipes.ALL.length
+    /** the one-line pill of the minimal overlay; {@code position} as the panel counts it (Library.position) */
+    static String miniLine(Recipes.Recipe recipe, String position, int[] cur, int[] edit, boolean dirty) {
+        return (edit[R_PE] != 0 ? Lang.t("tag_jpeg_only") + "  " : "") + Recipes.displayName(recipe) + "   " + position
                 + "   · " + Lang.t(dirty ? "mini_preview" : "mini_active")
                 + (edit[R_QUAL] != cur[R_QUAL] ? "   · " + Lang.t("mini_quality", qualityLabel(edit[R_QUAL])) : "");
     }

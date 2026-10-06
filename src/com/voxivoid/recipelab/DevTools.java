@@ -20,7 +20,16 @@ final class DevTools {
     static final int LEVEL_APP = 0, LEVEL_DEV = 1;
 
     /** app menu rows, in display order */
-    static final int APP_BROWSE = 0, APP_PANEL = 1, APP_LANG = 2, APP_RESET = 3, APP_ABOUT = 4, APP_DEV = 5, APP_ROWS = 6;
+    static final int APP_BROWSE = 0, APP_NEW = 1, APP_PANEL = 2, APP_LANG = 3, APP_RESET = 4, APP_ABOUT = 5, APP_DEV = 6, APP_ROWS = 7;
+
+    /** the icons the menus draw beside their rows (MenuView draws them: the camera font has no symbol glyphs) */
+    static final int IC_BROWSE = 0, IC_NEW = 1, IC_PANEL = 2, IC_LANGUAGE = 3, IC_RESET = 4, IC_ABOUT = 5, IC_DEV = 6,
+            IC_SNAPSHOT = 7, IC_LOCK = 8, IC_SAMPLES = 9, IC_CLOCK = 10, IC_KEYS = 11;
+    private static final int[] APP_ICONS = { IC_BROWSE, IC_NEW, IC_PANEL, IC_LANGUAGE, IC_RESET, IC_ABOUT, IC_DEV };
+    private static final int[] DEV_ICONS = { IC_SNAPSHOT, IC_LOCK, IC_SAMPLES, IC_CLOCK, IC_KEYS };
+
+    /** the icon of each row of a level, in row order */
+    static int[] icons(int level) { return (level == LEVEL_APP ? APP_ICONS : DEV_ICONS).clone(); }
 
     /** developer menu rows, in display order */
     static final int ROW_SNAPSHOT = 0, ROW_LOCKS = 1, ROW_SAMPLES = 2, ROW_SETTLE = 3, ROW_KEYS = 4, ROWS = 5;
@@ -52,6 +61,7 @@ final class DevTools {
     static String appLabel(int row) {
         switch (row) {
             case APP_BROWSE: return Lang.t("menu_browse");
+            case APP_NEW: return Lang.t("menu_new");
             case APP_PANEL: return Lang.t("menu_panel");
             case APP_LANG: return Lang.t("menu_language");
             case APP_RESET: return Lang.t("menu_reset");
@@ -65,6 +75,7 @@ final class DevTools {
     static String appDetail(int row) {
         switch (row) {
             case APP_BROWSE: return Lang.t("menu_browse_detail");
+            case APP_NEW: return Lang.t("menu_new_detail");
             case APP_PANEL: return Lang.t("menu_panel_detail");
             case APP_LANG: return Lang.t("menu_language_detail");
             case APP_RESET: return Lang.t("menu_reset_detail");
@@ -91,27 +102,50 @@ final class DevTools {
     static String panelLabel(int overlay) {
         switch (overlay) {
             case Params.OV_FULL: return Lang.t("panel_full");
+            case Params.OV_QUIET: return Lang.t("panel_no_keys");
             case Params.OV_PILL: return Lang.t("panel_label");
             case Params.OV_HIDDEN: return Lang.t("panel_hidden");
             default: return "?";
         }
     }
 
-    /** the panel state left / right lands on: full → label → hidden, wrapping; the browser is never one of them */
+    /** the panel states in the order trash and the Panel visibility row walk them */
+    static final int[] PANELS = { Params.OV_FULL, Params.OV_QUIET, Params.OV_PILL, Params.OV_HIDDEN };
+
+    /** the panel state trash or left / right lands on: full → no keys → label → hidden, wrapping; the browser is never one of them */
     static int nextPanel(int overlay, int dir) {
-        int o = overlay >= Params.OV_FULL && overlay <= Params.OV_HIDDEN ? overlay : Params.OV_FULL;
-        return (o + 3 + dir) % 3;
+        int pos = 0;                                              // from anything else — the browser — as from full
+        for (int i = 0; i < PANELS.length; i++) if (PANELS[i] == overlay) pos = i;
+        return PANELS[(pos + PANELS.length + dir) % PANELS.length];
     }
 
-    /** the About page: {name, value}. The version comes from the installed package at runtime, never from here. */
-    static String[][] about(String version, String model, String platform) {
+    /**
+     * The About page: {name, value}. The version comes from the installed package at runtime, never from here. The sponsor
+     * ask goes under it ({@link #aboutFooter}).
+     */
+    static String[][] about(String version, String model, String firmware, String platform) {
         return new String[][] {
             { Lang.t("about_version"), orShown(version) },
             { Lang.t("about_camera"), orShown(model) },
+            { Lang.t("about_firmware"), orShown(firmware) },
             { Lang.t("about_platform"), orShown(platform) },
             { Lang.t("about_source"), "github.com/voxivoid/recipe-lab-sony-pmca" },
         };
     }
+
+    /**
+     * The About page's footer, centred under the facts: the sponsor ask (drawn after a heart), then where to give —
+     * Ko-fi first, as it needs no GitHub account.
+     */
+    static String[] aboutFooter() {
+        return new String[] { Lang.t("about_love"), SPONSOR_URL, "github.com/sponsors/voxivoid" };
+    }
+
+    /** the line at the top of the live view, after its drawn heart: the ask and where to give */
+    static String sponsorLine() { return Lang.t("about_love") + "  " + SPONSOR_URL; }
+
+    /** where the sponsor ask sends people: Ko-fi, which needs no account anywhere */
+    static final String SPONSOR_URL = "ko-fi.com/voxivoid";
 
     // ------------------------------------------------------------ the reset question (hold trash, or Reset settings)
     /** the question asked before the factory look is stored: it replaces whatever the camera has now */

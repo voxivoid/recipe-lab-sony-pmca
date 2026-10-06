@@ -46,7 +46,7 @@ class ParamsEnterTest {
 
     @Test void aHoldNeverStealsTheKeyFromFocusingAChip() {
         // the two must agree: wherever a hold marks, the short press is a pick; wherever it focuses, a hold is inert
-        for (int overlay : new int[] { OV_FULL, OV_PILL, OV_HIDDEN, OV_BROWSER }) {
+        for (int overlay : new int[] { OV_FULL, OV_QUIET, OV_PILL, OV_HIDDEN, OV_BROWSER }) {
             for (int row : new int[] { R_RECIPE, R_SAT, R_QUAL }) {
                 for (int col : new int[] { COL_GROUPS, COL_RECIPES }) {
                     int action = enterAction(overlay, row, col);
@@ -57,6 +57,32 @@ class ParamsEnterTest {
                 }
             }
         }
+    }
+
+    @Test void thePanelWithoutKeysIsTheFullPanel() {
+        assertTrue(panelUp(OV_FULL));
+        assertTrue(panelUp(OV_QUIET));
+        assertFalse(panelUp(OV_PILL));
+        assertFalse(panelUp(OV_HIDDEN));
+        assertFalse(panelUp(OV_BROWSER));
+        assertFalse(onRecipeLine(OV_QUIET, R_SAT), "its chips take the keys as with the legend");
+        assertEquals(ENTER_FOCUS, enterAction(OV_QUIET, R_SAT, COL_RECIPES));
+        assertTrue(menuHoldArms(OV_QUIET, false));
+    }
+
+    @Test void downWalksRecipeChipsButtonsAndWraps() {
+        assertEquals(LINE_CHIPS, nextLine(LINE_RECIPE, +1, true));
+        assertEquals(LINE_ACTIONS, nextLine(LINE_CHIPS, +1, true));
+        assertEquals(LINE_RECIPE, nextLine(LINE_ACTIONS, +1, true));
+        assertEquals(LINE_ACTIONS, nextLine(LINE_RECIPE, -1, true), "up from the recipe name wraps to the buttons");
+        assertEquals(LINE_CHIPS, nextLine(LINE_ACTIONS, -1, true));
+    }
+
+    @Test void withoutEditsThereAreNoButtonsToLandOn() {
+        assertEquals(LINE_CHIPS, nextLine(LINE_RECIPE, +1, false));
+        assertEquals(LINE_RECIPE, nextLine(LINE_CHIPS, +1, false), "as before the buttons: recipe and chips toggle");
+        assertEquals(LINE_CHIPS, nextLine(LINE_RECIPE, -1, false));
+        assertEquals(LINE_RECIPE, nextLine(LINE_ACTIONS, +1, false), "buttons that just went away count as the chips");
     }
 
     @Test void aMenuHoldOpensTheAppMenuFromTheLiveScreen() {

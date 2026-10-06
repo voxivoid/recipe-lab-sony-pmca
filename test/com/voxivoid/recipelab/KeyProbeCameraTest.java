@@ -46,6 +46,15 @@ class KeyProbeCameraTest {
         assertEquals(Integer.valueOf(1103), KeyProbe.logic(706, 4));
     }
 
+    @Test void theFirmwareVersionComesFromItsOwnMethod() {
+        ScalarProperties.setFirmware(" 3.21 ");
+        assertEquals("3.21", KeyProbe.firmware());
+        ScalarProperties.setFirmware("");
+        assertNull(KeyProbe.firmware(), "empty means unknown");
+        ScalarProperties.clearFirmware();                     // as off the camera again, whatever test runs next
+        assertNull(KeyProbe.firmware(), "a camera that will not say");
+    }
+
     @Test void propertiesComeBackAsStringsAndEmptyMeansUnknown() {
         ScalarProperties.set("test.model", "ILCE-5100");
         ScalarProperties.set("test.empty", "");

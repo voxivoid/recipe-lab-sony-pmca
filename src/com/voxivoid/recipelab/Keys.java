@@ -115,9 +115,13 @@ final class Keys {
     static final int I_NONE = -1, I_WHEEL = 0, I_UPDOWN = 1, I_LEFTRIGHT = 2, I_DIAL = 3, I_ENTER = 4, I_TRASH = 6,
             I_MENU = 7, I_FN = 9;
 
-    /** the legend rows: the main panel's three, the browser's two columns, and the menu's — *_VALUE on a row left / right change */
+    /**
+     * The legend rows: the main panel's three, the browser's two columns, and the menu's — *_VALUE on a row left / right
+     * change. H_RECIPES_CUSTOM on a custom recipe in the brand list, where a MENU hold opens its options; H_NAME under the name editor; H_ACTIONS on the edit buttons.
+     */
     static final int H_RECIPE = 0, H_CHIPS = 1, H_EDIT = 2, H_BRANDS = 3, H_RECIPES = 4, H_MENU_TOP = 5, H_MENU_SUB = 6,
-            H_PAGE = 7, H_LOGGER = 8, H_MENU_TOP_VALUE = 9, H_MENU_SUB_VALUE = 10;
+            H_PAGE = 7, H_LOGGER = 8, H_MENU_TOP_VALUE = 9, H_MENU_SUB_VALUE = 10, H_RECIPES_CUSTOM = 12,
+            H_NAME = 14, H_ACTIONS = 15;
 
     /** one legend row: per item an icon, an optional shortcut icon drawn before it (I_NONE for none), and a label */
     static final class Hints {
@@ -152,7 +156,8 @@ final class Keys {
             case H_RECIPE: {
                 Row r = new Row().add(I_ENTER, Lang.t("action_pick"));
                 if (caps.hasFn()) r.add(I_FN, Lang.t("action_browse"));
-                return r.add(I_ENTER, Lang.t("action_favourite_hold")).add(I_MENU, Lang.t("action_menu_hold")).add(I_TRASH, Lang.t("action_hide")).add(I_MENU, Lang.t("action_exit")).done();
+                r.add(I_ENTER, Lang.t("action_favourite_hold"));
+                return r.add(I_MENU, Lang.t("action_menu_hold")).add(I_TRASH, Lang.t("action_hide")).add(I_MENU, Lang.t("action_exit")).done();
             }
             case H_CHIPS: {
                 Row r = new Row().add(I_ENTER, Lang.t("action_edit"));
@@ -160,8 +165,12 @@ final class Keys {
                 return r.add(I_MENU, Lang.t("action_menu_hold")).add(I_TRASH, Lang.t("action_hide")).add(I_MENU, Lang.t("action_exit")).done();
             }
             case H_EDIT: return new Row().add(I_ENTER, Lang.t("action_done")).done();
+            case H_ACTIONS: return new Row().add(I_LEFTRIGHT, Lang.t("action_move")).add(I_ENTER, Lang.t("action_select")).add(I_MENU, Lang.t("action_exit")).done();
             case H_BRANDS: return new Row().add(I_ENTER, Lang.t("action_recipes")).add(I_MENU, fn, Lang.t("action_close")).done();
             case H_RECIPES: return new Row().add(I_ENTER, Lang.t("action_pick")).add(I_ENTER, Lang.t("action_favourite_hold")).add(I_MENU, fn, Lang.t("action_close")).done();
+            case H_RECIPES_CUSTOM: return new Row().add(I_ENTER, Lang.t("action_pick")).add(I_ENTER, Lang.t("action_favourite_hold"))
+                    .add(I_MENU, Lang.t("action_options_hold")).add(I_MENU, fn, Lang.t("action_close")).done();
+            case H_NAME: return new Row().add(I_UPDOWN, Lang.t("action_move")).add(I_ENTER, Lang.t("action_type")).add(I_TRASH, Lang.t("action_delete_char")).add(I_MENU, Lang.t("action_cancel")).done();
             case H_MENU_TOP: return new Row().add(I_UPDOWN, Lang.t("action_move")).add(I_ENTER, Lang.t("action_select")).add(I_MENU, Lang.t("action_close")).done();
             case H_MENU_SUB: return new Row().add(I_UPDOWN, Lang.t("action_move")).add(I_ENTER, Lang.t("action_select")).add(I_MENU, Lang.t("action_back")).done();
             case H_MENU_TOP_VALUE: return new Row().add(I_UPDOWN, Lang.t("action_move")).add(I_LEFTRIGHT, Lang.t("action_change")).add(I_MENU, Lang.t("action_close")).done();
@@ -170,6 +179,38 @@ final class Keys {
             case H_LOGGER: return new Row().add(I_MENU, Lang.t("action_exit_hold")).done();
             default: return new Row().done();
         }
+    }
+
+    /**
+     * How a legend row breaks into lines when it does not fit {@code width} at full size: the number of items on each line,
+     * in order. {@code widths} are the items' own widths, {@code gap} the least space between two. As few lines as
+     * greedy filling needs, then the items spread evenly over them when that still fits — seven items as 4 + 3, not
+     * 6 + 1. An item wider than the line gets a line to itself (the legend shrinks that one to fit).
+     */
+    static int[] lineCounts(float[] widths, float width, float gap) {
+        List<Integer> greedy = new ArrayList<Integer>();
+        int n = 0; float used = 0;
+        for (float w : widths) {
+            float need = n == 0 ? w : used + gap + w;
+            if (n > 0 && need > width) { greedy.add(n); n = 0; need = w; }
+            used = need; n++;
+        }
+        if (n > 0) greedy.add(n);
+        int lines = greedy.size(), total = widths.length;
+        if (lines > 1) {                                          // the same number of lines, items shared out evenly
+            int[] even = new int[lines];
+            for (int i = 0; i < lines; i++) even[i] = total / lines + (i < total % lines ? 1 : 0);
+            boolean fits = true;
+            for (int i = 0, at = 0; i < lines && fits; at += even[i], i++) {
+                float w = 0;
+                for (int k = at; k < at + even[i]; k++) w += widths[k] + (k > at ? gap : 0);
+                fits = w <= width || even[i] == 1;
+            }
+            if (fits) return even;
+        }
+        int[] out = new int[lines];
+        for (int i = 0; i < lines; i++) out[i] = greedy.get(i);
+        return out;
     }
 
     /** shown once, on the first launch of a build with these keys */

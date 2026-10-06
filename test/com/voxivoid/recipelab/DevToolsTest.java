@@ -61,8 +61,20 @@ class DevToolsTest {
         assertEquals(DevTools.ROWS, DevTools.rows(DevTools.LEVEL_DEV));
         String[] labels = new String[DevTools.APP_ROWS];
         for (int r = 0; r < DevTools.APP_ROWS; r++) labels[r] = DevTools.appLabel(r);
-        assertEquals(Arrays.asList("Browse recipes", "Panel visibility", "Language", "Reset settings", "About", "Developer  >"), Arrays.asList(labels));
+        assertEquals(Arrays.asList("Browse recipes", "New recipe", "Panel visibility", "Language", "Reset settings", "About", "Developer  >"), Arrays.asList(labels));
+        assertTrue(DevTools.appDetail(DevTools.APP_NEW).contains("current settings"), "the row says what it keeps");
         assertEquals(DevTools.APP_BROWSE, 0, "the menu opens on Browse, so a body without Fn is one press from the list");
+    }
+
+    @Test void everyMenuRowHasItsOwnIcon() {
+        for (int level : new int[] { DevTools.LEVEL_APP, DevTools.LEVEL_DEV }) {
+            int[] icons = DevTools.icons(level);
+            assertEquals(DevTools.rows(level), icons.length, "one icon per row, level " + level);
+            java.util.Set<Integer> seen = new java.util.HashSet<Integer>();
+            for (int ic : icons) assertTrue(seen.add(ic), "level " + level + " repeats icon " + ic);
+        }
+        assertEquals(DevTools.IC_NEW, DevTools.icons(DevTools.LEVEL_APP)[DevTools.APP_NEW]);
+        assertEquals(DevTools.IC_LANGUAGE, DevTools.icons(DevTools.LEVEL_APP)[DevTools.APP_LANG]);
     }
 
     @Test void everyAppRowHasADetailLine() {
@@ -71,12 +83,13 @@ class DevToolsTest {
 
     @Test void onlyThePanelAndLanguageRowsHaveAValue() {
         assertEquals("Full", DevTools.appValue(DevTools.APP_PANEL, Params.OV_FULL, Lang.AUTO));
+        assertEquals("No keys", DevTools.appValue(DevTools.APP_PANEL, Params.OV_QUIET, Lang.AUTO));
         assertEquals("Label", DevTools.appValue(DevTools.APP_PANEL, Params.OV_PILL, Lang.AUTO));
         assertEquals("Hidden", DevTools.appValue(DevTools.APP_PANEL, Params.OV_HIDDEN, Lang.AUTO));
         for (int r = 0; r < DevTools.APP_ROWS; r++)
             if (r != DevTools.APP_PANEL && r != DevTools.APP_LANG) assertNull(DevTools.appValue(r, Params.OV_FULL, Lang.AUTO), "row " + r);
-        assertTrue(DevTools.appDetail(DevTools.APP_PANEL).contains("left / right"), "the row says how to change it");
-        assertTrue(DevTools.appDetail(DevTools.APP_LANG).contains("left / right"), "the row says how to change it");
+        assertFalse(DevTools.appDetail(DevTools.APP_PANEL).contains("left / right"), "the drawn arrows say how to change it");
+        assertFalse(DevTools.appDetail(DevTools.APP_LANG).contains("left / right"));
     }
 
     @Test void theLanguageRowNamesEachLanguageInItsOwnScript() {
@@ -87,11 +100,12 @@ class DevToolsTest {
     }
 
     @Test void leftRightWalkThePanelStatesAndWrap() {
-        assertEquals(Params.OV_PILL, DevTools.nextPanel(Params.OV_FULL, +1));
+        assertEquals(Params.OV_QUIET, DevTools.nextPanel(Params.OV_FULL, +1), "the panel without its key legend comes second");
+        assertEquals(Params.OV_PILL, DevTools.nextPanel(Params.OV_QUIET, +1));
         assertEquals(Params.OV_HIDDEN, DevTools.nextPanel(Params.OV_PILL, +1));
         assertEquals(Params.OV_FULL, DevTools.nextPanel(Params.OV_HIDDEN, +1));
         assertEquals(Params.OV_HIDDEN, DevTools.nextPanel(Params.OV_FULL, -1));
-        assertEquals(Params.OV_PILL, DevTools.nextPanel(Params.OV_BROWSER, +1), "never lands on the browser; from it, starts at full");
+        assertEquals(Params.OV_QUIET, DevTools.nextPanel(Params.OV_BROWSER, +1), "never lands on the browser; from it, starts at full");
     }
 
     @Test void theSettleRowShowsItsDelayAsAValue() {
@@ -119,14 +133,21 @@ class DevToolsTest {
     }
 
     // ---- About
-    @Test void aboutShowsVersionCameraPlatformAndSource() {
-        String[][] a = DevTools.about("9.8.7", null, "");
-        assertEquals(4, a.length);
+    @Test void aboutShowsVersionCameraFirmwarePlatformAndSource() {
+        String[][] a = DevTools.about("9.8.7", null, "3.21", "");
+        assertEquals(5, a.length, "the facts; the sponsor ask is the footer");
         assertEquals("version", a[0][0]); assertEquals("9.8.7", a[0][1]);
         assertEquals("camera", a[1][0]); assertEquals("unknown", a[1][1], "no model from the camera");
-        assertEquals("platform", a[2][0]); assertEquals("unknown", a[2][1], "an empty platform string");
-        assertEquals("source", a[3][0]);
-        assertEquals("ILCE-6000", DevTools.about(null, "ILCE-6000", "2.4")[1][1]);
+        assertEquals("firmware", a[2][0]); assertEquals("3.21", a[2][1]);
+        assertEquals("platform", a[3][0]); assertEquals("unknown", a[3][1], "an empty platform string");
+        assertEquals("source", a[4][0]);
+        assertEquals("unknown", DevTools.about(null, null, null, null)[2][1], "no firmware from the camera");
+        String[] f = DevTools.aboutFooter();
+        assertEquals("Do you love this project? Sponsor it!", f[0], "the README's ask");
+        assertEquals("ko-fi.com/voxivoid", f[1], "Ko-fi first: no GitHub account needed");
+        assertEquals("github.com/sponsors/voxivoid", f[2]);
+        assertEquals("Do you love this project? Sponsor it!  ko-fi.com/voxivoid", DevTools.sponsorLine(), "the live view's line");
+        assertEquals("ILCE-6000", DevTools.about(null, "ILCE-6000", null, "2.4")[1][1]);
     }
 
     @Test void theKeysLineSortsPresentAbsentAndUnknown() {
