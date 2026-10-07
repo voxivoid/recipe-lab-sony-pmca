@@ -35,7 +35,7 @@ import static com.voxivoid.recipelab.Params.*;
  * Preview = runtime camera parameters. ENTER picks the recipe: writes its bytes + sync → power-cycle applies it everywhere.
  *
  * Keys (issue #18 — every function on keys every body has; Fn is a shortcut where it exists, see {@link Keys}):
- *       wheel / LEFT / RIGHT recipe · UP / DOWN parameter · top dial adjust · ENTER pick · hold ENTER favourite
+ *       wheel / dial / LEFT / RIGHT recipe, chip or value · UP / DOWN line · ENTER pick · hold ENTER favourite
  *       TRASH overlay: full → pill → hidden · hold TRASH reset (asks first) · hold MENU app menu (browse, panel,
  *       language, reset, about, developer) · SHUTTER photo · MENU exit · Fn brand browser
  *       hold MENU on a custom recipe in the brand list: its options (rename, delete); a short MENU still closes the list
@@ -417,9 +417,9 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     }
 
     private boolean promptKey(int sc) {
+        int dir = sc == K_LEFT ? -1 : sc == K_RIGHT ? +1 : turn(sc);
+        if (dir != 0) { promptSel = (promptSel + promptOptions() + dir) % promptOptions(); renderPrompt(); return true; }
         switch (sc) {
-            case K_LEFT: case K_WHEEL_CCW: case K_DIAL_CCW: promptSel = (promptSel + promptOptions() - 1) % promptOptions(); renderPrompt(); return true;
-            case K_RIGHT: case K_WHEEL_CW: case K_DIAL_CW: promptSel = (promptSel + 1) % promptOptions(); renderPrompt(); return true;
             case K_ENTER: closePrompt(); promptAnswered(); render(); return true;
             case K_MENU: case K_SK1:
                 swallowMenuUp = true; closePrompt();
@@ -599,10 +599,9 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             if (isMenu(sc) || sc == K_ENTER) { menuPage = PAGE_ROWS; renderMenu(); }
             return true;
         }
+        int dir = sc == K_UP ? -1 : sc == K_DOWN ? +1 : turn(sc);      // any wheel or dial moves rows, as in the camera's menu
+        if (dir != 0) { menuSel = DevTools.nextRow(menuLevel, menuSel, dir); renderMenu(); return true; }
         switch (sc) {
-            // the dial moves rows like the wheel: on the A5100 the control wheel itself arrives as the dial (525 / 526)
-            case K_UP: case K_WHEEL_CCW: case K_DIAL_CCW: menuSel = DevTools.nextRow(menuLevel, menuSel, -1); renderMenu(); return true;
-            case K_DOWN: case K_WHEEL_CW: case K_DIAL_CW: menuSel = DevTools.nextRow(menuLevel, menuSel, +1); renderMenu(); return true;
             case K_LEFT: stepMenuValue(-1); return true;                         // only rows with a value take left / right
             case K_RIGHT: stepMenuValue(+1); return true;
             case K_ENTER: pickMenuRow(); return true;
@@ -816,13 +815,12 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
 
     /** keys while the name editor is up: the four-way and the dials move, centre types, trash deletes, MENU cancels */
     private boolean nameKey(int sc) {
+        if (turn(sc) != 0) { nameEntry.step(turn(sc)); renderName(); return true; }
         switch (sc) {
             case K_UP: nameEntry.move(-1, 0); break;
             case K_DOWN: nameEntry.move(+1, 0); break;
             case K_LEFT: nameEntry.move(0, -1); break;
             case K_RIGHT: nameEntry.move(0, +1); break;
-            case K_WHEEL_CW: case K_DIAL_CW: nameEntry.step(+1); break;
-            case K_WHEEL_CCW: case K_DIAL_CCW: nameEntry.step(-1); break;
             case K_ENTER: if (nameEntry.press() == NameEntry.DONE) { nameDone(); return true; } break;
             case K_DELETE: case K_SK2: nameEntry.backspace(); break;
             case K_MENU: case K_SK1:
@@ -1175,9 +1173,9 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     }
 
     private boolean browserKey(int sc) {
+        int dir = sc == K_UP ? -1 : sc == K_DOWN ? +1 : turn(sc);
+        if (dir != 0) { if (browserCol == COL_GROUPS) nextGroup(dir); else nextInGroup(dir); return true; }
         switch (sc) {
-            case K_UP: case K_WHEEL_CCW: case K_DIAL_CCW: if (browserCol == COL_GROUPS) nextGroup(-1); else nextInGroup(-1); return true;
-            case K_DOWN: case K_WHEEL_CW: case K_DIAL_CW: if (browserCol == COL_GROUPS) nextGroup(+1); else nextInGroup(+1); return true;
             case K_LEFT: case K_RIGHT: if (browserCol == COL_RECIPES) { browserCol = COL_GROUPS; render(); } else enterRecipeColumn(); return true;
             case K_MENU: case K_SK1:
                 // on a custom recipe MENU is press / hold: the release closes the list, a hold opens the recipe's options
@@ -1243,19 +1241,14 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         if (sc == K_ENTER) { enterDown(e.getRepeatCount()); return true; }
         if (sc == K_AEL || sc == K_C1 || sc == K_DISP) return true;   // not bound on any screen (issue #18)
         if (overlay == OV_BROWSER && sc != K_PLAY) return browserKey(sc);
+        int step = turn(sc);
+        if (step != 0) {                                         // any wheel or dial: along the line the highlight is on
+            if (focus) stepValue(step); else if (onButtons()) moveAction(step); else if (Params.onRecipeLine(overlay, row)) nextRecipe(step); else moveChip(step);
+            return true;
+        }
         switch (sc) {
             case K_LEFT: case K_RIGHT: {
                 int dir = e.getScanCode() == K_RIGHT ? +1 : -1;
-                if (focus) stepValue(dir); else if (onButtons()) moveAction(dir); else if (Params.onRecipeLine(overlay, row)) nextRecipe(dir); else moveChip(dir);
-                return true;
-            }
-            case K_WHEEL_CW: case K_WHEEL_CCW: {
-                int dir = e.getScanCode() == K_WHEEL_CW ? +1 : -1;
-                if (focus) stepValue(dir); else nextRecipe(dir);
-                return true;
-            }
-            case K_DIAL_CW: case K_DIAL_CCW: {
-                int dir = e.getScanCode() == K_DIAL_CW ? +1 : -1;
                 if (focus) stepValue(dir); else if (onButtons()) moveAction(dir); else if (Params.onRecipeLine(overlay, row)) nextRecipe(dir); else moveChip(dir);
                 return true;
             }
@@ -1288,6 +1281,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         if (sc == K_ENTER && (promptOpen || nameOpen || running)) { handler.removeCallbacks(enterHold); enter.reset(); }
         if (promptOpen || nameOpen) { if (isMenu(sc)) swallowMenuUp = false; return true; }
         if (running) return true;                               // the release of whatever key started or stopped the run
+        if (turn(sc) != 0) return true;
         switch (sc) {
             case K_ENTER: enterUp(); return true;
             case K_FN: return true;
@@ -1298,7 +1292,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             case K_S1: try { camera.cancelAutoFocus(); } catch (Throwable t) {} return true;
             case K_S2: cancelCapture(); return true;
             case K_UP: case K_DOWN: case K_LEFT: case K_RIGHT: case K_PLAY: case K_DISP:
-            case K_DELETE: case K_SK2: case K_C1: case K_AEL: case K_WHEEL_CW: case K_WHEEL_CCW: case K_DIAL_CW: case K_DIAL_CCW: return true;
+            case K_DELETE: case K_SK2: case K_C1: case K_AEL: return true;
         }
         return super.onKeyUp(keyCode, e);
     }

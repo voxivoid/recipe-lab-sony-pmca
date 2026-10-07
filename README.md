@@ -231,8 +231,7 @@ Open **Recipe Lab** from the Application List. The live view shows the look. The
 
 | key | does |
 |---|---|
-| **wheel** | next / previous recipe |
-| **left / right**, **top dial** | next recipe on the name line · next chip on the chip row |
+| **wheel**, **left / right**, **top dial** | next recipe on the name line · next chip on the chip row |
 | **up / down** | move between name, chips and edit buttons |
 | **centre** | pick the recipe · edit a chip · press a button |
 | **hold centre** | favourite on / off |

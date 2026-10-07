@@ -183,6 +183,12 @@ class KeysTest {
         for (int k : new int[] { Keys.K_UP, Keys.K_DOWN, Keys.K_LEFT, Keys.K_RIGHT, Keys.K_WHEEL_CW, Keys.K_DIAL_CCW }) assertFalse(Keys.oneShot(k), "" + k);
     }
 
+    @Test void everyWheelAndDialIsATurn() {
+        for (int k : new int[] { Keys.K_WHEEL_CW, Keys.K_DIAL_CW, Keys.K_DIAL2_CW, Keys.K_DIAL3_CW }) assertEquals(+1, Keys.turn(k), "" + k);
+        for (int k : new int[] { Keys.K_WHEEL_CCW, Keys.K_DIAL_CCW, Keys.K_DIAL2_CCW, Keys.K_DIAL3_CCW }) assertEquals(-1, Keys.turn(k), "" + k);
+        for (int k : new int[] { Keys.K_UP, Keys.K_DOWN, Keys.K_LEFT, Keys.K_RIGHT, Keys.K_WHEEL_STATUS, Keys.K_DIAL_STATUS, Keys.K_ENTER }) assertEquals(0, Keys.turn(k), "" + k);
+    }
+
     @Test void theSoftKeysStandForMenuAndTrash() {
         assertTrue(Keys.isMenu(Keys.K_SK1));
         assertTrue(Keys.isTrash(Keys.K_SK2));
