@@ -218,7 +218,7 @@ Goes through `Camera.Parameters`: `color-mode`, `saturation`, `contrast`, `sharp
 `exposure-compensation` (1/3 EV steps), `dro-mode` + `dro-level`.
 **Key scan codes** (all in `Keys`, Sony's `ScalarInput` names): wheel 522 / 523, top dial 525 / 526, four-way 103 /
 108 / 105 / 106, centre 232, MENU 514 (SK1 229 on the NEX bodies), trash 595 (SK2 513), shutter 516 / 518, Fn 520.
-The wheel and the top dial do the same everywhere (the A5100's wheel arrives as the dial). Read but not bound: AEL 532, C1 622, DISP 608, PLAY 207 (all swallowed), MOVIE 515 and the zoom lever 610 / 611 (passed on).
+Every rotary code — KURU 522 / 523, DIAL_1 525 / 526, DIAL_2 528 / 529, DIAL_3 635 / 634 (clockwise / counter) — is a turn (`Keys.turn`) and does the same on every screen: bodies number their wheels differently (the A5100's one wheel arrives as DIAL_1). Read but not bound: AEL 532, C1 622, DISP 608, PLAY 207 (all swallowed), MOVIE 515 and the zoom lever 610 / 611 (passed on).
 
 ## Custom recipes
 

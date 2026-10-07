@@ -19,6 +19,8 @@ final class Keys {
     static final int K_UP = 103, K_DOWN = 108, K_LEFT = 105, K_RIGHT = 106, K_ENTER = 232, K_MENU = 514, K_SK1 = 229,
             K_DELETE = 595, K_SK2 = 513, K_PLAY = 207, K_DISP = 608, K_FN = 520, K_AEL = 532, K_C1 = 622, K_S1 = 516, K_S2 = 518,
             K_WHEEL_CW = 522, K_WHEEL_CCW = 523, K_DIAL_CW = 525, K_DIAL_CCW = 526, K_MOVIE = 515, K_ZOOM_T = 610, K_ZOOM_W = 611;
+    /** the other rotary codes in ScalarInput: DIAL_2, and DIAL_3, whose clockwise code is the higher one */
+    static final int K_DIAL2_CW = 528, K_DIAL2_CCW = 529, K_DIAL3_CW = 635, K_DIAL3_CCW = 634;
     /** the absolute-position codes of the wheel and the top dial: what the key probe asks about, not what a turn sends */
     static final int K_WHEEL_STATUS = 521, K_DIAL_STATUS = 524;
     /** the AF/MF–AEL lever of the A7 II bodies, in both of Sony's spellings: probed and logged, not bound (A7S II, #48) */
@@ -32,7 +34,7 @@ final class Keys {
             case K_DELETE: return "DELETE"; case K_PLAY: return "PLAY"; case K_DISP: return "DISP"; case K_FN: return "FN";
             case K_AEL: return "AEL"; case K_C1: return "C1"; case K_S1: return "S1"; case 517: return "S1_2"; case K_S2: return "S2";
             case K_WHEEL_CW: return "WHEEL+"; case K_WHEEL_CCW: return "WHEEL-"; case K_DIAL_CW: return "DIAL+"; case K_DIAL_CCW: return "DIAL-";
-            case 528: return "DIAL2+"; case 529: return "DIAL2-"; case K_MOVIE: return "MOVIE"; case 637: return "MOVIE2";
+            case K_DIAL2_CW: return "DIAL2+"; case K_DIAL2_CCW: return "DIAL2-"; case K_DIAL3_CW: return "DIAL3+"; case K_DIAL3_CCW: return "DIAL3-"; case K_MOVIE: return "MOVIE"; case 637: return "MOVIE2";
             case K_ZOOM_T: return "ZOOM_T"; case K_ZOOM_W: return "ZOOM_W"; case 533: return "AFMF";
             case K_AEL_LEVER: return "AEL_LEVER"; case K_AEL_AFMF: return "AEL_AFMF"; case 588: return "CUSTOM";
             case 623: return "C2"; case 659: return "C3"; case 572: return "MODE_DIAL"; case 519: return "FINDER";
@@ -49,6 +51,19 @@ final class Keys {
         switch (scan) {
             case K_ENTER: case K_MENU: case K_SK1: case K_DELETE: case K_SK2: case K_FN: return true;
             default: return false;
+        }
+    }
+
+    /**
+     * A turn of any wheel or dial: +1 clockwise, -1 counter-clockwise, 0 for any other key. Bodies number their rotaries
+     * differently — the A5100's one wheel arrives as DIAL_1 (525 / 526), the A6000's rear wheel does not — so every
+     * screen takes every rotary alike, and the wheel a body has walks wherever the dial does.
+     */
+    static int turn(int scan) {
+        switch (scan) {
+            case K_WHEEL_CW: case K_DIAL_CW: case K_DIAL2_CW: case K_DIAL3_CW: return +1;
+            case K_WHEEL_CCW: case K_DIAL_CCW: case K_DIAL2_CCW: case K_DIAL3_CCW: return -1;
+            default: return 0;
         }
     }
 
