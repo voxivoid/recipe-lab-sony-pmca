@@ -35,7 +35,7 @@ import static com.voxivoid.recipelab.Params.*;
  * Preview = runtime camera parameters. ENTER picks the recipe: writes its bytes + sync → power-cycle applies it everywhere.
  *
  * Keys (issue #18 — every function on keys every body has; Fn is a shortcut where it exists, see {@link Keys}):
- *       wheel / LEFT / RIGHT recipe · UP / DOWN parameter · top dial adjust · ENTER pick · hold ENTER favourite
+ *       wheel / dial / LEFT / RIGHT recipe, chip or value · UP / DOWN line · ENTER pick · hold ENTER favourite
  *       TRASH overlay: full → pill → hidden · hold TRASH reset (asks first) · hold MENU app menu (browse, panel,
  *       language, reset, about, developer) · SHUTTER photo · MENU exit · Fn brand browser
  *       hold MENU on a custom recipe in the brand list: its options (rename, delete); a short MENU still closes the list
@@ -1249,13 +1249,9 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
                 if (focus) stepValue(dir); else if (onButtons()) moveAction(dir); else if (Params.onRecipeLine(overlay, row)) nextRecipe(dir); else moveChip(dir);
                 return true;
             }
-            case K_WHEEL_CW: case K_WHEEL_CCW: {
-                int dir = e.getScanCode() == K_WHEEL_CW ? +1 : -1;
-                if (focus) stepValue(dir); else nextRecipe(dir);
-                return true;
-            }
-            case K_DIAL_CW: case K_DIAL_CCW: {
-                int dir = e.getScanCode() == K_DIAL_CW ? +1 : -1;
+            // the wheel walks like the dial: on the A5100 the control wheel itself arrives as the dial (525 / 526)
+            case K_WHEEL_CW: case K_WHEEL_CCW: case K_DIAL_CW: case K_DIAL_CCW: {
+                int dir = sc == K_WHEEL_CW || sc == K_DIAL_CW ? +1 : -1;
                 if (focus) stepValue(dir); else if (onButtons()) moveAction(dir); else if (Params.onRecipeLine(overlay, row)) nextRecipe(dir); else moveChip(dir);
                 return true;
             }
