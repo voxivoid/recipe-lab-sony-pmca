@@ -24,14 +24,14 @@ final class Lang {
     private Lang() {}
 
     /** the languages the tables hold, in menu order */
-    static final int EN = 0, ZH_HANS = 1, ZH_HANT = 2, COUNT = 3;
+    static final int EN = 0, ZH_HANS = 1, ZH_HANT = 2, VI = 3, COUNT = 4;
     /** the menu choice that follows the camera's own language */
     static final int AUTO = -1;
     /** how a choice is kept in the app's preferences: by code, so a new language never shifts a stored one */
-    static final String[] CODES = { "en", "zh-Hans", "zh-Hant" };
+    static final String[] CODES = { "en", "zh-Hans", "zh-Hant", "vi" };
     static final String AUTO_CODE = "auto";
 
-    private static final String[][][] TABLES = { TextEn.TEXT, TextZhHans.TEXT, TextZhHant.TEXT };
+    private static final String[][][] TABLES = { TextEn.TEXT, TextZhHans.TEXT, TextZhHant.TEXT, TextVi.TEXT };
     private static final Map<String, String>[] TEXT = maps();
     private static int current = EN;
 
@@ -99,7 +99,7 @@ final class Lang {
 
     // ------------------------------------------------------------ the menu choice
     /** the choices the Language row steps through: follow the camera, then each language */
-    static final int[] CHOICES = { AUTO, EN, ZH_HANS, ZH_HANT };
+    static final int[] CHOICES = { AUTO, EN, ZH_HANS, ZH_HANT, VI };
 
     /** the choice left / right lands on, wrapping */
     static int nextChoice(int choice, int dir) {
@@ -129,6 +129,7 @@ final class Lang {
      * (or a Hant script tag), Simplified for any other Chinese, English for everything else — there is no table for it.
      */
     static int fromLocale(String language, String country) {
+        if ("vi".equalsIgnoreCase(language)) return VI;
         if (!"zh".equalsIgnoreCase(language)) return EN;
         String c = country == null ? "" : country.toUpperCase(Locale.US);
         return c.equals("TW") || c.equals("HK") || c.equals("MO") || c.equals("HANT") ? ZH_HANT : ZH_HANS;

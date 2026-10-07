@@ -15,7 +15,7 @@ import android.widget.TextView;
 final class UiFont {
     private UiFont() {}
 
-    private static final String[] ASSET = { null, "fonts/RecipeLabCJKsc-Regular.ttf", "fonts/RecipeLabCJKtc-Regular.ttf" };
+    private static final String[] ASSET = { null, "fonts/RecipeLabCJKsc-Regular.ttf", "fonts/RecipeLabCJKtc-Regular.ttf", null };
     private static final Typeface[] LOADED = new Typeface[Lang.COUNT];
 
     /** the typeface of a language, loaded the first time it is asked for */

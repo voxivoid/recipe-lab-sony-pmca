@@ -25,8 +25,8 @@ import org.junit.jupiter.api.Test;
  * has a glyph for every character its table uses.
  */
 class LangTest {
-    private static final int[] TRANSLATIONS = { Lang.ZH_HANS, Lang.ZH_HANT };
-    private static final String[] FONTS = { null, "assets/fonts/RecipeLabCJKsc-Regular.ttf", "assets/fonts/RecipeLabCJKtc-Regular.ttf" };
+    private static final int[] TRANSLATIONS = { Lang.ZH_HANS, Lang.ZH_HANT, Lang.VI };
+    private static final String[] FONTS = { null, "assets/fonts/RecipeLabCJKsc-Regular.ttf", "assets/fonts/RecipeLabCJKtc-Regular.ttf", null };
     private static final Pattern PLACEHOLDER = Pattern.compile("%(?:\\d+\\$)?[a-zA-Z]");
 
     @AfterEach void english() { Lang.use(Lang.EN); }
