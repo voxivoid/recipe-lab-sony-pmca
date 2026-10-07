@@ -7,7 +7,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 /**
- * The typeface each display language ({@link Lang}) is drawn in. English keeps the camera's own font. Chinese needs
+ * The typeface each display language ({@link Lang}) is drawn in. English and Vietnamese keep the camera's own font. Chinese needs
  * the fonts in assets/fonts — the firmware font has no CJK glyphs — which tools/subset-font.py cuts down to what the
  * tables use, one per script so each gets its own glyph forms. A font that will not load falls back to the camera's:
  * the text is then boxes, but the app still opens.

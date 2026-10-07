@@ -54,7 +54,8 @@ src/com/voxivoid/recipelab/
                                every word on screen goes through — no Android, covered by test/ (docs/LOCALIZATION.md)
   TextEn.java                  the English text, key by key: the source, and what every other table falls back to
   TextZhHans.java, TextZhHant.java   Simplified and Traditional Chinese, plus the recipe / brand / style names
-  UiFont.java                  the typeface of each language: the camera's for English, assets/fonts for Chinese
+  TextVi.java                  Vietnamese, likewise
+  UiFont.java                  the typeface of each language: the camera's for English and Vietnamese, assets/fonts for Chinese
   res/raw/ids.txt              every settings entry of 16 bytes or less, used by the snapshot/diff tool
   PickerView.java              Canvas-drawn brand browser (Favourites, Custom, then the brands; an empty group says how to fill it)
   KeyboardView.java            Canvas-drawn name editor: the field and NameEntry's keyboard grid
