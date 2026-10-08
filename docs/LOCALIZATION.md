@@ -1,14 +1,15 @@
 # Localization
 
-Recipe Lab speaks English, Simplified Chinese (简体中文) and Traditional Chinese (繁體中文). The first Chinese
-translations came from Cysita ([#50](https://github.com/voxivoid/recipe-lab-sony-pmca/pull/50)); the strings added
-since then were translated alongside them and are waiting on a native speaker's review.
+Recipe Lab speaks English, Simplified Chinese (简体中文), Traditional Chinese (繁體中文) and Vietnamese (Tiếng Việt).
+The first Chinese translations came from Cysita ([#50](https://github.com/voxivoid/recipe-lab-sony-pmca/pull/50)); the
+strings added since then were translated alongside them and are waiting on a native speaker's review. Vietnamese came
+from Brian Bui ([#70](https://github.com/voxivoid/recipe-lab-sony-pmca/pull/70)).
 
 ## Choosing the language
 
-**Hold MENU → Language.** Left / right (or centre) steps through *Auto*, *English*, *简体中文* and *繁體中文*, and the
+**Hold MENU → Language.** Left / right (or centre) steps through *Auto*, *English*, *简体中文*, *繁體中文* and *Tiếng Việt*, and the
 app redraws in the new language at once. The choice is kept in the app's preferences (`language`, by code — `auto`,
-`en`, `zh-Hans`, `zh-Hant`), so a power cycle keeps it and an uninstall does not.
+`en`, `zh-Hans`, `zh-Hant`, `vi`), so a power cycle keeps it and an uninstall does not.
 
 *Auto* follows the camera's own language (its Android locale):
 
@@ -16,10 +17,12 @@ app redraws in the new language at once. The choice is kept in the app's prefere
 |---|---|
 | `zh_TW`, `zh_HK`, `zh_MO` | Traditional Chinese |
 | any other `zh` | Simplified Chinese |
+| `vi` | Vietnamese |
 | anything else | English |
 
 Each language is named in its own script and drawn in its own font, so whoever lands in a language they cannot read
-can still find theirs. The Chinese row label also says *Language* for the same reason.
+can still find theirs. The Chinese and Vietnamese row labels also say *Language* for the same reason. Vietnamese is
+Latin script, so it uses the camera's own font rather than a bundled one.
 
 ## What changes, and what does not
 
@@ -47,7 +50,7 @@ All of it is camera-free and covered by `tools/test.sh`:
 |---|---|
 | `Lang.java` | the current language, the Language row's choices, what *Auto* resolves to, and the lookup: `Lang.t(key, args…)` for text, `Lang.label(key, canonical)` for names |
 | `TextEn.java` | the English source, one `{ key, text }` row per string. Every other table falls back to it |
-| `TextZhHans.java`, `TextZhHant.java` | the translations: the same keys and placeholders, plus the names below |
+| `TextZhHans.java`, `TextZhHant.java`, `TextVi.java` | the translations: the same keys and placeholders, plus the names below |
 | `UiFont.java` | Android side: the typeface each language is drawn in, applied to every view |
 
 **Names are not in the English table.** Recipe, brand, style, effect, sub-setting, quality and row names already exist
@@ -86,7 +89,7 @@ the app still opens and English still works.
 
 1. Add the key and its English to `TextEn.java`, and call it with `Lang.t("key", args…)`. Placeholders are Java's
    positional ones, `%1$s`, `%2$d`; plurals are separate keys (`status_picked_one` / `_many`).
-2. Add the same key to `TextZhHans.java` and `TextZhHant.java`, keeping every placeholder.
+2. Add the same key to `TextZhHans.java`, `TextZhHant.java` and `TextVi.java`, keeping every placeholder.
 3. `python3 tools/subset-font.py`, then `./tools/test.sh`.
 
 `LangTest` checks that every table has exactly the keys it should, that placeholders match English, that every key
@@ -96,8 +99,9 @@ the code asks for exists and every English key is used, and the fonts.
 
 **Only when someone asks for it.** Every language is another table each new string must be translated into, and
 nobody here can review most of them; a language arrives with a request, ideally with the person who will check it. The
-camera's firmware font draws Latin, Cyrillic, Greek and Vietnamese, so those need no font; Japanese and Korean would
-need one like Chinese (about 100 KB each). Arabic, Persian, Hebrew and Thai cannot be drawn properly: Android 2.3's
+camera's firmware font draws Latin, Cyrillic and Greek. Vietnamese currently uses that font too, but its
+glyph coverage and stacked diacritics still need verification on a real camera; bundle a subset font if any glyphs
+are missing. Japanese and Korean would need one like Chinese (about 100 KB each). Arabic, Persian, Hebrew and Thai cannot be drawn properly: Android 2.3's
 Canvas does no shaping or right-to-left layout.
 
 1. Copy `TextEn.java` to `TextXx.java` and translate the values — keep every key and placeholder — then add the name
@@ -112,5 +116,6 @@ Canvas does no shaping or right-to-left layout.
 
 Tests prove which text the app draws, not how the camera draws it. On a camera, still to check: that both fonts load
 and render on the bodies people use (a contributor saw Simplified Chinese on a NEX-5R with the earlier version of this
-change, #50), that Chinese labels fit the chips, the legend and the menu at the camera's resolution, and what locale
-each body reports for *Auto*.
+change, #50), that Chinese labels fit the chips, the legend and the menu at the camera's resolution, that the
+firmware font draws Vietnamese's stacked diacritics (ế, ữ, ặ) cleanly at the chips' small size, and what locale each
+body reports for *Auto*.

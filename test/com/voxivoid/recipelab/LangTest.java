@@ -25,8 +25,8 @@ import org.junit.jupiter.api.Test;
  * has a glyph for every character its table uses.
  */
 class LangTest {
-    private static final int[] TRANSLATIONS = { Lang.ZH_HANS, Lang.ZH_HANT };
-    private static final String[] FONTS = { null, "assets/fonts/RecipeLabCJKsc-Regular.ttf", "assets/fonts/RecipeLabCJKtc-Regular.ttf" };
+    private static final int[] TRANSLATIONS = { Lang.ZH_HANS, Lang.ZH_HANT, Lang.VI };
+    private static final String[] FONTS = { null, "assets/fonts/RecipeLabCJKsc-Regular.ttf", "assets/fonts/RecipeLabCJKtc-Regular.ttf", null };
     private static final Pattern PLACEHOLDER = Pattern.compile("%(?:\\d+\\$)?[a-zA-Z]");
 
     @AfterEach void english() { Lang.use(Lang.EN); }
@@ -166,8 +166,9 @@ class LangTest {
         assertEquals(Lang.EN, Lang.nextChoice(Lang.AUTO, +1));
         assertEquals(Lang.ZH_HANS, Lang.nextChoice(Lang.EN, +1));
         assertEquals(Lang.ZH_HANT, Lang.nextChoice(Lang.ZH_HANS, +1));
-        assertEquals(Lang.AUTO, Lang.nextChoice(Lang.ZH_HANT, +1));
-        assertEquals(Lang.ZH_HANT, Lang.nextChoice(Lang.AUTO, -1));
+        assertEquals(Lang.VI, Lang.nextChoice(Lang.ZH_HANT, +1));
+        assertEquals(Lang.AUTO, Lang.nextChoice(Lang.VI, +1));
+        assertEquals(Lang.VI, Lang.nextChoice(Lang.AUTO, -1));
     }
 
     @Test void aChoiceIsStoredByCodeAndAnythingUnknownIsAuto() {
@@ -183,6 +184,8 @@ class LangTest {
         assertEquals(Lang.ZH_HANT, Lang.resolve(Lang.AUTO, "zh", "TW"));
         assertEquals(Lang.ZH_HANT, Lang.resolve(Lang.AUTO, "zh", "HK"));
         assertEquals(Lang.ZH_HANT, Lang.resolve(Lang.AUTO, "zh", "MO"));
+        assertEquals(Lang.VI, Lang.resolve(Lang.AUTO, "vi", "VN"));
+        assertEquals(Lang.VI, Lang.resolve(Lang.AUTO, "vi", null));
         assertEquals(Lang.EN, Lang.resolve(Lang.AUTO, "ja", "JP"), "no table for it, so English");
         assertEquals(Lang.EN, Lang.resolve(Lang.AUTO, null, null), "a camera that will not say");
         assertEquals(Lang.ZH_HANT, Lang.resolve(Lang.ZH_HANT, "en", "US"), "a choice overrides the camera");
@@ -228,6 +231,7 @@ class LangTest {
     // ---- fonts
     @Test void eachFontHasAGlyphForEveryCharacterItsTableUses() throws Exception {
         for (int lang : TRANSLATIONS) {
+            if (FONTS[lang] == null) continue;                                // drawn in the camera's own font
             File f = new File(FONTS[lang]);
             assumeTrue(f.isFile(), "run from the repository root to check " + f);
             byte[] ttf = Files.readAllBytes(f.toPath());
@@ -247,6 +251,7 @@ class LangTest {
         // a TextView sizes each line by the font's ascent / descent and pads it to the bounding box: a font that reports
         // more than the camera's Droid Sans (2048 units: hhea 1900 / -500, bbox -555 .. 2163) makes every line taller
         for (int lang : TRANSLATIONS) {
+            if (FONTS[lang] == null) continue;                                // drawn in the camera's own font
             File f = new File(FONTS[lang]);
             assumeTrue(f.isFile(), "run from the repository root to check " + f);
             byte[] ttf = Files.readAllBytes(f.toPath());
