@@ -61,7 +61,7 @@ class DevToolsTest {
         assertEquals(DevTools.ROWS, DevTools.rows(DevTools.LEVEL_DEV));
         String[] labels = new String[DevTools.APP_ROWS];
         for (int r = 0; r < DevTools.APP_ROWS; r++) labels[r] = DevTools.appLabel(r);
-        assertEquals(Arrays.asList("Browse recipes", "New recipe", "Panel visibility", "Language", "Reset settings", "About", "Developer  >"), Arrays.asList(labels));
+        assertEquals(Arrays.asList("Browse recipes", "New recipe", "Long recording", "Panel visibility", "Language", "Reset settings", "About", "Developer  >"), Arrays.asList(labels));
         assertTrue(DevTools.appDetail(DevTools.APP_NEW).contains("current settings"), "the row says what it keeps");
         assertEquals(DevTools.APP_BROWSE, 0, "the menu opens on Browse, so a body without Fn is one press from the list");
     }
@@ -74,6 +74,7 @@ class DevToolsTest {
             for (int ic : icons) assertTrue(seen.add(ic), "level " + level + " repeats icon " + ic);
         }
         assertEquals(DevTools.IC_NEW, DevTools.icons(DevTools.LEVEL_APP)[DevTools.APP_NEW]);
+        assertEquals(DevTools.IC_RECORDING, DevTools.icons(DevTools.LEVEL_APP)[DevTools.APP_RECORDING]);
         assertEquals(DevTools.IC_LANGUAGE, DevTools.icons(DevTools.LEVEL_APP)[DevTools.APP_LANG]);
     }
 
@@ -81,22 +82,27 @@ class DevToolsTest {
         for (int r = 0; r < DevTools.APP_ROWS; r++) assertFalse(DevTools.appDetail(r).isEmpty(), "row " + r);
     }
 
-    @Test void onlyThePanelAndLanguageRowsHaveAValue() {
-        assertEquals("Full", DevTools.appValue(DevTools.APP_PANEL, Params.OV_FULL, Lang.AUTO));
-        assertEquals("No keys", DevTools.appValue(DevTools.APP_PANEL, Params.OV_QUIET, Lang.AUTO));
-        assertEquals("Label", DevTools.appValue(DevTools.APP_PANEL, Params.OV_PILL, Lang.AUTO));
-        assertEquals("Hidden", DevTools.appValue(DevTools.APP_PANEL, Params.OV_HIDDEN, Lang.AUTO));
+    @Test void recordingPanelAndLanguageRowsHaveAValue() {
+        assertEquals("29 min 50", DevTools.appValue(DevTools.APP_RECORDING, Params.OV_FULL, Lang.AUTO, RecordingLimit.STANDARD, RecordingLimit.UNKNOWN));
+        assertEquals("13 h 01", DevTools.appValue(DevTools.APP_RECORDING, Params.OV_FULL, Lang.AUTO, RecordingLimit.LONG, RecordingLimit.UNKNOWN));
+        assertEquals("29:50 · 4K 5:00", DevTools.appValue(DevTools.APP_RECORDING, Params.OV_FULL, Lang.AUTO, RecordingLimit.STANDARD, RecordingLimit.STANDARD));
+        assertEquals("13 h 01 · 4K long", DevTools.appValue(DevTools.APP_RECORDING, Params.OV_FULL, Lang.AUTO, RecordingLimit.LONG, RecordingLimit.LONG));
+        assertEquals("Full", DevTools.appValue(DevTools.APP_PANEL, Params.OV_FULL, Lang.AUTO, RecordingLimit.STANDARD, RecordingLimit.UNKNOWN));
+        assertEquals("No keys", DevTools.appValue(DevTools.APP_PANEL, Params.OV_QUIET, Lang.AUTO, RecordingLimit.STANDARD, RecordingLimit.UNKNOWN));
+        assertEquals("Label", DevTools.appValue(DevTools.APP_PANEL, Params.OV_PILL, Lang.AUTO, RecordingLimit.STANDARD, RecordingLimit.UNKNOWN));
+        assertEquals("Hidden", DevTools.appValue(DevTools.APP_PANEL, Params.OV_HIDDEN, Lang.AUTO, RecordingLimit.STANDARD, RecordingLimit.UNKNOWN));
         for (int r = 0; r < DevTools.APP_ROWS; r++)
-            if (r != DevTools.APP_PANEL && r != DevTools.APP_LANG) assertNull(DevTools.appValue(r, Params.OV_FULL, Lang.AUTO), "row " + r);
+            if (r != DevTools.APP_RECORDING && r != DevTools.APP_PANEL && r != DevTools.APP_LANG)
+                assertNull(DevTools.appValue(r, Params.OV_FULL, Lang.AUTO, RecordingLimit.STANDARD, RecordingLimit.UNKNOWN), "row " + r);
         assertFalse(DevTools.appDetail(DevTools.APP_PANEL).contains("left / right"), "the drawn arrows say how to change it");
         assertFalse(DevTools.appDetail(DevTools.APP_LANG).contains("left / right"));
     }
 
     @Test void theLanguageRowNamesEachLanguageInItsOwnScript() {
-        assertEquals("Auto", DevTools.appValue(DevTools.APP_LANG, Params.OV_FULL, Lang.AUTO));
-        assertEquals("English", DevTools.appValue(DevTools.APP_LANG, Params.OV_FULL, Lang.EN));
-        assertEquals("简体中文", DevTools.appValue(DevTools.APP_LANG, Params.OV_FULL, Lang.ZH_HANS));
-        assertEquals("繁體中文", DevTools.appValue(DevTools.APP_LANG, Params.OV_FULL, Lang.ZH_HANT));
+        assertEquals("Auto", DevTools.appValue(DevTools.APP_LANG, Params.OV_FULL, Lang.AUTO, RecordingLimit.STANDARD, RecordingLimit.UNKNOWN));
+        assertEquals("English", DevTools.appValue(DevTools.APP_LANG, Params.OV_FULL, Lang.EN, RecordingLimit.STANDARD, RecordingLimit.UNKNOWN));
+        assertEquals("简体中文", DevTools.appValue(DevTools.APP_LANG, Params.OV_FULL, Lang.ZH_HANS, RecordingLimit.STANDARD, RecordingLimit.UNKNOWN));
+        assertEquals("繁體中文", DevTools.appValue(DevTools.APP_LANG, Params.OV_FULL, Lang.ZH_HANT, RecordingLimit.STANDARD, RecordingLimit.UNKNOWN));
     }
 
     @Test void leftRightWalkThePanelStatesAndWrap() {

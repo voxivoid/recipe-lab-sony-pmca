@@ -34,6 +34,7 @@ UNITS=(
   src/com/voxivoid/recipelab/RecipeFormatV1.java
   src/com/voxivoid/recipelab/Library.java
   src/com/voxivoid/recipelab/NameEntry.java
+  src/com/voxivoid/recipelab/RecordingLimit.java
   src/com/voxivoid/recipelab/DevTools.java
   src/com/voxivoid/recipelab/Keys.java
   src/com/voxivoid/recipelab/KeyProbe.java

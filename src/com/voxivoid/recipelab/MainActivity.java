@@ -36,8 +36,8 @@ import static com.voxivoid.recipelab.Params.*;
  *
  * Keys (issue #18 — every function on keys every body has; Fn is a shortcut where it exists, see {@link Keys}):
  *       wheel / dial / LEFT / RIGHT recipe, chip or value · UP / DOWN line · ENTER pick · hold ENTER favourite
- *       TRASH overlay: full → pill → hidden · hold TRASH reset (asks first) · hold MENU app menu (browse, panel,
- *       language, reset, about, developer) · SHUTTER photo · MENU exit · Fn brand browser
+ *       TRASH overlay: full → pill → hidden · hold TRASH reset (asks first) · hold MENU app menu (browse, new,
+ *       long recording, panel, language, reset, about, developer) · SHUTTER photo · MENU exit · Fn brand browser
  *       hold MENU on a custom recipe in the brand list: its options (rename, delete); a short MENU still closes the list
  *
  * Custom recipes ({@link CustomRecipes}) live on the memory card; {@link Library} gives them indexes after the table's.
@@ -124,6 +124,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private int browserGroup = 0;                     // browser: the group the brand column is on — Favourites.GROUP, .CUSTOM or a brand
     private int lastChip = 0;                         // chip to return to when leaving the recipe line
     private final int[] cur = new int[N], edit = new int[N];
+    private int recordingLimitState = RecordingLimit.UNKNOWN, recordingLimit4kState = RecordingLimit.UNKNOWN;
     private boolean previewOk = false;
     private String previewErr = "";
 
@@ -516,6 +517,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     // ------------------------------------------------------------ app menu (MENU hold), developer menu under it, and the sample run
     private void openMenu(int level) {
         if (running) return;
+        if (level == DevTools.LEVEL_APP) readRecordingLimit();
         menuOpen = true; menuLevel = level; menuPage = PAGE_ROWS; menuSel = 0; renderMenu();
     }
 
@@ -530,7 +532,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             for (int i = 0; i < n; i++) {
                 labels[i] = app ? DevTools.appLabel(i) : DevTools.rowLabel(i, snapshotTaken, settleIdx);
                 details[i] = app ? DevTools.appDetail(i) : DevTools.rowDetail(i, snapshotTaken);
-                values[i] = app ? DevTools.appValue(i, overlay, langChoice) : DevTools.rowValue(i, settleIdx);
+                values[i] = app ? DevTools.appValue(i, overlay, langChoice, recordingLimitState, recordingLimit4kState) :
+                        DevTools.rowValue(i, settleIdx);
             }
             if (app) faces[DevTools.APP_LANG] = UiFont.of(this, Lang.choiceScript(langChoice));   // 简体中文 in its own font, whatever the menu's
             boolean value = values[menuSel] != null;
@@ -560,6 +563,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             switch (menuSel) {
                 case DevTools.APP_BROWSE: closeMenu(); browse(); break;
                 case DevTools.APP_NEW: closeMenu(); openName(NAME_NEW); break;   // the camera's current settings, kept as a recipe
+                case DevTools.APP_RECORDING: toggleRecordingLimit(); break;
                 case DevTools.APP_PANEL: case DevTools.APP_LANG: stepMenuValue(+1); break;
                 case DevTools.APP_RESET: closeMenu(); askReset(); break;
                 case DevTools.APP_ABOUT: menuPage = PAGE_ABOUT; renderMenu(); break;
@@ -579,7 +583,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
 
     /** left / right on a row that has a value: change it in place, the menu stays open; false when the row has none */
     private boolean stepMenuValue(int dir) {
-        if (menuLevel == DevTools.LEVEL_APP && menuSel == DevTools.APP_PANEL) overlay = DevTools.nextPanel(overlay, dir);
+        if (menuLevel == DevTools.LEVEL_APP && menuSel == DevTools.APP_RECORDING) { toggleRecordingLimit(); return true; }
+        else if (menuLevel == DevTools.LEVEL_APP && menuSel == DevTools.APP_PANEL) overlay = DevTools.nextPanel(overlay, dir);
         else if (menuLevel == DevTools.LEVEL_APP && menuSel == DevTools.APP_LANG) {
             langChoice = Lang.nextChoice(langChoice, dir);
             prefs.edit().putString("language", Lang.choiceCode(langChoice)).commit();
@@ -987,6 +992,76 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             camera.setParameters(p);
             previewOk = true;
         } catch (Throwable t) { previewOk = false; previewErr = String.valueOf(t.getMessage()); }
+    }
+
+    /** Reads Sony's ordinary 29:50 limit and the separate five-minute 4K limit on RX100 IV/V. */
+    private void readRecordingLimit() {
+        try {
+            recordingLimitState = RecordingLimit.state(rdu(RecordingLimit.ID_HOURS), rdu(RecordingLimit.ID_MINUTES),
+                    rdu(RecordingLimit.ID_SECONDS));
+        } catch (Throwable t) { recordingLimitState = RecordingLimit.UNKNOWN; }
+        recordingLimit4kState = RecordingLimit.UNKNOWN;
+        if (RecordingLimit.hasShort4kLimit(KeyProbe.prop("model.name"))) {
+            try { recordingLimit4kState = RecordingLimit.state4k(NativeBackup.read(RecordingLimit.ID_4K)); }
+            catch (Throwable t) { recordingLimit4kState = RecordingLimit.UNKNOWN; }
+        }
+    }
+
+    /**
+     * App menu → Long recording: the same values as OpenMemories-Tweak. Attribute checks happen before the first
+     * write, and a partial failure restores every old byte. Thermal shutdown remains firmware-owned.
+     */
+    private void toggleRecordingLimit() {
+        int[] ids = RecordingLimit.ids(), old = new int[ids.length];
+        boolean short4k = RecordingLimit.hasShort4kLimit(KeyProbe.prop("model.name"));
+        byte[] old4k = null;
+        try {
+            for (int i = 0; i < ids.length; i++) {
+                old[i] = rdu(ids[i]);
+                if (Params.slotLocked(NativeBackup.attr(ids[i]))) {
+                    showToast(Lang.t("recording_locked"), 0);
+                    return;
+                }
+            }
+            int oldState = RecordingLimit.state(old[0], old[1], old[2]);
+            if (oldState != RecordingLimit.STANDARD && oldState != RecordingLimit.LONG) {
+                showToast(Lang.t("recording_unsupported"), 0);
+                return;
+            }
+            if (short4k) {
+                old4k = NativeBackup.read(RecordingLimit.ID_4K);
+                int old4kState = RecordingLimit.state4k(old4k);
+                if (old4kState != RecordingLimit.STANDARD && old4kState != RecordingLimit.LONG) {
+                    showToast(Lang.t("recording_unsupported"), 0);
+                    return;
+                }
+                if (Params.slotLocked(NativeBackup.attr(RecordingLimit.ID_4K))) {
+                    showToast(Lang.t("recording_locked"), 0);
+                    return;
+                }
+            }
+            boolean enable = oldState != RecordingLimit.LONG ||
+                    (short4k && RecordingLimit.state4k(old4k) != RecordingLimit.LONG);
+            int[] target = RecordingLimit.value(enable);
+            try {
+                for (int i = 0; i < ids.length; i++) NativeBackup.writeByte(ids[i], target[i]);
+                if (short4k) NativeBackup.write(RecordingLimit.ID_4K, RecordingLimit.value4k(enable));
+                NativeBackup.sync();
+            } catch (Throwable writeError) {
+                try {
+                    for (int i = 0; i < ids.length; i++) NativeBackup.writeByte(ids[i], old[i]);
+                    if (short4k && old4k != null) NativeBackup.write(RecordingLimit.ID_4K, old4k);
+                    NativeBackup.sync();
+                } catch (Throwable ignored) {}
+                throw writeError;
+            }
+            readRecordingLimit();
+            showToast(Lang.t(enable ? "recording_enabled" : "recording_disabled"), 5000);
+        } catch (Throwable t) {
+            readRecordingLimit();
+            showToast(Lang.t("recording_failed", String.valueOf(t.getMessage())), 0);
+        }
+        renderMenu();
     }
 
     // ------------------------------------------------------------ UI
