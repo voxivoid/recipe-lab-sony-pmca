@@ -23,6 +23,9 @@ The first, second and fourth pairs mainly change contrast or sharpness. The red 
 Effect, so the app does not require JPEG-only quality for it. This is the strongest functional reason to investigate
 it; it does not prove that its JPEG matches Acros +R. RAW records sensor data rather than baking in the B&W look.
 
+See [measurements of the existing published samples](SAMPLE_ANALYSIS.md) for concrete evidence of the overlap and
+the stronger shadows in the existing Acros +R. Those images do not include these trials.
+
 ## Load and compare
 
 1. Copy the four `.YML` files into `RECIPES` at the root of a memory card. Their filenames fit the camera's eight-character limit.

@@ -1,0 +1,328 @@
+{
+  "method": "Mean 0.2126 R + 0.7152 G + 0.0722 B on encoded JPEG values; not linear luminance",
+  "rois": {
+    "orange jacket": [
+      465,
+      345,
+      490,
+      385
+    ],
+    "green ear": [
+      337,
+      215,
+      349,
+      250
+    ],
+    "teal hem": [
+      375,
+      407,
+      415,
+      416
+    ],
+    "face fabric": [
+      475,
+      250,
+      505,
+      285
+    ],
+    "floor": [
+      650,
+      465,
+      750,
+      505
+    ],
+    "wall": [
+      650,
+      65,
+      750,
+      105
+    ]
+  },
+  "rows": [
+    {
+      "file": "01-factory-st.jpg",
+      "size": [
+        900,
+        600
+      ],
+      "patches": {
+        "orange jacket": {
+          "rgb": [
+            189.8,
+            88.4,
+            28.9
+          ],
+          "Yprime": 105.7
+        },
+        "green ear": {
+          "rgb": [
+            36.6,
+            76.9,
+            37.1
+          ],
+          "Yprime": 65.5
+        },
+        "teal hem": {
+          "rgb": [
+            13.2,
+            74.4,
+            72.0
+          ],
+          "Yprime": 61.2
+        },
+        "face fabric": {
+          "rgb": [
+            178.0,
+            163.7,
+            155.2
+          ],
+          "Yprime": 166.1
+        },
+        "floor": {
+          "rgb": [
+            152.4,
+            145.4,
+            139.1
+          ],
+          "Yprime": 146.4
+        },
+        "wall": {
+          "rgb": [
+            165.7,
+            174.4,
+            181.6
+          ],
+          "Yprime": 173.1
+        }
+      }
+    },
+    {
+      "file": "20-acros.jpg",
+      "size": [
+        900,
+        600
+      ],
+      "patches": {
+        "orange jacket": {
+          "rgb": [
+            90.4,
+            90.4,
+            90.4
+          ],
+          "Yprime": 90.4
+        },
+        "green ear": {
+          "rgb": [
+            35.4,
+            35.4,
+            35.4
+          ],
+          "Yprime": 35.4
+        },
+        "teal hem": {
+          "rgb": [
+            37.1,
+            37.1,
+            37.1
+          ],
+          "Yprime": 37.1
+        },
+        "face fabric": {
+          "rgb": [
+            157.5,
+            157.5,
+            157.5
+          ],
+          "Yprime": 157.5
+        },
+        "floor": {
+          "rgb": [
+            138.9,
+            138.9,
+            138.9
+          ],
+          "Yprime": 138.9
+        },
+        "wall": {
+          "rgb": [
+            168.4,
+            168.4,
+            168.4
+          ],
+          "Yprime": 168.4
+        }
+      }
+    },
+    {
+      "file": "21-acros-plus-ye-yellow-filter.jpg",
+      "size": [
+        900,
+        600
+      ],
+      "patches": {
+        "orange jacket": {
+          "rgb": [
+            93.9,
+            93.9,
+            93.9
+          ],
+          "Yprime": 93.9
+        },
+        "green ear": {
+          "rgb": [
+            37.3,
+            37.3,
+            37.3
+          ],
+          "Yprime": 37.3
+        },
+        "teal hem": {
+          "rgb": [
+            39.7,
+            39.7,
+            39.7
+          ],
+          "Yprime": 39.7
+        },
+        "face fabric": {
+          "rgb": [
+            161.4,
+            161.4,
+            161.4
+          ],
+          "Yprime": 161.4
+        },
+        "floor": {
+          "rgb": [
+            142.4,
+            142.4,
+            142.4
+          ],
+          "Yprime": 142.4
+        },
+        "wall": {
+          "rgb": [
+            171.8,
+            171.8,
+            171.8
+          ],
+          "Yprime": 171.8
+        }
+      }
+    },
+    {
+      "file": "22-acros-plus-r-red-filter.jpg",
+      "size": [
+        900,
+        600
+      ],
+      "patches": {
+        "orange jacket": {
+          "rgb": [
+            77.8,
+            77.8,
+            77.8
+          ],
+          "Yprime": 77.8
+        },
+        "green ear": {
+          "rgb": [
+            15.9,
+            15.9,
+            15.9
+          ],
+          "Yprime": 15.9
+        },
+        "teal hem": {
+          "rgb": [
+            17.6,
+            17.6,
+            17.6
+          ],
+          "Yprime": 17.6
+        },
+        "face fabric": {
+          "rgb": [
+            153.6,
+            153.6,
+            153.6
+          ],
+          "Yprime": 153.6
+        },
+        "floor": {
+          "rgb": [
+            126.1,
+            126.1,
+            126.1
+          ],
+          "Yprime": 126.1
+        },
+        "wall": {
+          "rgb": [
+            152.6,
+            152.6,
+            152.6
+          ],
+          "Yprime": 152.6
+        }
+      }
+    },
+    {
+      "file": "23-acros-plus-g-green-filter.jpg",
+      "size": [
+        900,
+        600
+      ],
+      "patches": {
+        "orange jacket": {
+          "rgb": [
+            92.5,
+            92.5,
+            92.5
+          ],
+          "Yprime": 92.5
+        },
+        "green ear": {
+          "rgb": [
+            35.7,
+            35.7,
+            35.7
+          ],
+          "Yprime": 35.7
+        },
+        "teal hem": {
+          "rgb": [
+            36.9,
+            36.9,
+            36.9
+          ],
+          "Yprime": 36.9
+        },
+        "face fabric": {
+          "rgb": [
+            157.3,
+            157.3,
+            157.3
+          ],
+          "Yprime": 157.3
+        },
+        "floor": {
+          "rgb": [
+            138.3,
+            138.3,
+            138.3
+          ],
+          "Yprime": 138.3
+        },
+        "wall": {
+          "rgb": [
+            167.1,
+            167.1,
+            167.1
+          ],
+          "Yprime": 167.1
+        }
+      }
+    }
+  ]
+}
