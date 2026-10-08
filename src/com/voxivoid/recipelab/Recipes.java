@@ -91,10 +91,10 @@ public class Recipes {
     }
 
     // ---- groups (brands) — recipes below MUST be listed in group order
-    public static final String[] GROUPS = { "Sony", "Fuji Sim", "Fuji Film", "Kodak", "Cine", "Ricoh GR", "Leica", "Hasselblad", "Canon / Nikon", "Pana / Olympus", "Other Stocks", "Ilford", "Fuji Mono" };
+    public static final String[] GROUPS = { "Sony", "Fuji Sim", "Fuji Film", "Kodak", "Cine", "Ricoh GR", "Leica", "Hasselblad", "Canon / Nikon", "Pana / Olympus", "Other Stocks", "Ilford" };
     /** the group of a custom recipe: not a brand, so never an index into GROUPS */
     public static final int CUSTOM = -2;
-    private static final int SONY = 0, FSIM = 1, FFILM = 2, KODAK = 3, CINE = 4, RICOH = 5, LEICA = 6, HASSEL = 7, CANIK = 8, PANOLY = 9, OTHER = 10, ILFORD = 11, FMONO = 12;
+    private static final int SONY = 0, FSIM = 1, FFILM = 2, KODAK = 3, CINE = 4, RICOH = 5, LEICA = 6, HASSEL = 7, CANIK = 8, PANOLY = 9, OTHER = 10, ILFORD = 11;
 
     public static final Recipe[] ALL = {
         // ---- Sony (Creative Looks from newer bodies — same pipeline, best fidelity)
@@ -186,11 +186,6 @@ public class Recipes {
         new Recipe(ILFORD,"Ilford Delta 100",                    MONO,     0,  1,  1, AUTO, 0,     0,  0),
         new Recipe(ILFORD,"Ilford Delta 3200",                   MONO,     0,  3, -2, AUTO, 0,     0,  0,  0,  2, 6),
         new Recipe(ILFORD,"Ilford Pan F 50",                     MONO,     0,  2,  2, AUTO, 0,     0,  0),
-        // ---- Fujifilm Monochrome simulations (appended to keep saved recipe indexes stable)
-        new Recipe(FMONO, "Monochrome",                          MONO,     0,  0,  0, AUTO, 0,     0,  0),   // smoother, gentler than Acros
-        new Recipe(FMONO, "Monochrome +Ye (yellow filter)",      MONO,     0,  1,  0, K,    4000,  0,  0),
-        new Recipe(FMONO, "Monochrome +R (red filter)",          MONO,     0,  2,  0, K,    2500,  0,  0),
-        new Recipe(FMONO, "Monochrome +G (green filter)",        MONO,     0, -1,  0, K,    5600,  0,  4),   // softer portrait tones
     };
 
     /**
@@ -224,7 +219,7 @@ public class Recipes {
         return start + ((i - start + n + dir) % n);
     }
 
-    /** where a recipe sits in the list, as the panel shows it: "12 / 81" */
+    /** where a recipe sits in the list, as the panel shows it: "12 / 77" */
     public static String position(int i) { return (i + 1) + " / " + LISTED; }
 
     // ---- names on screen: the display language's, where it has one. The canonical English above stays the identifier

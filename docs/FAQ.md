@@ -111,10 +111,9 @@ not the same thing.
 
 ## Are there sample photos of each recipe?
 
-**[docs/SAMPLES.md](SAMPLES.md)** has 77 frames shot before the four Monochrome recipes were added, on one subject,
-in one light, at one fixed exposure
+Yes — **[docs/SAMPLES.md](SAMPLES.md)**. All 77 recipes on one subject, in one light, at one fixed exposure
 (1/30, f/4.5, ISO 250), straight out of the camera and not edited, downscaled to 900 px so the page stays light.
-Nothing that touches colour was done to them. The new Monochrome variants have no sample frames yet.
+Nothing that touches colour was done to them.
 
 The scene has no skin tone, foliage or sky, so it judges the portrait-leaning recipes worst; for those the app's own
 live preview is still the better sample — turn the wheel and the image on the screen is what the camera will write.

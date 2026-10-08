@@ -172,8 +172,8 @@ class ParamsWritesTest {
             assertEquals(0, dirtyRows(back, edit, storedSub(store, edit)), Recipes.ALL[i].name + " still dirty after storing");
         }
         // back at the factory look -- except the colour temperature on the dial, which an AWB recipe leaves as the
-        // last kelvin recipe set it (Monochrome +G, 5600K); the Factory recipe says "auto", not "5500K"
-        int[] expected = factoryRows(); expected[R_KELVIN] = 56;
+        // last kelvin recipe set it (Classic Cinema, 6000K); the Factory recipe says "auto", not "5500K"
+        int[] expected = factoryRows(); expected[R_KELVIN] = 60;
         assertArrayEquals(expected, load(store), "back at the factory look");
     }
 }
