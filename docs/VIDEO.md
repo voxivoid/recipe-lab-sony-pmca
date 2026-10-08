@@ -15,10 +15,11 @@ those two model codes. It never changes the camera's temperature shutdown.
 | NEX-5R, NEX-5T, NEX-6, A68, A77 II | no | 29 min for internal HD |
 | RX100 II, RX100 III, original RX10, HX60, HX90, HX400, WX500 | no | 29 min for internal HD; some MP4 modes stop earlier at their file-size limit |
 
-To record a look, keep Picture Profile off, pick the recipe with centre (or Apply edited values), then press the
-camera's MOVIE button. Recipe Lab leaves MOVIE to Sony's camera service. Creative Style and white-balance based looks
-are the video path; recipes carrying the `JPEG only` badge use Picture Effect and are not video recipes.
+This change only edits the camera's recording-limit setting. It does not add start/stop recording to Recipe Lab.
+To record a look, keep Picture Profile off, store the recipe with centre (or Apply edited values), restart the camera,
+leave Recipe Lab, and record in the camera's normal Movie mode. Creative Style and white-balance based looks carry into
+that mode; recipes with the `JPEG only` badge use Picture Effect and are not video recipes.
 
-The rows and MOVIE pass-through compile for every app-capable body, but the settings-store IDs and recording inside a
-third-party app still need a report from each model. A6300 is the first target. RX100 IV/V especially need confirmation
-that the separate 4K slot is writable and takes effect on their installed firmware.
+The row compiles for every app-capable body, but the settings-store IDs still need a report from each model. A6300 is
+the first target. RX100 IV/V especially need confirmation that the separate 4K slot is writable and takes effect on
+their installed firmware.

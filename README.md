@@ -271,8 +271,9 @@ Open **Recipe Lab** from the Application List. The live view shows the look. The
 
 - **Browse recipes** · **New recipe** · **Long recording** · **Panel visibility** · **Language** · **Reset settings** · **About** · **Developer**.
 - **New recipe** saves the camera's current settings as a [custom recipe](#custom-recipes).
-- **Long recording** changes Sony's standard 29:50 movie limit to 13:01:00. Restart the camera, apply a look, then
-  use its **MOVIE** button. RX100 IV/V also get their separate five-minute 4K limit changed. Temperature protection
+- **Long recording** changes Sony's standard 29:50 movie limit to 13:01:00. This setting does not add video capture
+  to Recipe Lab: restart the camera, leave the app, and record in the camera's normal Movie mode. A stored compatible
+  recipe remains active there. RX100 IV/V also get their separate five-minute 4K limit changed. Temperature protection
   remains active. See [video compatibility](docs/VIDEO.md).
 - Languages: *Auto*, English, 简体中文, 繁體中文.
 
