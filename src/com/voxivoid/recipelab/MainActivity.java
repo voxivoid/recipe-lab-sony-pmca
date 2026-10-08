@@ -36,8 +36,8 @@ import static com.voxivoid.recipelab.Params.*;
  *
  * Keys (issue #18 — every function on keys every body has; Fn is a shortcut where it exists, see {@link Keys}):
  *       wheel / dial / LEFT / RIGHT recipe, chip or value · UP / DOWN line · ENTER pick · hold ENTER favourite
- *       TRASH overlay: full → pill → hidden · hold TRASH reset (asks first) · hold MENU app menu (browse, panel,
- *       language, reset, about, developer) · SHUTTER photo · MENU exit · Fn brand browser
+ *       TRASH overlay: full → pill → hidden · hold TRASH reset (asks first) · hold MENU app menu (browse, new,
+ *       compare A/B, panel, language, reset, about, developer) · SHUTTER photo · MENU exit · Fn brand browser
  *       hold MENU on a custom recipe in the brand list: its options (rename, delete); a short MENU still closes the list
  *
  * Custom recipes ({@link CustomRecipes}) live on the memory card; {@link Library} gives them indexes after the table's.
@@ -124,6 +124,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private int browserGroup = 0;                     // browser: the group the brand column is on — Favourites.GROUP, .CUSTOM or a brand
     private int lastChip = 0;                         // chip to return to when leaving the recipe line
     private final int[] cur = new int[N], edit = new int[N];
+    private final ComparePreview compare = new ComparePreview();
     private boolean previewOk = false;
     private String previewErr = "";
 
@@ -324,6 +325,12 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     }
 
     private void writeAll(boolean confirmed) {
+        if (!compare.canPick()) {
+            applyPreview();
+            showToast(Lang.t("compare_pick_recipe"), 3000);
+            render();
+            return;
+        }
         if (!confirmed && qualityChanges()) { openPrompt(P_QUALITY, 0); return; }
         if (!dirty()) { showToast(Lang.t("status_already_picked"), 2500); return; }
         int storedSub = storedSub();
@@ -530,7 +537,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             for (int i = 0; i < n; i++) {
                 labels[i] = app ? DevTools.appLabel(i) : DevTools.rowLabel(i, snapshotTaken, settleIdx);
                 details[i] = app ? DevTools.appDetail(i) : DevTools.rowDetail(i, snapshotTaken);
-                values[i] = app ? DevTools.appValue(i, overlay, langChoice) : DevTools.rowValue(i, settleIdx);
+                values[i] = app ? DevTools.appValue(i, overlay, langChoice, compare.camera()) : DevTools.rowValue(i, settleIdx);
             }
             if (app) faces[DevTools.APP_LANG] = UiFont.of(this, Lang.choiceScript(langChoice));   // 简体中文 in its own font, whatever the menu's
             boolean value = values[menuSel] != null;
@@ -560,6 +567,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             switch (menuSel) {
                 case DevTools.APP_BROWSE: closeMenu(); browse(); break;
                 case DevTools.APP_NEW: closeMenu(); openName(NAME_NEW); break;   // the camera's current settings, kept as a recipe
+                case DevTools.APP_COMPARE: closeMenu(); toggleCompare(); break;
                 case DevTools.APP_PANEL: case DevTools.APP_LANG: stepMenuValue(+1); break;
                 case DevTools.APP_RESET: closeMenu(); askReset(); break;
                 case DevTools.APP_ABOUT: menuPage = PAGE_ABOUT; renderMenu(); break;
@@ -579,7 +587,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
 
     /** left / right on a row that has a value: change it in place, the menu stays open; false when the row has none */
     private boolean stepMenuValue(int dir) {
-        if (menuLevel == DevTools.LEVEL_APP && menuSel == DevTools.APP_PANEL) overlay = DevTools.nextPanel(overlay, dir);
+        if (menuLevel == DevTools.LEVEL_APP && menuSel == DevTools.APP_COMPARE) { closeMenu(); toggleCompare(); return true; }
+        else if (menuLevel == DevTools.LEVEL_APP && menuSel == DevTools.APP_PANEL) overlay = DevTools.nextPanel(overlay, dir);
         else if (menuLevel == DevTools.LEVEL_APP && menuSel == DevTools.APP_LANG) {
             langChoice = Lang.nextChoice(langChoice, dir);
             prefs.edit().putString("language", Lang.choiceCode(langChoice)).commit();
@@ -933,7 +942,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
 
     /** the edit buttons that make sense now: none without edits, or without the full panel to show them on */
     private int[] actions() {
-        if (!panelUp(overlay) || !edited()) return new int[0];
+        if (compare.camera() || !panelUp(overlay) || !edited()) return new int[0];
         return CustomRecipes.editActions(library.isCustom(recipe), !dirty());
     }
 
@@ -979,14 +988,37 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     }
 
     // ------------------------------------------------------------ live preview (runtime params)
-    private void applyPreview() {
-        if (camera == null) return;
+    private boolean applyPreviewValues(int[] values) {
+        if (camera == null) return false;
         try {
             Camera.Parameters p = camera.getParameters();
-            for (Map.Entry<String, String> e : Params.preview(edit).entrySet()) p.set(e.getKey(), e.getValue());
+            for (Map.Entry<String, String> e : Params.preview(values).entrySet()) p.set(e.getKey(), e.getValue());
             camera.setParameters(p);
             previewOk = true;
+            previewErr = "";
+            return true;
         } catch (Throwable t) { previewOk = false; previewErr = String.valueOf(t.getMessage()); }
+        return false;
+    }
+
+    /** Any ordinary navigation or edit returns to B; only the Compare row deliberately applies A. */
+    private void applyPreview() {
+        compare.showRecipe();
+        applyPreviewValues(edit);
+    }
+
+    /** app menu → Compare A/B: switch the live pipeline only; neither set of values is written */
+    private void toggleCompare() {
+        if (camera == null || !previewOk) { showToast(Lang.t("compare_unavailable"), 3500); return; }
+        boolean toCamera = !compare.camera();
+        if (!applyPreviewValues(toCamera ? cur : edit)) {
+            showToast(Lang.t("compare_failed", previewErr), 0);
+            return;
+        }
+        if (toCamera) compare.showCamera(); else compare.showRecipe();
+        row = 0; focus = false; onActions = false;
+        showToast(Lang.t(toCamera ? "compare_camera_hint" : "compare_recipe_hint"), 2500);
+        render();
     }
 
     // ------------------------------------------------------------ UI
@@ -998,7 +1030,9 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
 
     private void render() {
         Recipes.Recipe r = library.get(recipe);
-        boolean dirty = dirty();
+        boolean cameraSide = compare.camera();
+        int[] shown = compare.values(cur, edit);
+        boolean dirty = !cameraSide && dirty();
         String pos = library.position(recipe);
         String grp = Recipes.groupLabel(r.group).toUpperCase();
         picker.setVisibility(overlay == OV_BROWSER ? View.VISIBLE : View.GONE);
@@ -1007,22 +1041,23 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         if (overlay == OV_BROWSER) { panel.setVisibility(View.GONE); mini.setVisibility(View.GONE); picker.set(recipe, browserCol, browserGroup, favs, library, cardDir != null); return; }
         if (panelUp(overlay)) {
             panel.setVisibility(View.VISIBLE); mini.setVisibility(View.GONE);
-            name.setText(Recipes.displayName(r));
+            name.setText(cameraSide ? Lang.t("compare_camera") : Recipes.displayName(r));
             name.setTextColor(row == 0 ? ACCENT : WHITE);
-            String original = Recipes.originalName(r);            // a translated name keeps the canonical one under it
+            String original = cameraSide ? null : Recipes.originalName(r); // a translated name keeps the canonical one under it
             nameOriginal.setText(original == null ? "" : original);
             nameOriginal.setVisibility(original == null ? View.GONE : View.VISIBLE);
-            count.setText(grp + "   " + pos);
+            count.setText(cameraSide ? Lang.t("compare_camera_hint") : grp + "   " + pos);
             tag.setText(Lang.t("tag_jpeg_only"));                    // a Picture Effect: the camera drops it under RAW
             tag.setTextColor(ACCENT);
-            tag.setVisibility(edit[R_PE] != 0 ? View.VISIBLE : View.GONE);
-            fav.setVisibility(favs.contains(recipe) ? View.VISIBLE : View.GONE);
+            tag.setVisibility(shown[R_PE] != 0 ? View.VISIBLE : View.GONE);
+            fav.setVisibility(!cameraSide && favs.contains(recipe) ? View.VISIBLE : View.GONE);
             // two questions, two badges: does the camera have what you see (ACTIVE / PREVIEW), and is it the recipe as it was (EDITED)
-            if (dirty) { badge.setText(Lang.t("state_preview")); badge.setBackgroundResource(R.drawable.badge_warn); }
+            if (cameraSide) { badge.setText("A"); badge.setBackgroundResource(R.drawable.badge_ok); }
+            else if (dirty) { badge.setText(Lang.t("state_preview")); badge.setBackgroundResource(R.drawable.badge_warn); }
             else { badge.setText(Lang.t("state_active")); badge.setBackgroundResource(R.drawable.badge_ok); }
             editedBadge.setText(Lang.t("state_edited"));
-            editedBadge.setVisibility(edited() ? View.VISIBLE : View.GONE);
-            String m = Params.metaLine(edit, previewOk ? null : previewErr);   // warnings only: the values are on the chips
+            editedBadge.setVisibility(!cameraSide && edited() ? View.VISIBLE : View.GONE);
+            String m = Params.metaLine(shown, previewOk ? null : previewErr);   // warnings only: the values are on the chips
             meta.setText(m);
             meta.setVisibility(m.isEmpty() ? View.GONE : View.VISIBLE);
             int[] acts = actions();
@@ -1037,13 +1072,13 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
                 actionBtn[i].setTextColor(on ? INK : WHITE);
             }
             for (int i : ORDER) {
-                chip[i].setVisibility(rowVisible(i) ? View.VISIBLE : View.GONE);
-                boolean sel = i == row && !onActions, ch = rowDirty(i), foc = sel && focus;
+                chip[i].setVisibility(Params.rowVisible(i, shown) ? View.VISIBLE : View.GONE);
+                boolean sel = i == row && !onActions, ch = !cameraSide && rowDirty(i), foc = sel && focus;
                 chip[i].setBackgroundResource(foc ? R.drawable.chip_sel : sel ? R.drawable.chip_hi : R.drawable.chip);
                 chipLabel[i].setText(Params.rowName(i));
                 chipLabel[i].setTextColor(foc ? INK : sel ? ACCENT : DIM);
                 chipValue[i].setTextColor(foc ? INK : ch ? ACCENT : WHITE);
-                chipValue[i].setText(Params.fmt(i, edit[i], edit));
+                chipValue[i].setText(Params.fmt(i, shown[i], shown));
             }
             if (row == 0) chipScroll.post(new Runnable() { public void run() { chipScroll.smoothScrollTo(0, 0); } });
             else {
@@ -1057,7 +1092,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             hints.setMode(onActions ? Keys.H_ACTIONS : row == 0 ? HintBar.RECIPE : focus ? HintBar.EDIT : HintBar.CHIPS);
         } else if (overlay == OV_PILL) {
             panel.setVisibility(View.GONE); mini.setVisibility(View.VISIBLE);
-            mini.setText(Params.miniLine(r, pos, cur, edit, dirty));
+            mini.setText(cameraSide ? Lang.t("compare_camera") : Params.miniLine(r, pos, cur, edit, dirty));
         } else {
             panel.setVisibility(View.GONE); mini.setVisibility(View.GONE);
         }
