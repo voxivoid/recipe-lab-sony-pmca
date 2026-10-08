@@ -20,12 +20,13 @@ final class DevTools {
     static final int LEVEL_APP = 0, LEVEL_DEV = 1;
 
     /** app menu rows, in display order */
-    static final int APP_BROWSE = 0, APP_NEW = 1, APP_PANEL = 2, APP_LANG = 3, APP_RESET = 4, APP_ABOUT = 5, APP_DEV = 6, APP_ROWS = 7;
+    static final int APP_BROWSE = 0, APP_NEW = 1, APP_COMPARE = 2, APP_PANEL = 3, APP_LANG = 4, APP_RESET = 5,
+            APP_ABOUT = 6, APP_DEV = 7, APP_ROWS = 8;
 
     /** the icons the menus draw beside their rows (MenuView draws them: the camera font has no symbol glyphs) */
     static final int IC_BROWSE = 0, IC_NEW = 1, IC_PANEL = 2, IC_LANGUAGE = 3, IC_RESET = 4, IC_ABOUT = 5, IC_DEV = 6,
-            IC_SNAPSHOT = 7, IC_LOCK = 8, IC_SAMPLES = 9, IC_CLOCK = 10, IC_KEYS = 11;
-    private static final int[] APP_ICONS = { IC_BROWSE, IC_NEW, IC_PANEL, IC_LANGUAGE, IC_RESET, IC_ABOUT, IC_DEV };
+            IC_SNAPSHOT = 7, IC_LOCK = 8, IC_SAMPLES = 9, IC_CLOCK = 10, IC_KEYS = 11, IC_COMPARE = 12;
+    private static final int[] APP_ICONS = { IC_BROWSE, IC_NEW, IC_COMPARE, IC_PANEL, IC_LANGUAGE, IC_RESET, IC_ABOUT, IC_DEV };
     private static final int[] DEV_ICONS = { IC_SNAPSHOT, IC_LOCK, IC_SAMPLES, IC_CLOCK, IC_KEYS };
 
     /** the icon of each row of a level, in row order */
@@ -62,6 +63,7 @@ final class DevTools {
         switch (row) {
             case APP_BROWSE: return Lang.t("menu_browse");
             case APP_NEW: return Lang.t("menu_new");
+            case APP_COMPARE: return Lang.t("menu_compare");
             case APP_PANEL: return Lang.t("menu_panel");
             case APP_LANG: return Lang.t("menu_language");
             case APP_RESET: return Lang.t("menu_reset");
@@ -76,6 +78,7 @@ final class DevTools {
         switch (row) {
             case APP_BROWSE: return Lang.t("menu_browse_detail");
             case APP_NEW: return Lang.t("menu_new_detail");
+            case APP_COMPARE: return Lang.t("menu_compare_detail");
             case APP_PANEL: return Lang.t("menu_panel_detail");
             case APP_LANG: return Lang.t("menu_language_detail");
             case APP_RESET: return Lang.t("menu_reset_detail");
@@ -87,11 +90,12 @@ final class DevTools {
 
     /**
      * The value an app menu row shows at its right edge, which left / right change in place; null for a row that has
-     * none. Panel visibility shows the panel state: Full, Label (the pill) or Hidden. Language shows the choice
-     * ({@link Lang#choiceLabel}): Auto, or a language by its own name.
+     * none. Compare shows which side is live. Panel visibility shows Full, Label (the pill) or Hidden. Language
+     * shows the choice ({@link Lang#choiceLabel}): Auto, or a language by its own name.
      */
-    static String appValue(int row, int overlay, int langChoice) {
+    static String appValue(int row, int overlay, int langChoice, boolean cameraSide) {
         switch (row) {
+            case APP_COMPARE: return Lang.t(cameraSide ? "compare_camera" : "compare_recipe");
             case APP_PANEL: return panelLabel(overlay);
             case APP_LANG: return Lang.choiceLabel(langChoice);
             default: return null;

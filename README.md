@@ -269,8 +269,10 @@ Open **Recipe Lab** from the Application List. The live view shows the look. The
 
 **Menu** — **hold MENU**
 
-- **Browse recipes** · **New recipe** · **Panel visibility** · **Language** · **Reset settings** · **About** · **Developer**.
+- **Browse recipes** · **New recipe** · **Compare A/B** · **Panel visibility** · **Language** · **Reset settings** · **About** · **Developer**.
 - **New recipe** saves the camera's current settings as a [custom recipe](#custom-recipes).
+- **Compare A/B** switches the live image between **A Camera** (the settings most recently read from the camera store)
+  and **B Recipe** (the recipe or edits on screen). It does not write either side; on A, centre returns to B before a recipe can be picked.
 - Languages: *Auto*, English, 简体中文, 繁體中文.
 
 ## Custom recipes

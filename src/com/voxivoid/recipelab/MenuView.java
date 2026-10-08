@@ -179,6 +179,19 @@ public class MenuView extends View {
                 c.drawLine(cx - s * 0.5f, cy, cx + s * 0.5f, cy, glyph);
                 c.drawLine(cx, cy - s * 0.5f, cx, cy + s * 0.5f, glyph);
                 return;
+            case DevTools.IC_COMPARE:                               // A / B split by two opposing arrows
+                c.drawLine(cx - s, cy, cx + s, cy, glyph);
+                c.drawLine(cx - s, cy, cx - s * 0.55f, cy - s * 0.35f, glyph);
+                c.drawLine(cx - s, cy, cx - s * 0.55f, cy + s * 0.35f, glyph);
+                c.drawLine(cx + s, cy, cx + s * 0.55f, cy - s * 0.35f, glyph);
+                c.drawLine(cx + s, cy, cx + s * 0.55f, cy + s * 0.35f, glyph);
+                glyph.setStyle(Paint.Style.FILL);
+                glyph.setTextAlign(Paint.Align.CENTER);
+                glyph.setTextSize(s * 0.9f);
+                c.drawText("A", cx - s * 0.55f, cy - s * 0.45f, glyph);
+                c.drawText("B", cx + s * 0.55f, cy + s * 0.95f, glyph);
+                glyph.setTextAlign(Paint.Align.LEFT);
+                return;
             case DevTools.IC_PANEL:                                 // a screen with the panel along its foot
                 box.set(cx - s, cy - s * 0.75f, cx + s, cy + s * 0.75f);
                 c.drawRoundRect(box, 2 * d, 2 * d, glyph);
