@@ -99,8 +99,9 @@ the code asks for exists and every English key is used, and the fonts.
 
 **Only when someone asks for it.** Every language is another table each new string must be translated into, and
 nobody here can review most of them; a language arrives with a request, ideally with the person who will check it. The
-camera's firmware font draws Latin, Cyrillic, Greek and Vietnamese, so those need no font; Japanese and Korean would
-need one like Chinese (about 100 KB each). Arabic, Persian, Hebrew and Thai cannot be drawn properly: Android 2.3's
+camera's firmware font draws Latin, Cyrillic and Greek. Vietnamese currently uses that font too, but its
+glyph coverage and stacked diacritics still need verification on a real camera; bundle a subset font if any glyphs
+are missing. Japanese and Korean would need one like Chinese (about 100 KB each). Arabic, Persian, Hebrew and Thai cannot be drawn properly: Android 2.3's
 Canvas does no shaping or right-to-left layout.
 
 1. Copy `TextEn.java` to `TextXx.java` and translate the values — keep every key and placeholder — then add the name
