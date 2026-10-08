@@ -1,0 +1,13 @@
+# Experimental Sony B&W settings; not a verified Fujifilm simulation.
+format: 1
+name: "Mono trial"
+style: mono
+saturation: 0
+contrast: 0
+sharpness: 0
+effect: off
+white-balance: auto
+amber-blue: 0
+green-magenta: 0
+exposure: 0
+dro: auto
