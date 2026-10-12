@@ -48,6 +48,7 @@
   - [The edit buttons](#the-edit-buttons)
   - [Rename, delete, favourite](#rename-delete-favourite)
   - [Sharing](#sharing)
+- [Transfer to phone](#transfer-to-phone)
 - [What it changes](#what-it-changes)
 - [Uninstalling](#uninstalling)
 - [Troubleshooting](#troubleshooting)
@@ -271,8 +272,10 @@ Open **Recipe Lab** from the Application List. The live view shows the look. The
 
 **Menu** — **hold MENU**
 
-- **Browse recipes** · **New recipe** · **Panel visibility** · **Language** · **Reset settings** · **Save a bug report** · **About** · **Developer**.
+- **Browse recipes** · **New recipe** · **Transfer to phone** · **Panel visibility** · **Language** · **Reset settings** ·
+  **Save a bug report** · **About** · **Developer**.
 - **New recipe** saves the camera's current settings as a [custom recipe](#custom-recipes).
+- **Transfer to phone** sends your photos to the phone over Wi-Fi — see [Transfer to phone](#transfer-to-phone).
 - Languages: *Auto*, English, 简体中文, 繁體中文, 日本語, 한국어, Tiếng Việt.
 
 ## Custom recipes
@@ -322,6 +325,29 @@ exposure: +0.7               # -5.0 .. +5.0 in thirds
 - **Formatting the card deletes them.** Back up `RECIPES` first.
 
 Full file format: [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#custom-recipes).
+
+## Transfer to phone
+
+Send RAWs and JPEGs from the memory card to your phone over Wi-Fi. No cable, no computer, no router: the camera
+makes its own Wi-Fi network.
+
+You need **Recipe Lab Studio** on the phone: it lists the photos by their previews and pulls the ones you want.
+It also sees your custom recipes in `RECIPES`.
+
+1. **Hold MENU → Transfer to phone.** The camera starts its Wi-Fi; after a few seconds the page says **Ready** and
+   shows the network's name and password in large type.
+2. On the phone, join that Wi-Fi network with that password.
+3. In Recipe Lab Studio: **Import → From camera (Wi-Fi) → Already on the camera's Wi-Fi**.
+4. Leave the camera on that page while the phone imports. It will not switch itself off.
+
+**MENU** stops it: the transfer ends, the camera's Wi-Fi goes off, auto power-off comes back. Leaving the app any
+other way stops it too.
+
+- **Speed:** about **1 MB/s** — roughly 25 s for a 24 MP RAW. Previews are small, so browsing is quick. Pull the full
+  RAWs only for the photos you keep.
+- **If it says Error**, the line under the card says why. Check Airplane Mode is off, press MENU and open Transfer to
+  phone again.
+- **Nothing is changed on the card.** The phone can only read.
 
 ## What it changes
 

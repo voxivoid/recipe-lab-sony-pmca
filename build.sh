@@ -62,7 +62,7 @@ echo "[1/7] aapt R.java"
 "$BT/aapt" package -f -m -J out/gen -M "$MANIFEST" -S res -A assets -I "$AJ"
 echo "[2/7] javac"
 "$JAVA/javac" -encoding UTF-8 --release 8 -Xlint:-options -cp "$AJ" -d out/classes \
-  out/gen/com/voxivoid/recipelab/R.java src/com/voxivoid/recipelab/*.java
+  out/gen/com/voxivoid/recipelab/R.java src/com/voxivoid/recipelab/*.java src/com/voxivoid/recipelab/transfer/*.java
 echo "[3/7] d8"
 find out/classes -name '*.class' > out/classes.txt
 "$JAVA/java" -cp "$BT/lib/d8.jar" com.android.tools.r8.D8 --release --min-api 10 \

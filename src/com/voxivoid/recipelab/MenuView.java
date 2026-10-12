@@ -14,6 +14,8 @@ import android.view.View;
  * menu and the developer menu), or a read-only page of name / value lines (About, the key logger). A row may carry a
  * value (panel visibility, settle delay) that left / right change in place: it is drawn at the row's right edge between
  * two arrows, drawn rather than typed because the camera font has no arrow glyphs. Title on top, icon legend at the bottom.
+ * A third shape is the Transfer to phone page ({@link #setTransfer}): a status chip, the hotspot's network and password
+ * large in a card, what to do, and a footer of the address and the totals.
  */
 public class MenuView extends View {
     private static final int ACCENT = 0xFFF2B85C, INK = 0xFF1A1208;
@@ -37,6 +39,12 @@ public class MenuView extends View {
     private int[] icons;                                           // DevTools.IC_* per row, or null for none
     private String[] footer;                                       // a page's centred footer (About's sponsor ask), or null
     private Keys.Hints hints = Keys.hints(Keys.H_MENU_TOP, Keys.Caps.UNKNOWN);
+    private DevTools.TransferPage transfer;                       // the Transfer to phone page, or null for rows / a page
+    private final Paint chip = new Paint(Paint.ANTI_ALIAS_FLAG), chipText = new Paint(Paint.ANTI_ALIAS_FLAG),
+            card = new Paint(Paint.ANTI_ALIAS_FLAG), cardEdge = new Paint(Paint.ANTI_ALIAS_FLAG), big = new Paint(Paint.ANTI_ALIAS_FLAG),
+            label = new Paint(Paint.ANTI_ALIAS_FLAG), body = new Paint(Paint.ANTI_ALIAS_FLAG), foot = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final String[] wrapped = new String[3];
+    private static final int READY_GREEN = 0xFF6CC48A, ERROR_RED = 0xFFE5604F, ERROR_TEXT = 0xFFFF8A7A;
 
     public MenuView(Context c, AttributeSet a) {
         super(c, a);
@@ -52,12 +60,20 @@ public class MenuView extends View {
         glyph.setStyle(Paint.Style.STROKE); glyph.setStrokeWidth(1.5f * d); glyph.setStrokeCap(Paint.Cap.ROUND);
         rule.setColor(0x33FFFFFF);
         track.setColor(0x26FFFFFF); thumb.setColor(0xCCF2B85C);
+        chipText.setTextSize(9.5f * d); chipText.setFakeBoldText(true);
+        card.setColor(0x14FFFFFF);
+        cardEdge.setStyle(Paint.Style.STROKE); cardEdge.setStrokeWidth(d); cardEdge.setColor(0x40F2B85C);
+        big.setFakeBoldText(true); big.setTypeface(Typeface.MONOSPACE);   // the password: 0 / O and 1 / l told apart
+        label.setTextSize(9 * d); label.setColor(0x99FFFFFF);
+        body.setTextSize(11 * d);
+        foot.setTextSize(9.5f * d);
     }
 
     /** the display language's typeface ({@link UiFont}) */
     public void setTypeface(Typeface tf) {
         face = tf;
         head.setTypeface(tf); item.setTypeface(tf); small.setTypeface(tf); key.setTypeface(tf); value.setTypeface(tf); legend.setTypeface(tf);
+        chipText.setTypeface(tf); label.setTypeface(tf); body.setTypeface(tf); foot.setTypeface(tf);
         invalidate();
     }
 
@@ -68,7 +84,7 @@ public class MenuView extends View {
      */
     public void set(String title, String[] labels, String[] details, String[] values, Typeface[] valueFaces, int[] icons, int selected, Keys.Hints hints) {
         this.title = title; this.labels = labels; this.details = details; this.selected = selected; this.hints = hints; page = false;
-        this.icons = icons; footer = null;
+        this.icons = icons; footer = null; transfer = null;
         this.values = values != null ? values : new String[labels.length];
         this.valueFaces = valueFaces != null ? valueFaces : new Typeface[labels.length];
         requestLayout(); invalidate();
@@ -79,10 +95,17 @@ public class MenuView extends View {
 
     /** a read-only page with a centred footer under its lines: the first footer line after a heart, the rest below it */
     public void setPage(String title, String[][] lines, String[] footer, Keys.Hints hints) {
-        this.title = title; this.hints = hints; page = true; selected = -1; this.footer = footer;
+        this.title = title; this.hints = hints; page = true; selected = -1; this.footer = footer; transfer = null;
         labels = new String[lines.length]; details = new String[lines.length]; values = new String[lines.length]; valueFaces = new Typeface[lines.length];
         for (int i = 0; i < lines.length; i++) { labels[i] = lines[i][0]; details[i] = lines[i][1]; }
         requestLayout(); invalidate();
+    }
+
+    /** the Transfer to phone page, drawn on its own layout */
+    public void setTransfer(String title, DevTools.TransferPage p, Keys.Hints hints) {
+        this.title = title; this.hints = hints; transfer = p; page = true; selected = -1; footer = null;
+        labels = new String[0]; details = new String[0]; values = new String[0]; valueFaces = new Typeface[0];
+        invalidate();
     }
 
     private float rowHeight() { return page ? 20 * d : 38 * d; }
@@ -97,10 +120,16 @@ public class MenuView extends View {
     protected void onDraw(Canvas c) {
         float w = getWidth(), h = getHeight(), pad = 16 * d;
         c.drawRect(0, 0, w, h, bg);
-        c.drawText(title, pad, pad + 7 * d, head);
         float legTop = h - pad - legend.height(legend.lines(w - 2 * pad, hints)) + 2 * d;   // the legend, on as many lines as it needs
         float top = pad + 14 * d, bottom = legTop - 6 * d;          // header / footer reserved, as in the brand list
         c.drawLine(pad, top, w - pad, top, rule);
+        if (transfer != null) {
+            drawTransfer(c, transfer, w, pad, top, legTop);
+            c.drawLine(pad, legTop - 2 * d, w - pad, legTop - 2 * d, rule);
+            legend.drawWrapped(c, pad, legTop, w - 2 * pad, hints);
+            return;
+        }
+        c.drawText(title, pad, pad + 7 * d, head);
 
         float y = top + 8 * d, rh = rowHeight();
         int visible = Math.max(1, (int) ((bottom - y) / rh)), n = labels.length;
@@ -150,6 +179,108 @@ public class MenuView extends View {
         }
         c.drawLine(pad, legTop - 2 * d, w - pad, legTop - 2 * d, rule);
         legend.drawWrapped(c, pad, legTop, w - 2 * pad, hints);
+    }
+
+    /**
+     * Transfer to phone: the title with its icon and the status chip at the right of the header; a card with the
+     * network name and the password, large; what went wrong (red) and what to do, wrapped; the address, the last request
+     * and the totals above the legend. Every line is fitted to the width: shrunk (the card) or cut with an ellipsis.
+     */
+    private void drawTransfer(Canvas c, DevTools.TransferPage p, float w, float pad, float top, float legTop) {
+        float inner = w - 2 * pad;
+        // header: icon, title, chip
+        glyph.setColor(ACCENT);
+        drawIcon(c, DevTools.IC_TRANSFER, pad + 6 * d, pad + 3.5f * d, 5.5f * d);
+        int chipFill = p.tone == DevTools.TransferPage.READY ? READY_GREEN : p.tone == DevTools.TransferPage.ERROR ? ERROR_RED : 0x33FFFFFF;
+        int chipInk = p.tone == DevTools.TransferPage.READY ? INK : 0xFFFFFFFF;
+        float chipW = chipText.measureText(p.chip) + 22 * d, chipR = w - pad, chipL = chipR - chipW;
+        r.set(chipL, pad - 3.5f * d, chipR, pad + 10.5f * d);
+        chip.setColor(chipFill);
+        c.drawRoundRect(r, 7 * d, 7 * d, chip);
+        chip.setColor(p.tone == DevTools.TransferPage.STARTING ? ACCENT : chipInk);
+        c.drawCircle(chipL + 8 * d, r.centerY(), 2.5f * d, chip);
+        chipText.setColor(chipInk);
+        c.drawText(p.chip, chipL + 14 * d, r.centerY() - (chipText.ascent() + chipText.descent()) / 2f, chipText);
+        float titleX = pad + 16 * d;
+        c.drawText(ellipsize(title, head, chipL - 8 * d - titleX), titleX, pad + 7 * d, head);
+
+        // the card: network and password, as large as fits
+        float cardTop = top + 9 * d, cardBottom = cardTop + 92 * d, cx = pad + 12 * d, cw = inner - 24 * d;
+        r.set(pad, cardTop, w - pad, cardBottom);
+        c.drawRoundRect(r, 6 * d, 6 * d, card);
+        cardEdge.setColor(p.tone == DevTools.TransferPage.READY ? 0x806CC48A : 0x40F2B85C);
+        c.drawRoundRect(r, 6 * d, 6 * d, cardEdge);
+        c.drawLine(cx, cardTop + 46 * d, w - pad - 12 * d, cardTop + 46 * d, rule);
+        c.drawText(p.networkLabel, cx, cardTop + 14 * d, label);
+        bigLine(c, p.network, cx, cardTop + 38 * d, cw);
+        c.drawText(p.passwordLabel, cx, cardTop + 60 * d, label);
+        bigLine(c, p.password, cx, cardTop + 84 * d, cw);
+
+        // what went wrong, then what to do
+        float y = cardBottom + 17 * d;
+        if (p.problem != null) {
+            body.setColor(ERROR_TEXT); body.setFakeBoldText(true);
+            c.drawText(ellipsize(p.problem, body, inner), pad, y, body);
+            body.setFakeBoldText(false);
+            y += 15 * d;
+        }
+        body.setColor(0xDDFFFFFF);
+        float footTop = legTop - 34 * d;                             // the footer's two lines sit above the legend's rule
+        int maxLines = Math.max(1, Math.min(wrapped.length, (int) ((footTop - y) / (14 * d)) + 1));
+        int n = wrap(p.instruction, body, inner, maxLines);
+        for (int i = 0; i < n; i++, y += 14 * d) c.drawText(wrapped[i], pad, y, body);
+
+        // footer: address · last request, then the totals
+        float fy = legTop - 21 * d;
+        foot.setColor(0xCCF2B85C);
+        String addr = p.address + "   ";
+        c.drawText(addr, pad, fy, foot);
+        float ax = pad + foot.measureText(addr);
+        foot.setColor(0x99FFFFFF);
+        c.drawText(ellipsize(p.last, foot, w - pad - ax), ax, fy, foot);
+        c.drawText(ellipsize(p.totals, foot, inner), pad, fy + 13 * d, foot);
+    }
+
+    /** a card value: up to 22 dp, smaller when it would not fit {@code width}; an absent one (—) dimmed */
+    private void bigLine(Canvas c, String text, float x, float baseline, float width) {
+        big.setTextSize(22 * d);
+        float tw = big.measureText(text);
+        if (tw > width) big.setTextSize(Math.max(10 * d, 22 * d * width / tw));
+        big.setColor("—".equals(text) ? 0x55FFFFFF : 0xFFFFFFFF);
+        c.drawText(ellipsize(text, big, width), x, baseline, big);
+    }
+
+    /** {@code s} cut to {@code max} wide with an ellipsis, or as it is when it fits */
+    private static String ellipsize(String s, Paint p, float max) {
+        if (s == null) return "";
+        if (p.measureText(s) <= max) return s;
+        String e = "…";
+        int n = s.length();
+        float ew = p.measureText(e);
+        while (n > 0 && p.measureText(s, 0, n) + ew > max) n--;
+        return s.substring(0, n).trim() + e;
+    }
+
+    /**
+     * {@code s} broken into at most {@code maxLines} lines of {@code max} wide in {@link #wrapped}: at spaces where there
+     * are any, between characters where there are none (Chinese); the last line ellipsized if text is left. Returns the count.
+     */
+    private int wrap(String s, Paint p, float max, int maxLines) {
+        int count = 0, start = 0, len = s.length();
+        while (start < len && count < maxLines) {
+            while (start < len && s.charAt(start) == ' ') start++;
+            if (start >= len) break;
+            if (count == maxLines - 1) { wrapped[count++] = ellipsize(s.substring(start), p, max); break; }
+            int end = start + 1;
+            while (end < len && p.measureText(s, start, end + 1) <= max) end++;
+            if (end < len) {
+                int sp = s.lastIndexOf(' ', end);
+                if (sp > start) end = sp;
+            }
+            wrapped[count++] = s.substring(start, end);
+            start = end;
+        }
+        return count;
     }
 
     /** "◀ Full ▶" ending at {@code right}, centred on {@code cy}: the arrows say left / right change it */
@@ -241,6 +372,18 @@ public class MenuView extends View {
                 c.drawLine(cx, cy, cx, cy - s * 0.6f, glyph);
                 c.drawLine(cx, cy, cx + s * 0.45f, cy + s * 0.2f, glyph);
                 return;
+            case DevTools.IC_TRANSFER: {                            // a phone, with Wi-Fi arcs beside it
+                box.set(cx - s, cy - s * 0.8f, cx - s * 0.2f, cy + s * 0.8f);
+                c.drawRoundRect(box, 1.5f * d, 1.5f * d, glyph);
+                float ax = cx + s * 0.05f, ay = cy + s * 0.25f;
+                for (int k = 1; k <= 2; k++) {
+                    float r = s * 0.45f * k;
+                    box.set(ax - r, ay - r, ax + r, ay + r);
+                    c.drawArc(box, -80, 70, false, glyph);
+                }
+                glyph.setStyle(Paint.Style.FILL); c.drawCircle(ax + s * 0.12f, ay - s * 0.12f, d * 0.9f, glyph);
+                return;
+            }
             case DevTools.IC_KEYS:                                  // a keyboard: case, two rows of keys, space bar
                 box.set(cx - s, cy - s * 0.65f, cx + s, cy + s * 0.65f);
                 c.drawRoundRect(box, 2 * d, 2 * d, glyph);
