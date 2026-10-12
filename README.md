@@ -125,7 +125,7 @@ Failures are as useful as successes.
 | **NEX-5T** | NEX-5T | ✅ | the stored values did not all match, and some menu labels read differently ([#22](https://github.com/voxivoid/recipe-lab-sony-pmca/issues/22)) |
 | **A6300** | ILCE-6300 | ✅ |  |
 | **A7R** | ILCE-7R | ✅ |  |
-| **A7R II** | ILCE-7RM2 | ✅ |  |
+| **A7R II** | ILCE-7RM2 | ✅ | one of four reports lost the look after a power cycle — check the mode dial is not on **MR** / **1** / **2** ([#82](https://github.com/voxivoid/recipe-lab-sony-pmca/issues/82)) |
 | **RX100 V** | DSC-RX100M5 | ✅ |  |
 | **HX60 / HX60V** | DSC-HX60 | ✅ | zoom and flash could not be used ([#42](https://github.com/voxivoid/recipe-lab-sony-pmca/issues/42)) |
 | **A7S II** | ILCE-7SM2 | ✅ | the image stabiliser misbehaved with a manual lens while the app was open ([#48](https://github.com/voxivoid/recipe-lab-sony-pmca/issues/48)) |
