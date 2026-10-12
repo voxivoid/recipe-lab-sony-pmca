@@ -8,6 +8,7 @@
   Film simulations and camera looks for the <b>Sony</b> cameras that support <b>PlayMemories Camera Apps</b>, stored in the camera itself.<br>
   <sub>
     <img src="https://img.shields.io/github/v/release/voxivoid/recipe-lab-sony-pmca?label=version" alt="version"> ·
+    <a href="https://recipelabstudio.pages.dev">Website</a> ·
     <a href="https://github.com/voxivoid/recipe-lab-sony-pmca/releases/latest/download/RecipeLab.apk">Download the app</a> ·
     <a href="docs/SAMPLES.md">See every recipe</a>
   </sub>
