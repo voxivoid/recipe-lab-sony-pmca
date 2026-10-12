@@ -132,8 +132,8 @@ Failures are as useful as successes.
 | **RX1R II** | DSC-RX1RM2 | ✅ |  |
 | **A5000** | ILCE-5000 | ✅ | no **Fn** button: the brand list is under **hold MENU → Browse recipes**; one sample run froze the camera after about eight frames, and only pulling the battery brought it back ([#58](https://github.com/voxivoid/recipe-lab-sony-pmca/issues/58)) |
 | **HX90 / HX90V** | DSC-HX90 | ✅ |  |
+| **NEX-5R** | NEX-5R | ✅ |  |
 | A7S | ILCE-7S | ❔ |  |
-| NEX-5R | NEX-5R | ❔ |  |
 | NEX-6 | NEX-6 | ❔ | menus differ a lot from the A6000 generation, so the settings are the least likely to sit in the same place |
 | A68 | ILCA-68 | ❔ | not in the installer's device table, so even the install is untested |
 | A77 II | ILCA-77M2 | ❔ |  |
