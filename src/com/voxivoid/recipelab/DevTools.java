@@ -1,8 +1,12 @@
 package com.voxivoid.recipelab;
 
+import com.voxivoid.recipelab.transfer.Protocol;
+import com.voxivoid.recipelab.transfer.Stats;
+import com.voxivoid.recipelab.transfer.TransferState;
+
 /**
  * The app menu (MENU hold) and the developer menu under it, and the sample run it can start: the rows each menu
- * has, the About and key-logger pages, the settle delay the run waits between applying a recipe and firing the
+ * has, the About, Transfer to phone and key-logger pages, the settle delay the run waits between applying a recipe and firing the
  * shutter, the progress lines it shows, and the manifest it writes so the frames can be matched to recipes afterwards.
  *
  * The run itself is a timed loop in MainActivity (stage a recipe → wait → shutter → wait → next); everything it
@@ -20,12 +24,13 @@ final class DevTools {
     static final int LEVEL_APP = 0, LEVEL_DEV = 1;
 
     /** app menu rows, in display order */
-    static final int APP_BROWSE = 0, APP_NEW = 1, APP_PANEL = 2, APP_LANG = 3, APP_RESET = 4, APP_REPORT = 5, APP_ABOUT = 6, APP_DEV = 7, APP_ROWS = 8;
+    static final int APP_BROWSE = 0, APP_NEW = 1, APP_TRANSFER = 2, APP_PANEL = 3, APP_LANG = 4, APP_RESET = 5, APP_REPORT = 6,
+            APP_ABOUT = 7, APP_DEV = 8, APP_ROWS = 9;
 
     /** the icons the menus draw beside their rows (MenuView draws them: the camera font has no symbol glyphs) */
     static final int IC_BROWSE = 0, IC_NEW = 1, IC_PANEL = 2, IC_LANGUAGE = 3, IC_RESET = 4, IC_ABOUT = 5, IC_DEV = 6,
-            IC_SNAPSHOT = 7, IC_LOCK = 8, IC_SAMPLES = 9, IC_CLOCK = 10, IC_KEYS = 11, IC_REPORT = 12;
-    private static final int[] APP_ICONS = { IC_BROWSE, IC_NEW, IC_PANEL, IC_LANGUAGE, IC_RESET, IC_REPORT, IC_ABOUT, IC_DEV };
+            IC_SNAPSHOT = 7, IC_LOCK = 8, IC_SAMPLES = 9, IC_CLOCK = 10, IC_KEYS = 11, IC_REPORT = 12, IC_TRANSFER = 13;
+    private static final int[] APP_ICONS = { IC_BROWSE, IC_NEW, IC_TRANSFER, IC_PANEL, IC_LANGUAGE, IC_RESET, IC_REPORT, IC_ABOUT, IC_DEV };
     private static final int[] DEV_ICONS = { IC_SNAPSHOT, IC_LOCK, IC_SAMPLES, IC_CLOCK, IC_KEYS };
 
     /** the icon of each row of a level, in row order */
@@ -62,6 +67,7 @@ final class DevTools {
         switch (row) {
             case APP_BROWSE: return Lang.t("menu_browse");
             case APP_NEW: return Lang.t("menu_new");
+            case APP_TRANSFER: return Lang.t("menu_transfer");
             case APP_PANEL: return Lang.t("menu_panel");
             case APP_LANG: return Lang.t("menu_language");
             case APP_RESET: return Lang.t("menu_reset");
@@ -77,6 +83,7 @@ final class DevTools {
         switch (row) {
             case APP_BROWSE: return Lang.t("menu_browse_detail");
             case APP_NEW: return Lang.t("menu_new_detail");
+            case APP_TRANSFER: return Lang.t("menu_transfer_detail");
             case APP_PANEL: return Lang.t("menu_panel_detail");
             case APP_LANG: return Lang.t("menu_language_detail");
             case APP_RESET: return Lang.t("menu_reset_detail");
@@ -148,6 +155,64 @@ final class DevTools {
 
     /** where the sponsor ask sends people: Ko-fi, which needs no account anywhere */
     static final String SPONSOR_URL = "ko-fi.com/voxivoid";
+
+    // ------------------------------------------------------------ Transfer to phone
+    static String transferTitle() { return Lang.t("transfer_title"); }
+
+    /**
+     * What the Transfer to phone page shows (MenuView draws it): a status chip, the hotspot's network name and password
+     * large in a card, one line of what to do, and a footer with the address, the last request and the totals.
+     */
+    static final class TransferPage {
+        /** the chip's colour: neutral while starting, green when the phone can join, red when something is wrong */
+        static final int STARTING = 0, READY = 1, ERROR = 2;
+        int tone;
+        String chip, networkLabel, network, passwordLabel, password;
+        /** what went wrong, said under the card; null when nothing did */
+        String problem;
+        /** what to do now: join and import, or how to try again */
+        String instruction;
+        /** footer: the address, the last request (or a hotspot note, or waiting), the totals */
+        String address, last, totals;
+    }
+
+    /** The page for {@code s}; {@code rate} is bytes per second. A server problem outranks a working hotspot. */
+    static TransferPage transferPage(TransferState s, Stats stats, double rate) {
+        TransferPage p = new TransferPage();
+        p.problem = transferProblem(s);
+        p.tone = p.problem != null ? TransferPage.ERROR : s.ready() ? TransferPage.READY : TransferPage.STARTING;
+        p.chip = Lang.t(p.tone == TransferPage.ERROR ? "transfer_chip_error" : p.tone == TransferPage.READY ? "transfer_chip_ready" : "transfer_chip_starting");
+        p.networkLabel = Lang.t("transfer_network");
+        p.passwordLabel = Lang.t("transfer_password");
+        p.network = s.ready() && s.ssid() != null ? s.ssid() : "—";
+        p.password = s.ready() && s.password() != null ? s.password() : "—";
+        p.instruction = Lang.t(s.failed() ? "transfer_hint_retry" : "transfer_instruction");
+        p.address = TransferState.address();
+        String last = stats.lastRequest();
+        if (last.isEmpty()) last = Lang.t(s.note() == TransferState.NOTE_PHONE_JOINED ? "transfer_phone_joined"
+                : s.note() == TransferState.NOTE_PHONE_LEFT ? "transfer_phone_left" : "transfer_waiting");
+        p.last = last;
+        p.totals = Lang.t(stats.active() > 0 ? "transfer_totals_active" : "transfer_totals",
+                stats.requests(), Stats.megabytes(stats.bytesSent()), Stats.rate(rate), stats.active());
+        return p;
+    }
+
+    /** what stops the transfer, in the display language: the hotspot's failure first, then the server's; null when none */
+    static String transferProblem(TransferState s) {
+        String d = s.detail();
+        switch (s.status()) {
+            case TransferState.UNAVAILABLE: return Lang.t("transfer_hotspot_unavailable");
+            case TransferState.REFUSED: return Lang.t("transfer_hotspot_refused");
+            case TransferState.NO_CONFIG: return Lang.t("transfer_hotspot_no_config");
+            case TransferState.ERROR: return Lang.t("transfer_hotspot_error", orShown(d));
+            case TransferState.FAILED: return Lang.t("transfer_hotspot_failed", orShown(d));
+            case TransferState.TIMEOUT: return Lang.t("transfer_hotspot_timeout");
+            default: break;
+        }
+        if (s.server() == TransferState.SERVER_NO_CARD) return Lang.t("transfer_no_card", orShown(s.serverDetail()));
+        if (s.server() == TransferState.SERVER_PORT) return Lang.t("transfer_port_failed", String.valueOf(Protocol.HTTP_PORT), orShown(s.serverDetail()));
+        return null;
+    }
 
     // ------------------------------------------------------------ the reset question (hold trash, or Reset settings)
     /** the question asked before the factory look is stored: it replaces whatever the camera has now */

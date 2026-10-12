@@ -8,6 +8,8 @@
 #   tools/test.sh              run everything
 #   tools/test.sh Recipes      only test classes whose name contains "Recipes"
 #
+# RECIPELAB_TEST_ARW=/path/to/A6000.ARW also runs the transfer tests against a real file (skipped otherwise).
+#
 # Toolchain: JAVA_HOME pointing at a JDK 17 (as for build.sh), or javac on PATH.
 # JUNIT_JAR=<path> uses an already downloaded launcher instead (offline).
 set -euo pipefail
@@ -45,6 +47,21 @@ UNITS=(
   src/com/voxivoid/recipelab/TextJa.java
   src/com/voxivoid/recipelab/TextKo.java
   src/com/voxivoid/recipelab/TextVi.java
+  # Transfer to phone: the protocol 2 server and the page's state -- everything in transfer/ but Hotspot and
+  # TransferMode, which are the Android half
+  src/com/voxivoid/recipelab/transfer/ArwPreview.java
+  src/com/voxivoid/recipelab/transfer/ByteRange.java
+  src/com/voxivoid/recipelab/transfer/FileIndex.java
+  src/com/voxivoid/recipelab/transfer/HttpException.java
+  src/com/voxivoid/recipelab/transfer/HttpRequest.java
+  src/com/voxivoid/recipelab/transfer/Json.java
+  src/com/voxivoid/recipelab/transfer/LinkServer.java
+  src/com/voxivoid/recipelab/transfer/Logger.java
+  src/com/voxivoid/recipelab/transfer/Protocol.java
+  src/com/voxivoid/recipelab/transfer/Stats.java
+  src/com/voxivoid/recipelab/transfer/StorageRoot.java
+  src/com/voxivoid/recipelab/transfer/TransferState.java
+  src/com/voxivoid/recipelab/transfer/Utf8.java
 )
 
 mkdir -p out/test

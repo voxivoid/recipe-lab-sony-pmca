@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.SharedPreferences;
 import android.graphics.Typeface;
 import android.hardware.Camera;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -15,6 +16,8 @@ import android.view.View;
 import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+
+import com.voxivoid.recipelab.transfer.TransferMode;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -37,12 +40,15 @@ import static com.voxivoid.recipelab.Params.*;
  * Keys (issue #18 — every function on keys every body has; Fn is a shortcut where it exists, see {@link Keys}):
  *       wheel / dial / LEFT / RIGHT recipe, chip or value · UP / DOWN line · ENTER pick · hold ENTER favourite
  *       TRASH overlay: full → pill → hidden · hold TRASH reset (asks first) · hold MENU app menu (browse, panel,
- *       language, reset, about, developer) · SHUTTER photo · MENU exit · Fn brand browser
+ *       transfer to phone, language, reset, about, developer) · SHUTTER photo · MENU exit · Fn brand browser
  *       hold MENU on a custom recipe in the brand list: its options (rename, delete); a short MENU still closes the list
  *
  * Custom recipes ({@link CustomRecipes}) live on the memory card; {@link Library} gives them indexes after the table's.
  * Finishing an edit of a built-in recipe offers to keep it as a new custom recipe; an edit of a custom one is saved in
  * place. Names are typed on the name editor ({@link NameEntry}, {@link KeyboardView}).
+ *
+ * Transfer to phone (app menu) serves the memory card over Wi-Fi for Recipe Lab Studio on a phone: a page of the menu
+ * drives {@link TransferMode}, which stops when the page or the app is left.
  *
  * This class holds the state and talks to the camera, the store and the views. What a value means, how the store
  * encodes it, what the preview sets and where a key press lands is decided in {@link Params}, {@link Keys} and
@@ -82,7 +88,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private int menuLevel = DevTools.LEVEL_APP, menuPage = PAGE_ROWS;   // which menu, and whether it shows rows or a read-only page
     private int menuSel = 0, settleIdx = DevTools.SETTLE_DEFAULT;   // menu: highlighted row · developer menu: chosen settle delay
     private int langChoice = Lang.AUTO;                         // the Language row: Lang.AUTO or a language
-    private static final int PAGE_ROWS = 0, PAGE_ABOUT = 1;
+    private static final int PAGE_ROWS = 0, PAGE_ABOUT = 1, PAGE_TRANSFER = 2;
+    private TransferMode transfer;                              // Transfer to phone, while its page is open (null otherwise)
     private Keys.Caps caps = Keys.Caps.UNKNOWN;                 // the shortcut keys this body reports (KeyProbe)
     private HintBar hints;
     private SponsorLine sponsor;
@@ -327,6 +334,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     protected void onPause() {
         super.onPause();
         stopRun(false);                                          // a run cannot outlive the camera it shoots with
+        stopTransfer();                                          // leaving the app stops Transfer to phone: hotspot off, auto power-off back
         closeMenu();
         closeName();
         if (promptOpen && promptKind >= P_DISCARD) { closePrompt(); afterDiscard = null; }   // about this recipe: the card is read again on the way back
@@ -341,6 +349,12 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         try { if (camera != null) camera.stopPreview(); } catch (Throwable t) {}
         try { if (cameraEx != null) cameraEx.getClass().getMethod("release").invoke(cameraEx); } catch (Throwable t) {}
         cameraEx = null; camera = null;
+    }
+
+    @Override
+    protected void onDestroy() {
+        stopTransfer();                                          // onPause has normally done it; never leave Wi-Fi on behind the app
+        super.onDestroy();
     }
 
     public void surfaceCreated(SurfaceHolder h) {
@@ -619,6 +633,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private void renderMenu() {
         if (menuPage == PAGE_ABOUT) menu.setPage(DevTools.aboutTitle(), DevTools.about(versionName(), KeyProbe.prop("model.name"),
                 KeyProbe.firmware(), KeyProbe.prop("version.platform")), DevTools.aboutFooter(), Keys.hints(Keys.H_PAGE, caps));
+        else if (menuPage == PAGE_TRANSFER && transfer != null) menu.setTransfer(DevTools.transferTitle(),
+                DevTools.transferPage(transfer.state(), transfer.stats(), transfer.rate()), Keys.hints(Keys.H_TRANSFER, caps));
         else {
             int n = DevTools.rows(menuLevel);
             boolean app = menuLevel == DevTools.LEVEL_APP, snapshotTaken = !app && snapFile().exists();
@@ -657,6 +673,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             switch (menuSel) {
                 case DevTools.APP_BROWSE: closeMenu(); browse(); break;
                 case DevTools.APP_NEW: closeMenu(); openName(NAME_NEW); break;   // the camera's current settings, kept as a recipe
+                case DevTools.APP_TRANSFER: openTransfer(); break;
                 case DevTools.APP_PANEL: case DevTools.APP_LANG: stepMenuValue(+1); break;
                 case DevTools.APP_RESET: closeMenu(); askReset(); break;
                 case DevTools.APP_REPORT: closeMenu(); saveReport(); break;
@@ -709,6 +726,37 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
                 else closeMenu();
                 return true;
         }
+        return true;
+    }
+
+    // ------------------------------------------------------------ Transfer to phone (app menu): a page that serves the card over Wi-Fi
+    /** the camera's hotspot and the server up, the page showing how it goes — refreshed by every event and once a second */
+    private void openTransfer() {
+        if (transfer == null) transfer = new TransferMode(this, transferModel(), new TransferMode.Listener() {
+            public void changed() { if (menuOpen && menuPage == PAGE_TRANSFER) renderMenu(); }
+        });
+        menuPage = PAGE_TRANSFER;
+        transfer.start();
+        renderMenu();
+    }
+
+    /** server, hotspot and Wi-Fi off, auto power-off back on */
+    private void stopTransfer() {
+        if (transfer != null) transfer.stop();
+        transfer = null;
+    }
+
+    /** the model the phone is told: Sony's model.name (ILCE-6000) — Build.MODEL is ScalarA on every body — else Build.MODEL */
+    private static String transferModel() {
+        String m = KeyProbe.prop("model.name");
+        return m != null && !m.isEmpty() ? m : Build.MODEL;
+    }
+
+    /** keys on the Transfer to phone page: MENU stops and goes back; nothing else does anything there */
+    private boolean transferKey(int sc, int repeat) {
+        if (repeat > 0 || (sc != K_MENU && sc != K_SK1)) return true;
+        swallowMenuUp = true; stopTransfer(); menuPage = PAGE_ROWS;
+        renderMenu();
         return true;
     }
 
@@ -1355,6 +1403,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         if (running) return runKey(sc);
         if (promptOpen) return promptKey(sc);
         if (nameOpen) return nameKey(sc);
+        if (menuOpen && menuPage == PAGE_TRANSFER && transfer != null) return transferKey(sc, e.getRepeatCount());
         if (menuOpen) return menuKey(sc);
         if (sc == K_ENTER) { enterDown(e.getRepeatCount()); return true; }
         if (sc == K_AEL || sc == K_C1 || sc == K_DISP) return true;   // not bound on any screen (issue #18)

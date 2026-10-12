@@ -14,6 +14,7 @@ see [CONTRIBUTING.md](CONTRIBUTING.md).
 - [Exit rule](#exit-rule)
 - [Live preview](#live-preview)
 - [Custom recipes](#custom-recipes)
+- [Transfer to phone](#transfer-to-phone)
 - [Keys on every body](#keys-on-every-body)
 - [Developing on WSL](#developing-on-wsl)
 - [Building](#building)
@@ -74,15 +75,18 @@ src/com/voxivoid/recipelab/
                                the live view on the Full and No keys panels (DevTools.sponsorLine, Ko-fi); the About page lists Ko-fi and GitHub Sponsors
   HintBar.java                 legend view under the panel (uses Legend)
   NativeBackup.java            JNI: read / write / attr / sync
+  transfer/                    Transfer to phone (see Transfer to phone): the camera hotspot and the protocol 2 HTTP
+                               server for Recipe Lab Studio — no Android in it but Hotspot and TransferMode, covered by test/
 jni/jni.cpp                    Backup_read / Backup_write / Backup_sync_all via OpenMemories-Platform
 jni/platform/                  git submodule: ma1co/OpenMemories-Platform
 res/                           layout, shape drawables, launcher icon
 assets/fonts/                  the CJK fonts: Noto Sans CJK SC / TC / JP / KR cut down to what the tables use (OFL)
-test/com/voxivoid/recipelab/   JUnit tests for the camera-free classes (see Unit tests)
+test/com/voxivoid/recipelab/   JUnit tests for the camera-free classes (see Unit tests); transfer/ for the server
 test/com/sony/scalar/sysutil/  test doubles of the Sony classes KeyProbe reflects on
 build.sh                       the build: ndk-build, aapt, javac, d8, zipalign, apksigner
 build.cmd                      the same seven steps on Windows
-tools/                         version computation, bumping, the unit tests, the CI gates, and the font subsetter
+tools/                         version computation, bumping, the unit tests, the CI gates, the font subsetter, and
+                               transfer-host-server.sh (the transfer server on a desktop, for the phone app's tests)
 ```
 
 ## Settings slots
@@ -116,6 +120,7 @@ down or the wheel move, the centre button runs a row, a short MENU goes back a l
 |---|---|
 | **Browse recipes** | the brand list, as Fn opens it |
 | **New recipe** | the name editor, then the camera's current *stored* settings become a custom recipe ([Custom recipes](#custom-recipes)) |
+| **Transfer to phone** | a page of the menu that starts the camera's hotspot and serves the memory card for Recipe Lab Studio until MENU — [Transfer to phone](#transfer-to-phone) |
 | **Panel visibility** | a value — *Full* / *No keys* / *Label* / *Hidden* (`DevTools.PANELS`) — that left / right step through in place, wrapping, with the menu left open; centre steps forward. The same states trash cycles. *No keys* (`OV_QUIET`) is the full panel, chips and all (`Params.panelUp`), without the `HintBar` legend; closing the browser returns to it if it was left on it |
 | **Language** | a value — *Auto* / *English* / *简体中文* / *繁體中文* / *日本語* / *한국어* / *Tiếng Việt* — stepped the same way, kept in the app's preferences under `language` by code (`Lang.CODES`). The app redraws in it at once. *Auto* follows the camera's locale (`Lang.fromLocale`); each language's name is drawn in its own script and font. See [LOCALIZATION.md](LOCALIZATION.md) |
 | **Reset settings** | asks `DevTools.resetTitle()` (Cancel highlighted), then stages `Recipes.FACTORY` and stores it (`writeAll`, so the quality prompt still asks when it must). The same look as **Factory**, the first Sony recipe, which is in the list like the others (it was hidden once, and users went looking for it) |
@@ -346,6 +351,118 @@ is visible over USB Mass Storage, that a file a computer gave a long name is sti
 rename survives a power-off mid-save, and — as always — that a custom
 recipe picked, then power-cycled, is still the camera's look.
 
+## Transfer to phone
+
+**Hold MENU → Transfer to phone** turns the camera into a small file server for **Recipe Lab Studio**, the phone app:
+it starts the camera's own hotspot (Sony's "Direct" mode — the camera is the access point, at `192.168.122.1`) and
+serves the memory card's photos and custom recipes over HTTP on port 8080. The phone joins the camera's network and
+browses by the embedded previews, downloading what it wants. The camera side only moves files: matching photos to
+recipes is the phone's job. There is no other mode: the camera never joins another network, and nothing is broadcast.
+
+It began as *Photo Studio Link*, a separate PMCA app speaking protocol 1; moving it into Recipe Lab made it protocol
+2, which adds the JPEGs and the recipe files. The phone app accepts exactly protocol 2.
+
+**The page.** Its own layout in `MenuView.setTransfer`, filled from `DevTools.transferPage` (a `DevTools.TransferPage`:
+every string already in the display language), redrawn on every hotspot event and once a second:
+
+| part | shows |
+|---|---|
+| header | the transfer icon and title, and a status chip: *Starting…* (grey), *Ready* (green), *Error* (red) |
+| card | **Network** and **Password**, 22 dp bold monospace (`0`/`O`, `1`/`l` told apart), shrunk to fit; `—` until the hotspot is up |
+| under the card | what went wrong in red, if anything (the hotspot's failure, else no card / port 8080 taken); then what to do, wrapped to the width: *join this Wi-Fi, then in Recipe Lab Studio: Import → From camera (Wi-Fi) → Already on the camera's Wi-Fi*, or, after a failure, *Is Airplane Mode on? Press MENU, then open Transfer to phone again* |
+| footer | `192.168.122.1:8080` and the last request (`GET /api/files -> 200`, ellipsized), or a hotspot note, or *Waiting for the phone…*; then requests, MB sent, the current rate and how many are running |
+| legend | MENU stop (`Keys.H_TRANSFER`) |
+
+Every line is fitted to the width — the card values shrink, the rest wrap or end in an ellipsis — so long
+SSIDs, long request paths and the Chinese strings stay on screen. MENU is the only key on the page.
+
+**Stopping.** MENU, or leaving the app any other way (`onPause` — the playback button, power off — and `onDestroy`),
+stops it: server off, the Direct group removed, Direct and Wi-Fi off, the window's keep-screen-on cleared, auto
+power-off back. While it runs the camera's auto power-off is held off (the `DAConnectionManagerService.apo`
+broadcast, renewed every minute), the activity tells the camera framework it is in front (`AppInfoReceive`, as
+PMCADemo does), and an uncaught exception turns the hotspot and Wi-Fi off and auto power-off back on before the app
+dies.
+
+**The hotspot** (`Hotspot`, `com.sony.wifi.direct.DirectManager` by reflection, the sequence PMCADemo's
+`WifiDirectActivity` uses): Wi-Fi on, `setDirectEnabled(true)`, and once `DIRECT_STATE_CHANGED_ACTION` says enabled,
+`startGo` on the last of `getConfigurations()` — the camera's own Direct network, the `DIRECT-xxxx:ILCE-6000` one its
+smartphone functions use. `GROUP_CREATE_SUCCESS_ACTION` carries a `DirectConfiguration` whose `getSsid()` and
+`getPreSharedKey()` are the network and password on the page (read from the configuration `startGo` was given if the
+broadcast's copy cannot be read). A body without `DirectManager` says *This camera has no Wi-Fi Direct mode*; one with
+no Direct configuration, a refused `setDirectEnabled`, a `GROUP_CREATE_FAILURE_ACTION` (its error code shown) or no
+answer in 30 s (`TransferState.START_TIMEOUT_MS`) say so on the red line. There is no fallback. `STA_CONNECTED` /
+`STA_DISCONNECTED` show as *A phone joined / left the camera's Wi-Fi* until the first request.
+
+The model in `/api/info` is `model.name` (`KeyProbe`) — `Build.MODEL` is `ScalarA` on every body.
+
+### Protocol 2
+
+HTTP/1.1 on TCP port **8080**, all interfaces, one response per connection (`Connection: close`), files streamed
+in 32 KB chunks and never held whole. Paths are relative to the card root, with `/` separators.
+
+| request | response |
+|---|---|
+| `GET /api/info` | `{"app":"recipe-lab","protocol":2,"model":"ILCE-6000","name":"Sony α6000"}` — non-ASCII `\u` escaped, so `"Sony \u03b16000"` on the wire |
+| `GET /api/files` | `{"files":[{"path":"DCIM/100MSDCF/DSC01542.ARW","size":25624576,"modified":1507981649000,"type":"arw"}, …]}`: every `.ARW`, `.JPG` and `.JPEG` (any case) outside `PRIVATE/`, `AVF_INFO/`, `RECIPES/` and dot-folders, newest first (equal times by path, descending), `modified` in epoch ms, `type` `arw` or `jpg` |
+| `GET /api/preview?path=<rel>&size=small\|large` | `image/jpeg` with `X-Orientation: 1–8`; `size` defaults to `large`. **ARW:** the JPEG embedded in it (about 1616×1080 large, 160×120 small; falls back to the other if one is missing). **JPEG:** `small` is its Exif thumbnail (IFD1, 160×120 on the A6000) — 404 when it has none; `large` is the file itself. The orientation is IFD0's 0x0112, 1 when absent |
+| `GET /api/recipes` | `{"files":[{"path":"RECIPES/GOLDENHO.YML","size":214,"modified":1507981649000}, …]}`: every `*.YML` (any case) directly in the `RECIPES` folder (any case) at the card root, by path; `{"files":[]}` when there is none. The path is the card's own spelling, ready for `/files/` |
+| `GET` / `HEAD /files/<rel>` | the file as `application/octet-stream`, with `Content-Length` and `Accept-Ranges: bytes`. `Range: bytes=a-b`, `bytes=a-` or `bytes=-n` gives 206 with `Content-Range`; an unsatisfiable range 416 with `Content-Range: bytes */total`. Multi-range or malformed `Range` headers are ignored (200). Recipe files download this way too |
+
+Errors are JSON `{"error":"..."}`: 400 for a malformed request or path, 404 for a missing file, a file that is not
+an ARW or JPEG (preview) or no preview, 405 for any method other than GET and HEAD (with `Allow: GET, HEAD`), 500
+for anything unexpected. Every path — the recipe listing's included — must resolve canonically inside the card
+(`StorageRoot`): `..`, `.`, empty segments, absolute paths, backslashes and symlinks that lead out are a 400, and a
+`RECIPES` folder or file that links out of the card is left out of the list. Nothing can be written: the server
+has no method that changes the card.
+
+**Previews.** Nothing is decoded. `ArwPreview` walks the TIFF — the IFD chain, SubIFDs, `0x0201/0x0202` and
+compression-6 strips — and picks by pixel size; a candidate counts only if it lies inside the file, starts with SOI
+and has a baseline / progressive SOF. On the A6000, IFD0 holds the 1616×1080 preview and IFD1 the 160×120 thumbnail.
+A camera JPEG carries the same structure in its APP1 `Exif\0\0` segment, whose offsets count from the TIFF header:
+`ArwPreview.locateExif` finds that segment and runs the same walk with the TIFF's base offset, bounded by the segment.
+
+**Finding the camera.** Nothing to discover: in the camera's own network it is always `192.168.122.1:8080`, which
+the phone app uses once it is on that Wi-Fi.
+
+**Speed.** The A6000 has 2.4 GHz 802.11n and a slow card bus: about 1 MB/s, some 25 s for a 24 MP ARW. Previews are
+about 1.1 MB large and 12 KB small.
+
+### Code
+
+```
+src/com/voxivoid/recipelab/transfer/
+  TransferMode.java     the Android half: the hotspot, auto power-off, the broadcasts, the lifecycle MainActivity drives
+  Hotspot.java          Sony's Direct mode by reflection; every call fails soft
+  TransferState.java    what the page knows: starting / ready / why it failed, the network and password, the timeout — no Android, covered by test/
+  LinkServer.java       sockets, routing, streaming (32 KB buffer, at most 6 connections, one response each)
+  HttpRequest.java      request-head parsing and percent-decoding
+  ByteRange.java        Range header → 200 / 206 / 416
+  StorageRoot.java      request path → canonical file inside the card
+  FileIndex.java        the photo listing and the recipe listing, and their JSON
+  ArwPreview.java       the TIFF walk to the embedded JPEGs, in an ARW or in a JPEG's Exif
+  Protocol.java         the app name, version 2, the port, the hotspot address, and the info document
+  Json.java, Stats.java, Utf8.java, Logger.java, HttpException.java
+```
+
+Everything in `transfer/` but `Hotspot` and `TransferMode` is in `UNITS` in `tools/test.sh`, compiled without
+`android.jar`. The words on the page are `DevTools.transferPage` / `transferProblem`, through `Lang` like every other
+screen; the legend is `Keys.H_TRANSFER`.
+
+### Testing it without a camera
+
+```bash
+./tools/transfer-host-server.sh /path/to/card          # port 8080
+./tools/transfer-host-server.sh /path/to/card 0        # any free port; it prints "PORT n"
+```
+
+The app's own server, built against the bare JDK and run on this machine, answering as an ILCE-6000 for a folder
+laid out like a card (`DCIM/100MSDCF/*.ARW`, `*.JPG`, `RECIPES/*.YML`). It is what the phone app's end-to-end tests run
+against: type this machine's address in the phone app.
+
+**On the camera.** The hotspot has been seen working on an A6000, with RAWs transferred to the phone. Still to
+prove: this page's layout on the LCD (it was only rendered off the camera), that auto power-off stays off for a long
+import and comes back after, other bodies, and the failure lines (none could be provoked on the A6000).
+
 ## Keys on every body
 
 Issue #18. The A6000 has Fn, AEL and C1; the A5100 and A5000 have none of them, the A7S II's AEL did nothing in both
@@ -548,7 +665,7 @@ against a SHA-256 pinned in the script (`JUNIT_JAR=<path>` points it at a copy w
 | `ParamsChipsTest` | chip visibility, stepping (wrap vs clamp, the effect → SUB / quality side effects), LEFT/RIGHT and UP/DOWN landing spots, chip text |
 | `ParamsHudTest` | the meta line (warnings only: RAW under an effect, no live preview — the values are on the chips), the minimal pill, the quality prompt |
 | `ParamsToolsTest` | the snapshot tool's id list — including that `res/raw/ids.txt` is well formed and lists every slot the app writes — and its diff lines |
-| `DevToolsTest` | the app menu and developer menu rows, About and the key logger's lines, settle delays, the sample run's progress / finish lines, and its manifest — a parsable line per recipe, in run order |
+| `DevToolsTest` | the app menu and developer menu rows, About, the Transfer to phone page (chip, card, problem and instruction lines, footer, in Chinese too) and the key logger's lines, settle delays, the sample run's progress / finish lines, and its manifest — a parsable line per recipe, in run order |
 | `KeysTest` | the press / hold gesture, the trash-hold guard, and that the legend never names a key the body lacks — every function on a universal key, Fn only when reported, the order pick · browse · save · fav · menu · hide · exit, the reset hold never hinted |
 | `KeyProbeTest` | that the key probe answers "unknown" off the camera instead of throwing |
 | `KeyProbeCameraTest` | the key probe against test doubles of Sony's `ScalarInput`, `KeyStatus` and `ScalarProperties` (`test/com/sony/scalar/sysutil/`, shaped like the OpenMemories-Framework stubs): the reflection finds the real signatures, only `valid == 1` is a key, only `status == 1` is a press. The doubles throw for anything a test did not set up, which is how the "off the camera" answers stay null |
@@ -558,6 +675,10 @@ against a SHA-256 pinned in the script (`JUNIT_JAR=<path>` points it at a copy w
 | `CustomRecipesTest` | the recipe file: every built-in look survives a round trip, hand-edited files (BOM, CRLF, case, comments, unknown keys) still read, a newer format or any out-of-range value skips the file with the reason, names and default names, file names, and save / edit / rename / delete / load against a temporary folder |
 | `LibraryTest` | one index over the table and the custom recipes: the wheel walks into them and wraps, the panel counts them among themselves |
 | `NameEntryTest` | the name editor: the placeholder the first character replaces, capitals, delete, the length limit, walking the grid with the four-way and the wheel |
+| `TransferStateTest` | Transfer to phone's page state: the hotspot starting, up with its network and password (quotes off), failing and why, the start timeout |
+| `LinkServerTest` | the protocol 2 server on an ephemeral port against a temporary card, over real sockets: `/api/info`, the ARW and JPEG listing, ARW and JPEG previews (the Exif thumbnail, the file itself, none), `/api/recipes` in any case, ranges, HEAD, 405, path traversal and symlinks that lead out, concurrent downloads, the counters |
+| `FileIndexTest`, `ArwPreviewTest` | the photo listing (ARW and JPEG, `type`, newest first, `PRIVATE` / `AVF_INFO` / `RECIPES` / dot-folders skipped) and the recipe listing; the TIFF walk on synthetic ARWs and on JPEGs with an Exif thumbnail (both byte orders, kept inside the segment). `RECIPELAB_TEST_ARW=/path/to/A6000.ARW` adds checks against a real file |
+| `HttpRequestTest`, `ByteRangeTest`, `StorageRootTest`, `SmallPartsTest` | request parsing, `Range`, the path rules, JSON escaping, the info document, the rate meter |
 | `LangTest` | the display language: every table has every key and keeps English's placeholders, every key the code asks for exists, the Language row's choices and what Auto resolves to, that samples.txt, locks.txt and favourites stay English in any language, and that each bundled font has a glyph for every character its table uses (read from the font's own cmap) |
 
 **What is not, and cannot be.** `MainActivity` (key dispatch, overlays, the camera and the JNI store), the
