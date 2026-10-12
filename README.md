@@ -10,7 +10,7 @@
     <img src="https://img.shields.io/github/v/release/voxivoid/recipe-lab-sony-pmca?label=version" alt="version"> ·
     <a href="https://recipelabstudio.pages.dev">Website</a> ·
     <a href="https://github.com/voxivoid/recipe-lab-sony-pmca/releases/latest/download/RecipeLab.apk">Download the app</a> ·
-    <a href="docs/SAMPLES.md">See every recipe</a>
+    <a href="https://recipelabstudio.pages.dev/recipes">See every recipe</a>
   </sub>
 </p>
 
@@ -88,8 +88,8 @@ mode**, photo and video, with the app closed. Turn it off and on, it is still th
 | **Other stocks** | Agfa Vista 200, Agfa Ultra 100, Polaroid / Instax |
 | **Ilford** | HP5, FP4, Delta 100, Delta 3200, Pan F 50 |
 
-**[See every recipe on the same subject →](docs/SAMPLES.md)** — 77 frames, one scene, one exposure, straight out of
-the camera.
+**[See every recipe on the same subject →](https://recipelabstudio.pages.dev/recipes)** — 77 frames, one scene, one
+exposure, straight out of the camera.
 
 Recipes marked **JPEG only** in the app (Acros +R, Tri-X 1600, GR Retro, GR Hi-Contrast B&W, Sony SH, Polaroid) are
 built on a Picture Effect because, against the reference frames, its tone
