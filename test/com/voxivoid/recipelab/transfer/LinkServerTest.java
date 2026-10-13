@@ -118,7 +118,7 @@ class LinkServerTest {
         Response r = get("/api/info");
         assertEquals(200, r.status);
         assertEquals("application/json", r.header("Content-Type"));
-        assertEquals("{\"app\":\"recipe-lab\",\"protocol\":3,\"model\":\"ILCE-6000\",\"name\":\"Sony \\u03b16000\"}", r.text());
+        assertEquals("{\"app\":\"recipe-lab\",\"protocol\":4,\"model\":\"ILCE-6000\",\"name\":\"Sony \\u03b16000\"}", r.text());
         assertBodyLengthMatches(r);
     }
 
@@ -370,11 +370,41 @@ class LinkServerTest {
         assertEquals(0, new File(base, "outside").list().length, "a RECIPES folder that links out of the card takes nothing");
     }
 
+    @Test void deleteRemovesARecipeFileInAnyCase() throws IOException {
+        Fixtures.write(new File(card, "Recipes/Golden.yml"), "old".getBytes("UTF-8"));
+        Fixtures.write(new File(card, "Recipes/KEEP.YML"), "keep".getBytes("UTF-8"));
+        Response r = request("DELETE", "/files/RECIPES/GOLDEN.YML");
+        assertEquals(200, r.status);
+        assertEquals("{\"path\":\"Recipes/Golden.yml\"}", r.text());
+        assertBodyLengthMatches(r);
+        assertArrayEquals(new String[] { "KEEP.YML" }, new File(card, "Recipes").list());
+        assertEquals(404, request("DELETE", "/files/RECIPES/GOLDEN.YML").status, "it is gone");
+    }
+
+    @Test void deleteRemovesNothingButRecipeFiles() throws IOException {
+        Fixtures.write(new File(card, "RECIPES/notes.txt"), "x".getBytes("UTF-8"));
+        assertEquals(403, request("DELETE", "/files/" + ARW).status);
+        assertEquals(403, request("DELETE", "/files/RECIPES/notes.txt").status);
+        assertEquals(403, request("DELETE", "/files/RECIPES/..%2Fsecret.YML").status);
+        assertEquals(403, request("DELETE", "/files/RECIPES/SUB/A.YML").status);
+        assertEquals(403, request("DELETE", "/api/recipes").status);
+        assertEquals(404, request("DELETE", "/files/RECIPES/NONE.YML").status);
+        assertTrue(new File(card, ARW).exists());
+        assertTrue(new File(card, "RECIPES/notes.txt").exists());
+    }
+
+    @Test void deleteNeverReachesOutsideTheCard() throws IOException {
+        Fixtures.write(new File(base, "outside/STOLEN.YML"), "secret".getBytes("UTF-8"));
+        Files.createSymbolicLink(new File(card, "RECIPES").toPath(), new File(base, "outside").toPath());
+        assertEquals(400, request("DELETE", "/files/RECIPES/STOLEN.YML").status);
+        assertTrue(new File(base, "outside/STOLEN.YML").exists());
+    }
+
     @Test void otherMethodsAre405() throws IOException {
         Response r = request("POST", "/api/files");
         assertEquals(405, r.status);
-        assertEquals("GET, HEAD, PUT", r.header("Allow"));
-        assertEquals(405, request("DELETE", "/files/" + ARW).status);
+        assertEquals("GET, HEAD, PUT, DELETE", r.header("Allow"));
+        assertEquals(405, request("PATCH", "/files/" + ARW).status);
         assertTrue(new File(card, ARW).exists());
     }
 

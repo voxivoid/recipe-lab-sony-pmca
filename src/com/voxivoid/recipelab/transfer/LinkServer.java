@@ -20,7 +20,7 @@ import java.util.Set;
 import java.util.concurrent.Semaphore;
 
 /**
- * The protocol 3 HTTP server: blocking sockets, one thread per connection (at most {@link #MAX_CONNECTIONS}), one
+ * The protocol 4 HTTP server: blocking sockets, one thread per connection (at most {@link #MAX_CONNECTIONS}), one
  * response per connection, files streamed in {@link Protocol#BUFFER_SIZE} chunks and never held in memory.
  *
  * <pre>
@@ -31,6 +31,7 @@ import java.util.concurrent.Semaphore;
  * GET  /api/recipes                            the custom recipe files in RECIPES (JSON)
  * GET  /files/REL  (and HEAD, Range)           the file itself
  * PUT  /files/RECIPES/NAME.YML                 writes a custom recipe file (new or replaced), nothing else
+ * DELETE /files/RECIPES/NAME.YML              removes a custom recipe file, nothing else
  * </pre>
  */
 public final class LinkServer {
@@ -195,7 +196,8 @@ public final class LinkServer {
         boolean head = "HEAD".equals(req.method);
         String p = req.path;
         if ("PUT".equals(req.method)) return putRecipe(req, p, in, out);
-        if (!head && !"GET".equals(req.method)) throw new HttpException(405, "method not allowed", "Allow", "GET, HEAD, PUT");
+        if ("DELETE".equals(req.method)) return deleteRecipe(p, out);
+        if (!head && !"GET".equals(req.method)) throw new HttpException(405, "method not allowed", "Allow", "GET, HEAD, PUT, DELETE");
         if (p.equals("/api/info")) return json(out, Protocol.infoJson(model, name), head);
         if (p.equals("/api/files")) return json(out, FileIndex.toJson(FileIndex.scan(root)), head);
         if (p.equals("/api/recipes")) return json(out, FileIndex.toJson(FileIndex.recipes(root)), head);
@@ -316,6 +318,37 @@ public final class LinkServer {
         writeHead(out, status, "application/json", b.length);
         out.write(b);
         return status;
+    }
+
+    /**
+     * {@code DELETE /files/RECIPES/NAME.YML}: that custom recipe file is removed (200); one that is not there is a 404.
+     * As with PUT, only a recipe file in RECIPES can be named (403): no photo, and nothing outside the folder.
+     */
+    private int deleteRecipe(String p, OutputStream out) throws IOException, HttpException {
+        String rel = p.startsWith("/files/") ? p.substring("/files/".length()) : "";
+        int slash = rel.indexOf('/');
+        String leaf = slash < 0 ? "" : rel.substring(slash + 1);
+        if (slash < 0 || !rel.substring(0, slash).equalsIgnoreCase(FileIndex.RECIPES) || !recipeFileName(leaf))
+            throw new HttpException(403, "only RECIPES/NAME.YML can be deleted");
+        String folder = null;                                        // the card's own spelling of the folder
+        String[] top = root.dir().list();
+        if (top != null) for (int i = 0; i < top.length; i++) if (top[i].equalsIgnoreCase(FileIndex.RECIPES)) folder = top[i];
+        if (folder == null) throw new HttpException(404, "not found");
+        synchronized (writing) {
+            File dir = root.resolve(folder);
+            String found = null;
+            String[] names = dir.list();
+            if (names != null) for (int i = 0; i < names.length; i++) if (names[i].equalsIgnoreCase(leaf)) found = names[i];
+            if (found == null) throw new HttpException(404, "not found");
+            File target = root.resolve(folder + "/" + found);
+            if (!target.isFile()) throw new HttpException(404, "not found");
+            if (!target.delete()) throw new HttpException(500, "cannot delete " + found);
+            leaf = found;
+        }
+        byte[] b = Utf8.bytes("{\"path\":" + Json.quote(folder + "/" + leaf) + "}");
+        writeHead(out, 200, "application/json", b.length);
+        out.write(b);
+        return 200;
     }
 
     /** The file a save writes before it takes the recipe's name, as in Recipe Lab's own saves; never read as a recipe. */
