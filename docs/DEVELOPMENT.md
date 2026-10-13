@@ -54,7 +54,8 @@ src/com/voxivoid/recipelab/
                                every word on screen goes through — no Android, covered by test/ (docs/LOCALIZATION.md)
   TextEn.java                  the English text, key by key: the source, and what every other table falls back to
   TextZhHans.java, TextZhHant.java   Simplified and Traditional Chinese, plus the recipe / brand / style names
-  UiFont.java                  the typeface of each language: the camera's for English, assets/fonts for Chinese
+  TextJa.java, TextKo.java, TextVi.java   Japanese, Korean and Vietnamese, the same way
+  UiFont.java                  the typeface of each language: the camera's for English and Vietnamese, assets/fonts for the rest
   res/raw/ids.txt              every settings entry of 16 bytes or less, used by the snapshot/diff tool
   PickerView.java              Canvas-drawn brand browser (Favourites, Custom, then the brands; an empty group says how to fill it)
   KeyboardView.java            Canvas-drawn name editor: the field and NameEntry's keyboard grid
@@ -73,7 +74,7 @@ src/com/voxivoid/recipelab/
 jni/jni.cpp                    Backup_read / Backup_write / Backup_sync_all via OpenMemories-Platform
 jni/platform/                  git submodule: ma1co/OpenMemories-Platform
 res/                           layout, shape drawables, launcher icon
-assets/fonts/                  the Chinese fonts: Noto Sans CJK SC / TC cut down to what the tables use (OFL)
+assets/fonts/                  the CJK fonts: Noto Sans CJK SC / TC / JP / KR cut down to what the tables use (OFL)
 test/com/voxivoid/recipelab/   JUnit tests for the camera-free classes (see Unit tests)
 test/com/sony/scalar/sysutil/  test doubles of the Sony classes KeyProbe reflects on
 build.sh                       the build: ndk-build, aapt, javac, d8, zipalign, apksigner
@@ -113,7 +114,7 @@ down or the wheel move, the centre button runs a row, a short MENU goes back a l
 | **Browse recipes** | the brand list, as Fn opens it |
 | **New recipe** | the name editor, then the camera's current *stored* settings become a custom recipe ([Custom recipes](#custom-recipes)) |
 | **Panel visibility** | a value — *Full* / *No keys* / *Label* / *Hidden* (`DevTools.PANELS`) — that left / right step through in place, wrapping, with the menu left open; centre steps forward. The same states trash cycles. *No keys* (`OV_QUIET`) is the full panel, chips and all (`Params.panelUp`), without the `HintBar` legend; closing the browser returns to it if it was left on it |
-| **Language** | a value — *Auto* / *English* / *简体中文* / *繁體中文* — stepped the same way, kept in the app's preferences under `language` by code (`Lang.CODES`). The app redraws in it at once. *Auto* follows the camera's locale (`Lang.fromLocale`); each language's name is drawn in its own script and font. See [LOCALIZATION.md](LOCALIZATION.md) |
+| **Language** | a value — *Auto* / *English* / *简体中文* / *繁體中文* / *日本語* / *한국어* / *Tiếng Việt* — stepped the same way, kept in the app's preferences under `language` by code (`Lang.CODES`). The app redraws in it at once. *Auto* follows the camera's locale (`Lang.fromLocale`); each language's name is drawn in its own script and font. See [LOCALIZATION.md](LOCALIZATION.md) |
 | **Reset settings** | asks `DevTools.resetTitle()` (Cancel highlighted), then stages `Recipes.FACTORY` and stores it (`writeAll`, so the quality prompt still asks when it must). The same look as **Factory**, the first Sony recipe, which is in the list like the others (it was hidden once, and users went looking for it) |
 | **About** | the installed version (from `PackageManager` — never a string in the source, `tools/check-version.sh`), `model.name`, the firmware version (`ScalarProperties.getFirmwareVersion()`, `KeyProbe.firmware`), `version.platform`, the source URL, and the sponsor footer |
 | **Developer >** | the developer menu below |

@@ -1,14 +1,15 @@
 # Localization
 
-Recipe Lab speaks English, Simplified Chinese (简体中文) and Traditional Chinese (繁體中文). The first Chinese
-translations came from Cysita ([#50](https://github.com/voxivoid/recipe-lab-sony-pmca/pull/50)); the strings added
-since then were translated alongside them and are waiting on a native speaker's review.
+Recipe Lab speaks English, Simplified Chinese (简体中文), Traditional Chinese (繁體中文), Japanese (日本語), Korean
+(한국어) and Vietnamese (Tiếng Việt). The first Chinese translations came from Cysita
+([#50](https://github.com/voxivoid/recipe-lab-sony-pmca/pull/50)). The Japanese, Korean and Vietnamese tables were written
+for the languages the website offers and are waiting on a native speaker's review, as is every string added since #50.
 
 ## Choosing the language
 
-**Hold MENU → Language.** Left / right (or centre) steps through *Auto*, *English*, *简体中文* and *繁體中文*, and the
-app redraws in the new language at once. The choice is kept in the app's preferences (`language`, by code — `auto`,
-`en`, `zh-Hans`, `zh-Hant`), so a power cycle keeps it and an uninstall does not.
+**Hold MENU → Language.** Left / right (or centre) steps through *Auto*, *English*, *简体中文*, *繁體中文*, *日本語*,
+*한국어* and *Tiếng Việt*, and the app redraws in the new language at once. The choice is kept in the app's preferences
+(`language`, by code — `auto`, `en`, `zh-Hans`, `zh-Hant`, `ja`, `ko`, `vi`), so a power cycle keeps it and an uninstall does not.
 
 *Auto* follows the camera's own language (its Android locale):
 
@@ -16,6 +17,9 @@ app redraws in the new language at once. The choice is kept in the app's prefere
 |---|---|
 | `zh_TW`, `zh_HK`, `zh_MO` | Traditional Chinese |
 | any other `zh` | Simplified Chinese |
+| `ja` | Japanese |
+| `ko` | Korean |
+| `vi` | Vietnamese |
 | anything else | English |
 
 Each language is named in its own script and drawn in its own font, so whoever lands in a language they cannot read
@@ -47,7 +51,7 @@ All of it is camera-free and covered by `tools/test.sh`:
 |---|---|
 | `Lang.java` | the current language, the Language row's choices, what *Auto* resolves to, and the lookup: `Lang.t(key, args…)` for text, `Lang.label(key, canonical)` for names |
 | `TextEn.java` | the English source, one `{ key, text }` row per string. Every other table falls back to it |
-| `TextZhHans.java`, `TextZhHant.java` | the translations: the same keys and placeholders, plus the names below |
+| `TextZhHans.java`, `TextZhHant.java`, `TextJa.java`, `TextKo.java`, `TextVi.java` | the translations: the same keys and placeholders, plus the names below |
 | `UiFont.java` | Android side: the typeface each language is drawn in, applied to every view |
 
 **Names are not in the English table.** Recipe, brand, style, effect, sub-setting, quality and row names already exist
@@ -68,9 +72,10 @@ Renaming a recipe therefore renames its key: `LangTest` names the table that is 
 
 ## Fonts
 
-The camera's firmware font has no Chinese glyphs, so the APK carries two: Noto Sans CJK SC and TC (SIL Open Font
-License), each cut down to the characters its table uses plus printable ASCII and the English table's characters —
-about 105 KB each. One per script, so each gets its own glyph forms. Their line metrics are set to the camera
+The camera's firmware font has no Chinese, Japanese or Hangul glyphs, so the APK carries four: Noto Sans CJK SC, TC, JP
+and KR (SIL Open Font License), each cut down to the characters its table uses plus printable ASCII and the English
+table's characters — 56 to 123 KB each. One per script, so each gets its own glyph forms. Vietnamese is Latin with
+diacritics and needs no font of its own; `LangTest` checks its letters stay in the ranges the firmware font draws. Their line metrics are set to the camera
 font's, so a Chinese line is no taller than an English one. They live in `assets/fonts/` with their licence
 and provenance ([README.txt](../assets/fonts/README.txt)).
 
@@ -86,7 +91,7 @@ the app still opens and English still works.
 
 1. Add the key and its English to `TextEn.java`, and call it with `Lang.t("key", args…)`. Placeholders are Java's
    positional ones, `%1$s`, `%2$d`; plurals are separate keys (`status_picked_one` / `_many`).
-2. Add the same key to `TextZhHans.java` and `TextZhHant.java`, keeping every placeholder.
+2. Add the same key to every other table (`TextZhHans`, `TextZhHant`, `TextJa`, `TextKo`, `TextVi`), keeping every placeholder.
 3. `python3 tools/subset-font.py`, then `./tools/test.sh`.
 
 `LangTest` checks that every table has exactly the keys it should, that placeholders match English, that every key
@@ -104,13 +109,14 @@ Canvas does no shaping or right-to-left layout.
    keys above (`recipe_…`, `group_…`, …). `lang_name` is the language's name in its own script.
 2. Add it to `Lang`: a constant, its table in `TABLES`, its code in `CODES`, a place in `CHOICES`, and a rule in
    `fromLocale` if *Auto* should pick it.
-3. Add it to `tools/test.sh` `UNITS` and to `TRANSLATIONS` in `LangTest`.
+3. Add it to `tools/test.sh` `UNITS` and to `TRANSLATIONS` in `LangTest`. A font for it goes in `FONTS` too.
 4. If the camera font lacks its glyphs, add a font: an entry in `UiFont.ASSET`, one in `tools/subset-font.py`, one in
    `LangTest.FONTS`, and its licence in `assets/fonts/`.
 
 ## What is not verified
 
-Tests prove which text the app draws, not how the camera draws it. On a camera, still to check: that both fonts load
-and render on the bodies people use (a contributor saw Simplified Chinese on a NEX-5R with the earlier version of this
-change, #50), that Chinese labels fit the chips, the legend and the menu at the camera's resolution, and what locale
-each body reports for *Auto*.
+Tests prove which text the app draws, not how the camera draws it. On a camera, still to check: that Chinese labels fit
+the chips, the legend and the menu at the camera's resolution (a contributor saw Simplified Chinese on a NEX-5R with the
+earlier version of this change, #50); that the four CJK fonts load and render on the bodies people use; that the
+Vietnamese diacritics draw in the firmware font; that the Japanese, Korean and Vietnamese labels fit the chips, the
+legend and the menu; and what locale each body reports for *Auto*.

@@ -8,7 +8,8 @@ import java.util.Map;
  * The display language: which one the app menu picked, which one that resolves to on this camera, and the text of
  * every message, label and legend in it.
  *
- * Text lives in one table per language ({@link TextEn}, {@link TextZhHans}, {@link TextZhHant}), a key → text pair
+ * Text lives in one table per language ({@link TextEn}, {@link TextZhHans}, {@link TextZhHant}, {@link TextJa},
+ * {@link TextKo}, {@link TextVi}), a key → text pair
  * each. English is the source: a key another table lacks falls back to it. Recipe, brand, style, effect and quality
  * names are not in the English table at all — their canonical English lives in {@link Recipes} and {@link Params},
  * where the manifest, the favourites and the tests read it — so {@link #label} takes that canonical text as its
@@ -24,14 +25,14 @@ final class Lang {
     private Lang() {}
 
     /** the languages the tables hold, in menu order */
-    static final int EN = 0, ZH_HANS = 1, ZH_HANT = 2, COUNT = 3;
+    static final int EN = 0, ZH_HANS = 1, ZH_HANT = 2, JA = 3, KO = 4, VI = 5, COUNT = 6;
     /** the menu choice that follows the camera's own language */
     static final int AUTO = -1;
     /** how a choice is kept in the app's preferences: by code, so a new language never shifts a stored one */
-    static final String[] CODES = { "en", "zh-Hans", "zh-Hant" };
+    static final String[] CODES = { "en", "zh-Hans", "zh-Hant", "ja", "ko", "vi" };
     static final String AUTO_CODE = "auto";
 
-    private static final String[][][] TABLES = { TextEn.TEXT, TextZhHans.TEXT, TextZhHant.TEXT };
+    private static final String[][][] TABLES = { TextEn.TEXT, TextZhHans.TEXT, TextZhHant.TEXT, TextJa.TEXT, TextKo.TEXT, TextVi.TEXT };
     private static final Map<String, String>[] TEXT = maps();
     private static int current = EN;
 
@@ -99,7 +100,7 @@ final class Lang {
 
     // ------------------------------------------------------------ the menu choice
     /** the choices the Language row steps through: follow the camera, then each language */
-    static final int[] CHOICES = { AUTO, EN, ZH_HANS, ZH_HANT };
+    static final int[] CHOICES = { AUTO, EN, ZH_HANS, ZH_HANT, JA, KO, VI };
 
     /** the choice left / right lands on, wrapping */
     static int nextChoice(int choice, int dir) {
@@ -126,10 +127,15 @@ final class Lang {
 
     /**
      * The language the camera itself is set to, from its locale: Traditional Chinese for Taiwan, Hong Kong and Macau
-     * (or a Hant script tag), Simplified for any other Chinese, English for everything else — there is no table for it.
+     * (or a Hant script tag), Simplified for any other Chinese, Japanese, Korean and Vietnamese for their languages,
+     * English for everything else — there is no table for it.
      */
     static int fromLocale(String language, String country) {
-        if (!"zh".equalsIgnoreCase(language)) return EN;
+        String l = language == null ? "" : language.toLowerCase(Locale.US);
+        if (l.equals("ja")) return JA;
+        if (l.equals("ko")) return KO;
+        if (l.equals("vi")) return VI;
+        if (!"zh".equals(l)) return EN;
         String c = country == null ? "" : country.toUpperCase(Locale.US);
         return c.equals("TW") || c.equals("HK") || c.equals("MO") || c.equals("HANT") ? ZH_HANT : ZH_HANS;
     }

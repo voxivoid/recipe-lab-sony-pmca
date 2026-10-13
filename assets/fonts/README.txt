@@ -1,8 +1,8 @@
 Recipe Lab bundled CJK fonts
 ============================
 
-Cut-down derivatives of Noto Sans CJK, holding only the glyphs the app's Chinese text uses
-(src/com/voxivoid/recipelab/TextZhHans.java and TextZhHant.java), plus printable ASCII and
+Cut-down derivatives of Noto Sans CJK, holding only the glyphs the app's Chinese, Japanese and Korean text uses
+(src/com/voxivoid/recipelab/TextZhHans.java, TextZhHant.java, TextJa.java and TextKo.java), plus printable ASCII and
 the English table's characters. Renamed as the SIL Open Font License asks of a modified font.
 
 Upstream:  https://github.com/notofonts/noto-cjk
@@ -14,10 +14,16 @@ Sources (not committed, about 16 MB each):
     SHA-256 d68bafcb48a2707749396aa12bbbd833cb70401f3a9a689fd2902c7e0d295964
   Sans/Variable/TTF/Subset/NotoSansTC-VF.ttf
     SHA-256 ac091cc8cd19e848202afc8fe6d3809b4526c8fdbdb4be82da20c4f785949591
+  Sans/Variable/TTF/Subset/NotoSansJP-VF.ttf
+    SHA-256 f4b373b226668ee33a6e54b02823dcd2d1209f17159f777421ae8c2275160369
+  Sans/Variable/TTF/Subset/NotoSansKR-VF.ttf
+    SHA-256 9e1d729e7e2b36f9ef439da102f8c134c10aabe46f1c843bf0aca5c043b86f76
 
 Generated (Regular weight instanced, static TrueType for Android 2.3):
   RecipeLabCJKsc-Regular.ttf   family "Recipe Lab CJK SC"
   RecipeLabCJKtc-Regular.ttf   family "Recipe Lab CJK TC"
+  RecipeLabCJKjp-Regular.ttf   family "Recipe Lab CJK JP"
+  RecipeLabCJKkr-Regular.ttf   family "Recipe Lab CJK KR"
 
 No OpenType layout tables are kept (Android 2.3 shapes nothing), and the line metrics are
 set to the camera font's proportions (Droid Sans: ascent 1900, descent 500 per 2048), so a

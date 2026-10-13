@@ -97,6 +97,9 @@ class DevToolsTest {
         assertEquals("English", DevTools.appValue(DevTools.APP_LANG, Params.OV_FULL, Lang.EN));
         assertEquals("简体中文", DevTools.appValue(DevTools.APP_LANG, Params.OV_FULL, Lang.ZH_HANS));
         assertEquals("繁體中文", DevTools.appValue(DevTools.APP_LANG, Params.OV_FULL, Lang.ZH_HANT));
+        assertEquals("日本語", DevTools.appValue(DevTools.APP_LANG, Params.OV_FULL, Lang.JA));
+        assertEquals("한국어", DevTools.appValue(DevTools.APP_LANG, Params.OV_FULL, Lang.KO));
+        assertEquals("Tiếng Việt", DevTools.appValue(DevTools.APP_LANG, Params.OV_FULL, Lang.VI));
     }
 
     @Test void leftRightWalkThePanelStatesAndWrap() {

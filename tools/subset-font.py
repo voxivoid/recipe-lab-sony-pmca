@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Rebuild the two CJK fonts the APK bundles, from the text tables that use them.
+"""Rebuild the four CJK fonts the APK bundles, from the text tables that use them.
 
-The camera's firmware font has no Chinese glyphs, so the app carries its own: Noto Sans CJK SC and TC, cut down to
-the characters their tables (src/.../TextZhHans.java, TextZhHant.java) actually use, plus printable ASCII and the
-English table's characters, which still appear on a Chinese screen (recipe names, codes, error text). Run it after
-any change to a translation; LangTest fails a character a font lacks.
+The camera's firmware font has no Chinese, Japanese or Hangul glyphs, so the app carries its own: Noto Sans CJK SC, TC,
+JP and KR, cut down to the characters their tables (src/.../TextZhHans.java, TextZhHant.java, TextJa.java,
+TextKo.java) actually use, plus printable ASCII and the English table's characters, which still appear on a translated
+screen (recipe names, codes, error text). Run it after any change to a translation; LangTest fails a character a font
+lacks.
 
     python3 tools/subset-font.py              # sources are fetched once into out/font-source/ (about 16 MB each)
     python3 tools/subset-font.py --source-dir <dir>
@@ -35,6 +36,10 @@ FONTS = [
      "d68bafcb48a2707749396aa12bbbd833cb70401f3a9a689fd2902c7e0d295964", "RecipeLabCJKsc-Regular.ttf", "Recipe Lab CJK SC"),
     ("TextZhHant.java", "NotoSansTC-VF.ttf", "Sans/Variable/TTF/Subset/NotoSansTC-VF.ttf",
      "ac091cc8cd19e848202afc8fe6d3809b4526c8fdbdb4be82da20c4f785949591", "RecipeLabCJKtc-Regular.ttf", "Recipe Lab CJK TC"),
+    ("TextJa.java", "NotoSansJP-VF.ttf", "Sans/Variable/TTF/Subset/NotoSansJP-VF.ttf",
+     "f4b373b226668ee33a6e54b02823dcd2d1209f17159f777421ae8c2275160369", "RecipeLabCJKjp-Regular.ttf", "Recipe Lab CJK JP"),
+    ("TextKo.java", "NotoSansKR-VF.ttf", "Sans/Variable/TTF/Subset/NotoSansKR-VF.ttf",
+     "9e1d729e7e2b36f9ef439da102f8c134c10aabe46f1c843bf0aca5c043b86f76", "RecipeLabCJKkr-Regular.ttf", "Recipe Lab CJK KR"),
 ]
 # The camera's own font, Droid Sans (2048 units per em): line ascent / descent and the glyph bounding box. A TextView
 # sizes each line by these, so a font that reports more makes every line taller than it is in English.
