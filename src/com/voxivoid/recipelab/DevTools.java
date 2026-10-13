@@ -24,13 +24,13 @@ final class DevTools {
     static final int LEVEL_APP = 0, LEVEL_DEV = 1;
 
     /** app menu rows, in display order */
-    static final int APP_BROWSE = 0, APP_NEW = 1, APP_TRANSFER = 2, APP_PANEL = 3, APP_LANG = 4, APP_RESET = 5, APP_REPORT = 6,
-            APP_ABOUT = 7, APP_DEV = 8, APP_ROWS = 9;
+    static final int APP_BROWSE = 0, APP_NEW = 1, APP_TRANSFER = 2, APP_SYNC = 3, APP_PANEL = 4, APP_LANG = 5, APP_RESET = 6,
+            APP_REPORT = 7, APP_ABOUT = 8, APP_DEV = 9, APP_ROWS = 10;
 
     /** the icons the menus draw beside their rows (MenuView draws them: the camera font has no symbol glyphs) */
     static final int IC_BROWSE = 0, IC_NEW = 1, IC_PANEL = 2, IC_LANGUAGE = 3, IC_RESET = 4, IC_ABOUT = 5, IC_DEV = 6,
-            IC_SNAPSHOT = 7, IC_LOCK = 8, IC_SAMPLES = 9, IC_CLOCK = 10, IC_KEYS = 11, IC_REPORT = 12, IC_TRANSFER = 13;
-    private static final int[] APP_ICONS = { IC_BROWSE, IC_NEW, IC_TRANSFER, IC_PANEL, IC_LANGUAGE, IC_RESET, IC_REPORT, IC_ABOUT, IC_DEV };
+            IC_SNAPSHOT = 7, IC_LOCK = 8, IC_SAMPLES = 9, IC_CLOCK = 10, IC_KEYS = 11, IC_REPORT = 12, IC_TRANSFER = 13, IC_SYNC = 14;
+    private static final int[] APP_ICONS = { IC_BROWSE, IC_NEW, IC_TRANSFER, IC_SYNC, IC_PANEL, IC_LANGUAGE, IC_RESET, IC_REPORT, IC_ABOUT, IC_DEV };
     private static final int[] DEV_ICONS = { IC_SNAPSHOT, IC_LOCK, IC_SAMPLES, IC_CLOCK, IC_KEYS };
 
     /** the icon of each row of a level, in row order */
@@ -68,6 +68,7 @@ final class DevTools {
             case APP_BROWSE: return Lang.t("menu_browse");
             case APP_NEW: return Lang.t("menu_new");
             case APP_TRANSFER: return Lang.t("menu_transfer");
+            case APP_SYNC: return Lang.t("menu_sync");
             case APP_PANEL: return Lang.t("menu_panel");
             case APP_LANG: return Lang.t("menu_language");
             case APP_RESET: return Lang.t("menu_reset");
@@ -84,6 +85,7 @@ final class DevTools {
             case APP_BROWSE: return Lang.t("menu_browse_detail");
             case APP_NEW: return Lang.t("menu_new_detail");
             case APP_TRANSFER: return Lang.t("menu_transfer_detail");
+            case APP_SYNC: return Lang.t("menu_sync_detail");
             case APP_PANEL: return Lang.t("menu_panel_detail");
             case APP_LANG: return Lang.t("menu_language_detail");
             case APP_RESET: return Lang.t("menu_reset_detail");
@@ -158,6 +160,8 @@ final class DevTools {
 
     // ------------------------------------------------------------ Transfer to phone
     static String transferTitle() { return Lang.t("transfer_title"); }
+    /** Sync recipes is the same page under its own title, telling the phone's other way in */
+    static String syncTitle() { return Lang.t("sync_title"); }
 
     /**
      * What the Transfer to phone page shows (MenuView draws it): a status chip, the hotspot's network name and password
@@ -176,8 +180,14 @@ final class DevTools {
         String address, last, totals;
     }
 
-    /** The page for {@code s}; {@code rate} is bytes per second. A server problem outranks a working hotspot. */
-    static TransferPage transferPage(TransferState s, Stats stats, double rate) {
+    /** The Transfer to phone page for {@code s}. */
+    static TransferPage transferPage(TransferState s, Stats stats, double rate) { return transferPage(s, stats, rate, false); }
+
+    /**
+     * The page for {@code s}; {@code rate} is bytes per second. A server problem outranks a working hotspot.
+     * {@code sync} is the Sync recipes page: the same link, with what to open on the phone for recipes.
+     */
+    static TransferPage transferPage(TransferState s, Stats stats, double rate, boolean sync) {
         TransferPage p = new TransferPage();
         p.problem = transferProblem(s);
         p.tone = p.problem != null ? TransferPage.ERROR : s.ready() ? TransferPage.READY : TransferPage.STARTING;
@@ -186,7 +196,7 @@ final class DevTools {
         p.passwordLabel = Lang.t("transfer_password");
         p.network = s.ready() && s.ssid() != null ? s.ssid() : "—";
         p.password = s.ready() && s.password() != null ? s.password() : "—";
-        p.instruction = Lang.t(s.failed() ? "transfer_hint_retry" : "transfer_instruction");
+        p.instruction = Lang.t(s.failed() ? "transfer_hint_retry" : sync ? "sync_instruction" : "transfer_instruction");
         p.address = TransferState.address();
         String last = stats.lastRequest();
         if (last.isEmpty()) last = Lang.t(s.note() == TransferState.NOTE_PHONE_JOINED ? "transfer_phone_joined"

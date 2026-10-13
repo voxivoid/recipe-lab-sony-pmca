@@ -1,7 +1,9 @@
 package com.voxivoid.recipelab.transfer;
 
 import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -13,11 +15,12 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.Semaphore;
 
 /**
- * The protocol 2 HTTP server: blocking sockets, one thread per connection (at most {@link #MAX_CONNECTIONS}), one
+ * The protocol 3 HTTP server: blocking sockets, one thread per connection (at most {@link #MAX_CONNECTIONS}), one
  * response per connection, files streamed in {@link Protocol#BUFFER_SIZE} chunks and never held in memory.
  *
  * <pre>
@@ -27,6 +30,7 @@ import java.util.concurrent.Semaphore;
  *                                              the file itself (large); X-Orientation header
  * GET  /api/recipes                            the custom recipe files in RECIPES (JSON)
  * GET  /files/REL  (and HEAD, Range)           the file itself
+ * PUT  /files/RECIPES/NAME.YML                 writes a custom recipe file (new or replaced), nothing else
  * </pre>
  */
 public final class LinkServer {
@@ -39,6 +43,7 @@ public final class LinkServer {
     private final Stats stats;
     private final Logger log;
     private final Semaphore slots = new Semaphore(MAX_CONNECTIONS);
+    private final Object writing = new Object();                  // one recipe file written at a time: they share SAVING.TMP
     private final Set<Socket> open = new HashSet<Socket>();
     private ServerSocket serverSocket;
     private Thread acceptThread;
@@ -144,7 +149,7 @@ public final class LinkServer {
             summary = req.method + " " + req.target;
             stats.requestStarted(summary);
             started = true;
-            int status = handleOrError(req, out);
+            int status = handleOrError(req, in, out);
             summary = summary + " -> " + status;
         } catch (SocketException e) {
             summary = summary + " -> dropped";     // client went away, or stop() closed the socket
@@ -161,10 +166,10 @@ public final class LinkServer {
     }
 
     /** Handles one request, turning failures into error responses; returns the status sent. */
-    public int handleOrError(HttpRequest req, CountingOutputStream out) throws IOException {
+    public int handleOrError(HttpRequest req, InputStream in, CountingOutputStream out) throws IOException {
         boolean head = "HEAD".equals(req.method);
         try {
-            return handle(req, out);
+            return handle(req, in, out);
         } catch (HttpException e) {
             if (out.count() > 0) throw new IOException("failed after response started: " + e.getMessage());
             writeError(out, e, head);
@@ -177,11 +182,20 @@ public final class LinkServer {
         }
     }
 
-    /** Routes one request and writes the whole response; returns the status. Errors are thrown, not written. */
+    /** A request without a body. */
     int handle(HttpRequest req, OutputStream out) throws IOException, HttpException {
+        return handle(req, new ByteArrayInputStream(new byte[0]), out);
+    }
+
+    /**
+     * Routes one request and writes the whole response; returns the status. Errors are thrown, not written.
+     * {@code in} is the connection past the request head, where a PUT's body is.
+     */
+    int handle(HttpRequest req, InputStream in, OutputStream out) throws IOException, HttpException {
         boolean head = "HEAD".equals(req.method);
-        if (!head && !"GET".equals(req.method)) throw new HttpException(405, "method not allowed", "Allow", "GET, HEAD");
         String p = req.path;
+        if ("PUT".equals(req.method)) return putRecipe(req, p, in, out);
+        if (!head && !"GET".equals(req.method)) throw new HttpException(405, "method not allowed", "Allow", "GET, HEAD, PUT");
         if (p.equals("/api/info")) return json(out, Protocol.infoJson(model, name), head);
         if (p.equals("/api/files")) return json(out, FileIndex.toJson(FileIndex.scan(root)), head);
         if (p.equals("/api/recipes")) return json(out, FileIndex.toJson(FileIndex.recipes(root)), head);
@@ -255,6 +269,70 @@ public final class LinkServer {
         }
     }
 
+    /**
+     * {@code PUT /files/RECIPES/NAME.YML}: the body becomes that custom recipe file, new (201) or replacing the one
+     * there (200). Nothing else on the card can be written (403): the folder must be RECIPES and the name one the
+     * card's file system takes, up to eight letters and digits plus .YML, stored in capitals. What the file says is
+     * not looked at; Recipe Lab reads it as it reads any file the card brings. The bytes go to SAVING.TMP first and
+     * only then take the name, as Recipe Lab's own saves do.
+     */
+    private int putRecipe(HttpRequest req, String p, InputStream in, OutputStream out) throws IOException, HttpException {
+        String rel = p.startsWith("/files/") ? p.substring("/files/".length()) : "";
+        int slash = rel.indexOf('/');
+        String leaf = slash < 0 ? "" : rel.substring(slash + 1);
+        if (slash < 0 || !rel.substring(0, slash).equalsIgnoreCase(FileIndex.RECIPES) || !recipeFileName(leaf))
+            throw new HttpException(403, "only RECIPES/NAME.YML can be written");
+        byte[] body = req.body(in, Protocol.MAX_RECIPE_BYTES);
+        leaf = leaf.toUpperCase(Locale.US);
+        String folder = FileIndex.RECIPES;                           // the card's own spelling of the folder, when it has one
+        String[] top = root.dir().list();
+        if (top != null) for (int i = 0; i < top.length; i++) if (top[i].equalsIgnoreCase(FileIndex.RECIPES)) folder = top[i];
+        File dir = root.resolve(folder);
+        boolean replaced;
+        synchronized (writing) {
+            if (!dir.isDirectory() && !dir.mkdirs()) throw new HttpException(500, "cannot create " + folder);
+            String[] names = dir.list();
+            if (names != null) for (int i = 0; i < names.length; i++) if (names[i].equalsIgnoreCase(leaf)) leaf = names[i];
+            File target = root.resolve(folder + "/" + leaf), tmp = root.resolve(folder + "/" + TMP);
+            replaced = target.exists();
+            try {
+                FileOutputStream f = new FileOutputStream(tmp);
+                try {
+                    f.write(body);
+                    f.flush();
+                    try { f.getFD().sync(); } catch (IOException noSync) {}   // Sony's FUSE layer has no fsync
+                } finally {
+                    f.close();
+                }
+            } catch (IOException e) {
+                tmp.delete();
+                throw new HttpException(500, "cannot write " + leaf);
+            }
+            if (replaced && !target.delete()) { tmp.delete(); throw new HttpException(500, "cannot replace " + leaf); }
+            if (!tmp.renameTo(target)) { tmp.delete(); throw new HttpException(500, "cannot write " + leaf); }
+        }
+        byte[] b = Utf8.bytes("{\"path\":" + Json.quote(folder + "/" + leaf) + "}");
+        int status = replaced ? 200 : 201;
+        writeHead(out, status, "application/json", b.length);
+        out.write(b);
+        return status;
+    }
+
+    /** The file a save writes before it takes the recipe's name, as in Recipe Lab's own saves; never read as a recipe. */
+    static final String TMP = "SAVING.TMP";
+
+    /** A recipe file name the card takes: one to eight ASCII letters and digits, then .YML (any case). */
+    static boolean recipeFileName(String name) {
+        if (!FileIndex.isRecipe(name)) return false;
+        int n = name.length() - 4;
+        if (n < 1 || n > 8) return false;
+        for (int i = 0; i < n; i++) {
+            char c = name.charAt(i);
+            if (!((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9'))) return false;
+        }
+        return true;
+    }
+
     /** Streams {@code length} bytes of {@code f} from {@code offset} in small chunks. */
     static void copy(File f, long offset, long length, OutputStream out) throws IOException {
         RandomAccessFile raf = new RandomAccessFile(f, "r");
@@ -295,10 +373,14 @@ public final class LinkServer {
     static String reason(int status) {
         switch (status) {
             case 200: return "OK";
+            case 201: return "Created";
             case 206: return "Partial Content";
             case 400: return "Bad Request";
+            case 403: return "Forbidden";
             case 404: return "Not Found";
             case 405: return "Method Not Allowed";
+            case 411: return "Length Required";
+            case 413: return "Payload Too Large";
             case 416: return "Range Not Satisfiable";
             case 500: return "Internal Server Error";
             default: return "Status";

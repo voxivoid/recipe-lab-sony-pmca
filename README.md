@@ -271,10 +271,12 @@ Open **Recipe Lab** from the Application List. The live view shows the look. The
 
 **Menu** — **hold MENU**
 
-- **Browse recipes** · **New recipe** · **Transfer to phone** · **Panel visibility** · **Language** · **Reset settings** ·
+- **Browse recipes** · **New recipe** · **Transfer to phone** · **Sync recipes** · **Panel visibility** · **Language** · **Reset settings** ·
   **Save a bug report** · **About** · **Developer**.
 - **New recipe** saves the camera's current settings as a [custom recipe](#custom-recipes).
 - **Transfer to phone** sends your photos to the phone over Wi-Fi — see [Transfer to phone](#transfer-to-phone).
+- **Sync recipes** opens the same Wi-Fi link for custom recipes: Recipe Lab Studio copies the ones the phone lacks
+  and sends the ones the card lacks. Leave the page with MENU and they are under Custom.
 - Languages: *Auto*, English, 简体中文, 繁體中文, 日本語, 한국어, Tiếng Việt.
 
 ## Custom recipes

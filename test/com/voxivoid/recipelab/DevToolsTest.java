@@ -63,7 +63,7 @@ class DevToolsTest {
         assertEquals(DevTools.ROWS, DevTools.rows(DevTools.LEVEL_DEV));
         String[] labels = new String[DevTools.APP_ROWS];
         for (int r = 0; r < DevTools.APP_ROWS; r++) labels[r] = DevTools.appLabel(r);
-        assertEquals(Arrays.asList("Browse recipes", "New recipe", "Transfer to phone", "Panel visibility", "Language", "Reset settings", "Save a bug report", "About", "Developer  >"), Arrays.asList(labels));
+        assertEquals(Arrays.asList("Browse recipes", "New recipe", "Transfer to phone", "Sync recipes", "Panel visibility", "Language", "Reset settings", "Save a bug report", "About", "Developer  >"), Arrays.asList(labels));
         assertTrue(DevTools.appDetail(DevTools.APP_NEW).contains("current settings"), "the row says what it keeps");
         assertEquals(DevTools.APP_BROWSE, 0, "the menu opens on Browse, so a body without Fn is one press from the list");
     }
@@ -78,6 +78,7 @@ class DevToolsTest {
         assertEquals(DevTools.IC_NEW, DevTools.icons(DevTools.LEVEL_APP)[DevTools.APP_NEW]);
         assertEquals(DevTools.IC_LANGUAGE, DevTools.icons(DevTools.LEVEL_APP)[DevTools.APP_LANG]);
         assertEquals(DevTools.IC_TRANSFER, DevTools.icons(DevTools.LEVEL_APP)[DevTools.APP_TRANSFER]);
+        assertEquals(DevTools.IC_SYNC, DevTools.icons(DevTools.LEVEL_APP)[DevTools.APP_SYNC]);
     }
 
     @Test void everyAppRowHasADetailLine() {
@@ -127,6 +128,18 @@ class DevToolsTest {
         assertEquals("Send RAWs and JPEGs to Recipe Lab Studio over Wi-Fi", DevTools.appDetail(DevTools.APP_TRANSFER));
         assertNull(DevTools.appValue(DevTools.APP_TRANSFER, Params.OV_FULL, Lang.AUTO), "a row that opens a page, not a value");
         assertEquals("TRANSFER TO PHONE", DevTools.transferTitle());
+    }
+
+    @Test void theSyncRowSitsUnderTransferAndOpensTheSamePageInItsOwnWords() {
+        assertEquals(DevTools.APP_TRANSFER + 1, DevTools.APP_SYNC);
+        assertEquals("Sync recipes", DevTools.appLabel(DevTools.APP_SYNC));
+        assertEquals("Exchange custom recipes with Recipe Lab Studio over Wi-Fi", DevTools.appDetail(DevTools.APP_SYNC));
+        assertNull(DevTools.appValue(DevTools.APP_SYNC, Params.OV_FULL, Lang.AUTO), "a row that opens a page, not a value");
+        assertEquals("SYNC RECIPES", DevTools.syncTitle());
+        TransferState s = started();
+        assertTrue(DevTools.transferPage(s, new Stats(), 0, true).instruction.contains("Import → Sync recipes"));
+        assertTrue(DevTools.transferPage(s, new Stats(), 0, false).instruction.contains("From camera (Wi-Fi)"));
+        assertEquals(DevTools.transferPage(s, new Stats(), 0).instruction, DevTools.transferPage(s, new Stats(), 0, false).instruction);
     }
 
     private static TransferState started() {

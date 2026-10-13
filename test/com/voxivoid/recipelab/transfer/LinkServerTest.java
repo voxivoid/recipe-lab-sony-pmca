@@ -118,7 +118,7 @@ class LinkServerTest {
         Response r = get("/api/info");
         assertEquals(200, r.status);
         assertEquals("application/json", r.header("Content-Type"));
-        assertEquals("{\"app\":\"recipe-lab\",\"protocol\":2,\"model\":\"ILCE-6000\",\"name\":\"Sony \\u03b16000\"}", r.text());
+        assertEquals("{\"app\":\"recipe-lab\",\"protocol\":3,\"model\":\"ILCE-6000\",\"name\":\"Sony \\u03b16000\"}", r.text());
         assertBodyLengthMatches(r);
     }
 
@@ -311,10 +311,69 @@ class LinkServerTest {
         assertEquals(0, missing.body.length);
     }
 
+    /** A PUT with {@code body}, its length declared. */
+    private Response put(String target, String body) throws IOException {
+        return raw("PUT " + target + " HTTP/1.1\r\nHost: camera\r\nContent-Length: " + body.getBytes("UTF-8").length + "\r\n\r\n" + body);
+    }
+
+    private static String read(File f) throws IOException {
+        return new String(Files.readAllBytes(f.toPath()), "UTF-8");
+    }
+
+    @Test void putWritesARecipeFileAndMakesTheFolder() throws IOException {
+        Response r = put("/files/RECIPES/goldenho.yml", "name: Golden Hour\n");
+        assertEquals(201, r.status);
+        assertEquals("{\"path\":\"RECIPES/GOLDENHO.YML\"}", r.text(), "stored in capitals, as the card's file system has it");
+        assertBodyLengthMatches(r);
+        assertEquals("name: Golden Hour\n", read(new File(card, "RECIPES/GOLDENHO.YML")));
+        assertTrue(get("/api/recipes").text().contains("RECIPES/GOLDENHO.YML"), "and it is listed straight away");
+        assertArrayEquals(new String[] { "GOLDENHO.YML" }, new File(card, "RECIPES").list(), "the temporary file is gone");
+    }
+
+    @Test void putReplacesTheFileThatIsThereInItsOwnSpelling() throws IOException {
+        Fixtures.write(new File(card, "Recipes/Golden.yml"), "old".getBytes("UTF-8"));
+        Response r = put("/files/RECIPES/GOLDEN.YML", "new");
+        assertEquals(200, r.status);
+        assertEquals("{\"path\":\"Recipes/Golden.yml\"}", r.text());
+        assertEquals("new", read(new File(card, "Recipes/Golden.yml")));
+        assertArrayEquals(new String[] { "Golden.yml" }, new File(card, "Recipes").list());
+    }
+
+    @Test void putWritesNothingButRecipeFiles() throws IOException {
+        assertEquals(403, put("/files/" + ARW, "x").status);
+        assertArrayEquals(arwBytes, Files.readAllBytes(new File(card, ARW).toPath()));
+        assertEquals(403, put("/files/RECIPES/notes.txt", "x").status);
+        assertEquals(403, put("/files/RECIPES/SAVING.TMP", "x").status);
+        assertEquals(403, put("/files/RECIPES/TOOLONGNAME.YML", "x").status, "the card takes 8.3 names only");
+        assertEquals(403, put("/files/RECIPES/A%20B.YML", "x").status);
+        assertEquals(403, put("/files/RECIPES/SUB/A.YML", "x").status);
+        assertEquals(403, put("/files/RECIPES/..%2Fsecret.YML", "x").status);
+        assertEquals(403, put("/files/DCIM/A.YML", "x").status);
+        assertEquals(403, put("/api/recipes", "x").status);
+        assertTrue(!new File(card, "RECIPES").exists(), "a refused PUT leaves the card as it was");
+    }
+
+    @Test void putNeedsALengthAndASmallBody() throws IOException {
+        assertEquals(411, request("PUT", "/files/RECIPES/A.YML").status);
+        assertEquals(413, request("PUT", "/files/RECIPES/A.YML", "Content-Length: " + (Protocol.MAX_RECIPE_BYTES + 1)).status);
+        assertEquals(400, request("PUT", "/files/RECIPES/A.YML", "Content-Length: -1").status);
+        assertTrue(!new File(card, "RECIPES/A.YML").exists());
+        StringBuilder full = new StringBuilder();
+        for (int i = 0; i < Protocol.MAX_RECIPE_BYTES; i++) full.append('a');
+        assertEquals(201, put("/files/RECIPES/A.YML", full.toString()).status, "the largest file Recipe Lab reads still fits");
+    }
+
+    @Test void putNeverWritesOutsideTheCard() throws IOException {
+        new File(base, "outside").mkdirs();
+        Files.createSymbolicLink(new File(card, "RECIPES").toPath(), new File(base, "outside").toPath());
+        assertEquals(400, put("/files/RECIPES/A.YML", "x").status);
+        assertEquals(0, new File(base, "outside").list().length, "a RECIPES folder that links out of the card takes nothing");
+    }
+
     @Test void otherMethodsAre405() throws IOException {
         Response r = request("POST", "/api/files");
         assertEquals(405, r.status);
-        assertEquals("GET, HEAD", r.header("Allow"));
+        assertEquals("GET, HEAD, PUT", r.header("Allow"));
         assertEquals(405, request("DELETE", "/files/" + ARW).status);
         assertTrue(new File(card, ARW).exists());
     }
