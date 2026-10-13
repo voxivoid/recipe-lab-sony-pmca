@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-/** One parsed HTTP/1.x request head. Bodies are never read: the protocol only has GET and HEAD. */
+/** One parsed HTTP/1.x request head. Only a PUT has a body, read on demand with {@link #body}. */
 public final class HttpRequest {
     /** Longest request head accepted (request line plus headers). */
     public static final int MAX_HEAD = 16 * 1024;
@@ -37,6 +37,25 @@ public final class HttpRequest {
     /** A header value by case-insensitive name, or null. Repeated headers are joined with ", ". */
     public String header(String name) {
         return headers.get(name.toLowerCase(Locale.US));
+    }
+
+    /**
+     * The request body, read from {@code in} right after the head: exactly Content-Length bytes. No length is a 411,
+     * one over {@code max} a 413 (nothing is read), a stream that ends early a 400.
+     */
+    public byte[] body(InputStream in, int max) throws IOException, HttpException {
+        String cl = header("Content-Length");
+        if (cl == null) throw new HttpException(411, "length required");
+        if (!cl.matches("\\d{1,9}")) throw new HttpException(400, "malformed Content-Length");
+        int n = Integer.parseInt(cl);
+        if (n > max) throw new HttpException(413, "body too large");
+        byte[] b = new byte[n];
+        for (int got = 0; got < n; ) {
+            int r = in.read(b, got, n - got);
+            if (r < 0) throw new HttpException(400, "incomplete body");
+            got += r;
+        }
+        return b;
     }
 
     /** The first query parameter called {@code name}, decoded ('+' is a space), or null. */

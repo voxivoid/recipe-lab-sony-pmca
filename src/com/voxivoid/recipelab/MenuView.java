@@ -384,6 +384,16 @@ public class MenuView extends View {
                 glyph.setStyle(Paint.Style.FILL); c.drawCircle(ax + s * 0.12f, ay - s * 0.12f, d * 0.9f, glyph);
                 return;
             }
+            case DevTools.IC_SYNC: {                                // two arrows, one each way
+                float y1 = cy - s * 0.4f, y2 = cy + s * 0.4f, h = s * 0.35f;
+                c.drawLine(cx - s, y1, cx + s, y1, glyph);
+                c.drawLine(cx + s, y1, cx + s - h, y1 - h, glyph);
+                c.drawLine(cx + s, y1, cx + s - h, y1 + h, glyph);
+                c.drawLine(cx - s, y2, cx + s, y2, glyph);
+                c.drawLine(cx - s, y2, cx - s + h, y2 - h, glyph);
+                c.drawLine(cx - s, y2, cx - s + h, y2 + h, glyph);
+                return;
+            }
             case DevTools.IC_KEYS:                                  // a keyboard: case, two rows of keys, space bar
                 box.set(cx - s, cy - s * 0.65f, cx + s, cy + s * 0.65f);
                 c.drawRoundRect(box, 2 * d, 2 * d, glyph);

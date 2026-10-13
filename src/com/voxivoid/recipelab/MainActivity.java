@@ -90,6 +90,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private int langChoice = Lang.AUTO;                         // the Language row: Lang.AUTO or a language
     private static final int PAGE_ROWS = 0, PAGE_ABOUT = 1, PAGE_TRANSFER = 2;
     private TransferMode transfer;                              // Transfer to phone, while its page is open (null otherwise)
+    private boolean transferSync;                               // the page was opened as Sync recipes: same link, its own words
     private Keys.Caps caps = Keys.Caps.UNKNOWN;                 // the shortcut keys this body reports (KeyProbe)
     private HintBar hints;
     private SponsorLine sponsor;
@@ -658,8 +659,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private void renderMenu() {
         if (menuPage == PAGE_ABOUT) menu.setPage(DevTools.aboutTitle(), DevTools.about(versionName(), KeyProbe.prop("model.name"),
                 KeyProbe.firmware(), KeyProbe.prop("version.platform")), DevTools.aboutFooter(), Keys.hints(Keys.H_PAGE, caps));
-        else if (menuPage == PAGE_TRANSFER && transfer != null) menu.setTransfer(DevTools.transferTitle(),
-                DevTools.transferPage(transfer.state(), transfer.stats(), transfer.rate()), Keys.hints(Keys.H_TRANSFER, caps));
+        else if (menuPage == PAGE_TRANSFER && transfer != null) menu.setTransfer(transferSync ? DevTools.syncTitle() : DevTools.transferTitle(),
+                DevTools.transferPage(transfer.state(), transfer.stats(), transfer.rate(), transferSync), Keys.hints(Keys.H_TRANSFER, caps));
         else {
             int n = DevTools.rows(menuLevel);
             boolean app = menuLevel == DevTools.LEVEL_APP, snapshotTaken = !app && snapFile().exists();
@@ -698,7 +699,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             switch (menuSel) {
                 case DevTools.APP_BROWSE: closeMenu(); browse(); break;
                 case DevTools.APP_NEW: closeMenu(); openName(NAME_NEW); break;   // the camera's current settings, kept as a recipe
-                case DevTools.APP_TRANSFER: openTransfer(); break;
+                case DevTools.APP_TRANSFER: openTransfer(false); break;
+                case DevTools.APP_SYNC: openTransfer(true); break;
                 case DevTools.APP_PANEL: case DevTools.APP_LANG: stepMenuValue(+1); break;
                 case DevTools.APP_RESET: closeMenu(); askReset(); break;
                 case DevTools.APP_REPORT: closeMenu(); saveReport(); break;
@@ -755,8 +757,12 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     }
 
     // ------------------------------------------------------------ Transfer to phone (app menu): a page that serves the card over Wi-Fi
-    /** the camera's hotspot and the server up, the page showing how it goes — refreshed by every event and once a second */
-    private void openTransfer() {
+    /**
+     * the camera's hotspot and the server up, the page showing how it goes — refreshed by every event and once a second.
+     * {@code sync} opens it as Sync recipes: the link is the same one, the page says where recipes go on the phone
+     */
+    private void openTransfer(boolean sync) {
+        transferSync = sync;
         if (transfer == null) transfer = new TransferMode(this, transferModel(), new TransferMode.Listener() {
             public void changed() { if (menuOpen && menuPage == PAGE_TRANSFER) renderMenu(); }
         });
@@ -781,6 +787,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private boolean transferKey(int sc, int repeat) {
         if (repeat > 0 || (sc != K_MENU && sc != K_SK1)) return true;
         swallowMenuUp = true; stopTransfer(); menuPage = PAGE_ROWS;
+        reloadCustoms();                                         // the phone may have sent recipes
         renderMenu();
         return true;
     }

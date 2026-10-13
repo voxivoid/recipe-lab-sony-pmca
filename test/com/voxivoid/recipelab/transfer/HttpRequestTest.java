@@ -88,6 +88,19 @@ class HttpRequestTest {
         assertEquals(400, status(sb.append("\r\n\r\n").toString()));
     }
 
+    @Test void aBodyIsExactlyItsDeclaredLength() throws Exception {
+        java.io.InputStream in = new java.io.ByteArrayInputStream("PUT /f HTTP/1.1\r\nContent-Length: 5\r\n\r\nhellomore".getBytes("ISO-8859-1"));
+        HttpRequest r = HttpRequest.read(in);
+        assertEquals("hello", new String(r.body(in, 8), "ISO-8859-1"));
+
+        java.io.InputStream cut = new java.io.ByteArrayInputStream("PUT /f HTTP/1.1\r\nContent-Length: 5\r\n\r\nhel".getBytes("ISO-8859-1"));
+        HttpRequest shortBody = HttpRequest.read(cut);
+        assertEquals(400, assertThrows(HttpException.class, () -> shortBody.body(cut, 8)).status);
+        assertEquals(413, assertThrows(HttpException.class, () -> r.body(in, 4)).status);
+        HttpRequest none = read("PUT /f HTTP/1.1\r\n\r\n");
+        assertEquals(411, assertThrows(HttpException.class, () -> none.body(new java.io.ByteArrayInputStream(new byte[0]), 8)).status);
+    }
+
     @Test void badQueryEscapeIs400() throws Exception {
         HttpRequest r = read("GET /api/preview?path=%G1 HTTP/1.1\r\n\r\n");
         assertEquals(400, assertThrows(HttpException.class, () -> r.queryParam("path")).status);
