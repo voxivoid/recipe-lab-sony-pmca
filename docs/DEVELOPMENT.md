@@ -388,6 +388,7 @@ Where things live:
 | `~/toolchains/jdk17` | JDK 17 (Temurin) |
 | `~/Android/Sdk` | build-tools 30.0.3, platform-28, NDK r16b |
 | `~/.keys/recipelab-release.keystore` | the signing key, `chmod 600` |
+| `~/.keys/recipelab-release.password` | its password, `chmod 600` — never in the repo |
 | `~/code/sony-pmca-re` | Sony-PMCA-RE — dumps, the updater shell, installing |
 | `~/code/a6000-dumps` | firmware and settings-store dumps |
 | `~/code/pmca-scripts` | camera helper scripts |
@@ -406,10 +407,14 @@ To build with the project key instead of a throwaway one:
 
 ```bash
 export ANDROID_KEYSTORE_B64="$(base64 -w0 ~/.keys/recipelab-release.keystore)"
-export ANDROID_KEYSTORE_PASSWORD=android
+export ANDROID_KEYSTORE_PASSWORD="$(cat ~/.keys/recipelab-release.password)"
 export ANDROID_KEY_ALIAS=probe
-export ANDROID_KEY_PASSWORD=android
+export ANDROID_KEY_PASSWORD="$ANDROID_KEYSTORE_PASSWORD"
 ```
+
+The keystore is PKCS12, so the store and the key share one password. The password and the
+keystore are both kept in the maintainer's password manager; losing the keystore means no
+update can ever install over an existing Recipe Lab again.
 
 An APK signed with a different key **cannot be installed over an existing Recipe Lab** — the
 app has to be removed first — so use these whenever you are updating a camera that already
