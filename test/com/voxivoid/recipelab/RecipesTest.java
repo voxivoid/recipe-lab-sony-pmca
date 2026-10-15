@@ -4,7 +4,11 @@ import static com.voxivoid.recipelab.Fixtures.indexOf;
 import static com.voxivoid.recipelab.Fixtures.recipe;
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 
@@ -248,5 +252,24 @@ class RecipesTest {
         assertEquals(1, Recipes.GROUP_COUNT[Recipes.ALL[solo].group]);
         assertEquals(solo, Recipes.nextInGroup(solo, +1));
         assertEquals(solo, Recipes.nextInGroup(solo, -1));
+    }
+
+    @Test void everySubValueIsOneTheCameraLists() {
+        // the pe-…-effect-values lists an A6000 reports in its camera parameters
+        Map<String, List<String>> camera = new HashMap<String, List<String>>();
+        camera.put("pe-toy-camera-effect", Arrays.asList("normal", "cool", "warm", "green", "magenta"));
+        camera.put("pe-part-color-effect", Arrays.asList("red", "green", "blue", "yellow"));
+        camera.put("pe-soft-high-key-effect", Arrays.asList("blue", "pink", "green"));
+        camera.put("pe-posterization-effect", Arrays.asList("posterization-color", "posterization-mono"));
+        for (int pe = 0; pe < Recipes.PE_KEYS.length; pe++) {
+            String[] values = Recipes.subValues(pe);
+            if (values == null) { assertNull(Recipes.subRuntime(pe, 0)); continue; }
+            List<String> listed = camera.get(Recipes.subKey(pe));
+            assertNotNull(listed, Recipes.subKey(pe));
+            for (int i = 0; i < values.length; i++)
+                assertEquals(listed.get(i), Recipes.subRuntime(pe, i), "the camera's value at the stored index: " + values[i]);
+            assertNull(Recipes.subRuntime(pe, values.length));
+        }
+        assertEquals("posterization-bw", Recipes.subValues(3)[1], "recipe files keep their own spelling");
     }
 }

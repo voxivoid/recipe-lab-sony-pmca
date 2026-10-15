@@ -75,6 +75,17 @@ public class Recipes {
             default: return null;
         }
     }
+    /**
+     * The value the camera's runtime takes for an effect sub-parameter (the {@code pe-…-effect-values} list it reports):
+     * the recipe's value, except B&W posterization, which recipe files spell {@code posterization-bw} and the camera
+     * {@code posterization-mono}. The camera ignores a value not in its list, so before this B&W posterization shot in
+     * colour. Null for an effect without a sub-parameter or an index out of range.
+     */
+    public static String subRuntime(int pe, int sub) {
+        String[] v = subValues(pe);
+        if (v == null || sub < 0 || sub >= v.length) return null;
+        return v[sub].equals("posterization-bw") ? "posterization-mono" : v[sub];
+    }
     public static String subLabel(int pe, int sub) {
         String[] v = subValues(pe);
         if (v == null) return null;

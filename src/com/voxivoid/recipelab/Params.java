@@ -354,8 +354,8 @@ final class Params {
         p.put("color-compensation-for-white-balance", String.valueOf(-edit[R_GM]));   // camera counts magenta positive; recipes count green positive
         p.put("storage-fmt", Q_FMT[edit[R_QUAL]]); p.put("jpeg-quality", Q_JPG[edit[R_QUAL]]);
         p.put("picture-effect", Recipes.PE_KEYS[edit[R_PE]]);
-        String sk = Recipes.subKey(edit[R_PE]); String[] sv = Recipes.subValues(edit[R_PE]);
-        if (sk != null && sv != null && edit[R_SUB] >= 0 && edit[R_SUB] < sv.length) p.put(sk, sv[edit[R_SUB]]);
+        String sk = Recipes.subKey(edit[R_PE]), sv = Recipes.subRuntime(edit[R_PE], edit[R_SUB]);
+        if (sk != null && sv != null) p.put(sk, sv);
         p.put("exposure-compensation", String.valueOf(edit[R_EV]));
         int dro = edit[R_DRO];
         if (dro == Recipes.DRO_AUTO) p.put("dro-mode", "auto");
