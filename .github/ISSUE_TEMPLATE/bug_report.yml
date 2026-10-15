@@ -67,8 +67,8 @@ body:
       description: >-
         The app writes what it did, and every error, to `RECIPLAB/LOGS/LOG.TXT` on the memory card. Connect the
         camera over USB (MENU → Setup → USB Connection → Mass Storage) or put the card in a reader, open that file,
-        and drag it into this box, or paste it. `LOG1.TXT` beside it is the older part, so attach it too if it is
-        there. No `RECIPLAB` folder on the card means your build is older than the log: say so here.
+        and drag it into this box. Attach the other files in that folder too: `LOG1.TXT` is the older part of the
+        log, and `PARAMS.TXT` every camera setting as the app last saw it. No `RECIPLAB` folder on the card means your build is older than the log: say so here.
       placeholder: "2026-10-15 14:03:27  FAIL     Classic Chrome: 01070c7f = 3 refused: Backup_get_datasize failed  (8 of 12 written before it)"
   - type: textarea
     id: diff

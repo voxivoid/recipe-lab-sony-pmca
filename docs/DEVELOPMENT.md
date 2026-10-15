@@ -161,15 +161,22 @@ tools' `DIFF.TXT`, `KEYS.TXT` and `LOCKS.TXT` — while `samples.txt` and `snaps
 
 | kind | when |
 |---|---|
-| `OPEN` | every `onResume`: model, platform, app version, the keys `KeyProbe` found |
+| `OPEN` | every `onResume`: model, platform, app version, the mode dial (`scene-mode` from the parameters `onResume` already read: `program-auto`, `shutter-speed`, …), the keys `KeyProbe` found |
+| `STATE` | at an opening, what the store holds for every recipe row (`STYLE=1 SAT=0 …`) — only when it changed since it was last logged (prefs `loggedState`), so the camera's own menus show up between two openings |
+| `INFO` | the mode dial turned with the app open (read back with the preview parameters), the snapshot tool's diff in `DIFF.TXT` |
 | `WRITE` | a successful store: the recipe and every `id=value` written |
 | `FAIL` | a refused write (slot, value, the error, how many went in first), read-only slots, a failed store read, a custom recipe save / delete, the shutter throwing |
-| `PREVIEW` | the camera not opening, the preview not starting, `setParameters` throwing — and the preview values the camera did not keep, read back after each `setParameters` (`color-mode mono>standard`), since a dropped value throws nothing (#104). Logged once per change, not per key press |
+| `PREVIEW` | autofocus refused, the camera not opening, the preview not starting, `setParameters` throwing — and the preview values the camera did not keep, read back after each `setParameters` (`color-mode mono>standard`), since a dropped value throws nothing (#104). Logged once per change, not per key press |
 | `SHOOT` | before every `takePicture`, the shutter key's and the sample run's: on a body that reboots on the shutter (#100) the last line is the frame that did it |
 | `CRASH` | the default uncaught-exception handler: the stack, then the platform's own handler |
 
 Times are the camera's clock, read from Sony's `TimeUtil` (the Android clock is never set: an A6000 log read 1970). Each line is opened, written and closed on its own, so a reboot loses at most the line being written. Past
-`CardLog.MAX_BYTES` (64 KB) `LOG.TXT` becomes `LOG1.TXT`, replacing the one before. No card, nothing is written, and a
+`CardLog.MAX_BYTES` (64 KB) any of them becomes its older file (`LOG1.TXT`, `KEYS1.TXT`, …), replacing the one before.
+
+`PARAMS.TXT` is every camera parameter (`flatten()`, about 9 KB on an A6000), one sorted line each, so two reports
+diff cleanly. It is **replaced**, not appended, and only when the parameters changed (prefs `paramsHash`): a full
+picture of the camera as of the last opening that differed, with nothing read beyond what `onResume` already reads. The
+folder never holds more than nine fixed names, about 600 KB. No card, nothing is written, and a
 log that cannot be written never stops the app. English always. The bug and compatibility report forms ask for the
 file, and walk through the snapshot tool for a setting that did not change.
 

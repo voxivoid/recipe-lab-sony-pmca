@@ -128,6 +128,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private String previewErr = "";
     // the shareable log on the card (CardLog): the last preview line written, so a failure repeated per key press is logged once
     private String lastPreviewLog = "";
+    private String lastMode;                                   // the mode dial as last logged: a turn with the app open is logged once
 
     @Override
     protected void onCreate(Bundle b) {
@@ -186,6 +187,30 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     /** one line of LOG.TXT; a log that cannot be written must never take the app down with it */
     private static void log(String kind, String msg) {
         try { CardLog.append(CardLog.dir(cardRoot()), CardLog.LOG, CardLog.line(kind, msg)); } catch (Throwable t) {}
+    }
+
+    /**
+     * Each opening: the body, the build and the mode dial; what the store holds, when it changed since it was last
+     * logged; and every camera parameter in PARAMS.TXT, rewritten only when they changed. All of it comes from what
+     * onResume has already read (load, the camera's parameters), so an opening costs one short line most of the time.
+     */
+    private void logOpen() {
+        lastMode = CardLog.param(origFlat, CardLog.MODE_KEY);
+        String head = CardLog.header(KeyProbe.prop("model.name"), KeyProbe.prop("version.platform"), versionName(), keysFound(), lastMode);
+        log(CardLog.OPEN, head);
+        String state = CardLog.state(cur);
+        if (!state.equals(prefs.getString("loggedState", null))) {
+            log(CardLog.STATE, state);
+            prefs.edit().putString("loggedState", state).commit();
+        }
+        File dir = CardLog.dir(cardRoot());
+        if (origFlat == null || dir == null) return;
+        int hash = origFlat.hashCode();
+        if (hash == prefs.getInt("paramsHash", 0) && new File(dir, CardLog.PARAMS).exists()) return;
+        try {
+            CardLog.replace(dir, CardLog.PARAMS, CardLog.paramsFile(CardLog.now() + "  " + head, origFlat));
+            prefs.edit().putInt("paramsHash", hash).commit();
+        } catch (Throwable t) {}
     }
 
     /** a preview line, once per change: the same failure on every key press would bury the rest */
@@ -257,8 +282,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         reloadCustoms();                                         // the card may have been edited over USB, or swapped
         int last = library.indexOfCustom(prefs.getString("customRecipe", null));
         if (last >= 0) recipe = last;
-        lastPreviewLog = "";
-        log(CardLog.OPEN, CardLog.header(KeyProbe.prop("model.name"), KeyProbe.prop("version.platform"), versionName(), keysFound()));
+        lastPreviewLog = ""; origFlat = null;
         try {
             Class<?> cx = Class.forName("com.sony.scalar.hardware.CameraEx");
             Method open = cx.getMethod("open", int.class, Class.forName("com.sony.scalar.hardware.CameraEx$OpenOptions"));
@@ -268,7 +292,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             holder.addCallback(this);
             previewOk = true;
         } catch (Throwable t) { previewOk = false; previewErr = String.valueOf(t); logPreview("camera did not open: " + previewErr); }
-        showRecipe();                                           // with the edits last applied, when the camera still holds them
+        logOpen();
+        showRecipe();                                          // with the edits last applied, when the camera still holds them
         applyPreview(); render();
         if (!prefs.getBoolean("keysNoticeSeen", false)) {               // the keys moved in this build (issue #18): say so once
             showToast(Keys.notice(), 8000);
@@ -1054,6 +1079,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             for (String k : wanted.keySet()) got.put(k, back.get(k));
             String dropped = CardLog.previewDropped(wanted, got);
             if (dropped.length() > 0) logPreview(Recipes.displayName(library.get(recipe)) + ": not kept  " + dropped);
+            String mode = back.get(CardLog.MODE_KEY);              // read anyway: a dial turned with the app open costs nothing more
+            if (mode != null && !mode.equals(lastMode)) { log(CardLog.INFO, "mode " + lastMode + " > " + mode); lastMode = mode; }
         } catch (Throwable t) { previewOk = false; previewErr = String.valueOf(t.getMessage()); logPreview("parameters refused: " + previewErr); }
     }
 
@@ -1251,7 +1278,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
                 swallowMenuUp = true; openBrowser(false); return true;
             case K_FN: openBrowser(false); return true;
             case K_DELETE: case K_SK2: armTrash(sc); return true;       // closes the list on the release; a hold asks to reset
-            case K_S1: try { camera.autoFocus(null); } catch (Throwable t) {} return true;
+            case K_S1: try { camera.autoFocus(null); } catch (Throwable t) { logPreview("autofocus refused: " + t); } return true;
             case K_S2: shootKey(); return true;
         }
         return true;
@@ -1327,7 +1354,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             }
             case K_FN: browse(); return true;
             case K_DELETE: case K_SK2: armTrash(sc); return true;       // hides on the release; a hold asks to reset
-            case K_S1: try { camera.autoFocus(null); } catch (Throwable t) {} return true;
+            case K_S1: try { camera.autoFocus(null); } catch (Throwable t) { logPreview("autofocus refused: " + t); } return true;
             case K_S2: shootKey(); return true;
             case K_MENU: case K_SK1:
                 if (focus) { swallowMenuUp = true; setFocus(false); return true; }

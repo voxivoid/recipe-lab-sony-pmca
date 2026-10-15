@@ -17,12 +17,13 @@ import java.util.Map;
 /**
  * The logs a user can share: {@link #LOG} (what the app did and what went wrong), and the developer tools' output —
  * {@link #DIFF} (what the snapshot tool saw change), {@link #KEYS} (the key logger), {@link #LOCKS} (the read-only
- * check) — in {@link #DIR}/{@link #SUB} on the memory card, so a bug report can attach them after mounting the
- * camera over USB — files in the app's own storage cannot be reached without a shell.
+ * check) — and {@link #PARAMS}, every camera parameter as of the last opening, in {@link #DIR}/{@link #SUB} on the
+ * memory card, so a bug report can attach them after mounting the camera over USB — files in the app's own storage
+ * cannot be reached without a shell.
  *
  * Every line is written and closed on its own: the camera can reboot under the app (issue #100), and the last line
- * before that is the one that matters. A log past {@link #MAX_BYTES} rolls over to {@link #OLD}, so the card never
- * fills. Names are 8.3, as the card's file system takes no longer ones (see {@link CustomRecipes}). English always,
+ * before that is the one that matters. Any file past {@link #MAX_BYTES} rolls over to one older file ({@link #older}),
+ * and {@link #PARAMS} is replaced, never appended, so the folder holds at most nine fixed names and about 600 KB. Names are 8.3, as the card's file system takes no longer ones (see {@link CustomRecipes}). English always,
  * like every file the app writes.
  *
  * MainActivity finds the card and calls in; this class formats and writes. No android.* import may appear here
@@ -34,12 +35,12 @@ final class CardLog {
     /** the app's folder at the root of the card: RECIPE-LAB would be ten characters, past what the card takes */
     static final String DIR = "RECIPLAB";
     static final String SUB = "LOGS";
-    static final String LOG = "LOG.TXT", OLD = "LOG1.TXT", DIFF = "DIFF.TXT", KEYS = "KEYS.TXT", LOCKS = "LOCKS.TXT";
+    static final String LOG = "LOG.TXT", DIFF = "DIFF.TXT", KEYS = "KEYS.TXT", LOCKS = "LOCKS.TXT", PARAMS = "PARAMS.TXT";
     /** about a thousand lines; the rolled-over file keeps as many again */
     static final int MAX_BYTES = 64 * 1024;
 
     /** the kinds of line, padded so the messages line up */
-    static final String OPEN = "OPEN", WRITE = "WRITE", FAIL = "FAIL", PREVIEW = "PREVIEW", SHOOT = "SHOOT", CRASH = "CRASH", INFO = "INFO";
+    static final String OPEN = "OPEN", STATE = "STATE", WRITE = "WRITE", FAIL = "FAIL", PREVIEW = "PREVIEW", SHOOT = "SHOOT", CRASH = "CRASH", INFO = "INFO";
 
     /** the logs folder under a card root; null without a card */
     static File dir(File cardRoot) { return cardRoot == null ? null : new File(new File(cardRoot, DIR), SUB); }
@@ -84,10 +85,39 @@ final class CardLog {
 
     private static int field(Object o, String name) throws Exception { return o.getClass().getField(name).getInt(o); }
 
-    /** what each opening of the app writes first: the body and the build, so a log needs no other context */
-    static String header(String model, String platform, String version, String keys) {
+    /** what each opening of the app writes first: the body, the build and the mode dial, so a log needs no other context */
+    static String header(String model, String platform, String version, String keys, String mode) {
         return "model " + orUnknown(model) + "  ·  platform " + orUnknown(platform) + "  ·  app " + orUnknown(version)
-                + "  ·  keys " + orUnknown(keys);
+                + "  ·  mode " + orUnknown(mode) + "  ·  keys " + orUnknown(keys);
+    }
+
+    /** the camera parameter the mode dial shows in (P / A / S / M / the auto and scene modes) */
+    static final String MODE_KEY = "scene-mode";
+
+    /** one value out of {@code Camera.Parameters.flatten()} ({@code key=value;key=value}); null when it is not there */
+    static String param(String flat, String key) {
+        if (flat == null) return null;
+        String k = key + "=";
+        int at = flat.startsWith(k) ? 0 : flat.indexOf(";" + k);
+        if (at < 0) return null;
+        int from = at == 0 ? k.length() : at + 1 + k.length(), to = flat.indexOf(';', from);
+        return flat.substring(from, to < 0 ? flat.length() : to);
+    }
+
+    /** {@link #PARAMS}: the flattened parameters one per line, sorted, so two reports compare with any diff tool */
+    static String paramsFile(String header, String flat) {
+        String[] kv = flat == null ? new String[0] : flat.split(";");
+        java.util.Arrays.sort(kv);
+        StringBuilder sb = new StringBuilder("# ").append(header).append('\n');
+        for (String s : kv) if (s.length() > 0) sb.append(s).append('\n');
+        return sb.toString();
+    }
+
+    /** what the store holds for every recipe row, by the rows' English names: {@code STYLE=1 SAT=0 …} */
+    static String state(int[] rows) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 1; i < rows.length && i < Params.ROW_NAME.length; i++) sb.append(i > 1 ? " " : "").append(Params.ROW_NAME[i]).append('=').append(rows[i]);
+        return sb.toString();
     }
 
     /** a write the store refused, in the words a report needs: slot, value, error and how far it got */
@@ -133,20 +163,31 @@ final class CardLog {
     /** whether appending {@code add} bytes to a file of {@code size} would take it past the cap */
     static boolean rolls(long size, int add) { return size > 0 && size + add > MAX_BYTES; }
 
-    /**
-     * Appends text to {@code name} in the logs folder, creating the folders. {@link #LOG} rolls over to {@link #OLD}
-     * first when it would pass the cap; the others never do, as they only grow by a developer's hand.
-     */
+    /** the one older file a full one rolls over to: LOG.TXT → LOG1.TXT, still 8.3 */
+    static String older(String name) { int dot = name.lastIndexOf('.'); return name.substring(0, dot) + "1" + name.substring(dot); }
+
+    /** Appends text to {@code name} in the logs folder, creating the folders; a file that would pass the cap rolls over first */
     static void append(File dir, String name, String text) throws IOException {
-        if (dir == null) throw new IOException("no memory card");
-        if (!dir.isDirectory() && !dir.mkdirs()) throw new IOException("cannot create " + dir);
-        File f = new File(dir, name);
-        if (LOG.equals(name) && rolls(f.length(), text.length())) {
-            File old = new File(dir, OLD);
+        File f = file(dir, name);
+        if (rolls(f.length(), text.length())) {
+            File old = new File(dir, older(name));
             old.delete();
             if (!f.renameTo(old)) f.delete();
         }
-        FileWriter w = new FileWriter(f, true);
+        write(f, text, true);
+    }
+
+    /** Replaces {@code name} in the logs folder with text: a snapshot such as {@link #PARAMS}, never more than one */
+    static void replace(File dir, String name, String text) throws IOException { write(file(dir, name), text, false); }
+
+    private static File file(File dir, String name) throws IOException {
+        if (dir == null) throw new IOException("no memory card");
+        if (!dir.isDirectory() && !dir.mkdirs()) throw new IOException("cannot create " + dir);
+        return new File(dir, name);
+    }
+
+    private static void write(File f, String text, boolean append) throws IOException {
+        FileWriter w = new FileWriter(f, append);
         try { w.write(text); } finally { w.close(); }
     }
 

@@ -23,7 +23,7 @@ class CardLogTest {
 
     @Test void folderAndFileNamesAreDos83() {
         for (String n : new String[] { CardLog.DIR, CardLog.SUB }) assertTrue(n.length() <= 8 && n.equals(n.toUpperCase()), n);
-        for (String n : new String[] { CardLog.LOG, CardLog.OLD, CardLog.DIFF, CardLog.KEYS, CardLog.LOCKS }) assertTrue(n.matches("[A-Z0-9]{1,8}\\.[A-Z]{1,3}"), n);
+        for (String n : new String[] { CardLog.LOG, CardLog.DIFF, CardLog.KEYS, CardLog.LOCKS, CardLog.PARAMS, CardLog.older(CardLog.LOG), CardLog.older(CardLog.LOCKS) }) assertTrue(n.matches("[A-Z0-9]{1,8}\\.[A-Z]{1,3}"), n);
         assertEquals("RECIPLAB/LOGS/LOG.TXT", CardLog.path(CardLog.LOG));
     }
 
@@ -46,20 +46,49 @@ class CardLogTest {
         CardLog.append(dir, CardLog.LOG, new String(big));
         CardLog.append(dir, CardLog.LOG, "first after the cap\n");
         assertEquals("first after the cap\n", read(new File(dir, CardLog.LOG)));
-        assertEquals(CardLog.MAX_BYTES - 10, new File(dir, CardLog.OLD).length());
+        assertEquals(CardLog.MAX_BYTES - 10, new File(dir, "LOG1.TXT").length());
 
         CardLog.append(dir, CardLog.LOG, new String(big));       // a second roll replaces the old file, never a third
         assertEquals(new String(big), read(new File(dir, CardLog.LOG)));
         assertEquals(2, dir.list().length);
     }
 
-    @Test void theDiffFileNeverRolls() throws IOException {
+    @Test void everyFileRollsToItsOwnOlderFile() throws IOException {
         File dir = CardLog.dir(root);
         char[] big = new char[CardLog.MAX_BYTES]; Arrays.fill(big, 'a');
-        CardLog.append(dir, CardLog.DIFF, new String(big));
-        CardLog.append(dir, CardLog.DIFF, "more\n");
-        assertEquals(CardLog.MAX_BYTES + 5, new File(dir, CardLog.DIFF).length());
-        assertFalse(new File(dir, CardLog.OLD).exists());
+        CardLog.append(dir, CardLog.KEYS, new String(big));
+        CardLog.append(dir, CardLog.KEYS, "more\n");
+        assertEquals("more\n", read(new File(dir, CardLog.KEYS)));
+        assertEquals(CardLog.MAX_BYTES, new File(dir, "KEYS1.TXT").length());
+        assertEquals("LOCKS1.TXT", CardLog.older(CardLog.LOCKS));
+    }
+
+    @Test void paramsAreReplacedNeverAppended() throws IOException {
+        File dir = CardLog.dir(root);
+        CardLog.replace(dir, CardLog.PARAMS, "one\n");
+        CardLog.replace(dir, CardLog.PARAMS, "two\n");
+        assertEquals("two\n", read(new File(dir, CardLog.PARAMS)));
+    }
+
+    @Test void aParamIsFoundAnywhereButNotInsideAnotherKey() {
+        String flat = "color-mode=mono;scene-mode=shutter-speed;scene-mode-values=auto,portrait";
+        assertEquals("shutter-speed", CardLog.param(flat, CardLog.MODE_KEY));
+        assertEquals("mono", CardLog.param(flat, "color-mode"));
+        assertEquals("auto,portrait", CardLog.param(flat, "scene-mode-values"));
+        assertNull(CardLog.param(flat, "mode"));
+        assertNull(CardLog.param(null, "mode"));
+    }
+
+    @Test void theParamsFileIsOneSortedLinePerParameter() {
+        assertEquals("# head\na=1\nb=2\nc=\n", CardLog.paramsFile("head", "c=;b=2;a=1"));
+    }
+
+    @Test void theStateNamesEveryRowButTheRecipe() {
+        int[] rows = new int[Params.ROW_NAME.length]; rows[1] = 3; rows[2] = -1;
+        String st = CardLog.state(rows);
+        assertTrue(st.startsWith("STYLE=3 SAT=-1 CON=0"), st);
+        assertFalse(st.contains("RECIPE"), st);
+        assertEquals(Params.ROW_NAME.length - 1, st.split(" ").length);
     }
 
     @Test void rollsOnlyAFileThatHasSomethingInIt() {
@@ -88,9 +117,9 @@ class CardLogTest {
     }
 
     @Test void theHeaderNamesTheBodyAndTheBuild() {
-        assertEquals("model ILCE-6000  ·  platform 2.0  ·  app 1.7.0  ·  keys Fn",
-                CardLog.header("ILCE-6000", "2.0", "1.7.0", "Fn"));
-        assertEquals("model unknown  ·  platform unknown  ·  app unknown  ·  keys unknown", CardLog.header(null, "", null, null));
+        assertEquals("model ILCE-6000  ·  platform 2.0  ·  app 1.7.0  ·  mode shutter-speed  ·  keys Fn",
+                CardLog.header("ILCE-6000", "2.0", "1.7.0", "Fn", "shutter-speed"));
+        assertEquals("model unknown  ·  platform unknown  ·  app unknown  ·  mode unknown  ·  keys unknown", CardLog.header(null, "", null, null, null));
     }
 
     @Test void aRefusedWriteSaysWhereItStopped() {
