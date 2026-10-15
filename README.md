@@ -135,15 +135,15 @@ Failures are as useful as successes.
 | **HX90 / HX90V** | DSC-HX90 | ✅ |  |
 | **NEX-5R** | NEX-5R | ✅ |  |
 | **A7S** | ILCE-7S | ✅ |  |
-| NEX-6 | NEX-6 | ❔ | menus differ a lot from the A6000 generation, so the settings are the least likely to sit in the same place |
+| **NEX-6** | NEX-6 | ✅ | one report stored and kept a look; another got `WRITE FAILED on EV` on most recipes ([#84](https://github.com/voxivoid/recipe-lab-sony-pmca/issues/84)) |
 | A68 | ILCA-68 | ❔ | not in the installer's device table, so even the install is untested |
 | A77 II | ILCA-77M2 | ❔ |  |
 | A99 II | ILCA-99M2 | ❔ |  |
-| RX100 IV | DSC-RX100M4 | ❔ |  |
+| **RX100 IV** | DSC-RX100M4 | ✅ |  |
 | RX10 II | DSC-RX10M2 | ❔ |  |
 | RX10 III | DSC-RX10M3 | ❔ |  |
 | HX400 / HX400V | DSC-HX400 | ❔ | compact; no control wheel of the kind the app is driven with |
-| WX500 | DSC-WX500 | ❔ | compact; no control wheel of the kind the app is driven with |
+| **WX500** | DSC-WX500 | ✅ | the rear wheel scrolls the recipes; playback or power off closes the app |
 
 Two more are unclear: the **RX100 II** and the original **RX10** had Sony's app store, but are missing from the
 installer's device table, so even the install is untested.

@@ -82,6 +82,14 @@ them by copying the files. See [Custom recipes](../README.md#custom-recipes).
 They live on the card, not in the app: removing the app keeps them, **formatting the card deletes them**, and a
 different card has its own.
 
+## Why do some recipes have identical settings?
+
+Because the camera has only a handful of knobs to turn: a Creative Style, contrast, saturation, sharpness, white
+balance and a few more. Two films that differ in grain, tone curve or halation can land on the same values once
+squeezed into those, and then they render the same JPEG. Examples are Acros, Ilford FP4 and Ilford Delta 100, or Sony
+NT and Canon Faithful. They are deliberate aliases: the name is there so you can find the look you know, not because
+the app does anything extra behind it. Nothing else differentiates them — Recipe Lab never processes an image.
+
 ## Can it use LUTs, like JPEG.CAM does?
 
 No, and not by accident. Recipe Lab never processes an image — it picks camera settings and gets out of the way,
