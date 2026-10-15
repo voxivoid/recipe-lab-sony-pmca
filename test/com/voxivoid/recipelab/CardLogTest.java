@@ -69,12 +69,20 @@ class CardLogTest {
     }
 
     @Test void aLineHasTheTimeTheKindAndTheMessage() {
-        String l = CardLog.line(0L, CardLog.WRITE, "Velvia: 2 slots");
+        String l = CardLog.line(CardLog.WRITE, "Velvia: 2 slots");
         assertTrue(l.matches("\\d{4}-\\d\\d-\\d\\d \\d\\d:\\d\\d:\\d\\d  WRITE    Velvia: 2 slots\n"), l);
     }
 
+    @Test void theCameraClockIsUtcPlusItsOffset() {
+        assertEquals("2026-10-15 14:03:27", CardLog.stamp(2026, 10, 15, 13, 3, 27, 60));    // Lisbon summer time
+        assertEquals("2026-01-01 00:30:00", CardLog.stamp(2025, 12, 31, 23, 30, 0, 60));    // across midnight and the year
+        assertEquals("2026-10-15 08:03:27", CardLog.stamp(2026, 10, 15, 13, 3, 27, -300));
+    }
+
+    @Test void offTheCameraTheSystemClock() { assertTrue(CardLog.now().startsWith(String.valueOf(java.time.Year.now().getValue())), CardLog.now()); }
+
     @Test void aMultiLineMessageKeepsItsIndent() {
-        String[] l = CardLog.line(0L, CardLog.CRASH, "boom\nat x").split("\n");
+        String[] l = CardLog.line(CardLog.CRASH, "boom\nat x").split("\n");
         assertEquals(2, l.length);
         assertEquals(l[0].indexOf("boom"), l[1].indexOf("at x"));
     }

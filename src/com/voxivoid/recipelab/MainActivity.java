@@ -185,7 +185,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
 
     /** one line of LOG.TXT; a log that cannot be written must never take the app down with it */
     private static void log(String kind, String msg) {
-        try { CardLog.append(CardLog.dir(cardRoot()), CardLog.LOG, CardLog.line(System.currentTimeMillis(), kind, msg)); } catch (Throwable t) {}
+        try { CardLog.append(CardLog.dir(cardRoot()), CardLog.LOG, CardLog.line(kind, msg)); } catch (Throwable t) {}
     }
 
     /** a preview line, once per change: the same failure on every key press would bury the rest */
@@ -536,7 +536,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
                 }
             }
             in.close(); f.delete();
-            String line = CardLog.line(System.currentTimeMillis(), CardLog.INFO, changed + " changed  " + all);
+            String line = CardLog.line(CardLog.INFO, changed + " changed  " + all);
             String where = debugFile(CardLog.DIFF, "diff.txt", line);
             showToast(Lang.t("status_diff_changed", changed, sb.toString()) + "  ·  " + where, 0);
         } catch (Throwable t) { showToast(Lang.t("status_snapshot_error", String.valueOf(t)), 0); }

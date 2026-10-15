@@ -168,7 +168,7 @@ tools' `DIFF.TXT`, `KEYS.TXT` and `LOCKS.TXT` — while `samples.txt` and `snaps
 | `SHOOT` | before every `takePicture`, the shutter key's and the sample run's: on a body that reboots on the shutter (#100) the last line is the frame that did it |
 | `CRASH` | the default uncaught-exception handler: the stack, then the platform's own handler |
 
-Each line is opened, written and closed on its own, so a reboot loses at most the line being written. Past
+Times are the camera's clock, read from Sony's `TimeUtil` (the Android clock is never set: an A6000 log read 1970). Each line is opened, written and closed on its own, so a reboot loses at most the line being written. Past
 `CardLog.MAX_BYTES` (64 KB) `LOG.TXT` becomes `LOG1.TXT`, replacing the one before. No card, nothing is written, and a
 log that cannot be written never stops the app. English always. The bug and compatibility report forms ask for the
 file, and walk through the snapshot tool for a setting that did not change.

@@ -6,7 +6,10 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.TimeZone;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -44,12 +47,42 @@ final class CardLog {
     /** where a log file sits on the card, as a user looks for it over USB */
     static String path(String name) { return DIR + "/" + SUB + "/" + name; }
 
-    /** {@code 2026-10-15 14:03:27  WRITE    msg}; a message over several lines keeps its indent on the next ones */
-    static String line(long millis, String kind, String msg) {
-        String when = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(new Date(millis));
+    /** {@code 2026-10-15 14:03:27  WRITE    msg}, at the camera's time; a message over several lines keeps its indent */
+    static String line(String kind, String msg) { return line(now(), kind, msg); }
+
+    static String line(String when, String kind, String msg) {
         String head = when + "  " + pad(kind, 8) + " ";
         return head + String.valueOf(msg).replace("\n", "\n" + spaces(head.length())) + "\n";
     }
+
+    /**
+     * The time the camera shows. Its Android clock is never set — an A6000 log read 1970-01-01 — so the time comes
+     * from Sony's TimeUtil, by reflection as in {@link KeyProbe}: a UTC calendar plus the zone and summer-time offsets
+     * set in the camera's menu (as OpenMemories-Framework's DateTime reads it). Off the camera, the system clock.
+     */
+    static String now() {
+        try {
+            Class<?> tu = Class.forName("com.sony.scalar.sysutil.TimeUtil");
+            Object cal = tu.getMethod("getCurrentCalendar").invoke(null), tz = tu.getMethod("getCurrentTimeZone").invoke(null);
+            return stamp(field(cal, "year"), field(cal, "month"), field(cal, "day"), field(cal, "hour"), field(cal, "minute"),
+                    field(cal, "second"), field(tz, "gmtDiff") + field(tz, "summerTimeDiff"));
+        } catch (Throwable t) {
+            return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(new Date());
+        }
+    }
+
+    /** a UTC date and time (month 1–12) shifted by the camera's offset in minutes */
+    static String stamp(int year, int month, int day, int hour, int minute, int second, int offsetMinutes) {
+        Calendar c = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
+        c.clear();
+        c.set(year, month - 1, day, hour, minute, second);
+        c.add(Calendar.MINUTE, offsetMinutes);
+        SimpleDateFormat f = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US);
+        f.setTimeZone(TimeZone.getTimeZone("UTC"));
+        return f.format(c.getTime());
+    }
+
+    private static int field(Object o, String name) throws Exception { return o.getClass().getField(name).getInt(o); }
 
     /** what each opening of the app writes first: the body and the build, so a log needs no other context */
     static String header(String model, String platform, String version, String keys) {
