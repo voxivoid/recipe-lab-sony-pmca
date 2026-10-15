@@ -65,7 +65,8 @@ body:
     attributes:
       label: Report file
       description: >-
-        On the camera, open Recipe Lab and hold **MENU** → **Save a bug report**. Then connect the camera to a
+        Right after the problem happens, open Recipe Lab and hold **MENU** → **Save a bug report**: it saves what
+        happened up to that moment. Then connect the camera to a
         computer with the USB cable (or put the memory card in a card reader), open the card, and drag the file
         **RECIPLAB/REPORT.TXT** into this box. No such menu row means your version is older: leave this empty.
   - type: textarea

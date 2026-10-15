@@ -122,6 +122,11 @@ class CardLogTest {
         assertEquals("model unknown  ·  platform unknown  ·  app unknown  ·  mode unknown  ·  keys unknown", CardLog.header(null, "", null, null, null));
     }
 
+    @Test void autoMayBeTheMovieDial() {
+        assertTrue(CardLog.header("ILCE-6000", "2.4", "1.7.0", "Fn", "auto").contains("mode auto (Auto or Movie)"));
+        assertEquals("manual-exposure", CardLog.modeLabel("manual-exposure"));
+    }
+
     @Test void aRefusedWriteSaysWhereItStopped() {
         assertEquals("01070c7f = 3 refused: Backup_get_datasize failed  (2 of 9 written before it)",
                 CardLog.writeFailed(0x01070c7f, 3, "Backup_get_datasize failed", 2, 9));

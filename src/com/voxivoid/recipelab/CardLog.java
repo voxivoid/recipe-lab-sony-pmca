@@ -88,8 +88,11 @@ final class CardLog {
     /** what each opening of the app writes first: the body, the build and the mode dial, so a log needs no other context */
     static String header(String model, String platform, String version, String keys, String mode) {
         return "model " + orUnknown(model) + "  ·  platform " + orUnknown(platform) + "  ·  app " + orUnknown(version)
-                + "  ·  mode " + orUnknown(mode) + "  ·  keys " + orUnknown(keys);
+                + "  ·  mode " + modeLabel(mode) + "  ·  keys " + orUnknown(keys);
     }
+
+    /** the mode dial as a reader should take it: an A6000 on the Movie dial reports {@code auto}, the same as Auto */
+    static String modeLabel(String mode) { return "auto".equals(mode) ? "auto (Auto or Movie)" : orUnknown(mode); }
 
     /** the camera parameter the mode dial shows in (P / A / S / M / the auto and scene modes) */
     static final String MODE_KEY = "scene-mode";

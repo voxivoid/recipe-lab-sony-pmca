@@ -162,7 +162,7 @@ tools' `DIFF.TXT`, `KEYS.TXT` and `LOCKS.TXT` — while `samples.txt` and `snaps
 
 | kind | when |
 |---|---|
-| `OPEN` | every `onResume`: model, platform, app version, the mode dial (`scene-mode` from the parameters `onResume` already read: `program-auto`, `shutter-speed`, …), the keys `KeyProbe` found |
+| `OPEN` | every `onResume`: model, platform, app version, the mode dial (`scene-mode` from the parameters `onResume` already read: `program-auto`, `shutter-speed`, …; an A6000 on the **Movie** dial reports `auto`, so the log writes `auto (Auto or Movie)`), the keys `KeyProbe` found |
 | `STATE` | at an opening, what the store holds for every recipe row (`STYLE=1 SAT=0 …`) — only when it changed since it was last logged (prefs `loggedState`), so the camera's own menus show up between two openings |
 | `INFO` | the mode dial turned with the app open (read back with the preview parameters), the snapshot tool's diff in `DIFF.TXT` |
 | `WRITE` | a successful store: the recipe and every `id=value` written |
