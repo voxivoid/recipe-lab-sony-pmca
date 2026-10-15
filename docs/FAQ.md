@@ -82,6 +82,17 @@ them by copying the files. See [Custom recipes](../README.md#custom-recipes).
 They live on the card, not in the app: removing the app keeps them, **formatting the card deletes them**, and a
 different card has its own.
 
+## Can I shoot inside the app?
+
+You can, but it is not what the app is for. The shutter works inside Recipe Lab only so you can try a recipe on a
+real frame while you scroll through them. Recipe Lab does not replace the camera's own shooting: it writes the recipe
+into the camera's settings, then you leave the app (**MENU**) and shoot with the camera's normal modes — P, A, S, M,
+video, silent shutter, drive modes, whatever your body offers. The look stays with you.
+
+So the in-app view is a preview, and it can differ from the camera's own (some bodies show Movie mode differently, for
+example). Bugs that appear only while shooting inside the app matter less than anything that goes wrong in the stored
+settings, and features such as other shutter modes belong to the camera, not to this app.
+
 ## Why do some recipes have identical settings?
 
 Because the camera has only a handful of knobs to turn: a Creative Style, contrast, saturation, sharpness, white
