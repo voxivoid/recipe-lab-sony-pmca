@@ -163,6 +163,55 @@ final class CardLog {
     /** whether appending {@code add} bytes to a file of {@code size} would take it past the cap */
     static boolean rolls(long size, int add) { return size > 0 && size + add > MAX_BYTES; }
 
+    // ------------------------------------------------------------ the report: one file for a user to attach
+    /** the one file a bug report needs, beside LOGS rather than in it, so it is the first thing seen in the folder */
+    static final String REPORT = "REPORT.TXT";
+    /** how much of each file the report keeps, from the end: the newest lines are the ones that explain a bug */
+    static final int REPORT_LOG = 48 * 1024, REPORT_TOOL = 8 * 1024;
+
+    /** where the report goes under a card root; null without a card */
+    static File reportDir(File cardRoot) { return cardRoot == null ? null : new File(cardRoot, DIR); }
+
+    /**
+     * Everything a bug report needs in one file, so a user who is not a developer attaches one thing: the camera now
+     * (its header, what the store holds, every parameter), then the end of the log and of each developer tool's file.
+     * Cheap: it only runs when the user asks for it, and reads at most about 100 KB.
+     */
+    static String report(File logs, String now, String header, String state, String flat) {
+        StringBuilder sb = new StringBuilder("Recipe Lab report: attach this file to your GitHub issue.\n")
+                .append("saved ").append(now).append('\n').append(header).append('\n').append("STATE ").append(state).append('\n');
+        section(sb, "LOG", tail(new File(logs, older(LOG)), new File(logs, LOG), REPORT_LOG));
+        section(sb, "LOCKS", tail(null, new File(logs, LOCKS), REPORT_TOOL));
+        section(sb, "DIFF", tail(null, new File(logs, DIFF), REPORT_TOOL));
+        section(sb, "KEYS", tail(null, new File(logs, KEYS), REPORT_TOOL));
+        section(sb, "PARAMS", flat != null ? paramsFile(now, flat) : tail(null, new File(logs, PARAMS), REPORT_LOG));
+        return sb.toString();
+    }
+
+    private static void section(StringBuilder sb, String name, String body) {
+        sb.append("\n===== ").append(name).append(" =====\n").append(body.length() == 0 ? "(none)\n" : body);
+        if (body.length() > 0 && !body.endsWith("\n")) sb.append('\n');
+    }
+
+    /** the last {@code max} bytes of {@code older} then {@code file} together, from a whole line on; "" when neither is there */
+    static String tail(File older, File file, int max) {
+        String all = read(older) + read(file);
+        if (all.length() <= max) return all;
+        String cut = all.substring(all.length() - max);
+        int nl = cut.indexOf('\n');
+        return nl < 0 ? cut : cut.substring(nl + 1);
+    }
+
+    private static String read(File f) {
+        if (f == null || !f.isFile()) return "";
+        try {
+            byte[] b = new byte[(int) f.length()];
+            java.io.FileInputStream in = new java.io.FileInputStream(f);
+            try { int n = 0; while (n < b.length) { int r = in.read(b, n, b.length - n); if (r < 0) break; n += r; } } finally { in.close(); }
+            return new String(b, "UTF-8");
+        } catch (IOException e) { return ""; }
+    }
+
     /** the one older file a full one rolls over to: LOG.TXT → LOG1.TXT, still 8.3 */
     static String older(String name) { int dot = name.lastIndexOf('.'); return name.substring(0, dot) + "1" + name.substring(dot); }
 

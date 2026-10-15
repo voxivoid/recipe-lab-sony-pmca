@@ -63,33 +63,21 @@ body:
   - type: textarea
     id: logfile
     attributes:
-      label: Log file
+      label: Report file
       description: >-
-        The app writes what it did, and every error, to `RECIPLAB/LOGS/LOG.TXT` on the memory card. Connect the
-        camera over USB (MENU → Setup → USB Connection → Mass Storage) or put the card in a reader, open that file,
-        and drag it into this box. Attach the other files in that folder too: `LOG1.TXT` is the older part of the
-        log, and `PARAMS.TXT` every camera setting as the app last saw it. No `RECIPLAB` folder on the card means your build is older than the log: say so here.
-      placeholder: "2026-10-15 14:03:27  FAIL     Classic Chrome: 01070c7f = 3 refused: Backup_get_datasize failed  (8 of 12 written before it)"
+        On the camera, open Recipe Lab and hold **MENU** → **Save a bug report**. Then connect the camera to a
+        computer with the USB cable (or put the memory card in a card reader), open the card, and drag the file
+        **RECIPLAB/REPORT.TXT** into this box. No such menu row means your version is older: leave this empty.
   - type: textarea
     id: diff
     attributes:
-      label: Settings that did not change
-      description: |
-        If a setting did not change to what the recipe shows, the app can find where your camera keeps it. One
-        setting at a time:
-
-        1. Open Recipe Lab and store the recipe.
-        2. Hold MENU → **Developer** → **Settings snapshot**.
-        3. Press MENU to leave the app. In the camera's own menus, set the setting that did not change to the value
-           the recipe should have given it (for example Creative Style → B/W, or White Balance → 5500K).
-        4. Open Recipe Lab again. Hold MENU → **Developer** → **Settings diff**.
-        5. Repeat from step 2 for the next setting. Change nothing else in between, as every change shows up.
-
-        Then attach `RECIPLAB/LOGS/DIFF.TXT` from the card (as for the log above), and list each setting and the
-        value you set, in the order you did them.
-      placeholder: |
-        1. Creative Style → B/W
-        2. White Balance → 5500K, A-B 1
+      label: A setting that did not change (optional)
+      description: >-
+        Only if a setting did not end up the way the recipe shows. In Recipe Lab, hold MENU → Developer →
+        **Settings snapshot**. Leave the app, change that one setting by hand to what the recipe should have set,
+        open Recipe Lab again and hold MENU → Developer → **Settings diff**. Then save the bug report again (above)
+        and write here which setting you changed, and to what.
+      placeholder: "Creative Style → B/W"
   - type: dropdown
     id: powercycle
     attributes:

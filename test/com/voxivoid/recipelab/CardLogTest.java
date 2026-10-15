@@ -147,6 +147,34 @@ class CardLogTest {
         assertEquals("", CardLog.previewDropped(wanted, got));
     }
 
+    @Test void theReportHoldsTheCameraNowAndTheEndOfEveryFile() throws IOException {
+        File dir = CardLog.dir(root);
+        CardLog.append(dir, CardLog.LOG, "opened\n");
+        CardLog.append(dir, CardLog.KEYS, "down 232\n");
+        String r = CardLog.report(dir, "2026-10-15 14:03:27", "model ILCE-6000", "STYLE=1", "scene-mode=manual-exposure;color-mode=mono");
+        assertTrue(r.startsWith("Recipe Lab report"), r);
+        assertTrue(r.contains("model ILCE-6000\nSTATE STYLE=1\n"), r);
+        assertTrue(r.contains("===== LOG =====\nopened\n"), r);
+        assertTrue(r.contains("===== KEYS =====\ndown 232\n"), r);
+        assertTrue(r.contains("===== LOCKS =====\n(none)\n"), r);
+        assertTrue(r.contains("===== PARAMS =====\n# 2026-10-15 14:03:27\ncolor-mode=mono\nscene-mode=manual-exposure\n"), r);
+    }
+
+    @Test void theReportGoesBesideTheLogs() {
+        assertEquals(new File(root, "RECIPLAB"), CardLog.reportDir(root));
+        assertNull(CardLog.reportDir(null));
+        assertTrue(CardLog.REPORT.matches("[A-Z0-9]{1,8}\\.[A-Z]{1,3}"));
+    }
+
+    @Test void aTailKeepsTheNewestWholeLinesAcrossTheOlderFile() throws IOException {
+        File dir = CardLog.dir(root);
+        CardLog.replace(dir, "LOG1.TXT", "one\ntwo\n");
+        CardLog.replace(dir, CardLog.LOG, "three\n");
+        assertEquals("one\ntwo\nthree\n", CardLog.tail(new File(dir, "LOG1.TXT"), new File(dir, CardLog.LOG), 100));
+        assertEquals("two\nthree\n", CardLog.tail(new File(dir, "LOG1.TXT"), new File(dir, CardLog.LOG), 11));
+        assertEquals("", CardLog.tail(null, new File(dir, "NONE.TXT"), 10));
+    }
+
     @Test void aStackHasTheExceptionAndWhereItCameFrom() {
         String s = CardLog.stack(new IllegalStateException("boom"));
         assertTrue(s.startsWith("java.lang.IllegalStateException: boom"), s);

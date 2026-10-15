@@ -20,12 +20,12 @@ final class DevTools {
     static final int LEVEL_APP = 0, LEVEL_DEV = 1;
 
     /** app menu rows, in display order */
-    static final int APP_BROWSE = 0, APP_NEW = 1, APP_PANEL = 2, APP_LANG = 3, APP_RESET = 4, APP_ABOUT = 5, APP_DEV = 6, APP_ROWS = 7;
+    static final int APP_BROWSE = 0, APP_NEW = 1, APP_PANEL = 2, APP_LANG = 3, APP_RESET = 4, APP_REPORT = 5, APP_ABOUT = 6, APP_DEV = 7, APP_ROWS = 8;
 
     /** the icons the menus draw beside their rows (MenuView draws them: the camera font has no symbol glyphs) */
     static final int IC_BROWSE = 0, IC_NEW = 1, IC_PANEL = 2, IC_LANGUAGE = 3, IC_RESET = 4, IC_ABOUT = 5, IC_DEV = 6,
-            IC_SNAPSHOT = 7, IC_LOCK = 8, IC_SAMPLES = 9, IC_CLOCK = 10, IC_KEYS = 11;
-    private static final int[] APP_ICONS = { IC_BROWSE, IC_NEW, IC_PANEL, IC_LANGUAGE, IC_RESET, IC_ABOUT, IC_DEV };
+            IC_SNAPSHOT = 7, IC_LOCK = 8, IC_SAMPLES = 9, IC_CLOCK = 10, IC_KEYS = 11, IC_REPORT = 12;
+    private static final int[] APP_ICONS = { IC_BROWSE, IC_NEW, IC_PANEL, IC_LANGUAGE, IC_RESET, IC_REPORT, IC_ABOUT, IC_DEV };
     private static final int[] DEV_ICONS = { IC_SNAPSHOT, IC_LOCK, IC_SAMPLES, IC_CLOCK, IC_KEYS };
 
     /** the icon of each row of a level, in row order */
@@ -65,6 +65,7 @@ final class DevTools {
             case APP_PANEL: return Lang.t("menu_panel");
             case APP_LANG: return Lang.t("menu_language");
             case APP_RESET: return Lang.t("menu_reset");
+            case APP_REPORT: return Lang.t("menu_report");
             case APP_ABOUT: return Lang.t("menu_about");
             case APP_DEV: return Lang.t("menu_dev");
             default: return "?" + row;
@@ -79,6 +80,7 @@ final class DevTools {
             case APP_PANEL: return Lang.t("menu_panel_detail");
             case APP_LANG: return Lang.t("menu_language_detail");
             case APP_RESET: return Lang.t("menu_reset_detail");
+            case APP_REPORT: return Lang.t("menu_report_detail");
             case APP_ABOUT: return Lang.t("menu_about_detail");
             case APP_DEV: return Lang.t("menu_dev_detail");
             default: return "";

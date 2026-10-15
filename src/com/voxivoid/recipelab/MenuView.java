@@ -203,6 +203,12 @@ public class MenuView extends View {
                 c.drawLine(cx, cy - s * 0.1f, cx, cy + s * 0.5f, glyph);
                 glyph.setStyle(Paint.Style.FILL); c.drawCircle(cx, cy - s * 0.45f, d, glyph);
                 return;
+            case DevTools.IC_REPORT:                                // a page with a folded corner and three lines of text
+                shape.reset(); shape.moveTo(cx - s * 0.7f, cy - s); shape.lineTo(cx + s * 0.25f, cy - s); shape.lineTo(cx + s * 0.7f, cy - s * 0.55f);
+                shape.lineTo(cx + s * 0.7f, cy + s); shape.lineTo(cx - s * 0.7f, cy + s); shape.close();
+                c.drawPath(shape, glyph);
+                for (int k = 0; k < 3; k++) { float y = cy - s * 0.2f + k * s * 0.35f; c.drawLine(cx - s * 0.4f, y, cx + s * 0.4f, y, glyph); }
+                return;
             case DevTools.IC_DEV:                                   // < >
                 c.drawLine(cx - s * 0.3f, cy - s * 0.6f, cx - s, cy, glyph); c.drawLine(cx - s, cy, cx - s * 0.3f, cy + s * 0.6f, glyph);
                 c.drawLine(cx + s * 0.3f, cy - s * 0.6f, cx + s, cy, glyph); c.drawLine(cx + s, cy, cx + s * 0.3f, cy + s * 0.6f, glyph);

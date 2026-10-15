@@ -119,6 +119,7 @@ down or the wheel move, the centre button runs a row, a short MENU goes back a l
 | **Panel visibility** | a value — *Full* / *No keys* / *Label* / *Hidden* (`DevTools.PANELS`) — that left / right step through in place, wrapping, with the menu left open; centre steps forward. The same states trash cycles. *No keys* (`OV_QUIET`) is the full panel, chips and all (`Params.panelUp`), without the `HintBar` legend; closing the browser returns to it if it was left on it |
 | **Language** | a value — *Auto* / *English* / *简体中文* / *繁體中文* / *日本語* / *한국어* / *Tiếng Việt* — stepped the same way, kept in the app's preferences under `language` by code (`Lang.CODES`). The app redraws in it at once. *Auto* follows the camera's locale (`Lang.fromLocale`); each language's name is drawn in its own script and font. See [LOCALIZATION.md](LOCALIZATION.md) |
 | **Reset settings** | asks `DevTools.resetTitle()` (Cancel highlighted), then stages `Recipes.FACTORY` and stores it (`writeAll`, so the quality prompt still asks when it must). The same look as **Factory**, the first Sony recipe, which is in the list like the others (it was hidden once, and users went looking for it) |
+| **Save a bug report** | `saveReport()`: one file, `RECIPLAB/REPORT.TXT`, replaced on every save — the header, mode and `STATE` as of now, then the end of `LOG1.TXT` + `LOG.TXT` (48 KB), of `LOCKS.TXT`, `DIFF.TXT` and `KEYS.TXT` (8 KB each) and every camera parameter (`CardLog.report`). No card: a toast says so. The report forms ask for this file and nothing else, as most reporters are not developers |
 | **About** | the installed version (from `PackageManager` — never a string in the source, `tools/check-version.sh`), `model.name`, the firmware version (`ScalarProperties.getFirmwareVersion()`, `KeyProbe.firmware`), `version.platform`, the source URL, and the sponsor footer |
 | **Developer >** | the developer menu below |
 
@@ -177,8 +178,7 @@ Times are the camera's clock, read from Sony's `TimeUtil` (the Android clock is 
 diff cleanly. It is **replaced**, not appended, and only when the parameters changed (prefs `paramsHash`): a full
 picture of the camera as of the last opening that differed, with nothing read beyond what `onResume` already reads. The
 folder never holds more than nine fixed names, about 600 KB. No card, nothing is written, and a
-log that cannot be written never stops the app. English always. The bug and compatibility report forms ask for the
-file, and walk through the snapshot tool for a setting that did not change.
+log that cannot be written never stops the app. English always. The report forms do not ask for these files one by one: **Save a bug report** in the app menu bundles them into `RECIPLAB/REPORT.TXT`, the one file a user attaches.
 
 ### Read-only check
 

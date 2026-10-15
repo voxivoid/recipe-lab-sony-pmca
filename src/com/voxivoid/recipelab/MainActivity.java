@@ -213,6 +213,24 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         } catch (Throwable t) {}
     }
 
+    /**
+     * Hold MENU → Save report: one file, RECIPLAB/REPORT.TXT, with everything a bug report needs — the camera as it is
+     * now and the end of every log — so a user attaches one thing. Replaced on every save.
+     */
+    private void saveReport() {
+        File root = cardRoot();
+        if (root == null) { showToast(Lang.t("report_need_card"), 4000); return; }
+        String flat = null;
+        try { if (camera != null) flat = camera.getParameters().flatten(); } catch (Throwable t) {}
+        String head = CardLog.header(KeyProbe.prop("model.name"), KeyProbe.prop("version.platform"), versionName(), keysFound(),
+                CardLog.param(flat, CardLog.MODE_KEY));
+        try {
+            CardLog.replace(CardLog.reportDir(root), CardLog.REPORT,
+                    CardLog.report(CardLog.dir(root), CardLog.now(), head, CardLog.state(cur), flat));
+            showToast(Lang.t("report_saved", CardLog.DIR + "/" + CardLog.REPORT), 0);
+        } catch (Throwable t) { showToast(Lang.t("report_failed", String.valueOf(t.getMessage())), 0); }
+    }
+
     /** a preview line, once per change: the same failure on every key press would bury the rest */
     private void logPreview(String msg) {
         if (msg.equals(lastPreviewLog)) return;
@@ -637,6 +655,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
                 case DevTools.APP_NEW: closeMenu(); openName(NAME_NEW); break;   // the camera's current settings, kept as a recipe
                 case DevTools.APP_PANEL: case DevTools.APP_LANG: stepMenuValue(+1); break;
                 case DevTools.APP_RESET: closeMenu(); askReset(); break;
+                case DevTools.APP_REPORT: closeMenu(); saveReport(); break;
                 case DevTools.APP_ABOUT: menuPage = PAGE_ABOUT; renderMenu(); break;
                 case DevTools.APP_DEV: menuLevel = DevTools.LEVEL_DEV; menuSel = 0; renderMenu(); break;
             }
