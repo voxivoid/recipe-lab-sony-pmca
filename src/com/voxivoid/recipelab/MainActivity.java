@@ -126,6 +126,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private final int[] cur = new int[N], edit = new int[N];
     private boolean previewOk = false;
     private String previewErr = "";
+    // the shareable log on the card (CardLog): the last preview line written, so a failure repeated per key press is logged once
+    private String lastPreviewLog = "";
 
     @Override
     protected void onCreate(Bundle b) {
@@ -165,6 +167,32 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         SurfaceView sv = (SurfaceView) findViewById(R.id.surface);
         holder = sv.getHolder();
         holder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
+        final Thread.UncaughtExceptionHandler was = Thread.getDefaultUncaughtExceptionHandler();
+        Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+            public void uncaughtException(Thread th, Throwable t) {
+                log(CardLog.CRASH, CardLog.stack(t));            // written and closed before the app goes
+                if (was != null) was.uncaughtException(th, t);
+            }
+        });
+    }
+
+    // ------------------------------------------------------------ the shareable log on the card (RECIPLAB/LOGS)
+    /** the card's root; null when no card is in or the camera will not say */
+    private static File cardRoot() {
+        try { return Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState()) ? Environment.getExternalStorageDirectory() : null; }
+        catch (Throwable t) { return null; }
+    }
+
+    /** one line of LOG.TXT; a log that cannot be written must never take the app down with it */
+    private static void log(String kind, String msg) {
+        try { CardLog.append(CardLog.dir(cardRoot()), CardLog.LOG, CardLog.line(System.currentTimeMillis(), kind, msg)); } catch (Throwable t) {}
+    }
+
+    /** a preview line, once per change: the same failure on every key press would bury the rest */
+    private void logPreview(String msg) {
+        if (msg.equals(lastPreviewLog)) return;
+        lastPreviewLog = msg;
+        log(CardLog.PREVIEW, msg);
     }
 
     private int dp(float v) { return (int) (v * getResources().getDisplayMetrics().density + 0.5f); }
@@ -216,6 +244,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         reloadCustoms();                                         // the card may have been edited over USB, or swapped
         int last = library.indexOfCustom(prefs.getString("customRecipe", null));
         if (last >= 0) recipe = last;
+        lastPreviewLog = "";
+        log(CardLog.OPEN, CardLog.header(KeyProbe.prop("model.name"), KeyProbe.prop("version.platform"), versionName(), keysFound()));
         try {
             Class<?> cx = Class.forName("com.sony.scalar.hardware.CameraEx");
             Method open = cx.getMethod("open", int.class, Class.forName("com.sony.scalar.hardware.CameraEx$OpenOptions"));
@@ -224,8 +254,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             origFlat = camera.getParameters().flatten();
             holder.addCallback(this);
             previewOk = true;
-        } catch (Throwable t) { previewOk = false; previewErr = String.valueOf(t); }
-        showRecipe();                                            // with the edits last applied, when the camera still holds them
+        } catch (Throwable t) { previewOk = false; previewErr = String.valueOf(t); logPreview("camera did not open: " + previewErr); }
+        showRecipe();                                           // with the edits last applied, when the camera still holds them
         applyPreview(); render();
         if (!prefs.getBoolean("keysNoticeSeen", false)) {               // the keys moved in this build (issue #18): say so once
             showToast(Keys.notice(), 8000);
@@ -255,7 +285,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
 
     public void surfaceCreated(SurfaceHolder h) {
         try { camera.setPreviewDisplay(h); camera.startPreview(); }
-        catch (Throwable t) { previewOk = false; previewErr = String.valueOf(t); render(); }
+        catch (Throwable t) { previewOk = false; previewErr = String.valueOf(t); logPreview("preview did not start: " + previewErr); render(); }
     }
     public void surfaceChanged(SurfaceHolder h, int f, int w, int hh) {}
     public void surfaceDestroyed(SurfaceHolder h) {}
@@ -272,7 +302,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
                 if (id == QUALITY_SLOTS) { cur[i] = edit[i] = readQuality(); continue; }
                 cur[i] = edit[i] = Params.fromStore(id, NativeBackup.readByte(id));
             }
-        } catch (Throwable t) { showToast(Lang.t("status_read_failed", String.valueOf(t.getMessage())), 0); }
+        } catch (Throwable t) { showToast(Lang.t("status_read_failed", String.valueOf(t.getMessage())), 0); log(CardLog.FAIL, "read: " + t); }
     }
 
     private void stageRecipe() {
@@ -330,16 +360,22 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         int n = Params.dirtyRows(cur, edit, storedSub);
         List<Params.Write> ws = Params.writes(cur, edit, storedSub);
         List<Integer> locked = Params.lockedFrom(ws, attrsOf(ws));   // the slots backup protection would refuse (issue #19)
-        if (!locked.isEmpty()) { showToast(Params.lockedMessage(locked), 0); return; }   // nothing written, so nothing half-applied
+        String what = Recipes.displayName(library.get(recipe));
+        if (!locked.isEmpty()) { log(CardLog.FAIL, what + ": read-only " + CardLog.ids(locked)); showToast(Params.lockedMessage(locked), 0); return; }   // nothing written, so nothing half-applied
 
         String msg = null;
         int written = 0;
         for (Params.Write w : ws) {
             try { NativeBackup.writeByte(w.id, w.value); written++; }
-            catch (Throwable t) { msg = Params.writeFailedMessage(w.id, String.valueOf(t.getMessage()), written); break; }
+            catch (Throwable t) {
+                msg = Params.writeFailedMessage(w.id, String.valueOf(t.getMessage()), written);
+                log(CardLog.FAIL, what + ": " + CardLog.writeFailed(w.id, w.value, String.valueOf(t.getMessage()), written, ws.size()));
+                break;
+            }
         }
         if (written > 0) NativeBackup.sync();                    // Backup_sync_all is void: nothing to catch, nothing to report
         boolean ok = msg == null;
+        if (ok) log(CardLog.WRITE, CardLog.written(what, ws));
         if (ok) msg = Lang.t(n == 1 ? "status_picked_one" : "status_picked_many", n);
         // what was written is now the look: keep it on the chips — re-staging the recipe would drop edits just applied
         // to a built-in one ("Apply only"); after a refusal, the recipe is staged again, ready to retry
@@ -476,18 +512,25 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
                 return;
             }
             FileInputStream in = new FileInputStream(f);
-            StringBuilder sb = new StringBuilder(); int changed = 0;
+            StringBuilder sb = new StringBuilder(), all = new StringBuilder(); int changed = 0;
             for (int[] e : ids) {
                 int len = in.read(); byte[] old = new byte[Math.max(0, len)]; if (len > 0) in.read(old);
                 byte[] now; try { now = NativeBackup.read(e[0]); } catch (Throwable t) { now = new byte[0]; }
                 if (!java.util.Arrays.equals(old, now)) {
                     changed++;
                     if (changed <= 14) sb.append(Params.diffEntry(e[0], old, now));
+                    all.append(Params.diffEntry(e[0], old, now));   // the file takes every change, the screen the first 14
                 }
             }
             in.close(); f.delete();
-            java.io.FileWriter w = new java.io.FileWriter(new File(getFilesDir(), "diff.txt"), true); w.write(changed + " changed  " + sb + "\n"); w.close();
-            showToast(Lang.t("status_diff_changed", changed, sb.toString()), 0);
+            String line = CardLog.line(System.currentTimeMillis(), CardLog.INFO, changed + " changed  " + all);
+            String where = CardLog.path(CardLog.DIFF);
+            try { CardLog.append(CardLog.dir(cardRoot()), CardLog.DIFF, line); }
+            catch (Throwable t) {                                // no card: the app's own storage, as before
+                where = "diff.txt";
+                java.io.FileWriter w = new java.io.FileWriter(new File(getFilesDir(), where), true); w.write(line); w.close();
+            }
+            showToast(Lang.t("status_diff_changed", changed, sb.toString()) + "  ·  " + where, 0);
         } catch (Throwable t) { showToast(Lang.t("status_snapshot_error", String.valueOf(t)), 0); }
     }
 
@@ -688,7 +731,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     /** fire the shutter, then let the capture finish before the next recipe is applied */
     private void sampleShoot() {
         if (!running) return;
-        try { camera.takePicture(null, null, null); }
+        try { shoot("sample " + (runFrame + 1) + ", " + Recipes.displayName(Recipes.ALL[runFrame])); }
         catch (Throwable t) {
             String msg = DevTools.shootFailed(runFrame + 1, runFrame, String.valueOf(t.getMessage()));
             endRun(msg); return;
@@ -723,6 +766,21 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         } catch (Throwable t) { return "  ·  " + Lang.t("status_file_failed", DevTools.MANIFEST, String.valueOf(t)); }
         finally { runLog = null; }
         return "";
+    }
+
+    /**
+     * The shutter. Its line is written before the call, not after: a body that reboots on the shutter (issue #100)
+     * leaves nothing else behind, and the last line of the log is then the frame that took it down.
+     */
+    private void shoot(String what) {
+        log(CardLog.SHOOT, what);
+        try { camera.takePicture(null, null, null); }
+        catch (RuntimeException t) { log(CardLog.FAIL, "shutter: " + t); throw t; }
+    }
+
+    /** the shutter key: a frame with the recipe on screen; a refusal is logged, as it was always swallowed */
+    private void shootKey() {
+        try { shoot(Recipes.displayName(library.get(recipe)) + (dirty() ? " (preview)" : "")); } catch (Throwable t) {}
     }
 
     /** the shutter key's release, as the run and the key handler both need it */
@@ -851,7 +909,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private boolean saveNew(String name, int[] rows) {
         CustomRecipes.Entry e;
         try { e = CustomRecipes.save(cardDir, CustomRecipes.recipe(name, rows), madeOn(), null); }
-        catch (Throwable t) { showToast(Lang.t("custom_save_failed", String.valueOf(t.getMessage())), 0); return false; }
+        catch (Throwable t) { log(CardLog.FAIL, "save " + name + ": " + t); showToast(Lang.t("custom_save_failed", String.valueOf(t.getMessage())), 0); return false; }
         reloadCustoms();
         follow(name);
         stageRecipe(); applyPreview();
@@ -864,7 +922,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         CustomRecipes.Entry e = library.entry(recipe);
         if (cardDir == null) { showToast(Lang.t("custom_need_card"), 4000); return false; }
         try { CustomRecipes.save(cardDir, CustomRecipes.recipe(e.recipe.name, edit), madeOn(), e.file); }
-        catch (Throwable t) { showToast(Lang.t("custom_save_failed", String.valueOf(t.getMessage())), 0); return false; }
+        catch (Throwable t) { log(CardLog.FAIL, "save " + e.recipe.name + ": " + t); showToast(Lang.t("custom_save_failed", String.valueOf(t.getMessage())), 0); return false; }
         reloadCustoms();
         showToast(Lang.t("custom_saved", e.recipe.name), 2500);
         return true;
@@ -874,7 +932,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         CustomRecipes.Entry e = library.entry(recipe);
         if (name.equals(e.recipe.name)) return;
         try { CustomRecipes.save(cardDir, CustomRecipes.renamed(e.recipe, name), madeOn(), e.file); }
-        catch (Throwable t) { showToast(Lang.t("custom_save_failed", String.valueOf(t.getMessage())), 0); return; }
+        catch (Throwable t) { log(CardLog.FAIL, "save " + name + ": " + t); showToast(Lang.t("custom_save_failed", String.valueOf(t.getMessage())), 0); return; }
         favStored = Favourites.renameCustom(favStored, e.recipe.name, name);
         prefs.edit().putString("favourites", favStored).commit();
         if (e.recipe.name.equalsIgnoreCase(prefs.getString("customRecipe", ""))) prefs.edit().putString("customRecipe", name).commit();
@@ -894,7 +952,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         CustomRecipes.Entry e = library.entry(recipe);
         int k = recipe - Library.BASE, favPos = favs.indexOf(recipe);
         try { CustomRecipes.delete(cardDir, e.file); }
-        catch (Throwable t) { showToast(Lang.t("custom_delete_failed", e.recipe.name, String.valueOf(t.getMessage())), 0); return; }
+        catch (Throwable t) { log(CardLog.FAIL, "delete " + e.recipe.name + ": " + t); showToast(Lang.t("custom_delete_failed", e.recipe.name, String.valueOf(t.getMessage())), 0); return; }
         favStored = Favourites.forgetCustom(favStored, e.recipe.name);
         prefs.edit().putString("favourites", favStored).commit();
         reloadCustoms();                                         // the recipe is gone: the first one stands in
@@ -983,10 +1041,16 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         if (camera == null) return;
         try {
             Camera.Parameters p = camera.getParameters();
-            for (Map.Entry<String, String> e : Params.preview(edit).entrySet()) p.set(e.getKey(), e.getValue());
+            Map<String, String> wanted = Params.preview(edit);
+            for (Map.Entry<String, String> e : wanted.entrySet()) p.set(e.getKey(), e.getValue());
             camera.setParameters(p);
             previewOk = true;
-        } catch (Throwable t) { previewOk = false; previewErr = String.valueOf(t.getMessage()); }
+            Camera.Parameters back = camera.getParameters();     // what the camera kept: a dropped value throws nothing (#104)
+            Map<String, String> got = new java.util.HashMap<String, String>();
+            for (String k : wanted.keySet()) got.put(k, back.get(k));
+            String dropped = CardLog.previewDropped(wanted, got);
+            if (dropped.length() > 0) logPreview(Recipes.displayName(library.get(recipe)) + ": not kept  " + dropped);
+        } catch (Throwable t) { previewOk = false; previewErr = String.valueOf(t.getMessage()); logPreview("parameters refused: " + previewErr); }
     }
 
     // ------------------------------------------------------------ UI
@@ -1184,7 +1248,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             case K_FN: openBrowser(false); return true;
             case K_DELETE: case K_SK2: armTrash(sc); return true;       // closes the list on the release; a hold asks to reset
             case K_S1: try { camera.autoFocus(null); } catch (Throwable t) {} return true;
-            case K_S2: try { camera.takePicture(null, null, null); } catch (Throwable t) {} return true;
+            case K_S2: shootKey(); return true;
         }
         return true;
     }
@@ -1260,7 +1324,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             case K_FN: browse(); return true;
             case K_DELETE: case K_SK2: armTrash(sc); return true;       // hides on the release; a hold asks to reset
             case K_S1: try { camera.autoFocus(null); } catch (Throwable t) {} return true;
-            case K_S2: try { camera.takePicture(null, null, null); } catch (Throwable t) {} return true;
+            case K_S2: shootKey(); return true;
             case K_MENU: case K_SK1:
                 if (focus) { swallowMenuUp = true; setFocus(false); return true; }
                 if (menuHoldArms(overlay, focus) && menuKeyHold.down(0) == Keys.Hold.ARM) handler.postDelayed(menuHold, HOLD_MS);

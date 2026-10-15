@@ -186,7 +186,36 @@ body:
         button you have once — especially any that did nothing above. Copy the top line (camera, platform, keys) and
         the lines it shows, or attach a photo of the screen. Hold MENU to leave it.
       placeholder: "KEY LOGGER · ILCE-5100 · 2.7 — has DELETE PLAY MOVIE · lacks FN AEL C1 — down 103 UP · repeat 0"
-      render: text
+  - type: textarea
+    id: logfile
+    attributes:
+      label: Log file
+      description: >-
+        The app writes what it did, and every error, to `RECIPLAB/LOGS/LOG.TXT` on the memory card. Connect the
+        camera over USB (MENU → Setup → USB Connection → Mass Storage) or put the card in a reader, open that file,
+        and drag it into this box, or paste it. `LOG1.TXT` beside it is the older part, so attach it too if it is
+        there. No `RECIPLAB` folder on the card means your build is older than the log: say so here.
+      placeholder: "2026-10-15 14:03:27  FAIL     Classic Chrome: 01070c7f = 3 refused: Backup_get_datasize failed  (8 of 12 written before it)"
+  - type: textarea
+    id: diff
+    attributes:
+      label: Settings that did not change
+      description: |
+        If a setting did not change to what the recipe shows, the app can find where your camera keeps it. One
+        setting at a time:
+
+        1. Open Recipe Lab and store the recipe.
+        2. Hold MENU → **Developer** → **Settings snapshot**.
+        3. Press MENU to leave the app. In the camera's own menus, set the setting that did not change to the value
+           the recipe should have given it (for example Creative Style → B/W, or White Balance → 5500K).
+        4. Open Recipe Lab again. Hold MENU → **Developer** → **Settings diff**.
+        5. Repeat from step 2 for the next setting. Change nothing else in between, as every change shows up.
+
+        Then attach `RECIPLAB/LOGS/DIFF.TXT` from the card (as for the log above), and list each setting and the
+        value you set, in the order you did them.
+      placeholder: |
+        1. Creative Style → B/W
+        2. White Balance → 5500K, A-B 1
   - type: textarea
     id: notes
     attributes:

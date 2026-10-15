@@ -40,6 +40,9 @@ src/com/voxivoid/recipelab/
                                writing the RECIPES folder — no Android, covered by test/
   RecipeFormats.java           the custom recipe file's versions: which RecipeFormat reads a file (its format line) and
                                which writes one (the newest); RecipeFormat.java is a version, RecipeFormatV1.java format 1
+  CardLog.java                 the shareable logs on the card, RECIPLAB/LOGS: LOG.TXT (opens, writes, failures, preview
+                               values the camera did not keep, the shutter, crashes) and DIFF.TXT (the snapshot tool),
+                               line format and roll-over — no Android, covered by test/
   Library.java                 one index over the table's recipes and the custom ones after it: the wheel, the panel's
                                count — no Android, covered by test/
   NameEntry.java               the name editor: placeholder, capitals, delete, walking the keyboard grid — no Android,
@@ -142,11 +145,33 @@ id in `res/raw/ids.txt` (each settings entry of 16 bytes or less):
 1. **First press** writes `snapshot.bin` into `getFilesDir()` — the current value of every id.
 2. Leave the app, change **one** thing in the camera menus, reopen.
 3. **Second press** re-reads every id, diffs it against the snapshot, shows the changed ones as
-   `id:old>new` (first 14 on screen), appends the same line to `diff.txt` in `getFilesDir()`, and deletes
+   `id:old>new` (first 14 on screen), appends **every** change, timestamped, to `RECIPLAB/LOGS/DIFF.TXT` on the card
+   (`diff.txt` in `getFilesDir()` without a card), and deletes
    `snapshot.bin` — so the next press starts a fresh snapshot.
 
 Whatever shows up is the slot for the menu item you changed. Change one thing at a time or the diff is useless:
 the camera rewrites unrelated entries on its own, so a second change means guessing which id belongs to what.
+
+### Log on the card
+
+`CardLog`. Reports kept arriving without the one thing that would explain them — `keys.txt`, `locks.txt` and the
+old `diff.txt` live in `getFilesDir()`, which a user cannot reach without a shell. So the app writes a log where they
+can: `RECIPLAB/LOGS/LOG.TXT` at the root of the card, which the camera shows over USB Mass Storage. The folder is
+`RECIPLAB`, not `RECIPE-LAB`: the card's FUSE layer takes 8.3 names only (see [Custom recipes](#custom-recipes)).
+
+| kind | when |
+|---|---|
+| `OPEN` | every `onResume`: model, platform, app version, the keys `KeyProbe` found |
+| `WRITE` | a successful store: the recipe and every `id=value` written |
+| `FAIL` | a refused write (slot, value, the error, how many went in first), read-only slots, a failed store read, a custom recipe save / delete, the shutter throwing |
+| `PREVIEW` | the camera not opening, the preview not starting, `setParameters` throwing — and the preview values the camera did not keep, read back after each `setParameters` (`color-mode mono>standard`), since a dropped value throws nothing (#104). Logged once per change, not per key press |
+| `SHOOT` | before every `takePicture`, the shutter key's and the sample run's: on a body that reboots on the shutter (#100) the last line is the frame that did it |
+| `CRASH` | the default uncaught-exception handler: the stack, then the platform's own handler |
+
+Each line is opened, written and closed on its own, so a reboot loses at most the line being written. Past
+`CardLog.MAX_BYTES` (64 KB) `LOG.TXT` becomes `LOG1.TXT`, replacing the one before. No card, nothing is written, and a
+log that cannot be written never stops the app. English always. The bug and compatibility report forms ask for the
+file, and walk through the snapshot tool for a setting that did not change.
 
 ### Read-only check
 
@@ -522,6 +547,7 @@ against a SHA-256 pinned in the script (`JUNIT_JAR=<path>` points it at a copy w
 | `KeyProbeCameraTest` | the key probe against test doubles of Sony's `ScalarInput`, `KeyStatus` and `ScalarProperties` (`test/com/sony/scalar/sysutil/`, shaped like the OpenMemories-Framework stubs): the reflection finds the real signatures, only `valid == 1` is a key, only `status == 1` is a press. The doubles throw for anything a test did not set up, which is how the "off the camera" answers stay null |
 | `FavouritesTest` | the favourites list — stored by name, unknown names dropped, marking order kept, toggle, the highlight after a removal, custom recipes as `custom:<name>` kept while their card is out — and the browser's group order: Favourites, Custom with its New row, the brands |
 | `RecipeFormatsTest` | the file's versions: numbered 1, 2, 3 … with the newest written, every writer read back by its own reader, each file read by the version it names (a stand-in version 2 beside format 1), unknown versions skipped whole, the shared envelope |
+| `CardLogTest` | the log's 8.3 names and folder, appending and creating the folders, the roll-over (one old file, never the diff), the line format, the refused-write, written-slots and dropped-preview lines |
 | `CustomRecipesTest` | the recipe file: every built-in look survives a round trip, hand-edited files (BOM, CRLF, case, comments, unknown keys) still read, a newer format or any out-of-range value skips the file with the reason, names and default names, file names, and save / edit / rename / delete / load against a temporary folder |
 | `LibraryTest` | one index over the table and the custom recipes: the wheel walks into them and wraps, the panel counts them among themselves |
 | `NameEntryTest` | the name editor: the placeholder the first character replaces, capitals, delete, the length limit, walking the grid with the four-way and the wheel |
