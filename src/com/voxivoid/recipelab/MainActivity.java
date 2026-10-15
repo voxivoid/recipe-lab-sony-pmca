@@ -196,7 +196,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
      */
     private void logOpen() {
         lastMode = CardLog.param(origFlat, CardLog.MODE_KEY);
-        String head = CardLog.header(KeyProbe.prop("model.name"), KeyProbe.prop("version.platform"), versionName(), keysFound(), lastMode);
+        String head = CardLog.header(KeyProbe.prop("model.name"), KeyProbe.firmware(), KeyProbe.prop("version.platform"), versionName(), keysFound(), lastMode);
         log(CardLog.OPEN, head);
         String state = CardLog.state(cur);
         if (!state.equals(prefs.getString("loggedState", null))) {
@@ -222,11 +222,15 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         if (root == null) { showToast(Lang.t("report_need_card"), 4000); return; }
         String flat = null;
         try { if (camera != null) flat = camera.getParameters().flatten(); } catch (Throwable t) {}
-        String head = CardLog.header(KeyProbe.prop("model.name"), KeyProbe.prop("version.platform"), versionName(), keysFound(),
+        String head = CardLog.header(KeyProbe.prop("model.name"), KeyProbe.firmware(), KeyProbe.prop("version.platform"), versionName(), keysFound(),
                 CardLog.param(flat, CardLog.MODE_KEY));
         try {
             CardLog.replace(CardLog.reportDir(root), CardLog.REPORT,
-                    CardLog.report(CardLog.dir(root), CardLog.now(), head, CardLog.state(cur), flat));
+                    CardLog.report(CardLog.dir(root), CardLog.now(), head,
+                            CardLog.app(Recipes.displayName(library.get(recipe)), !dirty(), edited(), Lang.choiceCode(langChoice)
+                                    + (langChoice == Lang.AUTO ? " (" + Lang.CODES[Lang.current()] + ")" : ""),
+                                    library.customNames().size(), skipped, favs.size()),
+                            CardLog.state(cur), flat));
             showToast(Lang.t("report_saved", CardLog.DIR + "/" + CardLog.REPORT), 8000);   // long enough to read the path
         } catch (Throwable t) { showToast(Lang.t("report_failed", String.valueOf(t.getMessage())), 0); }
     }

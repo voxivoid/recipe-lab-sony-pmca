@@ -5,88 +5,28 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for taking the time to report this. **The most useful thing you can send is a report file from the
-        camera.** It takes a minute:
+        Thanks for reporting this. Two things are all we need: a report file from the camera, and a few words on
+        what went wrong.
 
-        1. Right after the problem happens, open Recipe Lab on the camera.
-        2. Hold **MENU** until the app menu opens, choose **Save a bug report** and press the centre button. The
-           screen says *Report saved*.
-        3. Connect the camera to your computer with its USB cable, or put the memory card in a card reader. The card
-           shows up like a USB drive. (Nothing shows up? On the camera, set MENU → Setup → **USB Connection** to
-           **Mass Storage** and plug it in again.)
-        4. Open the **RECIPLAB** folder on the card. **REPORT.TXT** is the file to attach below.
+        **Save the report file** right after the problem happens:
 
-        No *Save a bug report* in the menu? Your Recipe Lab is older: install the
-        [latest release](https://github.com/voxivoid/recipe-lab-sony-pmca/releases/latest) and try again, or fill
-        in the form without it.
+        1. Open Recipe Lab. Hold **MENU** until the app menu opens, choose **Save a bug report**, press the centre
+           button.
+        2. Connect the camera to your computer with its USB cable, or put the memory card in a card reader.
+           (Nothing shows up? On the camera, set MENU → Setup → **USB Connection** to **Mass Storage**.)
+        3. Open the **RECIPLAB** folder on the card and drag **REPORT.TXT** into the box below.
 
-        Trying Recipe Lab on a camera other than the A6000, and a setting lands in the wrong place or a button does
-        nothing? The [compatibility report](https://github.com/voxivoid/recipe-lab-sony-pmca/issues/new?template=compatibility_report.yml)
-        is the better form.
+        The file already holds your camera, its firmware, the app version, the recipe on screen and what the app
+        did, so you do not need to type any of that.
   - type: textarea
     id: logfile
     attributes:
       label: Report file
-      description: Drag **REPORT.TXT** from the RECIPLAB folder into this box. Leave it empty only if you could not save one.
-  - type: input
-    id: camera
-    attributes:
-      label: Camera
-      description: The name printed on the camera.
-      placeholder: "Sony A6000"
-    validations: { required: true }
-  - type: input
-    id: version
-    attributes:
-      label: Recipe Lab version
-      description: In the app, hold MENU → **About**.
-      placeholder: "1.8.0"
-    validations: { required: true }
-  - type: input
-    id: recipe
-    attributes:
-      label: Which recipe was selected?
-      placeholder: "Kodak Portra 400"
+      description: Drag REPORT.TXT here. No *Save a bug report* in the menu? Your Recipe Lab is older; just tell us your camera below.
   - type: textarea
     id: what
     attributes:
-      label: What happened, and what did you expect?
-      description: Copy any message the app showed word for word, or attach a photo of the screen.
+      label: What went wrong?
+      description: What you did, what you expected, and what happened instead. A photo of the screen helps too.
+      placeholder: "I picked Portra 400 and pressed the centre button. With the app closed, my photos still look like Standard."
     validations: { required: true }
-  - type: textarea
-    id: steps
-    attributes:
-      label: What did you do, step by step?
-      placeholder: |
-        1. Opened Recipe Lab
-        2. Turned the wheel to Portra 400
-        3. Pressed the centre button
-    validations: { required: true }
-  - type: dropdown
-    id: powercycle
-    attributes:
-      label: Did you turn the camera off and on before checking?
-      description: Some settings only take effect after the camera is turned off and on again. This is the most common cause of "it didn't work".
-      options: ["Yes", "No"]
-    validations: { required: true }
-  - type: textarea
-    id: diff
-    attributes:
-      label: A setting that did not change (optional)
-      description: |
-        Only if a setting did not end up the way the recipe shows. This tells us where your camera keeps it:
-
-        1. In Recipe Lab, hold MENU → **Developer** → **Settings snapshot**.
-        2. Press MENU to leave the app. In the camera's own menu, change only that one setting to what the recipe
-           should have set.
-        3. Open Recipe Lab again, hold MENU → **Developer** → **Settings diff**.
-        4. Save the bug report again (steps at the top) and attach the new REPORT.TXT above.
-
-        Then write here which setting you changed, and to what.
-      placeholder: "Creative Style → B/W"
-  - type: input
-    id: firmware
-    attributes:
-      label: Camera firmware version (optional)
-      description: On the camera, MENU → Setup → Version.
-      placeholder: "3.21"

@@ -86,13 +86,27 @@ final class CardLog {
     private static int field(Object o, String name) throws Exception { return o.getClass().getField(name).getInt(o); }
 
     /** what each opening of the app writes first: the body, the build and the mode dial, so a log needs no other context */
-    static String header(String model, String platform, String version, String keys, String mode) {
-        return "model " + orUnknown(model) + "  ·  platform " + orUnknown(platform) + "  ·  app " + orUnknown(version)
+    static String header(String model, String firmware, String platform, String version, String keys, String mode) {
+        return "model " + orUnknown(model) + "  ·  firmware " + orUnknown(firmware) + "  ·  platform " + orUnknown(platform)
+                + "  ·  app " + orUnknown(version)
                 + "  ·  mode " + modeLabel(mode) + "  ·  keys " + orUnknown(keys);
     }
 
     /** the mode dial as a reader should take it: an A6000 on the Movie dial reports {@code auto}, the same as Auto */
     static String modeLabel(String mode) { return "auto".equals(mode) ? "auto (Auto or Movie)" : orUnknown(mode); }
+
+    /**
+     * What the app shows when the report is saved — so a bug report need not ask: the recipe on screen, whether the
+     * camera holds it (ACTIVE / PREVIEW) and whether its values were changed (EDITED), the display language, and the
+     * user's own recipes and marks.
+     */
+    static String app(String recipe, boolean active, boolean edited, String language, int customs, List<String> skipped, int favourites) {
+        return "recipe " + recipe + (active ? "  ACTIVE" : "  PREVIEW") + (edited ? " EDITED" : "") + "  ·  language " + language
+                + "  ·  custom recipes " + customs + (skipped.isEmpty() ? "" : " (skipped: " + join(skipped) + ")")
+                + "  ·  favourites " + favourites;
+    }
+
+    private static String join(List<String> l) { StringBuilder b = new StringBuilder(); for (String s : l) b.append(b.length() == 0 ? "" : "; ").append(s); return b.toString(); }
 
     /** the camera parameter the mode dial shows in (P / A / S / M / the auto and scene modes) */
     static final String MODE_KEY = "scene-mode";
@@ -180,9 +194,10 @@ final class CardLog {
      * (its header, what the store holds, every parameter), then the end of the log and of each developer tool's file.
      * Cheap: it only runs when the user asks for it, and reads at most about 100 KB.
      */
-    static String report(File logs, String now, String header, String state, String flat) {
+    static String report(File logs, String now, String header, String app, String state, String flat) {
         StringBuilder sb = new StringBuilder("Recipe Lab report: attach this file to your GitHub issue.\n")
-                .append("saved ").append(now).append('\n').append(header).append('\n').append("STATE ").append(state).append('\n');
+                .append("saved ").append(now).append('\n').append(header).append('\n').append(app).append('\n')
+                .append("STATE ").append(state).append('\n');
         section(sb, "LOG", tail(new File(logs, older(LOG)), new File(logs, LOG), REPORT_LOG));
         section(sb, "LOCKS", tail(null, new File(logs, LOCKS), REPORT_TOOL));
         section(sb, "DIFF", tail(null, new File(logs, DIFF), REPORT_TOOL));

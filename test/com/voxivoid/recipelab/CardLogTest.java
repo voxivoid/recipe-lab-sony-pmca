@@ -117,14 +117,21 @@ class CardLogTest {
     }
 
     @Test void theHeaderNamesTheBodyAndTheBuild() {
-        assertEquals("model ILCE-6000  ·  platform 2.0  ·  app 1.7.0  ·  mode shutter-speed  ·  keys Fn",
-                CardLog.header("ILCE-6000", "2.0", "1.7.0", "Fn", "shutter-speed"));
-        assertEquals("model unknown  ·  platform unknown  ·  app unknown  ·  mode unknown  ·  keys unknown", CardLog.header(null, "", null, null, null));
+        assertEquals("model ILCE-6000  ·  firmware 3.21  ·  platform 2.0  ·  app 1.7.0  ·  mode shutter-speed  ·  keys Fn",
+                CardLog.header("ILCE-6000", "3.21", "2.0", "1.7.0", "Fn", "shutter-speed"));
+        assertEquals("model unknown  ·  firmware unknown  ·  platform unknown  ·  app unknown  ·  mode unknown  ·  keys unknown", CardLog.header(null, null, "", null, null, null));
     }
 
     @Test void autoMayBeTheMovieDial() {
-        assertTrue(CardLog.header("ILCE-6000", "2.4", "1.7.0", "Fn", "auto").contains("mode auto (Auto or Movie)"));
+        assertTrue(CardLog.header("ILCE-6000", "3.21", "2.4", "1.7.0", "Fn", "auto").contains("mode auto (Auto or Movie)"));
         assertEquals("manual-exposure", CardLog.modeLabel("manual-exposure"));
+    }
+
+    @Test void theAppLineSaysWhatTheScreenShowed() {
+        assertEquals("recipe Velvia  PREVIEW EDITED  ·  language auto (en)  ·  custom recipes 2 (skipped: BAD.YML line 3)  ·  favourites 5",
+                CardLog.app("Velvia", false, true, "auto (en)", 2, Arrays.asList("BAD.YML line 3"), 5));
+        assertEquals("recipe Factory  ACTIVE  ·  language zh-Hans  ·  custom recipes 0  ·  favourites 0",
+                CardLog.app("Factory", true, false, "zh-Hans", 0, Arrays.<String>asList(), 0));
     }
 
     @Test void aRefusedWriteSaysWhereItStopped() {
@@ -156,9 +163,9 @@ class CardLogTest {
         File dir = CardLog.dir(root);
         CardLog.append(dir, CardLog.LOG, "opened\n");
         CardLog.append(dir, CardLog.KEYS, "down 232\n");
-        String r = CardLog.report(dir, "2026-10-15 14:03:27", "model ILCE-6000", "STYLE=1", "scene-mode=manual-exposure;color-mode=mono");
+        String r = CardLog.report(dir, "2026-10-15 14:03:27", "model ILCE-6000", "recipe Velvia  ACTIVE", "STYLE=1", "scene-mode=manual-exposure;color-mode=mono");
         assertTrue(r.startsWith("Recipe Lab report"), r);
-        assertTrue(r.contains("model ILCE-6000\nSTATE STYLE=1\n"), r);
+        assertTrue(r.contains("model ILCE-6000\nrecipe Velvia  ACTIVE\nSTATE STYLE=1\n"), r);
         assertTrue(r.contains("===== LOG =====\nopened\n"), r);
         assertTrue(r.contains("===== KEYS =====\ndown 232\n"), r);
         assertTrue(r.contains("===== LOCKS =====\n(none)\n"), r);
