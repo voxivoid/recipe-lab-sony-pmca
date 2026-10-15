@@ -227,7 +227,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         try {
             CardLog.replace(CardLog.reportDir(root), CardLog.REPORT,
                     CardLog.report(CardLog.dir(root), CardLog.now(), head, CardLog.state(cur), flat));
-            showToast(Lang.t("report_saved", CardLog.DIR + "/" + CardLog.REPORT), 0);
+            showToast(Lang.t("report_saved", CardLog.DIR + "/" + CardLog.REPORT), 8000);   // long enough to read the path
         } catch (Throwable t) { showToast(Lang.t("report_failed", String.valueOf(t.getMessage())), 0); }
     }
 
