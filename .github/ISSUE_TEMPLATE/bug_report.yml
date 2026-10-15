@@ -5,40 +5,42 @@ body:
   - type: markdown
     attributes:
       value: |
-        Recipe Lab runs on any Sony body that takes PlayMemories camera apps. It was developed on an **A6000**, and
-        the settings IDs come from that body — so on another camera a wrong value or a missing control is expected
-        rather than a bug. If that is what you are seeing, the
-        [compatibility report](https://github.com/voxivoid/recipe-lab-sony-pmca/issues/new?template=compatibility_report.yml)
+        Thanks for taking the time to report this. **The most useful thing you can send is a report file from the
+        camera.** It takes a minute:
+
+        1. Right after the problem happens, open Recipe Lab on the camera.
+        2. Hold **MENU** until the app menu opens, choose **Save a bug report** and press the centre button. The
+           screen says *Report saved*.
+        3. Connect the camera to your computer with its USB cable, or put the memory card in a card reader. The card
+           shows up like a USB drive. (Nothing shows up? On the camera, set MENU → Setup → **USB Connection** to
+           **Mass Storage** and plug it in again.)
+        4. Open the **RECIPLAB** folder on the card. **REPORT.TXT** is the file to attach below.
+
+        No *Save a bug report* in the menu? Your Recipe Lab is older: install the
+        [latest release](https://github.com/voxivoid/recipe-lab-sony-pmca/releases/latest) and try again, or fill
+        in the form without it.
+
+        Trying Recipe Lab on a camera other than the A6000, and a setting lands in the wrong place or a button does
+        nothing? The [compatibility report](https://github.com/voxivoid/recipe-lab-sony-pmca/issues/new?template=compatibility_report.yml)
         is the better form.
+  - type: textarea
+    id: logfile
+    attributes:
+      label: Report file
+      description: Drag **REPORT.TXT** from the RECIPLAB folder into this box. Leave it empty only if you could not save one.
   - type: input
     id: camera
     attributes:
-      label: Camera body
-      description: Model name and code, if you know it.
-      placeholder: "Sony A6000 (ILCE-6000)"
-    validations: { required: true }
-  - type: input
-    id: firmware
-    attributes:
-      label: Camera firmware version
-      description: MENU → Setup → Version
-      placeholder: "3.21"
+      label: Camera
+      description: The name printed on the camera.
+      placeholder: "Sony A6000"
     validations: { required: true }
   - type: input
     id: version
     attributes:
       label: Recipe Lab version
-      description: Shown on the release you installed, or `dev` for a development build.
-      placeholder: "1.1.0 / dev"
-    validations: { required: true }
-  - type: dropdown
-    id: install
-    attributes:
-      label: How did you install it?
-      options:
-        - PMCA-GUI
-        - Sony-PMCA-RE command line (pmca-console.py)
-        - Other
+      description: In the app, hold MENU → **About**.
+      placeholder: "1.8.0"
     validations: { required: true }
   - type: input
     id: recipe
@@ -49,40 +51,42 @@ body:
     id: what
     attributes:
       label: What happened, and what did you expect?
-      description: Include anything shown in the app's panel, verbatim.
+      description: Copy any message the app showed word for word, or attach a photo of the screen.
     validations: { required: true }
   - type: textarea
     id: steps
     attributes:
-      label: Steps to reproduce
+      label: What did you do, step by step?
       placeholder: |
-        1. Launch Recipe Lab
-        2. Turn the wheel to …
-        3. Press …
+        1. Opened Recipe Lab
+        2. Turned the wheel to Portra 400
+        3. Pressed the centre button
     validations: { required: true }
-  - type: textarea
-    id: logfile
-    attributes:
-      label: Report file
-      description: >-
-        Right after the problem happens, open Recipe Lab and hold **MENU** → **Save a bug report**: it saves what
-        happened up to that moment. Then connect the camera to a
-        computer with the USB cable (or put the memory card in a card reader), open the card, and drag the file
-        **RECIPLAB/REPORT.TXT** into this box. No such menu row means your version is older: leave this empty.
-  - type: textarea
-    id: diff
-    attributes:
-      label: A setting that did not change (optional)
-      description: >-
-        Only if a setting did not end up the way the recipe shows. In Recipe Lab, hold MENU → Developer →
-        **Settings snapshot**. Leave the app, change that one setting by hand to what the recipe should have set,
-        open Recipe Lab again and hold MENU → Developer → **Settings diff**. Then save the bug report again (above)
-        and write here which setting you changed, and to what.
-      placeholder: "Creative Style → B/W"
   - type: dropdown
     id: powercycle
     attributes:
       label: Did you turn the camera off and on before checking?
-      description: Some settings only take effect after a power cycle — this is the single most common cause of "it didn't work".
+      description: Some settings only take effect after the camera is turned off and on again. This is the most common cause of "it didn't work".
       options: ["Yes", "No"]
     validations: { required: true }
+  - type: textarea
+    id: diff
+    attributes:
+      label: A setting that did not change (optional)
+      description: |
+        Only if a setting did not end up the way the recipe shows. This tells us where your camera keeps it:
+
+        1. In Recipe Lab, hold MENU → **Developer** → **Settings snapshot**.
+        2. Press MENU to leave the app. In the camera's own menu, change only that one setting to what the recipe
+           should have set.
+        3. Open Recipe Lab again, hold MENU → **Developer** → **Settings diff**.
+        4. Save the bug report again (steps at the top) and attach the new REPORT.TXT above.
+
+        Then write here which setting you changed, and to what.
+      placeholder: "Creative Style → B/W"
+  - type: input
+    id: firmware
+    attributes:
+      label: Camera firmware version (optional)
+      description: On the camera, MENU → Setup → Version.
+      placeholder: "3.21"

@@ -140,6 +140,17 @@ live preview is still the better sample — turn the wheel and the image on the 
 
 ## Something went wrong
 
+**To report a bug, save a report file first.** It holds everything needed to find the problem, so you attach one
+file instead of answering a long list of questions:
+
+1. Right after the problem happens, open Recipe Lab.
+2. Hold **MENU** until the app menu opens, choose **Save a bug report** and press the centre button.
+3. Connect the camera to your computer with its USB cable, or put the memory card in a card reader. If the card does
+   not show up, set `MENU → Setup → USB Connection` to *Mass Storage* on the camera and plug it in again.
+4. Open the **RECIPLAB** folder on the card and attach **REPORT.TXT** to a
+   [bug report](https://github.com/voxivoid/recipe-lab-sony-pmca/issues/new?template=bug_report.yml).
+
+
 The [Troubleshooting table](../README.md#troubleshooting) covers the common ones. Install and USB problems belong to
 [Sony-PMCA-RE](https://github.com/ma1co/Sony-PMCA-RE/issues), which is what puts apps on the camera; anything about
 the recipes or the app itself belongs [here](https://github.com/voxivoid/recipe-lab-sony-pmca/issues).

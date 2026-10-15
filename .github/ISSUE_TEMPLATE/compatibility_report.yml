@@ -14,7 +14,8 @@ body:
         **A report that it failed is as useful as one that it worked.** Please file it either way.
 
         Put your camera's name after `compat: ` in the title, e.g. `compat: A5100`. The questions below follow the
-        order you will do things in, so keep the camera at hand while you fill them in.
+        order you will do things in, so keep the camera at hand while you fill them in. Near the end you will save
+        a report file in the app and attach it: that one file answers most of what we would otherwise ask.
   - type: input
     id: camera
     attributes:
@@ -34,9 +35,8 @@ body:
     attributes:
       label: Recipe Lab version
       description: >-
-        The number of the release you downloaded, from the
-        [releases page](https://github.com/voxivoid/recipe-lab-sony-pmca/releases). The `RecipeLab.apk` link in the
-        README always serves the newest one. For any other build, give the name it came with.
+        In the app, hold MENU → **About**. If it did not install, the number of the release you downloaded from the
+        [releases page](https://github.com/voxivoid/recipe-lab-sony-pmca/releases).
       placeholder: "1.3.1"
     validations: { required: true }
   - type: dropdown
@@ -197,20 +197,30 @@ body:
     id: logfile
     attributes:
       label: Report file
-      description: >-
-        Right after the problem happens, open Recipe Lab and hold **MENU** → **Save a bug report**: it saves what
-        happened up to that moment. Then connect the camera to a
-        computer with the USB cable (or put the memory card in a card reader), open the card, and drag the file
-        **RECIPLAB/REPORT.TXT** into this box. No such menu row means your version is older: leave this empty.
+      description: |
+        When you have tried everything above:
+
+        1. Open Recipe Lab, hold **MENU** until the app menu opens, choose **Save a bug report** and press the centre
+           button. The screen says *Report saved*.
+        2. Connect the camera to your computer with its USB cable, or put the memory card in a card reader. (Nothing
+           shows up? On the camera, set MENU → Setup → **USB Connection** to **Mass Storage**.)
+        3. Open the **RECIPLAB** folder on the card and drag **REPORT.TXT** into this box.
+
+        No *Save a bug report* in the menu means your Recipe Lab is older: leave this empty.
   - type: textarea
     id: diff
     attributes:
       label: A setting that did not change (optional)
-      description: >-
-        Only if a setting did not end up the way the recipe shows. In Recipe Lab, hold MENU → Developer →
-        **Settings snapshot**. Leave the app, change that one setting by hand to what the recipe should have set,
-        open Recipe Lab again and hold MENU → Developer → **Settings diff**. Then save the bug report again (above)
-        and write here which setting you changed, and to what.
+      description: |
+        Only if a setting did not end up the way the recipe shows. This tells us where your camera keeps it:
+
+        1. In Recipe Lab, hold MENU → **Developer** → **Settings snapshot**.
+        2. Press MENU to leave the app. In the camera's own menu, change only that one setting to what the recipe
+           should have set.
+        3. Open Recipe Lab again, hold MENU → **Developer** → **Settings diff**.
+        4. Save the bug report again (above) and attach the new REPORT.TXT.
+
+        Then write here which setting you changed, and to what.
       placeholder: "Creative Style → B/W"
   - type: textarea
     id: notes
