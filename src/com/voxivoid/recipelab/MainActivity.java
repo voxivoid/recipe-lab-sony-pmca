@@ -195,6 +195,19 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         log(CardLog.PREVIEW, msg);
     }
 
+    /**
+     * Appends a developer tool's output to its file in the card's logs folder, where a report can attach it; without a
+     * card, to {@code fallback} in the app's own storage. Returns where it went, as the toast names it.
+     */
+    private String debugFile(String name, String fallback, String text) throws java.io.IOException {
+        try { CardLog.append(CardLog.dir(cardRoot()), name, text); return CardLog.path(name); }
+        catch (java.io.IOException t) {
+            java.io.FileWriter w = new java.io.FileWriter(new File(getFilesDir(), fallback), true);
+            try { w.write(text); } finally { w.close(); }
+            return fallback;
+        }
+    }
+
     private int dp(float v) { return (int) (v * getResources().getDisplayMetrics().density + 0.5f); }
 
     private void buildChips() {
@@ -524,12 +537,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             }
             in.close(); f.delete();
             String line = CardLog.line(System.currentTimeMillis(), CardLog.INFO, changed + " changed  " + all);
-            String where = CardLog.path(CardLog.DIFF);
-            try { CardLog.append(CardLog.dir(cardRoot()), CardLog.DIFF, line); }
-            catch (Throwable t) {                                // no card: the app's own storage, as before
-                where = "diff.txt";
-                java.io.FileWriter w = new java.io.FileWriter(new File(getFilesDir(), where), true); w.write(line); w.close();
-            }
+            String where = debugFile(CardLog.DIFF, "diff.txt", line);
             showToast(Lang.t("status_diff_changed", changed, sb.toString()) + "  ·  " + where, 0);
         } catch (Throwable t) { showToast(Lang.t("status_snapshot_error", String.valueOf(t)), 0); }
     }
@@ -538,7 +546,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     /**
      * Whether this body holds any slot a recipe writes read-only — the question the PROTECTED badge used to ask
      * of one unrelated slot (issue #19). Every slot of {@link Params#allSlots()} is listed with its attribute in
-     * locks.txt, so a compatibility report can quote it.
+     * LOCKS.TXT on the card, so a compatibility report can attach it.
      */
     private void lockCheck() {
         List<Integer> ids = Params.allSlots();
@@ -550,9 +558,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         int was = Lang.use(Lang.EN);                              // the file is quoted in compatibility reports: English
         try { file = Params.lockReport(ids, attrs); } finally { Lang.use(was); }
         try {
-            java.io.FileWriter w = new java.io.FileWriter(new File(getFilesDir(), "locks.txt"), true);
-            try { w.write(file + "\n" + Params.lockLines(ids, attrs)); } finally { w.close(); }
-        } catch (Throwable t) { text += "  ·  " + Lang.t("status_file_failed", "locks.txt", String.valueOf(t)); }
+            text += "  ·  " + debugFile(CardLog.LOCKS, "locks.txt", file + "\n" + Params.lockLines(ids, attrs));
+        } catch (Throwable t) { text += "  ·  " + Lang.t("status_file_failed", CardLog.LOCKS, String.valueOf(t)); }
         showToast(text, 0);
     }
 
@@ -679,10 +686,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     }
 
     private void appendKeyLog(String line) {
-        try {
-            java.io.FileWriter w = new java.io.FileWriter(new File(getFilesDir(), DevTools.KEY_LOG), true);
-            try { w.write(line + "\n"); } finally { w.close(); }
-        } catch (Throwable t) {}
+        try { debugFile(CardLog.KEYS, DevTools.KEY_LOG, line + "\n"); } catch (Throwable t) {}
     }
 
     /** every key while the logger runs: shown and written, nothing else happens; a MENU hold leaves */
@@ -1212,7 +1216,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private void menuHoldFired() {
         if (menuKeyHold.fire() != Keys.Hold.HOLD) return;
         swallowMenuUp = true;
-        if (logging) { stopLogger(); showToast(Lang.t("status_logger_stopped", DevTools.KEY_LOG), 4000); return; }
+        if (logging) { stopLogger(); showToast(Lang.t("status_logger_stopped", cardRoot() != null ? CardLog.path(CardLog.KEYS) : DevTools.KEY_LOG), 4000); return; }
         if (running || promptOpen || menuOpen || nameOpen) return;
         if (overlay == OV_BROWSER) { if (onCustomRow()) openPrompt(P_OPTIONS, CustomRecipes.OPT_DEFAULT); return; }
         if (menuHoldArms(overlay, focus)) openMenu(DevTools.LEVEL_APP);

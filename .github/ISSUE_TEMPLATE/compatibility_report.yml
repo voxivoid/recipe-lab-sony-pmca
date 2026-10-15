@@ -183,8 +183,8 @@ body:
       label: Key logger output
       description: >-
         Optional, and the most useful thing for key problems. Hold MENU → Developer → Key logger, then press each
-        button you have once — especially any that did nothing above. Copy the top line (camera, platform, keys) and
-        the lines it shows, or attach a photo of the screen. Hold MENU to leave it.
+        button you have once — especially any that did nothing above. Hold MENU to leave it, then attach
+        `RECIPLAB/LOGS/KEYS.TXT` from the card (as for the log below), or a photo of the screen.
       placeholder: "KEY LOGGER · ILCE-5100 · 2.7 — has DELETE PLAY MOVIE · lacks FN AEL C1 — down 103 UP · repeat 0"
   - type: textarea
     id: logfile

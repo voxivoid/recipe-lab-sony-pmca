@@ -133,7 +133,7 @@ The **developer menu** holds the tools that are not part of using the app:
 | **Read-only check — 26 slots** | the read-only check below: does this body flag any slot a recipe writes |
 | **Shoot samples — 77 recipes** | the sample run below |
 | **Settle delay** | a value — the delay the sample run waits after applying a recipe; left / right step through 0.8 / 1.2 / 2.0 / 3.0 / 5.0 s in place (centre steps forward), kept in the app's preferences |
-| **Key logger** | every key event on screen, newest first, and appended to `keys.txt` in `getFilesDir()`: scan code, down / up, repeat count, Sony's logic code; the header is the model, the platform and what the probe found. Nothing else happens while it runs; **hold MENU** leaves |
+| **Key logger** | every key event on screen, newest first, and appended to `RECIPLAB/LOGS/KEYS.TXT` on the card (`keys.txt` in `getFilesDir()` without one): scan code, down / up, repeat count, Sony's logic code; the header is the model, the platform and what the probe found. Nothing else happens while it runs; **hold MENU** leaves |
 
 New functions go in as app menu rows, not on new keys — see [Keys on every body](#keys-on-every-body).
 
@@ -154,9 +154,9 @@ the camera rewrites unrelated entries on its own, so a second change means guess
 
 ### Log on the card
 
-`CardLog`. Reports kept arriving without the one thing that would explain them — `keys.txt`, `locks.txt` and the
-old `diff.txt` live in `getFilesDir()`, which a user cannot reach without a shell. So the app writes a log where they
-can: `RECIPLAB/LOGS/LOG.TXT` at the root of the card, which the camera shows over USB Mass Storage. The folder is
+`CardLog`. Reports kept arriving without the one thing that would explain them — the developer tools wrote to `getFilesDir()`,
+which a user cannot reach without a shell. So the files that help debugging go where they can — `LOG.TXT`, and the
+tools' `DIFF.TXT`, `KEYS.TXT` and `LOCKS.TXT` — while `samples.txt` and `snapshot.bin` stay private: `RECIPLAB/LOGS/LOG.TXT` at the root of the card, which the camera shows over USB Mass Storage. The folder is
 `RECIPLAB`, not `RECIPE-LAB`: the card's FUSE layer takes 8.3 names only (see [Custom recipes](#custom-recipes)).
 
 | kind | when |
@@ -187,7 +187,7 @@ about that slot, and no answer at all about Creative Style, saturation or white 
 
 So the app asks per slot instead. The row reads `NativeBackup.attr(id)` for every entry of `Params.allSlots()` —
 the 26 slots any recipe can write — and reports `26 recipe slots checked · none read-only`, or names the rows
-that are flagged. The full list goes to `locks.txt` in `getFilesDir()`, one line per slot
+that are flagged. The full list goes to `RECIPLAB/LOGS/LOCKS.TXT` on the card (`locks.txt` in `getFilesDir()` without one), one line per slot
 (`01070175 STYLE attr=0`), which is what a compatibility report should quote. A slot the camera will not answer
 for counts as writable: the write path reports a refusal properly, so a failed probe must not block a recipe.
 

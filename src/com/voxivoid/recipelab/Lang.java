@@ -15,7 +15,7 @@ import java.util.Map;
  * where the manifest, the favourites and the tests read it — so {@link #label} takes that canonical text as its
  * fallback, and only a translation adds the key.
  *
- * What the app writes to files (samples.txt, locks.txt, keys.txt, diff.txt, custom recipes) stays English whatever the menu says:
+ * What the app writes to files (samples.txt, the RECIPLAB logs, custom recipes) stays English whatever the menu says:
  * compatibility reports quote those files. The few places that build file text from a label switch to English for
  * the length of it with {@link #use}.
  *

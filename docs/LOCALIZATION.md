@@ -35,7 +35,7 @@ What stays the same in every language:
 
 - **The recipe identifiers.** `Recipe.name` is the canonical English. Favourites are stored by it, so switching the
   language never loses a mark.
-- **Every file the app writes** — `samples.txt`, `locks.txt`, `keys.txt`, `diff.txt`. Compatibility reports quote them,
+- **Every file the app writes** — `samples.txt`, and the logs in `RECIPLAB/LOGS` (`LOG.TXT`, `DIFF.TXT`, `KEYS.TXT`, `LOCKS.TXT`). Compatibility reports quote them,
   so they stay English and parsable. So do the custom recipe files in `RECIPES`: people trade them, and a file has to
   read the same on every camera. A custom recipe's name is the user's own and is never translated; the name editor
   types only what every font the app carries can draw (`CustomRecipes.nameChar`), and the default *Untitled* is data

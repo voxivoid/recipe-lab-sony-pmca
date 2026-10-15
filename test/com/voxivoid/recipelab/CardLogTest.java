@@ -23,7 +23,7 @@ class CardLogTest {
 
     @Test void folderAndFileNamesAreDos83() {
         for (String n : new String[] { CardLog.DIR, CardLog.SUB }) assertTrue(n.length() <= 8 && n.equals(n.toUpperCase()), n);
-        for (String n : new String[] { CardLog.LOG, CardLog.OLD, CardLog.DIFF }) assertTrue(n.matches("[A-Z0-9]{1,8}\\.[A-Z]{1,3}"), n);
+        for (String n : new String[] { CardLog.LOG, CardLog.OLD, CardLog.DIFF, CardLog.KEYS, CardLog.LOCKS }) assertTrue(n.matches("[A-Z0-9]{1,8}\\.[A-Z]{1,3}"), n);
         assertEquals("RECIPLAB/LOGS/LOG.TXT", CardLog.path(CardLog.LOG));
     }
 

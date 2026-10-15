@@ -12,8 +12,9 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * The logs a user can share: {@link #LOG} (what the app did and what went wrong) and {@link #DIFF} (what the snapshot
- * tool saw change), in {@link #DIR}/{@link #SUB} on the memory card, so a bug report can attach them after mounting the
+ * The logs a user can share: {@link #LOG} (what the app did and what went wrong), and the developer tools' output —
+ * {@link #DIFF} (what the snapshot tool saw change), {@link #KEYS} (the key logger), {@link #LOCKS} (the read-only
+ * check) — in {@link #DIR}/{@link #SUB} on the memory card, so a bug report can attach them after mounting the
  * camera over USB — files in the app's own storage cannot be reached without a shell.
  *
  * Every line is written and closed on its own: the camera can reboot under the app (issue #100), and the last line
@@ -30,7 +31,7 @@ final class CardLog {
     /** the app's folder at the root of the card: RECIPE-LAB would be ten characters, past what the card takes */
     static final String DIR = "RECIPLAB";
     static final String SUB = "LOGS";
-    static final String LOG = "LOG.TXT", OLD = "LOG1.TXT", DIFF = "DIFF.TXT";
+    static final String LOG = "LOG.TXT", OLD = "LOG1.TXT", DIFF = "DIFF.TXT", KEYS = "KEYS.TXT", LOCKS = "LOCKS.TXT";
     /** about a thousand lines; the rolled-over file keeps as many again */
     static final int MAX_BYTES = 64 * 1024;
 
@@ -101,7 +102,7 @@ final class CardLog {
 
     /**
      * Appends text to {@code name} in the logs folder, creating the folders. {@link #LOG} rolls over to {@link #OLD}
-     * first when it would pass the cap; the diff file never does, as one only grows by a developer's hand.
+     * first when it would pass the cap; the others never do, as they only grow by a developer's hand.
      */
     static void append(File dir, String name, String text) throws IOException {
         if (dir == null) throw new IOException("no memory card");
