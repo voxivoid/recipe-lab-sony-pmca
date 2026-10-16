@@ -122,7 +122,7 @@ Failures are as useful as successes.
 | **A5100** | ILCE-5100 | ✅ | no **Fn** button: the brand list is under **hold MENU → Browse recipes** |
 | **A7 II** | ILCE-7M2 | ✅ |  |
 | **A7** | ILCE-7 | ✅ |  |
-| **NEX-5T** | NEX-5T | ✅ | the stored values did not all match, and some menu labels read differently ([#22](https://github.com/voxivoid/recipe-lab-sony-pmca/issues/22)) |
+| **NEX-5T** | NEX-5T | ✅ | some menu labels read differently ([#22](https://github.com/voxivoid/recipe-lab-sony-pmca/issues/22)) |
 | **A6300** | ILCE-6300 | ✅ |  |
 | **A7R** | ILCE-7R | ✅ |  |
 | **A7R II** | ILCE-7RM2 | ✅ | one of four reports lost the look after a power cycle — check the mode dial is not on **MR** / **1** / **2** ([#82](https://github.com/voxivoid/recipe-lab-sony-pmca/issues/82)) |
@@ -135,7 +135,7 @@ Failures are as useful as successes.
 | **HX90 / HX90V** | DSC-HX90 | ✅ |  |
 | **NEX-5R** | NEX-5R | ✅ |  |
 | **A7S** | ILCE-7S | ✅ |  |
-| **NEX-6** | NEX-6 | ✅ | one report stored and kept a look; another got `WRITE FAILED on EV` on most recipes ([#84](https://github.com/voxivoid/recipe-lab-sony-pmca/issues/84)) |
+| **NEX-6** | NEX-6 | ✅ |  |
 | A68 | ILCA-68 | ❔ | not in the installer's device table, so even the install is untested |
 | A77 II | ILCA-77M2 | ❔ |  |
 | A99 II | ILCA-99M2 | ❔ |  |
