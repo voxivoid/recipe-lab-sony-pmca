@@ -70,6 +70,15 @@ class ParamsLockTest {
         assertEquals(ids(ID_SAT), lockedFrom(ws, new int[] { -1, ATTR_READ_ONLY }), "one unreadable slot does not hide a flagged one");
     }
 
+    @Test void companionCopiesTheCameraWillNotAnswerForAreDroppedBeforeWriting() {
+        List<Write> ws = Arrays.asList(w(ID_EV, 2), w(ID_EV2, 2), w(ID_DRO, 4), w(ID_DRO_LVL, 4), w(ID_QFMT, 0), w(ID_QFMT2, 0));
+        assertEquals(ws, supportedFrom(ws, new int[] { 96, 96, 96, 96, 96, 96 }), "a body that has every slot writes every slot");
+        assertEquals(Arrays.asList(w(ID_EV, 2), w(ID_DRO, 4), w(ID_DRO_LVL, 4), w(ID_QFMT, 0)),
+                supportedFrom(ws, new int[] { 96, -1, 96, 96, 96, -1 }), "missing companion copies (NEX-5T/NEX-6) are skipped");
+        assertEquals(Arrays.asList(w(ID_EV, 2), w(ID_DRO, 4), w(ID_DRO_LVL, 4), w(ID_QFMT, 0)),
+                supportedFrom(ws, new int[] { -1, -1, -1, -1, -1, -1 }), "primary slots are kept even if attr fails so write reports any error");
+    }
+
     // ---- naming a slot
     @Test void aSlotIsNamedAfterTheRowThatOwnsIt() {
         assertEquals("STYLE", slotName(ID_STYLE));

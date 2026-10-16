@@ -419,7 +419,9 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         int storedSub = storedSub();
         int n = Params.dirtyRows(cur, edit, storedSub);
         List<Params.Write> ws = Params.writes(cur, edit, storedSub);
-        List<Integer> locked = Params.lockedFrom(ws, attrsOf(ws));   // the slots backup protection would refuse (issue #19)
+        int[] attrs = attrsOf(ws);
+        List<Integer> locked = Params.lockedFrom(ws, attrs);   // the slots backup protection would refuse (issue #19)
+        ws = Params.supportedFrom(ws, attrs);                  // drop companion copies absent on older bodies (issue #84)
         String what = Recipes.displayName(library.get(recipe));
         if (!locked.isEmpty()) { log(CardLog.FAIL, what + ": read-only " + CardLog.ids(locked)); showToast(Params.lockedMessage(locked), 0); return; }   // nothing written, so nothing half-applied
 
