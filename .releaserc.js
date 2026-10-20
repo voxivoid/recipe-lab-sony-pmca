@@ -16,6 +16,9 @@ export default {
         releaseRules: [{ type: 'refactor', release: 'patch' }],
       },
     ],
+    // The release's body is the reviewed notes (release-notes/next.md) with the generated commit list folded below.
+    // semantic-release joins the notes of its plugins in order, so the first exec opens a <details>, the second closes it.
+    ['@semantic-release/exec', { generateNotesCmd: 'node tools/release-notes.mjs github-start' }],
     [
       '@semantic-release/release-notes-generator',
       {
@@ -35,6 +38,7 @@ export default {
         },
       },
     ],
+    ['@semantic-release/exec', { generateNotesCmd: 'node tools/release-notes.mjs github-end' }],
     [
       '@semantic-release/exec',
       {
@@ -43,6 +47,8 @@ export default {
         // releases/latest/download URL the README points at working.
         prepareCmd:
           './tools/bump-version.sh ${nextRelease.version}' +
+          // The notes written with /release-notes become this release's file, in the same release commit.
+          ' && node tools/release-notes.mjs archive ${nextRelease.version}' +
           ' && RELEASE=1 RELEASE_TAG=v${nextRelease.version} ./build.sh' +
           ' && cp RecipeLab.apk RecipeLab-${nextRelease.version}.apk',
       },
@@ -71,7 +77,7 @@ export default {
     [
       '@semantic-release/git',
       {
-        assets: ['AndroidManifest.xml'],
+        assets: ['AndroidManifest.xml', 'release-notes/v*.md'],
         message: 'chore(release): ${nextRelease.version} [skip ci]',
       },
     ],

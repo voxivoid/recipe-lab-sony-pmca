@@ -91,8 +91,29 @@ tests prove which bytes and parameters the app *sends*, not what the camera *doe
 need a real A6000, exercised **and power-cycled** — a look that vanishes after a power cycle was never stored.
 Say so plainly rather than implying a green build or a green `test` means the change works.
 
+## Release notes: check them on every commit
+
+`release-notes/next.md` is what camera owners read at the top of the next GitHub release (and of the `dev`
+prerelease). It is written by hand with `/release-notes` and shipped as it stands, so a wrong or stale line goes
+out to users. Before every `git commit`:
+
+1. Read `release-notes/next.md` (if it does not exist and the commit is user-facing, create it with `/release-notes`).
+2. Make it match the code after this commit:
+   - add a line if the commit changes what a user can do or see, or fixes a bug a user would notice;
+   - edit or drop lines this commit makes wrong (a feature changed, renamed, reverted, or fixed before release);
+   - drop lines for things no longer in the code.
+3. Include the notes change in the same commit, or say in the commit's summary to the user that the notes were
+   checked and need no change. Do not skip the check because the commit is "only" a refactor, fix or docs: those are
+   where stale lines come from.
+
+What belongs in the notes: only changes that affect how the app is used, and bugs that affect the user. Leave out
+anything internal: docs, compatibility-table updates, refactors, tests, CI/build/release tooling, dependency bumps,
+code structure, and fixes to bugs that never reached a release. No commit prefixes, hashes, slot IDs, file or class
+names, or jargon. Never claim a change works on a body nobody tried. Details: `.claude/skills/release-notes/SKILL.md`.
+
 ## Releasing
 
 Run the **create-release** workflow (`gh workflow run create-release.yml`, or `-f dry_run=true` to preview).
 It releases whatever is on `main` at that moment, so releasing is a decision about timing, not about
-merging anything. Full runbook in [docs/RELEASING.md](docs/RELEASING.md).
+merging anything. Full runbook in [docs/RELEASING.md](docs/RELEASING.md);
+the `/create-release` skill walks it, notes first.

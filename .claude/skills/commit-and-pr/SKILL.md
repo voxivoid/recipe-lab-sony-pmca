@@ -57,7 +57,13 @@ Stage specific files by name; avoid `git add -A` / `git add .`.
 irreplaceable), `node_modules/`, `out/`, `jni/platform/errno.h.updater_only`. All are
 gitignored — if one shows up in `git status`, something is wrong; stop and say so.
 
-### 4. Run the gates before committing
+### 4. Check the release notes
+
+Read `release-notes/next.md` and make it match the code after this commit: add a line for a change a camera owner
+would notice, fix or drop lines this commit makes wrong. Stage it with the commit, or say in the report that it was
+checked and needs no change. Rules: `CLAUDE.md` (Release notes) and `.claude/skills/release-notes/SKILL.md`.
+
+### 4b. Run the gates before committing
 
 These are the same checks CI runs, and they take a second locally:
 
@@ -234,3 +240,4 @@ Tell the user:
 - **what release the PR title implies** (patch / minor / major / none) — so a mistyped title
   is caught before merge
 - whether the change still needs verifying on a camera
+- whether `release-notes/next.md` changed, or was checked and needs nothing

@@ -8,6 +8,9 @@ workflow ships whatever is on `main` when you run it. Releasing is a decision ab
 
 ## The button
 
+Write the notes first: `release-notes/next.md` is the top of the release (see [Release notes](#release-notes)). The
+`/create-release` skill in Claude Code checks it, then runs the steps below.
+
 **Actions → create-release → Run workflow**, or:
 
 ```bash
@@ -23,8 +26,28 @@ gh workflow run create-release.yml -f dry_run=true    # just report what would s
 It refuses if the last build failed (that build runs the unit tests first), or if no commit
 since the last tag carries a releasable type. Then it runs the unit tests once more, and
 semantic-release decides the version, writes `AndroidManifest.xml` via `tools/bump-version.sh`,
-builds the APK, tags, publishes the release and commits the manifest bump back to `main`.
+moves `release-notes/next.md` to `vX.Y.Z.md`, builds the APK, tags, publishes the release and commits the manifest bump back to `main`.
 Finally the rolling `dev` prerelease is rebuilt so its tag follows the new tip.
+
+## Release notes
+
+A release's body starts with notes written for camera owners, with the generated commit list folded below them
+(`<details>`). The notes live in `release-notes/`:
+
+- `release-notes/next.md` holds the notes of the next release. The `/release-notes` skill drafts it from the commits
+  since the last tag, and every commit keeps it true (`CLAUDE.md`). The rolling `dev` prerelease shows it too.
+- At release, `.releaserc.js` puts it on top of the body (two small `@semantic-release/exec` steps around the notes
+  generator open and close the fold) and moves it to `release-notes/vX.Y.Z.md` in the `chore(release):` commit.
+- No `next.md`: the body is the generated commit list alone, as before.
+
+Plain text, one heading line per group (`New`, `Changed`, `Fixed`, `Please try`) and `- ` lines under it;
+`tools/release-notes.mjs` turns the headings into markdown. To fix the notes of a release already out, change
+`release-notes/vX.Y.Z.md` on `main`, then:
+
+```bash
+node tools/release-notes.mjs github vX.Y.Z                 # the body it would get; the commit list is kept
+node tools/release-notes.mjs github vX.Y.Z > body.md && gh release edit vX.Y.Z --notes-file body.md
+```
 
 ## What decides the version
 
