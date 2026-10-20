@@ -137,7 +137,7 @@ Failures are as useful as successes.
 | **A7S** | ILCE-7S | ✅ |  |
 | **NEX-6** | NEX-6 | ✅ |  |
 | A68 | ILCA-68 | ❔ | not in the installer's device table, so even the install is untested |
-| A77 II | ILCA-77M2 | ❔ |  |
+| A77 II | ILCA-77M2 | ❔ | one owner (firmware 2.00) found no `MENU → Application`, and the installer refused the camera with `This device does not support apps` ([#114](https://github.com/voxivoid/recipe-lab-sony-pmca/issues/114)) |
 | A99 II | ILCA-99M2 | ❔ |  |
 | **RX100 IV** | DSC-RX100M4 | ✅ |  |
 | RX10 II | DSC-RX10M2 | ❔ |  |
@@ -160,11 +160,12 @@ which closed in 2021.
 | | |
 |---|---|
 | **E-mount, APS-C** | A6100, A6400, A6600, A6700, ZV-E10, ZV-E10 II, FX30 |
-| **E-mount, full frame** | A7 III, A7R III, A7R IV / IVA, A7R V, A7S III, A7C, A7C II, A7CR, A9, A9 II, A9 III, A1, A1 II, ZV-E1, FX3 |
+| **E-mount, full frame** | A7 III, A7 IV, A7R III, A7R IV / IVA, A7R V, A7S III, A7C, A7C II, A7CR, A9, A9 II, A9 III, A1, A1 II, ZV-E1, FX3 |
 | **Cyber-shot** | RX100 VA, RX100 VI, RX100 VII, RX10 IV, RX0, RX0 II, HX99, ZV-1, ZV-1F, ZV-1 II |
 
-…and everything released since. The menu is the test: no `MENU → Application` on your camera, no app — so reports of
-Recipe Lab running on an A6400 or similar are mistaken.
+…and everything released since, as well as bodies from before Sony's app store, such as the HX50 / HX50V
+([#115](https://github.com/voxivoid/recipe-lab-sony-pmca/issues/115)). The menu is the test: no `MENU → Application`
+on your camera, no app — so reports of Recipe Lab running on an A6400 or similar are mistaken.
 
 ## Installing
 
@@ -368,6 +369,7 @@ The common questions — RAW files, damage, LUTs, newer bodies — are in the **
 |---|---|
 | `No devices found` | USB Connection must be *Mass Storage*; card inserted; camera on and showing *USB Mode*; try another cable or port |
 | Stuck at `Waiting for camera to switch...` | Unplug, turn the camera off and on, reconnect, run again |
+| `UnicodeDecodeError: 'utf-8' codec can't decode byte ...` after `Waiting for camera to switch...`, with `getfqdn` in the traceback | The installer cannot read your computer's name when it has accents or other non-English letters in it. Rename the computer to plain letters and digits (Windows: *Settings → System → About → Rename this PC*), restart, and install again ([#103](https://github.com/voxivoid/recipe-lab-sony-pmca/issues/103)) |
 | `Not written — the camera holds these settings read-only` or `WRITE FAILED` | The camera refused the recipe. Install [OpenMemories-Tweak](https://github.com/ma1co/OpenMemories-Tweak), open **Protection**, tick *Unlock protected settings* until it reads *Protection disabled*, then pick the recipe again |
 | Look not applied after picking a recipe | Turn the camera off and on |
 | Look gone after a power cycle, or the recipe will not store, with the mode dial on **MR** / **1** / **2** | Memory Recall loads the settings registered to that position at power-on, over whatever the app stored. Turn the dial to P, A, S or M, store the recipe again, and register it to the MR slot from the camera's menu if you want it there ([#59](https://github.com/voxivoid/recipe-lab-sony-pmca/issues/59)) |
