@@ -25,7 +25,8 @@ Scope for this run: $ARGUMENTS (empty = the next release, written to `release-no
    dependency bumps, licence, code structure, and fixes to bugs that never shipped in a release (check the fix is
    not for a feature added in this same range). A feature added and then reworked in the range is one line, the
    final behaviour.
-3. Write the file in exactly this shape (plain text, no links, no hashes, no commit prefixes like `feat(ui):`):
+3. Write the file in exactly this shape (plain text, no hashes, no commit prefixes like `feat(ui):`; no links except a bare
+   `https://recipelab.io/...` page, which GitHub makes clickable):
 
 ```
 New
