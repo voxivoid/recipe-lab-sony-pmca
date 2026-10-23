@@ -31,6 +31,7 @@ final class TextJa {
         { "quality_prompt_title", "画質：%1$s → %2$s" },
         { "quality_prompt_effect", "このレシピの適用にはJPEGが必要です。" },
         { "quality_prompt_style", "クリエイティブスタイルのレシピは、ファクトリーレシピの画質を使います。" },
+        { "quality_prompt_raw", "RAWのみではJPEGが残らず、仕上がりを反映できません。" },
         { "quality_slot_note", "画質の設定位置が未確認——ライブビューのみ" },
         { "reset_title", "工場出荷時の設定に戻しますか？" },
         { "reset_body", "現在の仕上がりの代わりに、スタンダード 0 / 0 / 0、オートホワイトバランス、効果なしを保存します" },

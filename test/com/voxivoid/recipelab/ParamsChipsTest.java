@@ -39,7 +39,8 @@ class ParamsChipsTest {
         e[R_STYLE] = Recipes.AUTUMN; step(e, R_STYLE, +1, Q_FINE); assertEquals(Recipes.SEPIA, e[R_STYLE], "13 is unidentified and skipped");
         step(e, R_STYLE, -1, Q_FINE); assertEquals(Recipes.AUTUMN, e[R_STYLE], "and skipped backwards too");
         e[R_DRO] = Recipes.DRO_AUTO; step(e, R_DRO, +1, Q_FINE); assertEquals(Recipes.DRO_OFF, e[R_DRO]);
-        e[R_QUAL] = Q_STD; step(e, R_QUAL, +1, Q_FINE); assertEquals(Q_RAW, e[R_QUAL]);
+        e[R_QUAL] = Q_STD; step(e, R_QUAL, +1, Q_FINE); assertEquals(Q_RAWJPG, e[R_QUAL], "RAW alone is not offered (#100)");
+        e[R_QUAL] = Q_RAWJPG; step(e, R_QUAL, -1, Q_FINE); assertEquals(Q_STD, e[R_QUAL], "and not offered going back either");
 
         e[R_SAT] = 3; step(e, R_SAT, +1, Q_FINE); assertEquals(3, e[R_SAT], "saturation stops at the menu's +3");
         e[R_SAT] = -3; step(e, R_SAT, -1, Q_FINE); assertEquals(-3, e[R_SAT]);

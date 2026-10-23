@@ -35,7 +35,9 @@ final class Params {
             ID_QFMT = 0x01070013, ID_QJPG = 0x01070014,            // still file format / jpeg quality (verified by menu diff)
             ID_QFMT2 = 0x01070aa9, ID_QJPG2 = 0x01070aaa;          // the camera keeps mirror copies; written too
 
-    // ---- quality: 0 RAW, 1 RAW+JPEG, 2 JPEG Fine, 3 JPEG Std — runtime keys storage-fmt / jpeg-quality
+    // ---- quality: 0 RAW, 1 RAW+JPEG, 2 JPEG Fine, 3 JPEG Std — runtime keys storage-fmt / jpeg-quality.
+    // RAW alone is still read (a camera can be left on it) but never offered: no JPEG, so the look has nowhere to go,
+    // and a shutter fired on it reboots the A6000 (#100). It becomes RAW+JPEG wherever the app picks a quality.
     static final int Q_RAW = 0, Q_RAWJPG = 1, Q_FINE = 2, Q_STD = 3;
     static final String[] Q_LABEL = { "RAW", "RAW+JPG", "JPG Fine", "JPG Std" };
     static final String[] Q_FMT = { "raw", "rawjpeg", "jpeg", "jpeg" };
@@ -120,8 +122,8 @@ final class Params {
         if ("rawjpeg".equals(storageFmt)) return Q_RAWJPG;
         return "25".equals(jpegQuality) ? Q_STD : Q_FINE;
     }
-    /** a recipe's quality given the Factory base: effects need JPEG, so RAW bases become JPEG Fine for them */
-    static int recipeQuality(Recipes.Recipe r, int base) { return r.isEffect() ? (base >= Q_FINE ? base : Q_FINE) : base; }
+    /** a recipe's quality given the Factory base: effects need JPEG, so RAW bases become JPEG Fine for them; RAW alone is never kept */
+    static int recipeQuality(Recipes.Recipe r, int base) { return r.isEffect() ? (base >= Q_FINE ? base : Q_FINE) : (base == Q_RAW ? Q_RAWJPG : base); }
     /** a quality the user picked on this recipe becomes the Factory base — except a JPEG forced by an effect recipe */
     static boolean redefinesBaseQuality(Recipes.Recipe r, int quality) { return !r.isEffect() || quality >= Q_FINE; }
 
@@ -365,7 +367,8 @@ final class Params {
         else if (edit[R_WBMODE] == WB_AUTO) p.put("whitebalance", "auto");
         p.put("light-balance-for-white-balance", String.valueOf(edit[R_AB]));
         p.put("color-compensation-for-white-balance", String.valueOf(-edit[R_GM]));   // camera counts magenta positive; recipes count green positive
-        p.put("storage-fmt", Q_FMT[edit[R_QUAL]]); p.put("jpeg-quality", Q_JPG[edit[R_QUAL]]);
+        int q = edit[R_QUAL] == Q_RAW ? Q_RAWJPG : edit[R_QUAL];   // the shutter must never meet RAW alone (#100)
+        p.put("storage-fmt", Q_FMT[q]); p.put("jpeg-quality", Q_JPG[q]);
         p.put("picture-effect", Recipes.PE_KEYS[edit[R_PE]]);
         String sk = Recipes.subKey(edit[R_PE]), sv = Recipes.subRuntime(edit[R_PE], edit[R_SUB]);
         if (sk != null && sv != null) p.put(sk, sv);
@@ -405,6 +408,7 @@ final class Params {
         if (row == R_STYLE) { int n = ROW_MAX[row] - ROW_MIN[row] + 1; do { edit[row] = ROW_MIN[row] + ((edit[row] - ROW_MIN[row] + n + dir) % n); } while (!Recipes.styleKnown(edit[row])); return false; }   // unidentified enum values are skipped
         if (isChoice(row)) { int n = ROW_MAX[row] - ROW_MIN[row] + 1; edit[row] = ROW_MIN[row] + ((edit[row] - ROW_MIN[row] + n + dir) % n); }   // choices wrap around
         else edit[row] = clamp(edit[row] + dir, ROW_MIN[row], ROW_MAX[row]);                                                                  // numbers clamp
+        if (row == R_QUAL && edit[R_QUAL] == Q_RAW) edit[R_QUAL] = dir > 0 ? Q_RAWJPG : Q_STD;   // RAW alone is not offered
         if (row == R_PE) { edit[R_SUB] = 0; edit[R_QUAL] = recipeQuality; if (edit[R_PE] != 0 && edit[R_QUAL] <= Q_RAWJPG) edit[R_QUAL] = Q_FINE; }
         return row == R_QUAL;
     }
@@ -507,7 +511,7 @@ final class Params {
     static String[] qualityPrompt(int[] cur, int[] edit) {
         return new String[] {
             Lang.t("quality_prompt_title", qualityLabel(cur[R_QUAL]), qualityLabel(edit[R_QUAL])),
-            Lang.t(edit[R_PE] != 0 ? "quality_prompt_effect" : "quality_prompt_style") };
+            Lang.t(edit[R_PE] != 0 ? "quality_prompt_effect" : cur[R_QUAL] == Q_RAW ? "quality_prompt_raw" : "quality_prompt_style") };
     }
 
     // ------------------------------------------------------------ snapshot / diff tool

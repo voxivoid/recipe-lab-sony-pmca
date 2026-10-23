@@ -332,8 +332,10 @@ balance and its fine-tune, exposure compensation, DRO, Picture Effect. No firmwa
 is on, and it only works with **Quality = JPEG** — set to RAW or RAW+JPEG, the camera drops the effect silently.
 
 **Quality** therefore follows you rather than being dictated by a recipe. The Factory recipe starts as whatever the
-camera is set to, and every Creative Style recipe uses that. Change it any time with the `QUALITY` chip. Only when a
-recipe needs JPEG and you are on RAW does the app ask:
+camera is set to, and every Creative Style recipe uses that. Change it any time with the `QUALITY` chip. The chip offers
+RAW+JPG and the JPEG settings, not RAW alone: with no JPEG there is nothing for the look to be applied to. A camera left
+on RAW alone is moved to RAW+JPG when you store, after the app asks. Only when a recipe needs JPEG and you are on RAW
+or RAW+JPG does the app ask:
 
 ```
 Quality: RAW+JPG → JPG Fine — JPEG is needed to apply this recipe

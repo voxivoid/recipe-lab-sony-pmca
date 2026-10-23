@@ -130,7 +130,7 @@ class ParamsPreviewTest {
 
     @Test void qualityDrivesFormatAndJpegLevel() {
         int[] e = factoryRows();
-        e[R_QUAL] = Q_RAW;    assertEquals("raw", preview(e).get("storage-fmt"));
+        e[R_QUAL] = Q_RAW;    assertEquals("rawjpeg", preview(e).get("storage-fmt"), "RAW alone is never previewed: the shutter reboots on it (#100)");
         e[R_QUAL] = Q_RAWJPG; assertEquals("rawjpeg", preview(e).get("storage-fmt"));
         e[R_QUAL] = Q_STD;    assertEquals("jpeg", preview(e).get("storage-fmt")); assertEquals("25", preview(e).get("jpeg-quality"));
         e[R_QUAL] = Q_FINE;   assertEquals("50", preview(e).get("jpeg-quality"));
@@ -146,12 +146,12 @@ class ParamsPreviewTest {
         }
     }
 
-    @Test void effectRecipesPreviewJpegEvenOnARawCamera() {
+    @Test void effectRecipesPreviewJpegAndStylesRawJpegOnARawCamera() {
         for (Recipes.Recipe r : Recipes.ALL) {
             int[] cur = factoryRows(); cur[R_QUAL] = Q_RAW;
             String fmt = preview(staged(r, cur, Q_RAW)).get("storage-fmt");
             if (r.isEffect()) assertEquals("jpeg", fmt, r.name + " would preview an effect in RAW, which the camera ignores");
-            else assertEquals("raw", fmt, r.name + " should keep the camera's RAW");
+            else assertEquals("rawjpeg", fmt, r.name + " should preview RAW+JPEG on a RAW camera");
         }
     }
 }

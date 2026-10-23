@@ -31,6 +31,7 @@ final class TextVi {
         { "quality_prompt_title", "Chất lượng: %1$s → %2$s" },
         { "quality_prompt_effect", "Cần JPEG để áp dụng công thức này." },
         { "quality_prompt_style", "Công thức Creative Style dùng chất lượng của công thức Factory." },
+        { "quality_prompt_raw", "Chỉ RAW thì không có JPEG nào mang look." },
         { "quality_slot_note", "chưa xác định ô chất lượng — chỉ xem trực tiếp" },
         { "reset_title", "Đặt lại về cài đặt gốc?" },
         { "reset_body", "Lưu Standard 0 / 0 / 0, cân bằng trắng tự động, không hiệu ứng, thay cho kiểu hiện tại" },

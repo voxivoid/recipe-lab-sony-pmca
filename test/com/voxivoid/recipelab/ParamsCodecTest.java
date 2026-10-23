@@ -109,7 +109,8 @@ class ParamsCodecTest {
 
     @Test void effectRecipesForceJpegOverARawBase() {
         Recipes.Recipe cs = Fixtures.recipe("Velvia"), pe = Fixtures.recipe("GR Retro");
-        for (int base = 0; base < 4; base++) assertEquals(base, recipeQuality(cs, base), "a Creative Style recipe keeps the Factory quality");
+        for (int base = 1; base < 4; base++) assertEquals(base, recipeQuality(cs, base), "a Creative Style recipe keeps the Factory quality");
+        assertEquals(Q_RAWJPG, recipeQuality(cs, Q_RAW), "but RAW alone becomes RAW+JPEG (#100)");
         assertEquals(Q_FINE, recipeQuality(pe, Q_RAW));
         assertEquals(Q_FINE, recipeQuality(pe, Q_RAWJPG));
         assertEquals(Q_FINE, recipeQuality(pe, Q_FINE));

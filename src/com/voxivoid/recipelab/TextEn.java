@@ -40,6 +40,7 @@ final class TextEn {
         { "quality_prompt_title", "Quality: %1$s  →  %2$s" },
         { "quality_prompt_effect", "JPEG is needed to apply this recipe." },
         { "quality_prompt_style", "Creative Style recipes use the Factory recipe's quality." },
+        { "quality_prompt_raw", "RAW alone keeps no JPEG to carry the look." },
         { "quality_slot_note", "quality slot not located yet — live view only" },
         { "reset_title", "Reset to factory settings?" },
         { "reset_body", "Stores Standard 0 / 0 / 0, auto white balance, no effect, in place of the current look" },

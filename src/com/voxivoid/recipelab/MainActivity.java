@@ -385,7 +385,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     }
 
     /** the Factory recipe's quality: the camera's current one until the user changes it in the app, then remembered */
-    private int baseQuality() { int b = prefs.getInt("baseQuality", -1); return b >= 0 && b < 4 ? b : cur[R_QUAL]; }
+    private int baseQuality() { int b = prefs.getInt("baseQuality", -1); b = b >= 0 && b < 4 ? b : cur[R_QUAL]; return b == Q_RAW ? Q_RAWJPG : b; }
     private int recipeQuality(Recipes.Recipe r) { return Params.recipeQuality(r, baseQuality()); }
     /** user changed quality on the current recipe: CS recipes and JPEG choices on PE recipes redefine the Factory quality */
     private void qualityChanged() {
@@ -546,7 +546,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     }
 
     private void cycleQuality() {
-        edit[R_QUAL] = (edit[R_QUAL] + 1) % 4; qualityChanged(); applyPreview(); render();
+        Params.step(edit, R_QUAL, +1, baseQuality()); qualityChanged(); applyPreview(); render();
         showToast(Lang.t(qualityPersistent() ? "status_quality_pick" : "status_quality_live", qualityLabel(edit[R_QUAL])), 2500);
     }
 

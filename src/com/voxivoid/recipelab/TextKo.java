@@ -31,6 +31,7 @@ final class TextKo {
         { "quality_prompt_title", "화질: %1$s → %2$s" },
         { "quality_prompt_effect", "이 레시피를 적용하려면 JPEG가 필요합니다." },
         { "quality_prompt_style", "크리에이티브 스타일 레시피는 팩토리 레시피의 화질을 씁니다." },
+        { "quality_prompt_raw", "RAW만 쓰면 룩을 담을 JPEG가 남지 않습니다." },
         { "quality_slot_note", "화질 설정 위치를 아직 찾지 못함 — 라이브 뷰만" },
         { "reset_title", "공장 초기 설정으로 되돌릴까요?" },
         { "reset_body", "현재 룩 대신 스탠다드 0 / 0 / 0, 자동 화이트 밸런스, 효과 없음을 저장합니다" },

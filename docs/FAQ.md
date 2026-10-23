@@ -21,9 +21,10 @@ Quality: RAW+JPG → JPG Fine — JPEG is needed to apply this recipe
 
 *Cancel* stores nothing and leaves your Quality alone. Pick a Creative Style recipe instead and you keep shooting RAW.
 
-Going back is just as plain: every Creative Style recipe uses whatever Quality the camera is set to, so switch Quality
-back to RAW (`QUALITY` chip in the app, or the normal menu) and RAW files come back. Nothing about the switch is
-one-way.
+**RAW alone is not offered.** The camera applies a look only to a JPEG, so with RAW alone there is nothing to see, and
+the in-app shutter restarts the A6000 on it (#100). Use **RAW+JPG** for the raw file plus the processed JPEG. A camera
+left on RAW alone is moved to RAW+JPG when you store a recipe, after the app asks. To go back to RAW alone, use the
+camera's own menu.
 
 ## Can this damage or brick my camera?
 

@@ -30,6 +30,7 @@ final class TextZhHant {
         { "quality_prompt_title", "畫質：%1$s → %2$s" },
         { "quality_prompt_effect", "套用此配方需要 JPEG。" },
         { "quality_prompt_style", "創意風格配方沿用出廠配方的畫質。" },
+        { "quality_prompt_raw", "僅 RAW 不會保留帶有效果的 JPEG。" },
         { "quality_slot_note", "尚未定位畫質槽位——僅即時預覽" },
         { "reset_title", "恢復出廠設定？" },
         { "reset_body", "以標準 0 / 0 / 0、自動白平衡、無效果取代目前風格並儲存" },

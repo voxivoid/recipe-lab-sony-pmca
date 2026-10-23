@@ -52,7 +52,9 @@ class ParamsHudTest {
         int[] cur = factoryRows(); cur[R_QUAL] = Q_RAW;
         int[] e = staged(recipe("GR Retro"), cur, Q_RAW);
         assertArrayEquals(new String[] { "Quality: RAW  →  JPG Fine", "JPEG is needed to apply this recipe." }, qualityPrompt(cur, e));
-        e = cur.clone(); e[R_QUAL] = Q_STD;
-        assertArrayEquals(new String[] { "Quality: RAW  →  JPG Std", "Creative Style recipes use the Factory recipe's quality." }, qualityPrompt(cur, e));
+        e = cur.clone(); e[R_QUAL] = Q_RAWJPG;
+        assertArrayEquals(new String[] { "Quality: RAW  →  RAW+JPG", "RAW alone keeps no JPEG to carry the look." }, qualityPrompt(cur, e));
+        cur[R_QUAL] = Q_FINE; e = cur.clone(); e[R_QUAL] = Q_STD;
+        assertArrayEquals(new String[] { "Quality: JPG Fine  →  JPG Std", "Creative Style recipes use the Factory recipe's quality." }, qualityPrompt(cur, e));
     }
 }
