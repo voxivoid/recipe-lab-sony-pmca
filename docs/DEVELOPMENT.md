@@ -95,7 +95,7 @@ Found by disassembling the camera app's parameter registration in `libObj.so`):
 | Contrast | `0x01070178` | signed byte |
 | Saturation | `0x01070187` | signed byte, keep it in -3..+3 (see [Adding recipes](#adding-recipes)) |
 | Sharpness | `0x0107018a` | signed byte |
-| Picture Profile no. | `0x0107031c` | 0 off. No chip: every staged recipe writes 0, clearing the PP3 that the old matrix recipes stored (#38). PP3's alternate matrix did not hold on the A6000, so the app no longer uses it |
+| Picture Profile no. | `0x0107031c` | 0 off. No chip: every staged recipe writes 0, clearing the PP3 that the old matrix recipes stored (#38). Opening the app with it non-zero asks to write 0 on its own (#90). PP3's alternate matrix did not hold on the A6000, so the app no longer uses it |
 | WB mode | `0x01070019` | 1 auto, 14 colour temperature |
 | WB Kelvin | `0x01070018` | Kelvin / 100 |
 | WB A-B / G-M | `0x01070017` / `0x01070016` + per-mode copies: AWB `0x0107067f` / `0x0107067e`, colour temp `0x01070683` / `0x01070682` | signed, magenta positive (menu G1 = 0xff). The camera applies the per-mode copy (verified end-to-end) |

@@ -57,4 +57,18 @@ class ParamsHudTest {
         cur[R_QUAL] = Q_FINE; e = cur.clone(); e[R_QUAL] = Q_STD;
         assertArrayEquals(new String[] { "Quality: JPG Fine  →  JPG Std", "Creative Style recipes use the Factory recipe's quality." }, qualityPrompt(cur, e));
     }
+
+    @Test void aPictureProfileLeftOnIsAskedAboutAndTurnedOffWithOneByte() {
+        int[] cur = factoryRows();
+        assertFalse(asksPictureProfileOff(cur));
+        cur[R_PP] = ppFromStore(7);                                   // any profile number reads as on
+        assertTrue(asksPictureProfileOff(cur));
+        assertArrayEquals(new String[] { "Picture Profile is on", "Recipes have no effect while a Picture Profile is on. Turn it off?" }, pictureProfilePrompt());
+        assertEquals("Turn off", pictureProfileOptions()[PP_DEFAULT], "Enter on the default answer turns it off");
+        assertEquals(java.util.Collections.singletonList(new Write(ID_PP_NO, 0)), pictureProfileOff());
+        int[] e = staged(recipe("Kodak Portra 400"), cur, cur[R_QUAL]);
+        assertTrue(writes(cur, e, 0).contains(new Write(ID_PP_NO, 0)), "while it is on, storing a recipe turns it off too");
+        cur[R_PP] = 0;                                                // after Turn off
+        assertFalse(writes(cur, e, 0).contains(new Write(ID_PP_NO, 0)), "and once off, a recipe has no PP byte left to write");
+    }
 }

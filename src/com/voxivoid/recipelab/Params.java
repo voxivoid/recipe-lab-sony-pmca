@@ -514,6 +514,16 @@ final class Params {
             Lang.t(edit[R_PE] != 0 ? "quality_prompt_effect" : cur[R_QUAL] == Q_RAW ? "quality_prompt_raw" : "quality_prompt_style") };
     }
 
+    // ------------------------------------------------------------ Picture Profile left on (issue #90)
+    /** While a Picture Profile runs, the camera ignores Creative Style and its sliders: ask on opening the app. */
+    static boolean asksPictureProfileOff(int[] cur) { return cur[R_PP] != 0; }
+    /** title and body of that question */
+    static String[] pictureProfilePrompt() { return new String[] { Lang.t("pp_title"), Lang.t("pp_body") }; }
+    static String[] pictureProfileOptions() { return new String[] { Lang.t("button_turn_off"), Lang.t("button_keep_on") }; }
+    static final int PP_OFF = 0, PP_DEFAULT = PP_OFF;
+    /** what "Turn off" writes: the Picture Profile number, 0 for off — the same byte storing any recipe writes */
+    static List<Write> pictureProfileOff() { List<Write> w = new ArrayList<Write>(); w.add(new Write(ID_PP_NO, 0)); return w; }
+
     // ------------------------------------------------------------ snapshot / diff tool
     /**
      * Reads "id size" lines (hex id, decimal size) into {@code into}; lines of any other shape are skipped. Fills a

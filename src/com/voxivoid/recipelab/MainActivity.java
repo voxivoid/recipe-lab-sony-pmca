@@ -63,7 +63,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     /**
      * the questions the prompt asks: quality change, reset, discard a recipe's edits, a custom recipe's options, delete it
      */
-    private static final int P_QUALITY = 0, P_RESET = 1, P_DISCARD = 2, P_OPTIONS = 3, P_DELETE = 4;
+    private static final int P_QUALITY = 0, P_RESET = 1, P_DISCARD = 2, P_OPTIONS = 3, P_DELETE = 4, P_PP = 5;
     private Runnable afterDiscard;                               // what the discard question goes on to do when answered Discard
     // the name editor, and what its OK does: keep a recipe's edits as a copy and store it, keep the camera's settings, rename
     private KeyboardView keyboard;
@@ -321,6 +321,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             showToast(Keys.notice(), 8000);
             prefs.edit().putBoolean("keysNoticeSeen", true).commit();
         }
+        if (Params.asksPictureProfileOff(cur)) openPrompt(P_PP, Params.PP_DEFAULT);   // every time: no recipe shows while it runs (#90)
     }
 
     @Override
@@ -446,6 +447,26 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         showToast(msg, ok ? 5000 : 0); render();
     }
 
+    /** "Turn off" on the Picture Profile question: writes that one byte, and leaves the staged recipe as it is */
+    private void turnPictureProfileOff() {
+        List<Params.Write> ws = Params.pictureProfileOff();
+        String what = "Picture Profile off";
+        List<Integer> locked = Params.lockedFrom(ws, attrsOf(ws));
+        if (!locked.isEmpty()) { log(CardLog.FAIL, what + ": read-only " + CardLog.ids(locked)); showToast(Params.lockedMessage(locked), 0); return; }
+        Params.Write w = ws.get(0);
+        try { NativeBackup.writeByte(w.id, w.value); }
+        catch (Throwable t) {
+            log(CardLog.FAIL, what + ": " + CardLog.writeFailed(w.id, w.value, String.valueOf(t.getMessage()), 0, ws.size()));
+            showToast(Params.writeFailedMessage(w.id, String.valueOf(t.getMessage()), 0), 0);
+            return;
+        }
+        NativeBackup.sync();
+        log(CardLog.WRITE, CardLog.written(what, ws));
+        cur[R_PP] = 0; edit[R_PP] = 0;                           // not load(): that would put the stored look over the staged recipe
+        applyPreview();
+        showToast(Lang.t("status_pp_off"), 3000); render();
+    }
+
     /**
      * The recipe the app reopens on: the last one selected (centre in the brand list) or applied (any write, New recipe),
      * whichever came last — never just the last one the wheel scrolled past. A custom one is kept by name, as its index
@@ -496,6 +517,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             case P_DISCARD: prompt.set(CustomRecipes.discardTitle(Recipes.displayName(r)), CustomRecipes.discardBody(), CustomRecipes.discardOptions(), promptSel, null); break;
             case P_OPTIONS: prompt.set(r.name, CustomRecipes.optionsBody(library.entry(recipe).file), CustomRecipes.options(), promptSel, null); break;
             case P_DELETE: prompt.set(CustomRecipes.deleteTitle(r.name), CustomRecipes.deleteBody(library.entry(recipe).file), CustomRecipes.deleteOptions(), promptSel, null); break;
+            case P_PP: { String[] q = Params.pictureProfilePrompt(); prompt.set(q[0], q[1], Params.pictureProfileOptions(), promptSel, null); break; }
             default: {
                 String[] q = Params.qualityPrompt(cur, edit);
                 String[] opts = { Lang.t("button_accept"), Lang.t("button_cancel") };
@@ -541,6 +563,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
                 else if (promptSel == CustomRecipes.OPT_DELETE) openPrompt(P_DELETE, CustomRecipes.DELETE_DEFAULT);
                 return;
             case P_DELETE: if (promptSel == 0) deleteCustom(); return;
+            case P_PP: if (promptSel == Params.PP_OFF) turnPictureProfileOff(); else showToast(Lang.t("status_pp_kept"), 3000); return;
             default: if (promptSel == 0) writeAll(true); else showToast(Lang.t("status_not_picked"), 2000);   // cancel: recipe stays previewed only
         }
     }
