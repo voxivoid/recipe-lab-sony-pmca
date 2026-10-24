@@ -132,11 +132,12 @@ final class Keys {
 
     /**
      * The legend rows: the main panel's three, the browser's two columns, and the menu's — *_VALUE on a row left / right
-     * change. H_RECIPES_CUSTOM on a custom recipe in the brand list, where a MENU hold opens its options; H_NAME under the name editor; H_ACTIONS on the edit buttons.
+     * change. H_RECIPES_CUSTOM on a custom recipe in the brand list, where a MENU hold opens its options; H_NAME under the name editor; H_ACTIONS on the edit buttons;
+     * H_TRANSFER on the Transfer to phone page.
      */
     static final int H_RECIPE = 0, H_CHIPS = 1, H_EDIT = 2, H_BRANDS = 3, H_RECIPES = 4, H_MENU_TOP = 5, H_MENU_SUB = 6,
             H_PAGE = 7, H_LOGGER = 8, H_MENU_TOP_VALUE = 9, H_MENU_SUB_VALUE = 10, H_RECIPES_CUSTOM = 12,
-            H_NAME = 14, H_ACTIONS = 15;
+            H_NAME = 14, H_ACTIONS = 15, H_TRANSFER = 16;
 
     /** one legend row: per item an icon, an optional shortcut icon drawn before it (I_NONE for none), and a label */
     static final class Hints {
@@ -192,6 +193,7 @@ final class Keys {
             case H_MENU_SUB_VALUE: return new Row().add(I_UPDOWN, Lang.t("action_move")).add(I_LEFTRIGHT, Lang.t("action_change")).add(I_MENU, Lang.t("action_back")).done();
             case H_PAGE: return new Row().add(I_MENU, Lang.t("action_back")).done();
             case H_LOGGER: return new Row().add(I_MENU, Lang.t("action_exit_hold")).done();
+            case H_TRANSFER: return new Row().add(I_MENU, Lang.t("action_stop")).done();
             default: return new Row().done();
         }
     }

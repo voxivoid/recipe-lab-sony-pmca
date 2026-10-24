@@ -12,7 +12,7 @@ class KeysTest {
     private static final Keys.Caps NONE = new Keys.Caps(false), FN = new Keys.Caps(true);
     private static final int[] EVERY_MODE = { Keys.H_RECIPE, Keys.H_CHIPS, Keys.H_EDIT, Keys.H_BRANDS, Keys.H_RECIPES,
             Keys.H_MENU_TOP, Keys.H_MENU_SUB, Keys.H_PAGE, Keys.H_LOGGER, Keys.H_MENU_TOP_VALUE, Keys.H_MENU_SUB_VALUE,
-            Keys.H_RECIPES_CUSTOM, Keys.H_NAME, Keys.H_ACTIONS };
+            Keys.H_RECIPES_CUSTOM, Keys.H_NAME, Keys.H_ACTIONS, Keys.H_TRANSFER };
 
     // ---- press / hold
     @Test void aPressReleasedBeforeTheHoldIsShort() {
@@ -165,6 +165,12 @@ class KeysTest {
         assertTrue(Arrays.asList(Keys.hints(Keys.H_MENU_SUB_VALUE, NONE).labels).contains("back"));
         assertEquals(Arrays.asList("back"), Arrays.asList(Keys.hints(Keys.H_PAGE, NONE).labels));
         assertEquals(Arrays.asList("exit (hold)"), Arrays.asList(Keys.hints(Keys.H_LOGGER, NONE).labels), "a short MENU is logged, not obeyed");
+    }
+
+    @Test void theTransferPageHasOneKeyMenuStops() {
+        Keys.Hints h = Keys.hints(Keys.H_TRANSFER, FN);
+        assertEquals(Arrays.asList("stop"), Arrays.asList(h.labels));
+        assertEquals(Keys.I_MENU, h.icons[0], "MENU stops the transfer and goes back to the menu");
     }
 
     @Test void theBrowserClosesOnMenuWithFnBesideItWhenPresent() {

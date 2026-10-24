@@ -2,6 +2,8 @@ package com.voxivoid.recipelab;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.voxivoid.recipelab.transfer.Stats;
+import com.voxivoid.recipelab.transfer.TransferState;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -61,7 +63,7 @@ class DevToolsTest {
         assertEquals(DevTools.ROWS, DevTools.rows(DevTools.LEVEL_DEV));
         String[] labels = new String[DevTools.APP_ROWS];
         for (int r = 0; r < DevTools.APP_ROWS; r++) labels[r] = DevTools.appLabel(r);
-        assertEquals(Arrays.asList("Browse recipes", "New recipe", "Panel visibility", "Language", "Reset settings", "Save a bug report", "About", "Developer  >"), Arrays.asList(labels));
+        assertEquals(Arrays.asList("Browse recipes", "New recipe", "Transfer to phone", "Sync recipes", "Panel visibility", "Language", "Reset settings", "Save a bug report", "About", "Developer  >"), Arrays.asList(labels));
         assertTrue(DevTools.appDetail(DevTools.APP_NEW).contains("current settings"), "the row says what it keeps");
         assertEquals(DevTools.APP_BROWSE, 0, "the menu opens on Browse, so a body without Fn is one press from the list");
     }
@@ -75,6 +77,8 @@ class DevToolsTest {
         }
         assertEquals(DevTools.IC_NEW, DevTools.icons(DevTools.LEVEL_APP)[DevTools.APP_NEW]);
         assertEquals(DevTools.IC_LANGUAGE, DevTools.icons(DevTools.LEVEL_APP)[DevTools.APP_LANG]);
+        assertEquals(DevTools.IC_TRANSFER, DevTools.icons(DevTools.LEVEL_APP)[DevTools.APP_TRANSFER]);
+        assertEquals(DevTools.IC_SYNC, DevTools.icons(DevTools.LEVEL_APP)[DevTools.APP_SYNC]);
     }
 
     @Test void everyAppRowHasADetailLine() {
@@ -116,6 +120,107 @@ class DevToolsTest {
         assertEquals("1.2 s", DevTools.rowValue(DevTools.ROW_SETTLE, 1));
         assertEquals("0.8 s", DevTools.rowValue(DevTools.ROW_SETTLE, 0));
         for (int r = 0; r < DevTools.ROWS; r++) if (r != DevTools.ROW_SETTLE) assertNull(DevTools.rowValue(r, 1), "row " + r);
+    }
+
+    // ---- Transfer to phone
+    @Test void theTransferRowSaysWhatGoesWhere() {
+        assertEquals("Transfer to phone", DevTools.appLabel(DevTools.APP_TRANSFER));
+        assertEquals("Send RAWs and JPEGs to Recipe Lab Studio over Wi-Fi", DevTools.appDetail(DevTools.APP_TRANSFER));
+        assertNull(DevTools.appValue(DevTools.APP_TRANSFER, Params.OV_FULL, Lang.AUTO), "a row that opens a page, not a value");
+        assertEquals("TRANSFER TO PHONE", DevTools.transferTitle());
+    }
+
+    @Test void theSyncRowSitsUnderTransferAndOpensTheSamePageInItsOwnWords() {
+        assertEquals(DevTools.APP_TRANSFER + 1, DevTools.APP_SYNC);
+        assertEquals("Sync recipes", DevTools.appLabel(DevTools.APP_SYNC));
+        assertEquals("Exchange custom recipes with Recipe Lab Studio over Wi-Fi", DevTools.appDetail(DevTools.APP_SYNC));
+        assertNull(DevTools.appValue(DevTools.APP_SYNC, Params.OV_FULL, Lang.AUTO), "a row that opens a page, not a value");
+        assertEquals("SYNC RECIPES", DevTools.syncTitle());
+        TransferState s = started();
+        assertTrue(DevTools.transferPage(s, new Stats(), 0, true).instruction.contains("Import → Sync recipes"));
+        assertTrue(DevTools.transferPage(s, new Stats(), 0, false).instruction.contains("From camera (Wi-Fi)"));
+        assertEquals(DevTools.transferPage(s, new Stats(), 0).instruction, DevTools.transferPage(s, new Stats(), 0, false).instruction);
+    }
+
+    private static TransferState started() {
+        TransferState s = new TransferState();
+        s.start(0);
+        return s;
+    }
+
+    @Test void whileStartingTheCardHoldsPlaceholdersAndTheStepsAreAlreadyThere() {
+        DevTools.TransferPage p = DevTools.transferPage(started(), new Stats(), 0);
+        assertEquals(DevTools.TransferPage.STARTING, p.tone);
+        assertEquals("Starting…", p.chip);
+        assertEquals("Network", p.networkLabel);
+        assertEquals("Password", p.passwordLabel);
+        assertEquals("—", p.network);
+        assertEquals("—", p.password);
+        assertNull(p.problem);
+        assertTrue(p.instruction.contains("join this Wi-Fi") && p.instruction.contains("Import → From camera (Wi-Fi)")
+                && p.instruction.endsWith("Already on the camera's Wi-Fi"), p.instruction);
+        assertEquals("192.168.122.1:8080", p.address);
+        assertEquals("Waiting for the phone…", p.last);
+        assertEquals("0 requests  ·  0.0 MB  ·  0 KB/s", p.totals);
+    }
+
+    @Test void whenReadyTheCardShowsTheNetworkAndPassword() {
+        TransferState s = started();
+        s.up("\"DIRECT-xY:ILCE-6000\"", "abcd1234");
+        s.note(TransferState.NOTE_PHONE_JOINED);
+        DevTools.TransferPage p = DevTools.transferPage(s, new Stats(), 1_050_000);
+        assertEquals(DevTools.TransferPage.READY, p.tone);
+        assertEquals("Ready", p.chip);
+        assertEquals("DIRECT-xY:ILCE-6000", p.network);
+        assertEquals("abcd1234", p.password);
+        assertEquals("A phone joined the camera's Wi-Fi", p.last, "until a request comes in");
+        assertTrue(p.totals.endsWith("1.05 MB/s"), p.totals);
+    }
+
+    @Test void everyHotspotFailureSaysWhyAndHowToTryAgain() {
+        Set<String> seen = new HashSet<String>();
+        for (int why = TransferState.UNAVAILABLE; why <= TransferState.TIMEOUT; why++) {
+            TransferState s = started();
+            if (why == TransferState.TIMEOUT) s.tick(TransferState.START_TIMEOUT_MS + 1);
+            else s.failed(why, "7");
+            assertEquals(why, s.status());
+            DevTools.TransferPage p = DevTools.transferPage(s, new Stats(), 0);
+            assertEquals(DevTools.TransferPage.ERROR, p.tone, "status " + why);
+            assertEquals("Error", p.chip);
+            assertNotNull(p.problem, "status " + why);
+            assertTrue(seen.add(p.problem), "status " + why + " says the same as another: " + p.problem);
+            assertTrue(p.instruction.contains("Press MENU"), p.instruction);
+            assertEquals("—", p.network);
+        }
+        TransferState s = started();
+        s.failed(TransferState.FAILED, "7");
+        assertEquals("The camera's Wi-Fi failed (error 7)", DevTools.transferProblem(s));
+    }
+
+    @Test void aMissingCardOrPortIsAnErrorEvenWithTheHotspotUp() {
+        TransferState s = started();
+        s.up("Cam", "pw");
+        s.serverProblem(TransferState.SERVER_NO_CARD, "removed");
+        DevTools.TransferPage p = DevTools.transferPage(s, new Stats(), 0);
+        assertEquals(DevTools.TransferPage.ERROR, p.tone);
+        assertEquals("No memory card (removed)", p.problem);
+        assertEquals("Cam", p.network, "the network is still worth showing");
+        s.serverProblem(TransferState.SERVER_PORT, "Address in use");
+        assertEquals("Cannot serve on port 8080: Address in use", DevTools.transferProblem(s));
+    }
+
+    @Test void theTransferPageFollowsTheLanguage() {
+        TransferState s = started();
+        s.up("DIRECT-xY:ILCE-6000", "abcd1234");
+        Lang.use(Lang.ZH_HANS);
+        try {
+            DevTools.TransferPage p = DevTools.transferPage(s, new Stats(), 0);
+            assertEquals("网络", p.networkLabel);
+            assertEquals("就绪", p.chip);
+            assertEquals("DIRECT-xY:ILCE-6000", p.network, "the network's name stays the camera's own");
+        } finally {
+            Lang.use(Lang.EN);
+        }
     }
 
     // ---- the reset question

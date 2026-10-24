@@ -10,7 +10,8 @@
     <img src="https://img.shields.io/github/v/release/voxivoid/recipe-lab-sony-pmca?label=version" alt="version"> ·
     <a href="https://recipelab.io">Website</a> ·
     <a href="https://github.com/voxivoid/recipe-lab-sony-pmca/releases/latest/download/RecipeLab.apk">Download the app</a> ·
-    <a href="https://recipelab.io/recipes">See every recipe</a>
+    <a href="https://recipelab.io/recipes">See every recipe</a> ·
+    <a href="https://recipelab.io/studio">Recipe Lab Studio</a>
   </sub>
 </p>
 
@@ -48,6 +49,7 @@
   - [The edit buttons](#the-edit-buttons)
   - [Rename, delete, favourite](#rename-delete-favourite)
   - [Sharing](#sharing)
+- [Transfer to phone](#transfer-to-phone)
 - [What it changes](#what-it-changes)
 - [Uninstalling](#uninstalling)
 - [Troubleshooting](#troubleshooting)
@@ -63,6 +65,11 @@ as the A6000, A6300, A6500 and A7 II (see [Compatibility](#compatibility)). It c
 recreate the looks of other cameras — Fuji film simulations, Ricoh GR image controls, Leica, Hasselblad, Canon and
 Nikon colour, Sony's newer Creative Looks — and of classic film stocks from Kodak, Fuji, Cinestill, Agfa and Ilford.
 You can also make your own, and share them.
+
+**Recipe Lab has a phone app too.** [**Recipe Lab Studio**](https://recipelab.io/studio) develops your RAWs on iPhone,
+iPad and Android with these same looks, plus the film grain and mist a camera cannot do. The camera sends it photos
+and recipes over Wi-Fi ([Transfer to phone](#transfer-to-phone)), so a look you made on the camera is on the phone,
+and a look you made on the phone is on the camera. The camera app stays what it is: the looks, stored in the camera.
 
 You turn the wheel, watch the live image change, press a button. From then on the camera shoots that way in **every
 mode**, photo and video, with the app closed. Turn it off and on, it is still there.
@@ -271,8 +278,12 @@ Open **Recipe Lab** from the Application List. The live view shows the look. The
 
 **Menu** — **hold MENU**
 
-- **Browse recipes** · **New recipe** · **Panel visibility** · **Language** · **Reset settings** · **Save a bug report** · **About** · **Developer**.
+- **Browse recipes** · **New recipe** · **Transfer to phone** · **Sync recipes** · **Panel visibility** · **Language** · **Reset settings** ·
+  **Save a bug report** · **About** · **Developer**.
 - **New recipe** saves the camera's current settings as a [custom recipe](#custom-recipes).
+- **Transfer to phone** sends your photos to the phone over Wi-Fi — see [Transfer to phone](#transfer-to-phone).
+- **Sync recipes** opens the same Wi-Fi link for custom recipes: [Recipe Lab Studio](https://recipelab.io/studio) copies the ones the phone lacks
+  and sends the ones the card lacks. Leave the page with MENU and they are under Custom.
 - Languages: *Auto*, English, 简体中文, 繁體中文, 日本語, 한국어, Tiếng Việt.
 
 ## Custom recipes
@@ -322,6 +333,30 @@ exposure: +0.7               # -5.0 .. +5.0 in thirds
 - **Formatting the card deletes them.** Back up `RECIPES` first.
 
 Full file format: [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#custom-recipes).
+
+## Transfer to phone
+
+Send RAWs and JPEGs from the memory card to your phone over Wi-Fi. No cable, no computer, no router: the camera
+makes its own Wi-Fi network.
+
+You need **[Recipe Lab Studio](https://recipelab.io/studio)** on the phone: it lists the photos by their previews and
+pulls the ones you want, then develops them with your Recipe Lab looks, film grain and mist. It also sees your custom
+recipes in `RECIPES`, and sends its own back: see **Sync recipes** in the [menu](#how-to-use).
+
+1. **Hold MENU → Transfer to phone.** The camera starts its Wi-Fi; after a few seconds the page says **Ready** and
+   shows the network's name and password in large type.
+2. On the phone, join that Wi-Fi network with that password.
+3. In Recipe Lab Studio: **Import → From camera (Wi-Fi) → Already on the camera's Wi-Fi**.
+4. Leave the camera on that page while the phone imports. It will not switch itself off.
+
+**MENU** stops it: the transfer ends, the camera's Wi-Fi goes off, auto power-off comes back. Leaving the app any
+other way stops it too.
+
+- **Speed:** about **1 MB/s** — roughly 25 s for a 24 MP RAW. Previews are small, so browsing is quick. Pull the full
+  RAWs only for the photos you keep.
+- **If it says Error**, the line under the card says why. Check Airplane Mode is off, press MENU and open Transfer to
+  phone again.
+- **Nothing is changed on the card.** The phone can only read.
 
 ## What it changes
 
