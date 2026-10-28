@@ -1,6 +1,7 @@
 package com.voxivoid.recipelab.transfer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.util.Arrays;
 import org.junit.jupiter.api.Test;
@@ -30,6 +31,12 @@ class ApiProbeTest {
 
     @Test void plainObjectNamesNoSuperclass() {
         assertEquals("x: " + Base.class.getName() + "\nsetDirectEnabled(boolean)", ApiProbe.describe("x", new Base()));
+    }
+
+    @Test void addressesListedOrNone() {
+        assertEquals("none", ApiProbe.format(Arrays.<String>asList()));
+        assertEquals("wlan0 192.168.122.1, p2p0 192.168.49.1", ApiProbe.format(Arrays.asList("wlan0 192.168.122.1", "p2p0 192.168.49.1")));
+        assertNotNull(ApiProbe.addresses());   // whatever this machine has; it must not throw
     }
 
     @Test void wrapsBeforeTheWidth() {

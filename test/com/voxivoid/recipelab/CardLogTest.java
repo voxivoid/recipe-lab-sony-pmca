@@ -117,13 +117,20 @@ class CardLogTest {
     }
 
     @Test void theHeaderNamesTheBodyAndTheBuild() {
-        assertEquals("model ILCE-6000  ·  firmware 3.21  ·  platform 2.0  ·  app 1.7.0  ·  mode shutter-speed  ·  keys Fn",
-                CardLog.header("ILCE-6000", "3.21", "2.0", "1.7.0", "Fn", "shutter-speed"));
-        assertEquals("model unknown  ·  firmware unknown  ·  platform unknown  ·  app unknown  ·  mode unknown  ·  keys unknown", CardLog.header(null, null, "", null, null, null));
+        assertEquals("model ILCE-6000  ·  firmware 3.21  ·  platform 2.0  ·  android 2.3.7 (sdk 10)  ·  app 1.7.0  ·  mode shutter-speed  ·  keys Fn",
+                CardLog.header("ILCE-6000", "3.21", "2.0", "2.3.7 (sdk 10)", "1.7.0", "Fn", "shutter-speed"));
+        assertEquals("model unknown  ·  firmware unknown  ·  platform unknown  ·  android unknown  ·  app unknown  ·  mode unknown  ·  keys unknown",
+                CardLog.header(null, null, "", null, null, null, null));
+    }
+
+    @Test void androidNamesTheReleaseAndTheSdk() {
+        assertEquals("4.1.2 (sdk 16)", CardLog.android("4.1.2", 16));
+        assertEquals("unknown (sdk 10)", CardLog.android(null, 10));
+        assertEquals("unknown (sdk 10)", CardLog.android("", 10));
     }
 
     @Test void autoMayBeTheMovieDial() {
-        assertTrue(CardLog.header("ILCE-6000", "3.21", "2.4", "1.7.0", "Fn", "auto").contains("mode auto (Auto or Movie)"));
+        assertTrue(CardLog.header("ILCE-6000", "3.21", "2.4", "2.3.7 (sdk 10)", "1.7.0", "Fn", "auto").contains("mode auto (Auto or Movie)"));
         assertEquals("manual-exposure", CardLog.modeLabel("manual-exposure"));
     }
 

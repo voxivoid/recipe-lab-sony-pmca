@@ -175,7 +175,7 @@ final class HotspotP2p {
             NetworkInfo net = intent.getParcelableExtra(WifiP2pManager.EXTRA_NETWORK_INFO);
             boolean formed = info != null && info.groupFormed;
             NetworkInfo.DetailedState detail = net == null ? null : net.getDetailedState();
-            events.step("p2p connection " + detail + (formed ? "  group formed" : ""));
+            events.step("p2p connection " + detail + (formed ? "  group formed  owner " + info.isGroupOwner + "  owner address " + info.groupOwnerAddress : ""));
             if (!groupRequested) return;
             if (formed && detail == NetworkInfo.DetailedState.CONNECTED) readGroup();
             else if (!formed && detail == NetworkInfo.DetailedState.FAILED && !up) events.failed("connection failed");
@@ -196,6 +196,7 @@ final class HotspotP2p {
                     events.up(g.getNetworkName(), g.getPassphrase());
                 }
                 boolean joined = g.getClientList() != null && !g.getClientList().isEmpty();
+                events.step("p2p group " + g.getNetworkName() + "  interface " + g.getInterface() + "  clients " + (g.getClientList() == null ? 0 : g.getClientList().size()));
                 if (joined && !phone) events.phoneJoined();
                 else if (!joined && phone) events.phoneLeft();
                 phone = joined;

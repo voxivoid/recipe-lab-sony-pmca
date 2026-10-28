@@ -87,10 +87,18 @@ final class CardLog {
     private static int field(Object o, String name) throws Exception { return o.getClass().getField(name).getInt(o); }
 
     /** what each opening of the app writes first: the body, the build and the mode dial, so a log needs no other context */
-    static String header(String model, String firmware, String platform, String version, String keys, String mode) {
+    static String header(String model, String firmware, String platform, String android, String version, String keys, String mode) {
         return "model " + orUnknown(model) + "  ·  firmware " + orUnknown(firmware) + "  ·  platform " + orUnknown(platform)
-                + "  ·  app " + orUnknown(version)
+                + "  ·  android " + orUnknown(android) + "  ·  app " + orUnknown(version)
                 + "  ·  mode " + modeLabel(mode) + "  ·  keys " + orUnknown(keys);
+    }
+
+    /**
+     * Android's version as the header gives it, {@code 4.1.2 (sdk 16)}: it decides which Wi-Fi API the body has (Sony's
+     * DirectManager up to 2.3.7, its WifiP2pExtManager from 4.1), which no model table records.
+     */
+    static String android(String release, int sdk) {
+        return (release == null || release.isEmpty() ? "unknown" : release) + " (sdk " + sdk + ")";
     }
 
     /** the mode dial as a reader should take it: an A6000 on the Movie dial reports {@code auto}, the same as Auto */

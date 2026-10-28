@@ -55,6 +55,8 @@ public final class TransferMode {
     private LinkServer server;
     private Thread.UncaughtExceptionHandler crashHandler, previousCrashHandler;
     private boolean running, receiverRegistered, groupRequested, timeoutLogged;
+    /** the Wi-Fi services' full description goes to the card log once per app process: it is long, and never changes */
+    private static boolean probed;
     private long lastApoMs;
     private double rate;
 
@@ -104,7 +106,12 @@ public final class TransferMode {
         hotspot = Hotspot.create(activity);
         p2p = hotspot == null && Build.VERSION.SDK_INT >= 14 ? HotspotP2p.create(activity, p2pEvents) : null;
         step("start  wifi " + (wifi == null ? "none" : "state " + wifiState()) + "  airplane " + airplane()
-            + "  direct " + (hotspot != null ? hotspot.managerClass() : p2p != null ? p2p.managerClass() : "none"));
+            + "  direct " + (hotspot != null ? hotspot.managerClass() : p2p != null ? p2p.managerClass() : "none")
+            + "  sdk " + Build.VERSION.SDK_INT + "  saved networks " + savedNetworks() + "  addresses " + ApiProbe.addresses());
+        if (!probed) {
+            probed = true;
+            try { step("services\n" + Hotspot.probe(activity)); } catch (Throwable t) { stepFailed("services", t); }
+        }
         installCrashHandler();
         try { activity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON); } catch (Throwable t) { logger.error("screen on", t); }
         state.start(now());
@@ -122,7 +129,8 @@ public final class TransferMode {
     public void stop() {
         if (!running) return;
         running = false;
-        step("stop  status " + state.status());
+        step("stop  status " + state.status() + "  requests " + stats.requests() + "  bytes " + stats.bytesSent()
+            + (stats.lastRequest() == null ? "" : "  last " + stats.lastRequest()));
         handler.removeCallbacks(ticker);
         unregisterReceiver();
         try { if (server != null) server.stop(); } catch (Throwable t) { logger.error("server stop", t); }
@@ -199,6 +207,7 @@ public final class TransferMode {
         try {
             server = new LinkServer(new StorageRoot(card), model, Protocol.friendlyName(model), stats, logger);
             server.start(Protocol.HTTP_PORT);
+            step("server on port " + Protocol.HTTP_PORT + (state.server() == TransferState.SERVER_NO_CARD ? "  card " + mounted : ""));
         } catch (Throwable t) {
             stepFailed("server start", t);
             state.serverProblem(TransferState.SERVER_PORT, String.valueOf(t.getMessage()));
@@ -211,9 +220,7 @@ public final class TransferMode {
     private void startHotspot() {
         groupRequested = false;
         if (hotspot == null && p2p == null) {
-            String probe;
-            try { probe = Hotspot.probe(activity); } catch (Throwable t) { probe = "probe threw " + t; }
-            step("no Direct manager\n" + probe);
+            step("no Direct manager: neither service above is usable");
             state.failed(TransferState.UNAVAILABLE, null);
             return;
         }
@@ -259,7 +266,7 @@ public final class TransferMode {
 
         @Override public void up(String ssid, String password) {
             if (!running) return;
-            step("group up: " + ssid + (password == null ? "  no password" : ""));   // the password stays off the card
+            step("group up: " + ssid + (password == null ? "  no password" : "") + "  addresses " + ApiProbe.addresses());   // the password stays off the card
             state.up(ssid, password);
             changed();
         }
@@ -284,6 +291,11 @@ public final class TransferMode {
             changed();
         }
     };
+
+    /** how many Wi-Fi networks the camera has saved (never their names), or -1 */
+    private int savedNetworks() {
+        try { java.util.List<?> l = wifi.getConfiguredNetworks(); return l == null ? 0 : l.size(); } catch (Throwable t) { return -1; }
+    }
 
     private String airplane() {
         try { return String.valueOf(Settings.System.getInt(activity.getContentResolver(), Settings.System.AIRPLANE_MODE_ON, 0)); } catch (Throwable t) { return "?"; }
@@ -334,7 +346,7 @@ public final class TransferMode {
                 Object started = hotspot.startedConfig();             // the broadcast's copy could not be read: ours
                 if (ssid == null) ssid = Hotspot.ssid(started);
                 if (pass == null) pass = Hotspot.password(started);
-                step("group up: " + ssid + (pass == null ? "  no password" : ""));   // the password stays off the card
+                step("group up: " + ssid + (pass == null ? "  no password" : "") + "  addresses " + ApiProbe.addresses());   // the password stays off the card
                 state.up(ssid, pass);
                 changed();
             } else if (Hotspot.ACTION_GROUP_CREATE_FAILURE.equals(action)) {

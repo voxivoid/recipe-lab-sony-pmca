@@ -203,9 +203,13 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
      * logged; and every camera parameter in PARAMS.TXT, rewritten only when they changed. All of it comes from what
      * onResume has already read (load, the camera's parameters), so an opening costs one short line most of the time.
      */
+    private static String androidVersion() {
+        return CardLog.android(Build.VERSION.RELEASE, Build.VERSION.SDK_INT);
+    }
+
     private void logOpen() {
         lastMode = CardLog.param(origFlat, CardLog.MODE_KEY);
-        String head = CardLog.header(KeyProbe.prop("model.name"), KeyProbe.firmware(), KeyProbe.prop("version.platform"), versionName(), keysFound(), lastMode);
+        String head = CardLog.header(KeyProbe.prop("model.name"), KeyProbe.firmware(), KeyProbe.prop("version.platform"), androidVersion(), versionName(), keysFound(), lastMode);
         log(CardLog.OPEN, head);
         String state = CardLog.state(cur);
         if (!state.equals(prefs.getString("loggedState", null))) {
@@ -231,8 +235,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         if (root == null) { showToast(Lang.t("report_need_card"), 4000); return; }
         String flat = null;
         try { if (camera != null) flat = camera.getParameters().flatten(); } catch (Throwable t) {}
-        String head = CardLog.header(KeyProbe.prop("model.name"), KeyProbe.firmware(), KeyProbe.prop("version.platform"), versionName(), keysFound(),
-                CardLog.param(flat, CardLog.MODE_KEY));
+        String head = CardLog.header(KeyProbe.prop("model.name"), KeyProbe.firmware(), KeyProbe.prop("version.platform"), androidVersion(), versionName(),
+                keysFound(), CardLog.param(flat, CardLog.MODE_KEY));
         try {
             CardLog.replace(CardLog.reportDir(root), CardLog.REPORT,
                     CardLog.report(CardLog.dir(root), CardLog.now(), head,
