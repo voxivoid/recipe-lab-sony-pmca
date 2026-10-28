@@ -28,6 +28,8 @@ final class Hotspot {
     private Object started;
     /** what went wrong in the last {@link #startGroupOwner} that threw: the exception's class */
     private String error;
+    /** the same exception in full, for the card log */
+    private String errorDetail;
 
     private Hotspot(Object manager) {
         this.manager = manager;
@@ -42,6 +44,40 @@ final class Hotspot {
             return new Hotspot(m);
         } catch (Throwable t) {
             return null;
+        }
+    }
+
+    /**
+     * For the card log when {@link #create} found nothing: what the "wifi-direct" service is (if anything), and what
+     * the "wifip2p" one is — Sony's WifiP2pExtManager, which OpenMemories-Framework's stubs list as the Direct API of
+     * later bodies.
+     */
+    static String probe(Context context) {
+        return ApiProbe.describe(SERVICE, service(context, SERVICE)) + "\n" + ApiProbe.describe(P2P_SERVICE, service(context, P2P_SERVICE));
+    }
+
+    static final String P2P_SERVICE = "wifip2p";
+
+    private static Object service(Context context, String name) {
+        try {
+            return context.getSystemService(name);
+        } catch (Throwable t) {
+            return "threw " + t;
+        }
+    }
+
+    /** the manager's class name, for the card log */
+    String managerClass() {
+        return manager.getClass().getName();
+    }
+
+    /** how many saved Direct configurations the camera has, or -1 when the call failed */
+    int configurationCount() {
+        try {
+            List<?> configs = (List<?>) manager.getClass().getMethod("getConfigurations").invoke(manager);
+            return configs == null ? 0 : configs.size();
+        } catch (Throwable t) {
+            return -1;
         }
     }
 
@@ -77,7 +113,9 @@ final class Hotspot {
             if (r instanceof Boolean && !(Boolean) r) return TransferState.REFUSED;
             return -1;
         } catch (Throwable t) {
-            error = t.getClass().getSimpleName();
+            Throwable cause = t.getCause() != null ? t.getCause() : t;   // reflection wraps what the camera threw
+            error = cause.getClass().getSimpleName();
+            errorDetail = String.valueOf(cause);
             return TransferState.ERROR;
         }
     }
@@ -89,6 +127,10 @@ final class Hotspot {
 
     String error() {
         return error;
+    }
+
+    String errorDetail() {
+        return errorDetail;
     }
 
     void removeGroup() {

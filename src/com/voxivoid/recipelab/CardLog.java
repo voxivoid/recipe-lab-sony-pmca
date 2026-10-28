@@ -40,7 +40,8 @@ final class CardLog {
     static final int MAX_BYTES = 64 * 1024;
 
     /** the kinds of line, padded so the messages line up */
-    static final String OPEN = "OPEN", STATE = "STATE", WRITE = "WRITE", FAIL = "FAIL", PREVIEW = "PREVIEW", SHOOT = "SHOOT", CRASH = "CRASH", INFO = "INFO";
+    static final String OPEN = "OPEN", STATE = "STATE", WRITE = "WRITE", FAIL = "FAIL", PREVIEW = "PREVIEW", SHOOT = "SHOOT", CRASH = "CRASH", INFO = "INFO",
+            TRANSFER = "TRANSFER";
 
     /** the logs folder under a card root; null without a card */
     static File dir(File cardRoot) { return cardRoot == null ? null : new File(new File(cardRoot, DIR), SUB); }

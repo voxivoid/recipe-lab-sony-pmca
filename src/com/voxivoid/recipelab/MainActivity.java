@@ -17,6 +17,7 @@ import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.voxivoid.recipelab.transfer.Logger;
 import com.voxivoid.recipelab.transfer.TransferMode;
 
 import java.io.BufferedReader;
@@ -763,7 +764,10 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
      */
     private void openTransfer(boolean sync) {
         transferSync = sync;
-        if (transfer == null) transfer = new TransferMode(this, transferModel(), new TransferMode.Listener() {
+        if (transfer == null) transfer = new TransferMode(this, transferModel(), new Logger() {
+            public void info(String msg) { log(CardLog.TRANSFER, msg); }
+            public void error(String msg, Throwable t) { log(CardLog.TRANSFER, msg + ": " + t); }
+        }, new TransferMode.Listener() {
             public void changed() { if (menuOpen && menuPage == PAGE_TRANSFER) renderMenu(); }
         });
         menuPage = PAGE_TRANSFER;

@@ -47,8 +47,9 @@ UNITS=(
   src/com/voxivoid/recipelab/TextJa.java
   src/com/voxivoid/recipelab/TextKo.java
   src/com/voxivoid/recipelab/TextVi.java
-  # Transfer to phone: the protocol 2 server and the page's state -- everything in transfer/ but Hotspot and
+  # Transfer to phone: the protocol 2 server and the page's state -- everything in transfer/ but Hotspot, HotspotP2p and
   # TransferMode, which are the Android half
+  src/com/voxivoid/recipelab/transfer/ApiProbe.java
   src/com/voxivoid/recipelab/transfer/ArwPreview.java
   src/com/voxivoid/recipelab/transfer/ByteRange.java
   src/com/voxivoid/recipelab/transfer/FileIndex.java
