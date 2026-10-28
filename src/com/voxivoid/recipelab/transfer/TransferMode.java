@@ -6,9 +6,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.wifi.WifiManager;
+import android.os.Build;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.SystemClock;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.WindowManager;
 import java.io.File;
@@ -43,12 +45,18 @@ public final class TransferMode {
         @Override public void info(String msg) { Log.i(TAG, msg); }
         @Override public void error(String msg, Throwable t) { Log.e(TAG, msg, t); }
     };
+    /** the card log (LOG.TXT): every hotspot step, so a report from a body it fails on shows where it stopped */
+    private final Logger card;
 
     private WifiManager wifi;
     private Hotspot hotspot;
+    /** the hotspot on bodies with Sony's P2P manager instead of the Direct one (the A6300); null otherwise */
+    private HotspotP2p p2p;
     private LinkServer server;
     private Thread.UncaughtExceptionHandler crashHandler, previousCrashHandler;
-    private boolean running, receiverRegistered, groupRequested;
+    private boolean running, receiverRegistered, groupRequested, timeoutLogged;
+    /** the Wi-Fi services' full description goes to the card log once per app process: it is long, and never changes */
+    private static boolean probed;
     private long lastApoMs;
     private double rate;
 
@@ -59,11 +67,26 @@ public final class TransferMode {
         }
     };
 
-    /** {@code model} is the camera's model code as /api/info reports it, e.g. ILCE-6000. */
-    public TransferMode(Activity activity, String model, Listener listener) {
+    /**
+     * {@code model} is the camera's model code as /api/info reports it, e.g. ILCE-6000; {@code card} writes to the card
+     * log (never the password).
+     */
+    public TransferMode(Activity activity, String model, Logger card, Listener listener) {
         this.activity = activity;
         this.model = model == null || model.length() == 0 ? "unknown" : model;
+        this.card = card == null ? Logger.NONE : card;
         this.listener = listener;
+    }
+
+    /** a hotspot step: to logcat and to the card log */
+    private void step(String msg) {
+        logger.info(msg);
+        try { card.info(msg); } catch (Throwable ignored) {}
+    }
+
+    private void stepFailed(String msg, Throwable t) {
+        logger.error(msg, t);
+        try { card.error(msg, t); } catch (Throwable ignored) {}
     }
 
     public TransferState state() { return state; }
@@ -78,8 +101,17 @@ public final class TransferMode {
     public void start() {
         if (running) return;
         running = true;
+        timeoutLogged = false;
         wifi = (WifiManager) activity.getSystemService(Context.WIFI_SERVICE);
         hotspot = Hotspot.create(activity);
+        p2p = hotspot == null && Build.VERSION.SDK_INT >= 14 ? HotspotP2p.create(activity, p2pEvents) : null;
+        step("start  wifi " + (wifi == null ? "none" : "state " + wifiState()) + "  airplane " + airplane()
+            + "  direct " + (hotspot != null ? hotspot.managerClass() : p2p != null ? p2p.managerClass() : "none")
+            + "  sdk " + Build.VERSION.SDK_INT + "  saved networks " + savedNetworks() + "  addresses " + ApiProbe.addresses());
+        if (!probed) {
+            probed = true;
+            try { step("services\n" + Hotspot.probe(activity)); } catch (Throwable t) { stepFailed("services", t); }
+        }
         installCrashHandler();
         try { activity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON); } catch (Throwable t) { logger.error("screen on", t); }
         state.start(now());
@@ -97,6 +129,8 @@ public final class TransferMode {
     public void stop() {
         if (!running) return;
         running = false;
+        step("stop  status " + state.status() + "  requests " + stats.requests() + "  bytes " + stats.bytesSent()
+            + (stats.lastRequest() == null ? "" : "  last " + stats.lastRequest()));
         handler.removeCallbacks(ticker);
         unregisterReceiver();
         try { if (server != null) server.stop(); } catch (Throwable t) { logger.error("server stop", t); }
@@ -173,8 +207,9 @@ public final class TransferMode {
         try {
             server = new LinkServer(new StorageRoot(card), model, Protocol.friendlyName(model), stats, logger);
             server.start(Protocol.HTTP_PORT);
+            step("server on port " + Protocol.HTTP_PORT + (state.server() == TransferState.SERVER_NO_CARD ? "  card " + mounted : ""));
         } catch (Throwable t) {
-            logger.error("server start", t);
+            stepFailed("server start", t);
             state.serverProblem(TransferState.SERVER_PORT, String.valueOf(t.getMessage()));
             server = null;
         }
@@ -184,27 +219,107 @@ public final class TransferMode {
 
     private void startHotspot() {
         groupRequested = false;
-        if (hotspot == null) {
+        if (hotspot == null && p2p == null) {
+            step("no Direct manager: neither service above is usable");
             state.failed(TransferState.UNAVAILABLE, null);
             return;
         }
-        try { wifi.setWifiEnabled(true); } catch (Throwable t) { logger.error("wifi on", t); }
-        if (!hotspot.setEnabled(true)) {
+        if (hotspot == null) {
+            startP2p();
+            return;
+        }
+        try { step("wifi on: " + wifi.setWifiEnabled(true) + "  state " + wifiState()); } catch (Throwable t) { stepFailed("wifi on", t); }
+        boolean enabled = hotspot.setEnabled(true);
+        int direct = hotspot.state();
+        step("direct on: " + enabled + "  state " + direct);
+        if (!enabled) {
             state.failed(TransferState.REFUSED, null);
             return;
         }
-        if (hotspot.state() == Hotspot.STATE_ENABLED) startGroup();
+        if (direct == Hotspot.STATE_ENABLED) startGroup();
+    }
+
+    /** Sony's P2P manager: its channel first, then Wi-Fi; Direct goes on once Wi-Fi says it is enabled */
+    private void startP2p() {
+        if (!p2p.open()) {
+            state.failed(TransferState.REFUSED, null);
+            return;
+        }
+        try { step("wifi on: " + wifi.setWifiEnabled(true) + "  state " + wifiState()); } catch (Throwable t) { stepFailed("wifi on", t); }
+        if (wifiEnabled()) p2p.enableDirect();
+    }
+
+    private boolean wifiEnabled() {
+        try { return wifi.getWifiState() == WifiManager.WIFI_STATE_ENABLED; } catch (Throwable t) { return false; }
+    }
+
+    private final HotspotP2p.Events p2pEvents = new HotspotP2p.Events() {
+        @Override public void step(String msg) {
+            TransferMode.this.step(msg);
+        }
+
+        @Override public void refused(String why) {
+            if (!running || state.ready()) return;
+            state.failed(TransferState.REFUSED, why);
+            changed();
+        }
+
+        @Override public void up(String ssid, String password) {
+            if (!running) return;
+            step("group up: " + ssid + (password == null ? "  no password" : "") + "  addresses " + ApiProbe.addresses());   // the password stays off the card
+            state.up(ssid, password);
+            changed();
+        }
+
+        @Override public void failed(String why) {
+            if (!running || state.ready()) return;
+            state.failed(TransferState.FAILED, why);
+            changed();
+        }
+
+        @Override public void phoneJoined() {
+            if (!running) return;
+            step("phone joined");
+            state.note(TransferState.NOTE_PHONE_JOINED);
+            changed();
+        }
+
+        @Override public void phoneLeft() {
+            if (!running) return;
+            step("phone left");
+            state.note(TransferState.NOTE_PHONE_LEFT);
+            changed();
+        }
+    };
+
+    /** how many Wi-Fi networks the camera has saved (never their names), or -1 */
+    private int savedNetworks() {
+        try { java.util.List<?> l = wifi.getConfiguredNetworks(); return l == null ? 0 : l.size(); } catch (Throwable t) { return -1; }
+    }
+
+    private String airplane() {
+        try { return String.valueOf(Settings.System.getInt(activity.getContentResolver(), Settings.System.AIRPLANE_MODE_ON, 0)); } catch (Throwable t) { return "?"; }
+    }
+
+    private String wifiState() {
+        try { return String.valueOf(wifi.getWifiState()); } catch (Throwable t) { return "?"; }
     }
 
     private void startGroup() {
         if (groupRequested || state.status() != TransferState.STARTING) return;
         groupRequested = true;
+        step("group: " + hotspot.configurationCount() + " configurations");
         int failed = hotspot.startGroupOwner();
+        step("group start: " + (failed < 0 ? "requested" : "status " + failed + (hotspot.errorDetail() == null ? "" : "  " + hotspot.errorDetail())));
         if (failed >= 0) state.failed(failed, hotspot.error());
         changed();
     }
 
     private void stopHotspot() {
+        if (p2p != null) {
+            p2p.stop();
+            p2p = null;
+        }
         if (hotspot == null) return;
         if (groupRequested) hotspot.removeGroup();
         hotspot.setEnabled(false);
@@ -215,23 +330,35 @@ public final class TransferMode {
         @Override public void onReceive(Context context, Intent intent) {
             if (!running) return;
             String action = intent.getAction();
-            if (Hotspot.ACTION_STATE_CHANGED.equals(action)) {
-                if (intent.getIntExtra(Hotspot.EXTRA_STATE, Hotspot.STATE_UNKNOWN) == Hotspot.STATE_ENABLED) startGroup();
+            if (WifiManager.WIFI_STATE_CHANGED_ACTION.equals(action)) {
+                int wifiState = intent.getIntExtra(WifiManager.EXTRA_WIFI_STATE, WifiManager.WIFI_STATE_UNKNOWN);
+                step("wifi state " + wifiState);
+                if (p2p != null && wifiState == WifiManager.WIFI_STATE_ENABLED) p2p.enableDirect();   // once: it says so itself
+            } else if (hotspot == null) {
+                return;                                               // no Direct manager: only Wi-Fi's own state is logged
+            } else if (Hotspot.ACTION_STATE_CHANGED.equals(action)) {
+                int direct = intent.getIntExtra(Hotspot.EXTRA_STATE, Hotspot.STATE_UNKNOWN);
+                step("direct state " + direct);
+                if (direct == Hotspot.STATE_ENABLED) startGroup();
             } else if (Hotspot.ACTION_GROUP_CREATE_SUCCESS.equals(action)) {
                 Object config = Hotspot.config(intent, activity.getClassLoader());
                 String ssid = Hotspot.ssid(config), pass = Hotspot.password(config);
                 Object started = hotspot.startedConfig();             // the broadcast's copy could not be read: ours
                 if (ssid == null) ssid = Hotspot.ssid(started);
                 if (pass == null) pass = Hotspot.password(started);
+                step("group up: " + ssid + (pass == null ? "  no password" : "") + "  addresses " + ApiProbe.addresses());   // the password stays off the card
                 state.up(ssid, pass);
                 changed();
             } else if (Hotspot.ACTION_GROUP_CREATE_FAILURE.equals(action)) {
+                step("group failed: error " + intent.getIntExtra(Hotspot.EXTRA_ERROR_CODE, -1));
                 state.failed(TransferState.FAILED, String.valueOf(intent.getIntExtra(Hotspot.EXTRA_ERROR_CODE, -1)));
                 changed();
             } else if (Hotspot.ACTION_STA_CONNECTED.equals(action)) {
+                step("phone joined");
                 state.note(TransferState.NOTE_PHONE_JOINED);
                 changed();
             } else if (Hotspot.ACTION_STA_DISCONNECTED.equals(action)) {
+                step("phone left");
                 state.note(TransferState.NOTE_PHONE_LEFT);
                 changed();
             }
@@ -239,8 +366,9 @@ public final class TransferMode {
     };
 
     private void registerReceiver() {
-        if (receiverRegistered || hotspot == null) return;
+        if (receiverRegistered) return;
         IntentFilter d = new IntentFilter();
+        d.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
         d.addAction(Hotspot.ACTION_STATE_CHANGED);
         d.addAction(Hotspot.ACTION_GROUP_CREATE_SUCCESS);
         d.addAction(Hotspot.ACTION_GROUP_CREATE_FAILURE);
@@ -263,6 +391,10 @@ public final class TransferMode {
         long now = now();
         if (now - lastApoMs > APO_REFRESH_MS) setAutoPowerOff(false);
         state.tick(now);
+        if (state.status() == TransferState.TIMEOUT && !timeoutLogged) {
+            timeoutLogged = true;
+            step("timed out  wifi state " + wifiState() + "  direct state " + (hotspot != null ? String.valueOf(hotspot.state()) : p2p != null ? "p2p" : "none"));
+        }
         rate = stats.sampleRate(now);
         changed();
     }
