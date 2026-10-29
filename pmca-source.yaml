@@ -1,0 +1,10 @@
+---
+package: com.voxivoid.recipelab
+name: Recipe Lab
+author: André Domingues (voxivoid)
+desc: Film simulations and camera looks, stored in the camera
+homepage: https://recipelab.io
+release:
+  type: github
+  user: voxivoid
+  repo: recipe-lab-sony-pmca
