@@ -136,19 +136,19 @@ Failures are as useful as successes.
 | **RX100 V** | DSC-RX100M5 | ✅ |  |
 | **HX60 / HX60V** | DSC-HX60 | ✅ | zoom and flash could not be used ([#42](https://github.com/voxivoid/recipe-lab-sony-pmca/issues/42)) |
 | **A7S II** | ILCE-7SM2 | ✅ | the image stabiliser misbehaved with a manual lens while the app was open ([#48](https://github.com/voxivoid/recipe-lab-sony-pmca/issues/48)) |
-| **RX100 III** | DSC-RX100M3 | ✅ |  |
+| **RX100 III** | DSC-RX100M3 | ✅ | one owner could not get the look into **MR** even after registering it from P/A/S/M and power-cycling ([#117](https://github.com/voxivoid/recipe-lab-sony-pmca/issues/117)) |
 | **RX1R II** | DSC-RX1RM2 | ✅ |  |
 | **A5000** | ILCE-5000 | ✅ | no **Fn** button: the brand list is under **hold MENU → Browse recipes**; one sample run froze the camera after about eight frames, and only pulling the battery brought it back ([#58](https://github.com/voxivoid/recipe-lab-sony-pmca/issues/58)) |
 | **HX90 / HX90V** | DSC-HX90 | ✅ |  |
-| **NEX-5R** | NEX-5R | ✅ |  |
+| **NEX-5R** | NEX-5R | ✅ | one owner (firmware 1.00): 1.7.0 and earlier run, 1.8.0 onward start with a black screen and the app is unusable ([#130](https://github.com/voxivoid/recipe-lab-sony-pmca/issues/130)) |
 | **A7S** | ILCE-7S | ✅ |  |
 | **NEX-6** | NEX-6 | ✅ |  |
 | A68 | ILCA-68 | ❔ | not in the installer's device table, so even the install is untested |
 | A77 II | ILCA-77M2 | ❌ | one owner (firmware 2.00) found no `MENU → Application`, and the installer refused the camera with `This device does not support apps` ([#114](https://github.com/voxivoid/recipe-lab-sony-pmca/issues/114)) |
 | A99 II | ILCA-99M2 | ❔ |  |
-| **RX100 IV** | DSC-RX100M4 | ✅ |  |
+| **RX100 IV** | DSC-RX100M4 | ✅ | the zoom rocker does not zoom inside the app, only the lens ring does ([#123](https://github.com/voxivoid/recipe-lab-sony-pmca/issues/123)) |
 | RX10 II | DSC-RX10M2 | ❔ |  |
-| RX10 III | DSC-RX10M3 | ❔ |  |
+| **RX10 III** | DSC-RX10M3 | ✅ |  |
 | HX400 / HX400V | DSC-HX400 | ❔ | compact; no control wheel of the kind the app is driven with |
 | **WX500** | DSC-WX500 | ✅ | the rear wheel scrolls the recipes; playback or power off closes the app |
 
@@ -171,7 +171,7 @@ which closed in 2021.
 | **Cyber-shot** | RX100 VA, RX100 VI, RX100 VII, RX10 IV, RX0, RX0 II, HX99, ZV-1, ZV-1F, ZV-1 II |
 
 …and everything released since, as well as bodies from before Sony's app store, such as the HX50 / HX50V
-([#115](https://github.com/voxivoid/recipe-lab-sony-pmca/issues/115)). The menu is the test: no `MENU → Application`
+([#115](https://github.com/voxivoid/recipe-lab-sony-pmca/issues/115)) and the NEX-5N ([#136](https://github.com/voxivoid/recipe-lab-sony-pmca/issues/136)). The menu is the test: no `MENU → Application`
 on your camera, no app — so reports of Recipe Lab running on an A6400 or similar are mistaken.
 
 ## Installing
