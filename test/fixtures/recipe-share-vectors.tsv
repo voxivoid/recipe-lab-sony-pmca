@@ -1,0 +1,39 @@
+# Recipe share code test vectors (format 1). Same file in Recipe Lab (camera) and Recipe Lab Studio.
+# valid: code, name, style, saturation, contrast, sharpness, white-balance, amber-blue, green-magenta, exposure-thirds, dro, effect, effect-option (- for none)
+# invalid: code, why. Tab separated.
+valid	AQACBQMACggOBgAAQ2xhc3NpYyBDaHJvbWU	Classic Chrome	standard	-1	2	0	auto	3	1	-1	auto	off	-
+valid	AQADAwMABwcPBgAAQQ	A	standard	0	0	0	auto	0	0	0	auto	off	-
+valid	AQwGAAZjDgAeAA0AS29kYWsgR29sZCAyMDAgKHdhcm0pKyYn	Kodak Gold 200 (warm)+&'	sepia	3	-3	3	9900K	7	-7	15	off	watercolor	-
+valid	AQEABgAZAA4AAQEEQ29vbC1Ub3k	Cool-Toy	vivid	-3	3	-3	2500K	-7	7	-15	1	toy-camera	magenta
+valid	AQsEBAQBBwcSBQMBS2VlcCBXQiAxLjA	Keep WB 1.0	red-leaves	1	1	1	keep	0	0	3	5	posterization	posterization-bw
+valid	AQgDAwM4BwcPAwUBSGlnaCBLZXkgUGluaw	High Key Pink	light	0	0	0	5600K	0	0	0	3	soft-high-key	pink
+valid	AQUDAwMABwcPBgYDUGFydCBZZWxsb3c	Part Yellow	mono	0	0	0	auto	0	0	0	auto	part-color	yellow
+valid	AQIDAwMABwcPBgEAVG95IE5vcm1hbA	Toy Normal	neutral	0	0	0	auto	0	0	0	auto	toy-camera	normal
+valid	AQoFAQQgBgkLAgkAYWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4	abcdefghijklmnopqrstuvwx	night	2	-2	1	3200K	-1	2	-4	2	hdr-art	-
+invalid	AQADAwMABwcPBgAA	no name
+invalid	AgADAwMABwcPBgAAT2s	version 2
+invalid	AAADAwMABwcPBgAAT2s	version 0
+invalid	AQ0DAwMABwcPBgAAT2s	style past table
+invalid	AQAHAwMABwcPBgAAT2s	saturation +4
+invalid	AQADBwMABwcPBgAAT2s	contrast +4
+invalid	AQADAwcABwcPBgAAT2s	sharpness +4
+invalid	AQADAwMCBwcPBgAAT2s	kelvin 200
+invalid	AQADAwMYBwcPBgAAT2s	kelvin 2400
+invalid	AQADAwNkBwcPBgAAT2s	kelvin 10000
+invalid	AQADAwMADwcPBgAAT2s	amber-blue +8
+invalid	AQADAwMABw8PBgAAT2s	green-magenta +8
+invalid	AQADAwMABwcfBgAAT2s	exposure +16 thirds
+invalid	AQADAwMABwcPBwAAT2s	dro 7
+invalid	AQADAwMABwcPBg4AT2s	effect past table
+invalid	AQADAwMABwcPBgABT2s	option on effect without options
+invalid	AQADAwMABwcPBgEFT2s	toy-camera option 5
+invalid	AQADAwMABwcPBgAAIE9r	leading space
+invalid	AQADAwMABwcPBgAAT2sg	trailing space
+invalid	AQADAwMABwcPBgAAYS9i	slash
+invalid	AQADAwMABwcPBgAAeHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eA	25 chars
+invalid	AQADAwMABwcPBgAA6Q	non-ascii byte
+invalid	AQADAwMABwcPBgAAICAg	blank
+invalid	AQADAwMABwcPBgAAT2s=	padding
+invalid	AQADAwMABwcPBgAAT2s+	standard base64 char
+invalid	A	one char
+invalid	AQADAwMABwcPBgAAQR	non-zero bits after the last byte

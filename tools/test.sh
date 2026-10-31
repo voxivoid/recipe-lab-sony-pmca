@@ -35,6 +35,12 @@ UNITS=(
   src/com/voxivoid/recipelab/RecipeFormat.java
   src/com/voxivoid/recipelab/RecipeFormats.java
   src/com/voxivoid/recipelab/RecipeFormatV1.java
+  src/com/voxivoid/recipelab/RecipeShare.java
+  # Recipe QR codes (vendored, MIT)
+  src/io/nayuki/qrcodegen/BitBuffer.java
+  src/io/nayuki/qrcodegen/DataTooLongException.java
+  src/io/nayuki/qrcodegen/QrCode.java
+  src/io/nayuki/qrcodegen/QrSegment.java
   src/com/voxivoid/recipelab/Library.java
   src/com/voxivoid/recipelab/NameEntry.java
   src/com/voxivoid/recipelab/DevTools.java
