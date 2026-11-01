@@ -3,20 +3,23 @@ package com.voxivoid.recipelab;
 /**
  * A custom recipe as a link, for QR codes: {@code https://recipelab.io/r#<code>}. Recipe Lab Studio reads and writes
  * the same links (its {@code RecipeShare}): a phone's camera opens Studio with it, and Read Recipe QR Code here adds it.
- * The code is base64url, without padding, of these bytes (format 1; docs/DEVELOPMENT.md "Recipe share code"):
+ * The code is base64url, without padding, of these bytes (version 1; docs/DEVELOPMENT.md "Recipe share code"):
  *
  * <pre>
  *  0      1, the version
- *  1      style, index in {@link #STYLES} (runtime names, not the stored enum)
- *  2 3 4  saturation, contrast, sharpness, plus 3
- *  5      white balance: 0 auto, 1 keep, 25..99 the kelvin / 100
- *  6 7    amber-blue, green-magenta, plus 7
- *  8      exposure in thirds, plus 15
- *  9      DRO: 0 off, 1..5, 6 auto
- *  10     effect, index in {@link Recipes#PE_KEYS}
- *  11     effect option, index in {@link Recipes#subValues}; 0 for an effect without one
- *  12..   the name, ASCII, as {@link CustomRecipes#nameChar} allows, 1..24 characters
+ *  1      camera family: 0 {@link RecipeFormatV2#FAMILY}, the only one this app reads; another is refused
+ *  2      style, index in {@link #STYLES} (runtime names, not the stored enum)
+ *  3 4 5  saturation, contrast, sharpness, plus 3
+ *  6      white balance: 0 auto, 1 keep, 25..99 the kelvin / 100
+ *  7 8    amber-blue, green-magenta, plus 7
+ *  9      exposure in thirds, plus 15
+ *  10     DRO: 0 off, 1..5, 6 auto
+ *  11     effect, index in {@link Recipes#PE_KEYS}
+ *  12     effect option, index in {@link Recipes#subValues}; 0 for an effect without one
+ *  13..   the name, ASCII, as {@link CustomRecipes#nameChar} allows, 1..24 characters
  * </pre>
+ *
+ * Bytes 2..12 are this family's; a later family has its own after byte 1.
  *
  * The tables are frozen: a new style or effect goes at the end. test/fixtures/recipe-share-vectors.tsv is the same
  * file in both apps.
@@ -27,7 +30,9 @@ public final class RecipeShare {
     public static final int VERSION = 1;
     public static final String PREFIX = "https://recipelab.io/r#";
     private static final String WWW_PREFIX = "https://www.recipelab.io/r#";
-    private static final int HEAD = 12;
+    /** this family's code in byte 1 */
+    static final int FAMILY_CODE = 0;
+    private static final int HEAD = 13;
 
     /** Style codes, by runtime name: frozen. */
     static final String[] STYLES = { "standard", "vivid", "neutral", "portrait", "landscape", "mono", "clear", "deep",
@@ -43,17 +48,18 @@ public final class RecipeShare {
         if (style < 0) return null;
         byte[] b = new byte[HEAD + name.length()];
         b[0] = VERSION;
-        b[1] = (byte) style;
-        b[2] = (byte) (r.sat + 3);
-        b[3] = (byte) (r.con + 3);
-        b[4] = (byte) (r.sharp + 3);
-        b[5] = (byte) (r.wbMode == Params.WB_AUTO ? 0 : r.wbMode == Params.WB_KELVIN ? r.kelvin / 100 : 1);
-        b[6] = (byte) (r.ab + 7);
-        b[7] = (byte) (r.gm + 7);
-        b[8] = (byte) (r.ev + 15);
-        b[9] = (byte) r.dro;
-        b[10] = (byte) r.pe;
-        b[11] = (byte) (Recipes.subValues(r.pe) == null ? 0 : r.sub);
+        b[1] = FAMILY_CODE;
+        b[2] = (byte) style;
+        b[3] = (byte) (r.sat + 3);
+        b[4] = (byte) (r.con + 3);
+        b[5] = (byte) (r.sharp + 3);
+        b[6] = (byte) (r.wbMode == Params.WB_AUTO ? 0 : r.wbMode == Params.WB_KELVIN ? r.kelvin / 100 : 1);
+        b[7] = (byte) (r.ab + 7);
+        b[8] = (byte) (r.gm + 7);
+        b[9] = (byte) (r.ev + 15);
+        b[10] = (byte) r.dro;
+        b[11] = (byte) r.pe;
+        b[12] = (byte) (Recipes.subValues(r.pe) == null ? 0 : r.sub);
         for (int i = 0; i < name.length(); i++) b[HEAD + i] = (byte) name.charAt(i);
         return PREFIX + base64Url(b);
     }
@@ -74,11 +80,12 @@ public final class RecipeShare {
     /** The recipe a bare code carries (after the #); null when it cannot be read. */
     static Recipes.Recipe decodeCode(String code) {
         int[] b = unBase64Url(code);
-        if (b == null || b.length <= HEAD || b[0] != VERSION) return null;
-        if (b[1] >= STYLES.length || b[10] >= Recipes.PE_KEYS.length) return null;
-        int pe = b[10];
+        if (b == null || b.length < 2 || b[0] != VERSION) return null;
+        if (b[1] != FAMILY_CODE || b.length <= HEAD) return null;   // made for other cameras
+        if (b[2] >= STYLES.length || b[11] >= Recipes.PE_KEYS.length) return null;
+        int pe = b[11];
         String[] sv = Recipes.subValues(pe);
-        if (sv == null ? b[11] != 0 : b[11] >= sv.length) return null;
+        if (sv == null ? b[12] != 0 : b[12] >= sv.length) return null;
         StringBuilder name = new StringBuilder();
         for (int i = HEAD; i < b.length; i++) {
             if (b[i] > 0x7f) return null;
@@ -87,11 +94,11 @@ public final class RecipeShare {
         String n = name.toString();
         if (!nameOk(n)) return null;
         int wbMode, kelvin = 0;
-        if (b[5] == 0) wbMode = Params.WB_AUTO;
-        else if (b[5] == 1) wbMode = 0;
-        else { wbMode = Params.WB_KELVIN; kelvin = b[5] * 100; }
-        Recipes.Recipe r = new Recipes.Recipe(Recipes.CUSTOM, n, styleEnum(STYLES[b[1]]), b[2] - 3, b[3] - 3, b[4] - 3,
-                wbMode, kelvin, b[6] - 7, b[7] - 7, pe, b[8] - 15, b[9], b[11]);
+        if (b[6] == 0) wbMode = Params.WB_AUTO;
+        else if (b[6] == 1) wbMode = 0;
+        else { wbMode = Params.WB_KELVIN; kelvin = b[6] * 100; }
+        Recipes.Recipe r = new Recipes.Recipe(Recipes.CUSTOM, n, styleEnum(STYLES[b[2]]), b[3] - 3, b[4] - 3, b[5] - 3,
+                wbMode, kelvin, b[7] - 7, b[8] - 7, pe, b[9] - 15, b[10], b[12]);
         return CustomRecipes.problem(r) == null ? r : null;
     }
 

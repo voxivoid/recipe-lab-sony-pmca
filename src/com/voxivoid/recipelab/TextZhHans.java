@@ -78,6 +78,8 @@ final class TextZhHans {
         { "custom_twice", "%1$s 设置了两次" },
         { "custom_not_yaml", "第 %1$d 行不是 YAML 的 key: value" },
         { "custom_newer", "由更新版本的 Recipe Lab 创建（格式 %1$d）" },
+        { "custom_no_family", "缺少 family" },
+        { "custom_other_family", "适用于其他相机（%1$s）" },
         { "custom_too_large", "文件过大，不是配方" },
         { "custom_unreadable", "无法读取：%1$s" },
         { "custom_duplicate", "%1$s 已在 %2$s 中使用" },

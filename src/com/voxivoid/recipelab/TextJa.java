@@ -79,6 +79,8 @@ final class TextJa {
         { "custom_twice", "%1$s が2回設定されています" },
         { "custom_not_yaml", "%1$d 行目が YAML の key: value になっていません" },
         { "custom_newer", "新しい Recipe Lab で作成（形式 %1$d）" },
+        { "custom_no_family", "family: なし" },
+        { "custom_other_family", "別のカメラ用（%1$s）" },
         { "custom_too_large", "レシピにしては大きすぎます" },
         { "custom_unreadable", "読み込めません：%1$s" },
         { "custom_duplicate", "%1$s は %2$s ですでに使われている名前です" },

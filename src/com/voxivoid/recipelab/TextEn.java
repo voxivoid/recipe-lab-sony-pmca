@@ -95,6 +95,8 @@ final class TextEn {
         { "custom_twice", "%1$s is set twice" },
         { "custom_not_yaml", "line %1$d is not a YAML key: value" },
         { "custom_newer", "made by a newer Recipe Lab (format %1$d)" },
+        { "custom_no_family", "family: missing" },
+        { "custom_other_family", "made for other cameras (%1$s)" },
         { "custom_too_large", "too large to be a recipe" },
         { "custom_unreadable", "cannot be read: %1$s" },
         { "custom_duplicate", "%1$s is already the name in %2$s" },

@@ -79,6 +79,8 @@ final class TextVi {
         { "custom_twice", "%1$s được đặt hai lần" },
         { "custom_not_yaml", "dòng %1$d không phải dạng YAML key: value" },
         { "custom_newer", "tạo bởi Recipe Lab mới hơn (định dạng %1$d)" },
+        { "custom_no_family", "family: thiếu" },
+        { "custom_other_family", "dành cho máy ảnh khác (%1$s)" },
         { "custom_too_large", "quá lớn để là công thức" },
         { "custom_unreadable", "không đọc được: %1$s" },
         { "custom_duplicate", "%1$s đã là tên trong %2$s" },

@@ -91,7 +91,7 @@ class RecipeShareTest {
     }
 
     @Test void otherTextIsNotARecipe() {
-        String code = "AQADAwMABwcPBgAAQQ";
+        String code = "AQAAAwMDAAcHDwYAAEE";
         for (String s : new String[] { null, "", "hello", "http://recipelab.io/r#" + code, "https://recipelab.io/s#" + code,
                 "https://evil.io/r#" + code, "https://recipelab.io/r/#" + code, "HTTPS://RECIPELAB.IO/R#" + code }) {
             assertNull(RecipeShare.decode(s), String.valueOf(s));
@@ -101,14 +101,14 @@ class RecipeShareTest {
     }
 
     @Test void encodeRefusesWhatARecipeCannotHold() {
-        Recipes.Recipe ok = RecipeShare.decode(RecipeShare.PREFIX + "AQADAwMABwcPBgAAQQ");
+        Recipes.Recipe ok = RecipeShare.decode(RecipeShare.PREFIX + "AQAAAwMDAAcHDwYAAEE");
         assertNotNull(RecipeShare.encode(ok));
         assertNull(RecipeShare.encode(CustomRecipes.renamed(ok, "a/b")));
         assertNull(RecipeShare.encode(CustomRecipes.renamed(ok, "")));
         assertNull(RecipeShare.encode(CustomRecipes.renamed(ok, "xxxxxxxxxxxxxxxxxxxxxxxxx")));
         assertNull(RecipeShare.encode(new Recipes.Recipe(Recipes.CUSTOM, "A", 13, 0, 0, 0, Params.WB_AUTO, 0, 0, 0, 0, 0, 6, 0)), "unknown style");
         assertNull(RecipeShare.encode(new Recipes.Recipe(Recipes.CUSTOM, "A", 1, 4, 0, 0, Params.WB_AUTO, 0, 0, 0, 0, 0, 6, 0)), "saturation 4");
-        assertEquals(RecipeShare.PREFIX + "AQADAwMABwcPBgAAQQ", RecipeShare.encode(CustomRecipes.renamed(ok, " A ")), "trimmed");
+        assertEquals(RecipeShare.PREFIX + "AQAAAwMDAAcHDwYAAEE", RecipeShare.encode(CustomRecipes.renamed(ok, " A ")), "trimmed");
     }
 
     @Test void base64UrlRoundTripsEveryLength() {
@@ -136,5 +136,14 @@ class RecipeShareTest {
         for (int i = 0; i < 7; i++) { assertTrue(qr.getModule(i, 0)); assertTrue(qr.getModule(0, i)); }
         assertFalse(qr.getModule(1, 1));
         assertTrue(qr.getModule(3, 3));
+    }
+
+    @Test void theFamilyIsByteOneAndOnlyThisOneIsRead() {
+        int[] b = RecipeShare.unBase64Url(RecipeShare.encode(RecipeShare.decode(RecipeShare.PREFIX + "AQAAAwMDAAcHDwYAAEE")).substring(RecipeShare.PREFIX.length()));
+        assertEquals(1, b[0]);
+        assertEquals(RecipeShare.FAMILY_CODE, b[1]);
+        assertEquals(0, RecipeShare.FAMILY_CODE);
+        assertNull(RecipeShare.decode(RecipeShare.PREFIX + "AQEAAwMDAAcHDwYAAEE"), "family 1");
+        assertNull(RecipeShare.decode(RecipeShare.PREFIX + "AQA"), "a family and nothing after");
     }
 }

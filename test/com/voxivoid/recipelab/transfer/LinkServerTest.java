@@ -118,7 +118,7 @@ class LinkServerTest {
         Response r = get("/api/info");
         assertEquals(200, r.status);
         assertEquals("application/json", r.header("Content-Type"));
-        assertEquals("{\"app\":\"recipe-lab\",\"protocol\":4,\"model\":\"ILCE-6000\",\"name\":\"Sony \\u03b16000\"}", r.text());
+        assertEquals("{\"app\":\"recipe-lab\",\"protocol\":5,\"model\":\"ILCE-6000\",\"name\":\"Sony \\u03b16000\"}", r.text());
         assertBodyLengthMatches(r);
     }
 

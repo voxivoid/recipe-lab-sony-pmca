@@ -40,7 +40,9 @@ src/com/voxivoid/recipelab/
   CustomRecipes.java           custom recipes on the memory card: what a recipe may hold, names, file names, and reading /
                                writing the RECIPES folder — no Android, covered by test/
   RecipeFormats.java           the custom recipe file's versions: which RecipeFormat reads a file (its format line) and
-                               which writes one (the newest); RecipeFormat.java is a version, RecipeFormatV1.java format 1
+                               which writes one (the newest); RecipeFormat.java is a version, RecipeFormatV1.java format 1,
+                               RecipeFormatV2.java format 2 (format 1 plus the camera family)
+  RecipeShare.java             a recipe as a share link / QR code (Recipe share code); io/nayuki/qrcodegen draws the QR
   CardLog.java                 the shareable logs on the card, RECIPLAB/LOGS: LOG.TXT (opens, writes, failures, preview
                                values the camera did not keep, the shutter, crashes) and DIFF.TXT (the snapshot tool),
                                line format and roll-over — no Android, covered by test/
@@ -75,7 +77,7 @@ src/com/voxivoid/recipelab/
                                the live view on the Full and No keys panels (DevTools.sponsorLine, Ko-fi); the About page lists Ko-fi and GitHub Sponsors
   HintBar.java                 legend view under the panel (uses Legend)
   NativeBackup.java            JNI: read / write / attr / sync
-  transfer/                    Transfer to phone (see Transfer to phone): the camera hotspot and the protocol 4 HTTP
+  transfer/                    Transfer to phone (see Transfer to phone): the camera hotspot and the protocol 5 HTTP
                                server for Recipe Lab Studio — no Android in it but Hotspot and TransferMode, covered by test/
 jni/jni.cpp                    Backup_read / Backup_write / Backup_sync_all via OpenMemories-Platform
 jni/platform/                  git submodule: ma1co/OpenMemories-Platform
@@ -284,11 +286,13 @@ came last, never just the last one the wheel scrolled past (`rememberReopen`) �
 ignored), English always, `.YML`. Anything else YAML allows (lists, nesting) and any line that is not `key: value` (an
 old `key = value` file included) skips the file with its line number. The name is always written quoted, so other YAML
 tools read it as text; note that strict YAML 1.1 tools read `dro: off` as false — the app reads every value as text.
-Format 1 (`RecipeFormatV1`) writes:
+Format 2 (`RecipeFormatV2`) is what the app writes: format 1's keys (below) plus `family`. Format 1 (`RecipeFormatV1`)
+files, written by v1.11.1 and earlier, are still read.
 
 | key | values | missing → |
 |---|---|---|
-| `format` | the reader to use; this build writes and reads `1` | 1 |
+| `format` | the reader to use; this build writes `2` and reads `1` and `2` | 1 |
+| `family` | format 2 only, required: the cameras the values are for. `sony-creative-style` — every body Recipe Lab runs on (Creative Style, Picture Effect, DRO, white balance fine tune). Another family's file (a Canon's, from a later Recipe Lab Studio) is skipped, *made for other cameras* — never read as Sony's | format 2: the file is skipped |
 | `name` | 1–24 of `A–Z a–z 0–9` and ` -.'()&+` — what the name editor can type and every bundled font can draw | the file name |
 | `made-on` | the model it was saved on (`model.name`), informational — setting ids differ across bodies | — |
 | `style` | a runtime name from `Recipes.STYLE_NAMES` (only identified styles) | standard |
@@ -315,6 +319,10 @@ app writes with the newest (`RecipeFormats.current()`). The YAML envelope every 
   through its own reader.
 - A file whose `format` is newer than the build is skipped as a whole (*made by a newer Recipe Lab*), never half-read —
   its values end up in the settings store.
+- Format 2 exists for the camera family: format 1 had none, and an older app ignores a key it does not know, so a
+  family line in a format 1 file would let a Canon recipe be read as Sony's on v1.11.1. Those apps skip a format 2
+  file instead. The cost: a card from a newer camera, or recipes Studio sends, are not read by v1.11.1 or earlier —
+  protocol 5 is how Studio knows a camera reads them.
 
 **Untrusted input.** A file may come from anyone. Every value is checked against what the store takes
 (`CustomRecipes.problem`, the same ranges as the chips); one bad value skips the file with the reason, nothing is
@@ -351,6 +359,30 @@ is visible over USB Mass Storage, that a file a computer gave a long name is sti
 rename survives a power-off mid-save, and — as always — that a custom
 recipe picked, then power-cycled, is still the camera's look.
 
+## Recipe share code
+
+A custom recipe as a link, `https://recipelab.io/r#<code>`, for QR codes (`RecipeShare`). Recipe Lab Studio and
+recipelab.io read and write the same codes; `test/fixtures/recipe-share-vectors.tsv` is the same file in all three
+repos, and each one's tests run it. The `#` part never reaches a server. The code is base64url without padding (no
+`=`, and stray bits after the last byte refuse it) of:
+
+| byte | value |
+|---|---|
+| 0 | version, 1 |
+| 1 | camera family: `0` `sony-creative-style`. Another family's link is refused (*made for other cameras*); its values after this byte are its own |
+| 2 | style, index in `RecipeShare.STYLES` — the runtime names in the order of the file's `style` comment, not the stored enum |
+| 3, 4, 5 | saturation, contrast, sharpness, plus 3 |
+| 6 | white balance: 0 auto, 1 keep, 25 .. 99 the kelvin / 100 |
+| 7, 8 | amber-blue, green-magenta, plus 7 |
+| 9 | exposure in thirds, plus 15 |
+| 10 | DRO: 0 off, 1 .. 5, 6 auto |
+| 11 | effect, index in `Recipes.PE_KEYS` |
+| 12 | effect option, index in `Recipes.subValues`; 0 for an effect without options |
+| 13 .. | the name, ASCII, 1 .. 24 characters a name may hold |
+
+The tables are frozen: a new style or effect goes at the end. The longest code fits a version 5 QR code (37 × 37) at
+error correction M.
+
 ## Transfer to phone
 
 **Hold MENU → Transfer to phone** turns the camera into a small file server for **Recipe Lab Studio**, the phone app:
@@ -361,8 +393,9 @@ recipes is the phone's job. There is no other mode: the camera never joins anoth
 
 It began as *Photo Studio Link*, a separate PMCA app speaking protocol 1; moving it into Recipe Lab made it protocol
 2, which adds the JPEGs and the recipe files. Protocol 3 adds one request, `PUT` of a custom recipe file, and
-changes nothing else; protocol 4 adds `DELETE` of one. The phone app takes photos from any of them, sends recipes
-from 3 on and deletes them from 4 on.
+changes nothing else; protocol 4 adds `DELETE` of one; protocol 5 changes nothing on the wire but says the camera reads
+format 2 recipe files. The phone app takes photos from any of them, sends recipes from 5 on (it writes format 2, which
+3 and 4 take but skip) and deletes them from 4 on.
 
 **Hold MENU → Sync recipes** is the same hotspot and the same server under its own title, with the phone's other way
 in on the page (Import → Sync recipes): there the phone lists `RECIPES`, fetches the files it lacks and sends the ones
@@ -403,14 +436,14 @@ answer in 30 s (`TransferState.START_TIMEOUT_MS`) say so on the red line. There 
 
 The model in `/api/info` is `model.name` (`KeyProbe`) — `Build.MODEL` is `ScalarA` on every body.
 
-### Protocol 4
+### Protocol 5
 
 HTTP/1.1 on TCP port **8080**, all interfaces, one response per connection (`Connection: close`), files streamed
 in 32 KB chunks and never held whole. Paths are relative to the card root, with `/` separators.
 
 | request | response |
 |---|---|
-| `GET /api/info` | `{"app":"recipe-lab","protocol":4,"model":"ILCE-6000","name":"Sony α6000"}` — non-ASCII `\u` escaped, so `"Sony \u03b16000"` on the wire |
+| `GET /api/info` | `{"app":"recipe-lab","protocol":5,"model":"ILCE-6000","name":"Sony α6000"}` — non-ASCII `\u` escaped, so `"Sony \u03b16000"` on the wire |
 | `GET /api/files` | `{"files":[{"path":"DCIM/100MSDCF/DSC01542.ARW","size":25624576,"modified":1507981649000,"type":"arw"}, …]}`: every `.ARW`, `.JPG` and `.JPEG` (any case) outside `PRIVATE/`, `AVF_INFO/`, `RECIPES/` and dot-folders, newest first (equal times by path, descending), `modified` in epoch ms, `type` `arw` or `jpg` |
 | `GET /api/preview?path=<rel>&size=small\|large` | `image/jpeg` with `X-Orientation: 1–8`; `size` defaults to `large`. **ARW:** the JPEG embedded in it (about 1616×1080 large, 160×120 small; falls back to the other if one is missing). **JPEG:** `small` is its Exif thumbnail (IFD1, 160×120 on the A6000) — 404 when it has none; `large` is the file itself. The orientation is IFD0's 0x0112, 1 when absent |
 | `GET /api/recipes` | `{"files":[{"path":"RECIPES/GOLDENHO.YML","size":214,"modified":1507981649000}, …]}`: every `*.YML` (any case) directly in the `RECIPES` folder (any case) at the card root, by path; `{"files":[]}` when there is none. The path is the card's own spelling, ready for `/files/` |
@@ -681,13 +714,13 @@ against a SHA-256 pinned in the script (`JUNIT_JAR=<path>` points it at a copy w
 | `KeyProbeTest` | that the key probe answers "unknown" off the camera instead of throwing |
 | `KeyProbeCameraTest` | the key probe against test doubles of Sony's `ScalarInput`, `KeyStatus` and `ScalarProperties` (`test/com/sony/scalar/sysutil/`, shaped like the OpenMemories-Framework stubs): the reflection finds the real signatures, only `valid == 1` is a key, only `status == 1` is a press. The doubles throw for anything a test did not set up, which is how the "off the camera" answers stay null |
 | `FavouritesTest` | the favourites list — stored by name, unknown names dropped, marking order kept, toggle, the highlight after a removal, custom recipes as `custom:<name>` kept while their card is out — and the browser's group order: Favourites, Custom with its New row, the brands |
-| `RecipeFormatsTest` | the file's versions: numbered 1, 2, 3 … with the newest written, every writer read back by its own reader, each file read by the version it names (a stand-in version 2 beside format 1), unknown versions skipped whole, the shared envelope |
+| `RecipeFormatsTest` | the file's versions: numbered 1, 2, 3 … with the newest written, every writer read back by its own reader, each file read by the version it names (a stand-in version 3 beside formats 1 and 2), format 2's family line (missing, another family, exact spelling), unknown versions skipped whole, the shared envelope |
 | `CardLogTest` | the log's 8.3 names and folder, appending and creating the folders, the roll-over (one old file, never the diff), the line format, the refused-write, written-slots and dropped-preview lines |
 | `CustomRecipesTest` | the recipe file: every built-in look survives a round trip, hand-edited files (BOM, CRLF, case, comments, unknown keys) still read, a newer format or any out-of-range value skips the file with the reason, names and default names, file names, and save / edit / rename / delete / load against a temporary folder |
 | `LibraryTest` | one index over the table and the custom recipes: the wheel walks into them and wraps, the panel counts them among themselves |
 | `NameEntryTest` | the name editor: the placeholder the first character replaces, capitals, delete, the length limit, walking the grid with the four-way and the wheel |
 | `TransferStateTest` | Transfer to phone's page state: the hotspot starting, up with its network and password (quotes off), failing and why, the start timeout |
-| `LinkServerTest` | the protocol 4 server on an ephemeral port against a temporary card, over real sockets: DELETE of a recipe file (removed, refused, missing), PUT of a recipe file (new, replaced, refused, too large, a folder that links out), `/api/info`, the ARW and JPEG listing, ARW and JPEG previews (the Exif thumbnail, the file itself, none), `/api/recipes` in any case, ranges, HEAD, 405, path traversal and symlinks that lead out, concurrent downloads, the counters |
+| `LinkServerTest` | the protocol 5 server on an ephemeral port against a temporary card, over real sockets: DELETE of a recipe file (removed, refused, missing), PUT of a recipe file (new, replaced, refused, too large, a folder that links out), `/api/info`, the ARW and JPEG listing, ARW and JPEG previews (the Exif thumbnail, the file itself, none), `/api/recipes` in any case, ranges, HEAD, 405, path traversal and symlinks that lead out, concurrent downloads, the counters |
 | `FileIndexTest`, `ArwPreviewTest` | the photo listing (ARW and JPEG, `type`, newest first, `PRIVATE` / `AVF_INFO` / `RECIPES` / dot-folders skipped) and the recipe listing; the TIFF walk on synthetic ARWs and on JPEGs with an Exif thumbnail (both byte orders, kept inside the segment). `RECIPELAB_TEST_ARW=/path/to/A6000.ARW` adds checks against a real file |
 | `HttpRequestTest`, `ByteRangeTest`, `StorageRootTest`, `SmallPartsTest` | request parsing, `Range`, the path rules, JSON escaping, the info document, the rate meter |
 | `LangTest` | the display language: every table has every key and keeps English's placeholders, every key the code asks for exists, the Language row's choices and what Auto resolves to, that samples.txt, locks.txt and favourites stay English in any language, and that each bundled font has a glyph for every character its table uses (read from the font's own cmap) |

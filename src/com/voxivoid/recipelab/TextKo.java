@@ -79,6 +79,8 @@ final class TextKo {
         { "custom_twice", "%1$s 설정이 두 번 있습니다" },
         { "custom_not_yaml", "%1$d번째 줄이 YAML key: value 형식이 아닙니다" },
         { "custom_newer", "더 새로운 Recipe Lab에서 만든 파일 (형식 %1$d)" },
+        { "custom_no_family", "family: 없음" },
+        { "custom_other_family", "다른 카메라용 (%1$s)" },
         { "custom_too_large", "레시피로 쓰기에는 너무 큽니다" },
         { "custom_unreadable", "읽을 수 없음: %1$s" },
         { "custom_duplicate", "%1$s 이름은 이미 %2$s에서 사용 중입니다" },

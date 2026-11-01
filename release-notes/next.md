@@ -1,0 +1,7 @@
+Changed
+- Custom recipes are now saved in a newer file format that names the cameras they are for. Recipe Lab 1.11.1 and older skip these files, so update Recipe Lab on every camera you move a card between. Recipe files saved by older versions still load.
+- Recipe Lab Studio sends recipes only to cameras with this version: update Recipe Lab before Sync recipes.
+
+Please try
+- Save a new custom recipe, then look at its file in the RECIPES folder of the card on a computer: it should start with "format: 2" and "family: sony-creative-style". Pick it again after a power cycle: the look should stick.
+- Put a card with recipes saved by an older Recipe Lab in the camera: they should all still show under Custom.

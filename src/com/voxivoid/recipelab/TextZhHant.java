@@ -78,6 +78,8 @@ final class TextZhHant {
         { "custom_twice", "%1$s 設定了兩次" },
         { "custom_not_yaml", "第 %1$d 行不是 YAML 的 key: value" },
         { "custom_newer", "由較新版本的 Recipe Lab 建立（格式 %1$d）" },
+        { "custom_no_family", "缺少 family" },
+        { "custom_other_family", "適用於其他相機（%1$s）" },
         { "custom_too_large", "檔案過大，不是配方" },
         { "custom_unreadable", "無法讀取：%1$s" },
         { "custom_duplicate", "%1$s 已在 %2$s 中使用" },

@@ -57,7 +57,7 @@ class CustomRecipesTest {
     @Test void theFileReadsLikeTheChips() {
         String text = RecipeFormats.write(mine("Golden Hour", "Kodak Vision 200T (Asteroid City)"), "ILCE-6000");
         assertTrue(text.startsWith("# Recipe Lab custom recipe"), text);
-        for (String line : new String[] { "format: 1", "name: \"Golden Hour\"", "made-on: \"ILCE-6000\"", "style: neutral",
+        for (String line : new String[] { "format: 2", "family: sony-creative-style", "name: \"Golden Hour\"", "made-on: \"ILCE-6000\"", "style: neutral",
                 "saturation: -2", "contrast: -3", "effect: off", "white-balance: 5000K", "amber-blue: +2",
                 "green-magenta: +3", "exposure: +0.3", "dro: 3" })
             assertTrue(text.contains("\n" + line), line + " in\n" + text);
@@ -99,7 +99,7 @@ class CustomRecipesTest {
     @Test void aFileWithoutAFormatIsFormatOne() { assertEquals("Old", parse("name: Old\nstyle: mono").name); }
 
     @Test void aNewerFormatIsSkippedNotHalfRead() {
-        assertEquals("made by a newer Recipe Lab (format 2)", error("format: 2\nname: Future\nstyle: mono"));
+        assertEquals("made by a newer Recipe Lab (format 3)", error("format: 3\nname: Future\nstyle: mono"));
     }
 
     @Test void aFormatThatIsNotANumberIsRefused() {
