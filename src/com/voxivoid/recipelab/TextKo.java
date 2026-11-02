@@ -129,6 +129,7 @@ final class TextKo {
         { "custom_save_failed", "메모리 카드에 저장할 수 없음: %1$s" },
         { "custom_delete_failed", "%1$s 삭제할 수 없음: %2$s" },
         { "custom_need_card", "메모리 카드 없음 — 사용자 레시피를 저장하려면 카드를 넣으세요" },
+        { "links_file_header", "Recipe Lab: 이 카드에 있는 각 사용자 레시피의 링크입니다. Recipe Lab Studio가 있는 휴대폰에서 열면 레시피가 추가되고, 다른 사람에게 보낼 수도 있습니다. 레시피가 바뀌면 카메라가 이 파일을 다시 씁니다." },
         { "custom_capture_failed", "카메라의 현재 설정을 레시피로 저장할 수 없음: %1$s" },
         { "action_options_hold", "옵션(길게)" },
         { "action_type", "입력" },

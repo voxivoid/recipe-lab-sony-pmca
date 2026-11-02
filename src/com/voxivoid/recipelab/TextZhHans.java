@@ -128,6 +128,7 @@ final class TextZhHans {
         { "custom_save_failed", "无法保存到存储卡：%1$s" },
         { "custom_delete_failed", "无法删除 %1$s：%2$s" },
         { "custom_need_card", "没有存储卡——请插入存储卡以保存自定义配方" },
+        { "links_file_header", "Recipe Lab：此卡上每个自定义配方的链接。在装有 Recipe Lab Studio 的手机上打开即可添加配方，也可以发给别人。配方变化时相机会重写此文件。" },
         { "custom_capture_failed", "无法将相机当前设置保存为配方：%1$s" },
         { "action_options_hold", "选项（长按）" },
         { "action_type", "输入" },

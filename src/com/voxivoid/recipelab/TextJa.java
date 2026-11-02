@@ -129,6 +129,7 @@ final class TextJa {
         { "custom_save_failed", "メモリーカードに保存できません：%1$s" },
         { "custom_delete_failed", "%1$s を削除できません：%2$s" },
         { "custom_need_card", "メモリーカードがありません——カスタムレシピを残すには挿入してください" },
+        { "links_file_header", "Recipe Lab：このカードにある各カスタムレシピのリンクです。Recipe Lab Studio を入れたスマートフォンで開くとレシピを追加できます。誰かに送ることもできます。レシピが変わるとカメラがこのファイルを書き直します。" },
         { "custom_capture_failed", "カメラの現在の設定をレシピにできません：%1$s" },
         { "action_options_hold", "オプション（長押し）" },
         { "action_type", "入力" },

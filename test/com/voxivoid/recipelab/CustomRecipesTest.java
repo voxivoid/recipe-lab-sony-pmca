@@ -499,4 +499,49 @@ class CustomRecipesTest {
         assertEquals("Add", CustomRecipes.addOptions()[CustomRecipes.ADD_DEFAULT]);
         assertEquals(CustomRecipes.ADD, CustomRecipes.ADD_DEFAULT);
     }
+
+    // ---- the links file
+    private static CustomRecipes.Entry entry(String name, String file) {
+        return new CustomRecipes.Entry(CustomRecipes.renamed(recipe("Cinestill 800T"), name), file);
+    }
+
+    @Test void theLinksFileHasEachRecipesNameAndLink() {
+        CustomRecipes.Entry a = entry("Golden Hour", "GOLDENHO.YML"), b = entry("Night", "NIGHT.YML");
+        String text = CustomRecipes.linksText(Arrays.asList(a, b));
+        assertEquals("# " + Lang.t("links_file_header") + "\r\n"
+                + "\r\nGolden Hour\r\n" + RecipeShare.encode(a.recipe) + "\r\n"
+                + "\r\nNight\r\n" + RecipeShare.encode(b.recipe) + "\r\n", text);
+        assertEquals("Golden Hour", RecipeShare.decode(RecipeShare.encode(a.recipe)).name, "each link adds its recipe back");
+        assertNull(CustomRecipes.linksText(Collections.<CustomRecipes.Entry>emptyList()), "no recipes, no file");
+    }
+
+    @Test void theLinksFileIsWrittenOnlyWhenItChangesAndGoesWithTheLastRecipe() throws IOException {
+        File links = new File(dir, CustomRecipes.LINKS);
+        List<CustomRecipes.Entry> one = Collections.singletonList(entry("Golden Hour", "GOLDENHO.YML"));
+        assertTrue(CustomRecipes.writeLinks(dir, one));
+        assertEquals(CustomRecipes.linksText(one), new String(Files.readAllBytes(links.toPath()), StandardCharsets.UTF_8));
+        assertFalse(CustomRecipes.writeLinks(dir, one), "the same text: the card is not written again");
+        assertFalse(new File(dir, "LINKS.TMP").exists(), "no temporary file left");
+
+        List<CustomRecipes.Entry> two = Arrays.asList(one.get(0), entry("Night", "NIGHT.YML"));
+        assertTrue(CustomRecipes.writeLinks(dir, two), "a recipe added: rewritten");
+        assertEquals(CustomRecipes.linksText(two), new String(Files.readAllBytes(links.toPath()), StandardCharsets.UTF_8));
+
+        assertTrue(CustomRecipes.writeLinks(dir, Collections.<CustomRecipes.Entry>emptyList()), "the last recipe gone: the file goes");
+        assertFalse(links.exists());
+        assertFalse(CustomRecipes.writeLinks(dir, Collections.<CustomRecipes.Entry>emptyList()), "nothing to remove");
+    }
+
+    @Test void theLinksFileIsNoRecipeAndNeedsAFolder() throws IOException {
+        CustomRecipes.save(dir, recipe("Cinestill 800T"), "test", null);
+        CustomRecipes.Loaded l = CustomRecipes.load(dir);
+        assertTrue(CustomRecipes.writeLinks(dir, l.entries));
+        CustomRecipes.Loaded again = CustomRecipes.load(dir);
+        assertEquals(1, again.entries.size(), "LINKS.TXT is not read as a recipe");
+        assertTrue(again.skipped.isEmpty(), "nor skipped as a broken one");
+        File none = new File(dir, "NOPE");
+        assertFalse(CustomRecipes.writeLinks(none, l.entries));
+        assertFalse(none.exists(), "a missing folder is not made");
+        assertFalse(CustomRecipes.writeLinks(null, l.entries));
+    }
 }

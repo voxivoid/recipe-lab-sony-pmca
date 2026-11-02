@@ -285,6 +285,56 @@ final class CustomRecipes {
         if (!f.delete() && f.exists()) throw new IOException("cannot delete " + f);
     }
 
+    // ------------------------------------------------------------ the links file
+    /**
+     * RECIPES/LINKS.TXT: each custom recipe's share link ({@link RecipeShare}), for the camera has no clipboard. Opened on
+     * a computer or a phone (Transfer to phone, a card reader), a link is copied into a chat or opened on a phone with
+     * Recipe Lab Studio, which adds the recipe. Not a recipe file ({@link #EXT}), so nothing reads it back.
+     */
+    static final String LINKS = "LINKS.TXT";
+    private static final String LINKS_TMP = "LINKS.TMP";
+
+    /** the links file for {@code entries}: a header, then each recipe's name and link; null when none has a link */
+    static String linksText(List<Entry> entries) {
+        StringBuilder s = new StringBuilder();
+        for (Entry e : entries) {
+            String link = RecipeShare.encode(e.recipe);
+            if (link != null) s.append("\r\n").append(e.recipe.name).append("\r\n").append(link).append("\r\n");
+        }
+        if (s.length() == 0) return null;
+        return "# " + Lang.t("links_file_header") + "\r\n" + s;
+    }
+
+    /**
+     * Brings {@link #LINKS} in {@code dir} up to date with {@code entries}: written when it differs (a card is not written
+     * on every load), removed when no recipe is left. True when it changed. A folder that does not exist is not made.
+     */
+    static boolean writeLinks(File dir, List<Entry> entries) throws IOException {
+        if (dir == null || !dir.isDirectory()) return false;
+        String text = linksText(entries);
+        File target = new File(dir, LINKS);
+        if (text == null) {
+            if (!target.exists()) return false;
+            remove(target);
+            return true;
+        }
+        byte[] bytes = text.getBytes(UTF8);
+        if (target.isFile() && Arrays.equals(read(target), bytes)) return false;
+        File tmp = new File(dir, LINKS_TMP);
+        if (tmp.exists()) remove(tmp);
+        FileOutputStream out = new FileOutputStream(tmp);
+        try {
+            out.write(bytes);
+            out.flush();
+        } catch (IOException e) {
+            out.close(); tmp.delete(); throw e;
+        }
+        out.close();
+        if (target.exists()) remove(target);
+        if (!tmp.renameTo(target)) { tmp.delete(); throw new IOException("cannot write " + target); }
+        return true;
+    }
+
     // ------------------------------------------------------------ what the screen says
     /** the files a load skipped, as one toast */
     static String skippedMessage(List<String> skipped) {

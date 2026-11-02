@@ -129,6 +129,7 @@ final class TextVi {
         { "custom_save_failed", "Không lưu được vào thẻ nhớ: %1$s" },
         { "custom_delete_failed", "Không xóa được %1$s: %2$s" },
         { "custom_need_card", "Không có thẻ nhớ — hãy lắp thẻ để lưu công thức tùy chỉnh" },
+        { "links_file_header", "Recipe Lab: liên kết của từng công thức tùy chỉnh trên thẻ này. Mở trên điện thoại có Recipe Lab Studio để thêm công thức, hoặc gửi cho người khác. Máy ảnh ghi lại tệp này khi công thức thay đổi." },
         { "custom_capture_failed", "Không lưu được cài đặt hiện tại thành công thức: %1$s" },
         { "action_options_hold", "tùy chọn (giữ)" },
         { "action_type", "nhập" },

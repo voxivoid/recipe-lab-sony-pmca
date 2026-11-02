@@ -145,6 +145,7 @@ final class TextEn {
         { "custom_save_failed", "Could not save to the memory card: %1$s" },
         { "custom_delete_failed", "Could not delete %1$s: %2$s" },
         { "custom_need_card", "No memory card — insert one to keep custom recipes" },
+        { "links_file_header", "Recipe Lab: the link of each custom recipe on this card. Open one on a phone with Recipe Lab Studio to add the recipe, or send it to someone. The camera rewrites this file when its recipes change." },
         { "custom_capture_failed", "The camera's settings cannot be kept as a recipe: %1$s" },
 
         // ---- the legend

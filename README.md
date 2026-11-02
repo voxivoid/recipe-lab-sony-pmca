@@ -316,6 +316,13 @@ Leaving a changed recipe asks first: **Discard** or **Cancel**.
 
 ### Sharing
 
+- **Share:** in the brand list, **hold MENU** on a custom recipe → **Share**. Pick a shape (4:5, 1:1, 9:16), then
+  **Save image** (a picture with the settings and a QR code, in playback like a photo) or **Show QR code** (on the
+  screen, for someone next to you). A phone with [Recipe Lab Studio](https://recipelab.io/studio) adds the recipe by
+  scanning the code; anywhere else the link shows the recipe on recipelab.io.
+- **Links:** each recipe's link is in `RECIPES/LINKS.TXT` on the card, to copy into a chat or a post.
+- **Add a shared recipe:** **hold MENU** → **Read Recipe QR Code**, then press the shutter with the code in the frame.
+  The photo it takes is deleted once the code is read.
 - Each recipe is a small YAML file in `RECIPES` on the card — e.g. `RECIPES/GOLDENHO.YML`.
 - **Export:** connect the camera as *Mass Storage*. Copy the files out.
 - **Import:** copy a file into `RECIPES`. Keep its name short: up to 8 letters, then `.YML`. Reopen the app.

@@ -1476,6 +1476,9 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         cardDir = findCardDir();
         CustomRecipes.Loaded l = CustomRecipes.load(cardDir);
         library.set(l.entries);
+        // each recipe's share link where a computer or a phone can copy it: the camera has no clipboard
+        try { if (CustomRecipes.writeLinks(cardDir, l.entries)) log(CardLog.QR, "links: " + CustomRecipes.path(CustomRecipes.LINKS) + " for " + l.entries.size() + " recipes"); }
+        catch (Throwable t) { log(CardLog.FAIL, "links: " + t); }
         if (!l.skipped.equals(skipped)) { skipped = l.skipped; skippedShown = false; }
         favs = Favourites.decode(favStored, library);
         if (keep != null) recipe = library.indexOfCustom(keep);

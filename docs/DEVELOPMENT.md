@@ -409,6 +409,11 @@ database_library), so playback does not keep a picture it cannot display. That c
 is open: it gets 3 s, then the files are deleted directly and the call is not tried again until the app restarts.
 MENU leaves at any point. The log's `QR` lines time each step.
 
+**RECIPES/LINKS.TXT**: each custom recipe's name and share link, as the camera has no clipboard
+(`CustomRecipes.linksText` / `writeLinks`). Brought up to date on every load of the folder (start, return from
+Transfer to phone, save, rename, delete, add), written only when its text changed, removed with the last recipe. It is
+not a `.YML`, so the recipe reader, the listing and Studio's sync pass it by.
+
 ## Transfer to phone
 
 **Hold MENU → Transfer to phone** turns the camera into a small file server for **Recipe Lab Studio**, the phone app:
