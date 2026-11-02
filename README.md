@@ -450,6 +450,8 @@ Ilford, Cinema…). The values in this app are re-derived for what the A6000 can
 License: [GPL-3.0](LICENSE), © 2026 André Domingues. Releases up to and including v1.7.0 were published under MIT.
 OpenMemories-Platform: MIT, © 2017 ma1co.
 [QR Code generator](https://www.nayuki.io/page/qr-code-generator-library) (`src/io/nayuki/qrcodegen`): MIT, © Project Nayuki.
+[ZXing](https://github.com/zxing/zxing) 3.3.3, the QR code reader subset (`src/com/google/zxing`): Apache-2.0, © ZXing authors
+(patched where the camera's Java lacks a call, marked "Recipe Lab:" in the source).
 
 Additional term under GPL-3.0 section 7(b): any copy or modified version must preserve the attribution
 "Based on Recipe Lab by André Domingues" in its source notices and, where it has an interactive user interface, in

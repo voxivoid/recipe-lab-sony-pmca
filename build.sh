@@ -63,7 +63,7 @@ echo "[1/7] aapt R.java"
 echo "[2/7] javac"
 "$JAVA/javac" -encoding UTF-8 --release 8 -Xlint:-options -cp "$AJ" -d out/classes \
   out/gen/com/voxivoid/recipelab/R.java src/com/voxivoid/recipelab/*.java src/com/voxivoid/recipelab/transfer/*.java \
-  src/io/nayuki/qrcodegen/*.java
+  src/io/nayuki/qrcodegen/*.java $(find src/com/google/zxing -name '*.java')
 echo "[3/7] d8"
 find out/classes -name '*.class' > out/classes.txt
 "$JAVA/java" -cp "$BT/lib/d8.jar" com.android.tools.r8.D8 --release --min-api 10 \

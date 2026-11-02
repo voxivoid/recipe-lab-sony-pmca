@@ -353,9 +353,38 @@ final class CustomRecipes {
     /** a MENU hold on a custom recipe in the brand list: what can be done with it. Cancel is highlighted, so a stray centre press does nothing */
     static String optionsBody(String file) { return Lang.t("custom_options_body", path(file)); }
     static String[] options() {
-        return new String[] { Lang.t("button_rename"), Lang.t("button_delete"), Lang.t("button_cancel") };
+        return new String[] { Lang.t("button_rename"), Lang.t("button_share"), Lang.t("button_delete"), Lang.t("button_cancel") };
     }
-    static final int OPT_RENAME = 0, OPT_DELETE = 1, OPT_DEFAULT = 2;
+    static final int OPT_RENAME = 0, OPT_SHARE = 1, OPT_DELETE = 2, OPT_DEFAULT = 3;
+
+    // ------------------------------------------------------------ a recipe read from a QR code (Read Recipe QR Code)
+    /** whether two recipes set the camera the same way, whatever their names */
+    static boolean sameLook(Recipes.Recipe a, Recipes.Recipe b) {
+        return a.style == b.style && a.sat == b.sat && a.con == b.con && a.sharp == b.sharp && a.wbMode == b.wbMode
+                && (a.wbMode != Params.WB_KELVIN || a.kelvin == b.kelvin) && a.ab == b.ab && a.gm == b.gm && a.pe == b.pe
+                && a.ev == b.ev && a.dro == b.dro && (Recipes.subValues(a.pe) == null || a.sub == b.sub);
+    }
+
+    /**
+     * The name a shared recipe is added under, given the custom recipes already here: its own, or "Name 2" … when one
+     * of them has the name and another look. Null when one has the name and the same look: it is here already.
+     */
+    static String sharedName(Recipes.Recipe shared, List<Entry> have) {
+        List<String> names = new ArrayList<String>();
+        boolean taken = false;
+        for (Entry e : have) {
+            names.add(e.recipe.name);
+            if (!e.recipe.name.equalsIgnoreCase(shared.name)) continue;
+            if (sameLook(e.recipe, shared)) return null;
+            taken = true;
+        }
+        return taken ? copyName(shared.name, names) : shared.name;
+    }
+
+    /** the question before a shared recipe is added, Add highlighted */
+    static String[] addOptions() { return new String[] { Lang.t("button_add"), Lang.t("button_cancel") }; }
+    static final int ADD = 0, ADD_DEFAULT = 0;
+
 
     /** the second question before a delete, Cancel highlighted */
     static String deleteTitle(String name) { return Lang.t("custom_delete_title", name); }

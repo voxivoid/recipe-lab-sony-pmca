@@ -357,7 +357,10 @@ class CustomRecipesTest {
     }
 
     @Test void theQuestionsHighlightTheHarmlessAnswer() {
-        assertEquals(Arrays.asList("Rename", "Delete", "Cancel"), Arrays.asList(CustomRecipes.options()), "favourites are hold centre, as on any recipe");
+        assertEquals(Arrays.asList("Rename", "Share", "Delete", "Cancel"), Arrays.asList(CustomRecipes.options()), "favourites are hold centre, as on any recipe");
+        assertEquals("Share", CustomRecipes.options()[CustomRecipes.OPT_SHARE]);
+        assertEquals("Rename", CustomRecipes.options()[CustomRecipes.OPT_RENAME]);
+        assertEquals("Delete", CustomRecipes.options()[CustomRecipes.OPT_DELETE]);
         assertEquals("Cancel", CustomRecipes.options()[CustomRecipes.OPT_DEFAULT], "a stray centre press after the hold does nothing");
         assertEquals("Cancel", CustomRecipes.deleteOptions()[CustomRecipes.DELETE_DEFAULT]);
         assertEquals("Cancel", CustomRecipes.discardOptions()[CustomRecipes.DISCARD_DEFAULT], "leaving by accident keeps the edits");
@@ -442,5 +445,58 @@ class CustomRecipesTest {
     @Test void aFileWithoutTheExtensionStillNamesANamelessRecipe() {
         assertEquals("Mine", RecipeFormats.parse("style: vivid", "Mine").recipe.name);
         assertEquals("Mine", RecipeFormats.parse("name: \"\"\nstyle: vivid", "Mine.YML").recipe.name, "an empty name line, as no name line");
+    }
+
+    // ------------------------------------------------------------ a recipe read from a QR code
+    private static Recipes.Recipe shared(String name, int sat) {
+        return new Recipes.Recipe(Recipes.CUSTOM, name, Recipes.VIVID, sat, 0, 0, Params.WB_KELVIN, 5600, 1, -1, 0, 3, 2, 0);
+    }
+
+    private static CustomRecipes.Entry have(Recipes.Recipe r) { return new CustomRecipes.Entry(r, "X.YML"); }
+
+    @Test void aSharedRecipeKeepsItsNameWhenNoneHasIt() {
+        assertEquals("Warm", CustomRecipes.sharedName(shared("Warm", 1), Arrays.asList(have(shared("Cool", 1)))));
+        assertEquals("Warm", CustomRecipes.sharedName(shared("Warm", 1), new java.util.ArrayList<CustomRecipes.Entry>()));
+    }
+
+    @Test void aSharedRecipeAlreadyHereIsNotAddedAgain() {
+        assertNull(CustomRecipes.sharedName(shared("Warm", 1), Arrays.asList(have(shared("WARM", 1)))), "same name in any case, same look");
+    }
+
+    @Test void aSharedRecipeWithATakenNameAndAnotherLookIsACopy() {
+        assertEquals("Warm 2", CustomRecipes.sharedName(shared("Warm", 1), Arrays.asList(have(shared("Warm", 2)))));
+        assertEquals("Warm 3", CustomRecipes.sharedName(shared("Warm", 1), Arrays.asList(have(shared("Warm", 2)), have(shared("Warm 2", 3)))));
+    }
+
+    @Test void sameLookComparesEveryValueButTheName() {
+        Recipes.Recipe a = shared("A", 1);
+        assertTrue(CustomRecipes.sameLook(a, shared("B", 1)));
+        Recipes.Recipe[] others = {
+            new Recipes.Recipe(Recipes.CUSTOM, "A", Recipes.STD, 1, 0, 0, Params.WB_KELVIN, 5600, 1, -1, 0, 3, 2, 0),
+            new Recipes.Recipe(Recipes.CUSTOM, "A", Recipes.VIVID, 2, 0, 0, Params.WB_KELVIN, 5600, 1, -1, 0, 3, 2, 0),
+            new Recipes.Recipe(Recipes.CUSTOM, "A", Recipes.VIVID, 1, 1, 0, Params.WB_KELVIN, 5600, 1, -1, 0, 3, 2, 0),
+            new Recipes.Recipe(Recipes.CUSTOM, "A", Recipes.VIVID, 1, 0, 1, Params.WB_KELVIN, 5600, 1, -1, 0, 3, 2, 0),
+            new Recipes.Recipe(Recipes.CUSTOM, "A", Recipes.VIVID, 1, 0, 0, Params.WB_AUTO, 0, 1, -1, 0, 3, 2, 0),
+            new Recipes.Recipe(Recipes.CUSTOM, "A", Recipes.VIVID, 1, 0, 0, Params.WB_KELVIN, 5700, 1, -1, 0, 3, 2, 0),
+            new Recipes.Recipe(Recipes.CUSTOM, "A", Recipes.VIVID, 1, 0, 0, Params.WB_KELVIN, 5600, 2, -1, 0, 3, 2, 0),
+            new Recipes.Recipe(Recipes.CUSTOM, "A", Recipes.VIVID, 1, 0, 0, Params.WB_KELVIN, 5600, 1, 0, 0, 3, 2, 0),
+            new Recipes.Recipe(Recipes.CUSTOM, "A", Recipes.VIVID, 1, 0, 0, Params.WB_KELVIN, 5600, 1, -1, 2, 3, 2, 0),
+            new Recipes.Recipe(Recipes.CUSTOM, "A", Recipes.VIVID, 1, 0, 0, Params.WB_KELVIN, 5600, 1, -1, 0, 4, 2, 0),
+            new Recipes.Recipe(Recipes.CUSTOM, "A", Recipes.VIVID, 1, 0, 0, Params.WB_KELVIN, 5600, 1, -1, 0, 3, 3, 0),
+        };
+        for (int i = 0; i < others.length; i++) assertFalse(CustomRecipes.sameLook(a, others[i]), "value " + i);
+        // white balance auto or keep: the kelvin left over does not count; an effect without options: its option does not count
+        Recipes.Recipe auto1 = new Recipes.Recipe(Recipes.CUSTOM, "A", Recipes.STD, 0, 0, 0, Params.WB_AUTO, 0, 0, 0, 0, 0, 6, 0);
+        Recipes.Recipe auto2 = new Recipes.Recipe(Recipes.CUSTOM, "A", Recipes.STD, 0, 0, 0, Params.WB_AUTO, 5000, 0, 0, 0, 0, 6, 1);
+        assertTrue(CustomRecipes.sameLook(auto1, auto2));
+        Recipes.Recipe toy1 = new Recipes.Recipe(Recipes.CUSTOM, "A", Recipes.STD, 0, 0, 0, Params.WB_AUTO, 0, 0, 0, 1, 0, 6, 1);
+        Recipes.Recipe toy2 = new Recipes.Recipe(Recipes.CUSTOM, "A", Recipes.STD, 0, 0, 0, Params.WB_AUTO, 0, 0, 0, 1, 0, 6, 2);
+        assertFalse(CustomRecipes.sameLook(toy1, toy2), "the Toy camera tone counts");
+    }
+
+    @Test void theAddQuestionHighlightsAdd() {
+        assertEquals(Arrays.asList("Add", "Cancel"), Arrays.asList(CustomRecipes.addOptions()));
+        assertEquals("Add", CustomRecipes.addOptions()[CustomRecipes.ADD_DEFAULT]);
+        assertEquals(CustomRecipes.ADD, CustomRecipes.ADD_DEFAULT);
     }
 }

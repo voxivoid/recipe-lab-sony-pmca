@@ -43,6 +43,15 @@ src/com/voxivoid/recipelab/
                                which writes one (the newest); RecipeFormat.java is a version, RecipeFormatV1.java format 1,
                                RecipeFormatV2.java format 2 (format 1 plus the camera family)
   RecipeShare.java             a recipe as a share link / QR code (Recipe share code); io/nayuki/qrcodegen draws the QR
+  QrScan.java                  Read Recipe QR Code: a code in a frame or a photo (com/google/zxing), what it holds, the
+                               pictures a shutter press added (to read, then delete) — no Android, covered by test/
+  QrView.java                  Canvas-drawn QR screens: a recipe's code, the scanner's frame, the black cover with its
+                               ring, Share's card with its rows
+  RecipeCardLayout.java        the picture Share saves: shapes, where everything goes, what it says (Recipe Lab Studio's
+                               numbers) — no Android, covered by test/; CardPainter.java draws it
+  Playback.java                a picture into playback as a photo the camera took (decode, scale, write rows, export) and
+                               a shot deleted the camera's way; NativePlayback.java + jni/playback.c, jni/canvas.c write
+                               the rows; ImageCanvas.java the sizes and memory checks — covered by test/
   CardLog.java                 the shareable logs on the card, RECIPLAB/LOGS: LOG.TXT (opens, writes, failures, preview
                                values the camera did not keep, the shutter, crashes) and DIFF.TXT (the snapshot tool),
                                line format and roll-over — no Android, covered by test/
@@ -382,6 +391,23 @@ repos, and each one's tests run it. The `#` part never reaches a server. The cod
 
 The tables are frozen: a new style or effect goes at the end. The longest code fits a version 5 QR code (37 × 37) at
 error correction M.
+
+### On the camera
+
+**Share** (hold MENU on a custom recipe): the card screen, the picture on the left in the chosen shape (4:5, 1:1, 9:16,
+kept in the preferences as `cardShape`), rows on the right. **Save image** puts the picture into playback the way the
+overlay app does (`Playback`: the camera released, one of its photos decoded and scaled to the picture's size, the
+picture's rows written into it, `JpegExporter`, the camera opened again); it needs one photo the camera took on the
+card. **Show QR code** is the code alone, full screen.
+
+**Read Recipe QR Code** (app menu): the A6000 hands out no live view frames (`getPreviewSize` fails), so after 4 s
+without a readable one the shutter takes over. The new picture is the one in DCIM that was not there before the press
+(the card's file times read an hour off the app's clock), read once its size stops changing, every 200 ms; small
+first (750 px across), larger (1500 px) only when that held no code. The answer shows first; then the shot is deleted
+through `AvindexStore.Images.Media.deleteImage(ContentResolver, Uri, long _id)` (found in the firmware's
+database_library), so playback does not keep a picture it cannot display. That call may not return while the camera
+is open: it gets 3 s, then the files are deleted directly and the call is not tried again until the app restarts.
+MENU leaves at any point. The log's `QR` lines time each step.
 
 ## Transfer to phone
 
@@ -723,6 +749,8 @@ against a SHA-256 pinned in the script (`JUNIT_JAR=<path>` points it at a copy w
 | `LinkServerTest` | the protocol 5 server on an ephemeral port against a temporary card, over real sockets: DELETE of a recipe file (removed, refused, missing), PUT of a recipe file (new, replaced, refused, too large, a folder that links out), `/api/info`, the ARW and JPEG listing, ARW and JPEG previews (the Exif thumbnail, the file itself, none), `/api/recipes` in any case, ranges, HEAD, 405, path traversal and symlinks that lead out, concurrent downloads, the counters |
 | `FileIndexTest`, `ArwPreviewTest` | the photo listing (ARW and JPEG, `type`, newest first, `PRIVATE` / `AVF_INFO` / `RECIPES` / dot-folders skipped) and the recipe listing; the TIFF walk on synthetic ARWs and on JPEGs with an Exif thumbnail (both byte orders, kept inside the segment). `RECIPELAB_TEST_ARW=/path/to/A6000.ARW` adds checks against a real file |
 | `HttpRequestTest`, `ByteRangeTest`, `StorageRootTest`, `SmallPartsTest` | request parsing, `Range`, the path rules, JSON escaping, the info document, the rate meter |
+| `RecipeShareTest`, `QrScanTest` | the share code against the shared vectors, every field's range, refused codes; a generated code read back from a live view frame, a photo, small and off centre, light on dark; what a code holds; which pictures a press added and which to read; the photo's read size |
+| `RecipeCardLayoutTest`, `ImageCanvasTest` | the card in each shape: Studio's numbers, nothing overlapping or off the picture, a story inside its safe area, the cells' words; the scaler's steps and the memory checks of a picture into playback |
 | `LangTest` | the display language: every table has every key and keeps English's placeholders, every key the code asks for exists, the Language row's choices and what Auto resolves to, that samples.txt, locks.txt and favourites stay English in any language, and that each bundled font has a glyph for every character its table uses (read from the font's own cmap) |
 
 **What is not, and cannot be.** `MainActivity` (key dispatch, overlays, the camera and the JNI store), the
