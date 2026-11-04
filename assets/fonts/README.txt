@@ -36,3 +36,21 @@ Rebuild after any change to the Chinese text:
 It prints each output's size and SHA-256. The files are not byte-for-byte reproducible
 across fonttools versions; LangTest checks what matters, that each font maps every
 character its table uses.
+
+Recipe card fonts
+=================
+
+Share's card is drawn in Recipe Lab Studio's fonts, so it looks like Studio's card: static cuts of them, one per style
+the card uses, holding Latin text only (ASCII, Latin-1, Latin Extended-A, Vietnamese, a few punctuation marks), with
+Inter's tabular figures made its plain digits. Renamed as the SIL Open Font License asks of a modified font.
+
+  CardInter-SemiBold650.ttf  Inter, wght 650           family "Recipe Lab Card Title"     (Inter-OFL.txt)
+  CardInter-SemiBold.ttf     Inter, wght 600           family "Recipe Lab Card Value"
+  CardInter-Medium.ttf       Inter, wght 500           family "Recipe Lab Card Label"
+  CardArchivo-Wordmark.ttf   Archivo, wght 800 wdth 122, "RECIPE LAB" only
+                                                       family "Recipe Lab Card Wordmark"  (Archivo-OFL.txt)
+  CardSpaceMono-Bold.ttf     Space Mono Bold           family "Recipe Lab Card Plate"     (SpaceMono-OFL.txt)
+
+Sources: ../recipe-lab-studio/assets/fonts (Inter.ttf, Archivo.ttf, SpaceMono-Bold.ttf). Rebuild with
+
+    python3 tools/card-fonts.py

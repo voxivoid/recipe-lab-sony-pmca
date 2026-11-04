@@ -30,7 +30,7 @@ final class RecipeFormats {
     private RecipeFormats() {}
 
     /** every version the app reads, oldest first; the last is the one it writes */
-    static final RecipeFormat[] ALL = { new RecipeFormatV1() };
+    static final RecipeFormat[] ALL = { new RecipeFormatV1(), new RecipeFormatV2() };
 
     /** the version the app writes: the newest */
     static RecipeFormat current() { return ALL[ALL.length - 1]; }

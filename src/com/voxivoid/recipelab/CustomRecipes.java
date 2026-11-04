@@ -285,6 +285,56 @@ final class CustomRecipes {
         if (!f.delete() && f.exists()) throw new IOException("cannot delete " + f);
     }
 
+    // ------------------------------------------------------------ the links file
+    /**
+     * RECIPES/LINKS.TXT: each custom recipe's share link ({@link RecipeShare}), for the camera has no clipboard. Opened on
+     * a computer or a phone (Transfer to phone, a card reader), a link is copied into a chat or opened on a phone with
+     * Recipe Lab Studio, which adds the recipe. Not a recipe file ({@link #EXT}), so nothing reads it back.
+     */
+    static final String LINKS = "LINKS.TXT";
+    private static final String LINKS_TMP = "LINKS.TMP";
+
+    /** the links file for {@code entries}: a header, then each recipe's name and link; null when none has a link */
+    static String linksText(List<Entry> entries) {
+        StringBuilder s = new StringBuilder();
+        for (Entry e : entries) {
+            String link = RecipeShare.encode(e.recipe);
+            if (link != null) s.append("\r\n").append(e.recipe.name).append("\r\n").append(link).append("\r\n");
+        }
+        if (s.length() == 0) return null;
+        return "# " + Lang.t("links_file_header") + "\r\n" + s;
+    }
+
+    /**
+     * Brings {@link #LINKS} in {@code dir} up to date with {@code entries}: written when it differs (a card is not written
+     * on every load), removed when no recipe is left. True when it changed. A folder that does not exist is not made.
+     */
+    static boolean writeLinks(File dir, List<Entry> entries) throws IOException {
+        if (dir == null || !dir.isDirectory()) return false;
+        String text = linksText(entries);
+        File target = new File(dir, LINKS);
+        if (text == null) {
+            if (!target.exists()) return false;
+            remove(target);
+            return true;
+        }
+        byte[] bytes = text.getBytes(UTF8);
+        if (target.isFile() && Arrays.equals(read(target), bytes)) return false;
+        File tmp = new File(dir, LINKS_TMP);
+        if (tmp.exists()) remove(tmp);
+        FileOutputStream out = new FileOutputStream(tmp);
+        try {
+            out.write(bytes);
+            out.flush();
+        } catch (IOException e) {
+            out.close(); tmp.delete(); throw e;
+        }
+        out.close();
+        if (target.exists()) remove(target);
+        if (!tmp.renameTo(target)) { tmp.delete(); throw new IOException("cannot write " + target); }
+        return true;
+    }
+
     // ------------------------------------------------------------ what the screen says
     /** the files a load skipped, as one toast */
     static String skippedMessage(List<String> skipped) {
@@ -353,9 +403,38 @@ final class CustomRecipes {
     /** a MENU hold on a custom recipe in the brand list: what can be done with it. Cancel is highlighted, so a stray centre press does nothing */
     static String optionsBody(String file) { return Lang.t("custom_options_body", path(file)); }
     static String[] options() {
-        return new String[] { Lang.t("button_rename"), Lang.t("button_delete"), Lang.t("button_cancel") };
+        return new String[] { Lang.t("button_rename"), Lang.t("button_share"), Lang.t("button_delete"), Lang.t("button_cancel") };
     }
-    static final int OPT_RENAME = 0, OPT_DELETE = 1, OPT_DEFAULT = 2;
+    static final int OPT_RENAME = 0, OPT_SHARE = 1, OPT_DELETE = 2, OPT_DEFAULT = 3;
+
+    // ------------------------------------------------------------ a recipe read from a QR code (Read Recipe QR Code)
+    /** whether two recipes set the camera the same way, whatever their names */
+    static boolean sameLook(Recipes.Recipe a, Recipes.Recipe b) {
+        return a.style == b.style && a.sat == b.sat && a.con == b.con && a.sharp == b.sharp && a.wbMode == b.wbMode
+                && (a.wbMode != Params.WB_KELVIN || a.kelvin == b.kelvin) && a.ab == b.ab && a.gm == b.gm && a.pe == b.pe
+                && a.ev == b.ev && a.dro == b.dro && (Recipes.subValues(a.pe) == null || a.sub == b.sub);
+    }
+
+    /**
+     * The name a shared recipe is added under, given the custom recipes already here: its own, or "Name 2" … when one
+     * of them has the name and another look. Null when one has the name and the same look: it is here already.
+     */
+    static String sharedName(Recipes.Recipe shared, List<Entry> have) {
+        List<String> names = new ArrayList<String>();
+        boolean taken = false;
+        for (Entry e : have) {
+            names.add(e.recipe.name);
+            if (!e.recipe.name.equalsIgnoreCase(shared.name)) continue;
+            if (sameLook(e.recipe, shared)) return null;
+            taken = true;
+        }
+        return taken ? copyName(shared.name, names) : shared.name;
+    }
+
+    /** the question before a shared recipe is added, Add highlighted */
+    static String[] addOptions() { return new String[] { Lang.t("button_add"), Lang.t("button_cancel") }; }
+    static final int ADD = 0, ADD_DEFAULT = 0;
+
 
     /** the second question before a delete, Cancel highlighted */
     static String deleteTitle(String name) { return Lang.t("custom_delete_title", name); }

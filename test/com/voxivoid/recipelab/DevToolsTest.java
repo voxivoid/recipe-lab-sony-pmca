@@ -63,7 +63,7 @@ class DevToolsTest {
         assertEquals(DevTools.ROWS, DevTools.rows(DevTools.LEVEL_DEV));
         String[] labels = new String[DevTools.APP_ROWS];
         for (int r = 0; r < DevTools.APP_ROWS; r++) labels[r] = DevTools.appLabel(r);
-        assertEquals(Arrays.asList("Browse recipes", "New recipe", "Transfer to phone", "Sync recipes", "Panel visibility", "Language", "Reset settings", "Save a bug report", "About", "Developer  >"), Arrays.asList(labels));
+        assertEquals(Arrays.asList("Browse recipes", "New recipe", "Read Recipe QR Code", "Transfer to phone", "Sync recipes", "Panel visibility", "Language", "Reset settings", "Save a bug report", "About", "Developer  >"), Arrays.asList(labels));
         assertTrue(DevTools.appDetail(DevTools.APP_NEW).contains("current settings"), "the row says what it keeps");
         assertEquals(DevTools.APP_BROWSE, 0, "the menu opens on Browse, so a body without Fn is one press from the list");
     }
@@ -79,6 +79,9 @@ class DevToolsTest {
         assertEquals(DevTools.IC_LANGUAGE, DevTools.icons(DevTools.LEVEL_APP)[DevTools.APP_LANG]);
         assertEquals(DevTools.IC_TRANSFER, DevTools.icons(DevTools.LEVEL_APP)[DevTools.APP_TRANSFER]);
         assertEquals(DevTools.IC_SYNC, DevTools.icons(DevTools.LEVEL_APP)[DevTools.APP_SYNC]);
+        assertEquals(DevTools.IC_QR, DevTools.icons(DevTools.LEVEL_APP)[DevTools.APP_READ_QR]);
+        assertEquals("Read Recipe QR Code", DevTools.appLabel(DevTools.APP_READ_QR));
+        assertEquals(DevTools.APP_NEW + 1, DevTools.APP_READ_QR, "beside New recipe: the other way a recipe comes in");
     }
 
     @Test void everyAppRowHasADetailLine() {

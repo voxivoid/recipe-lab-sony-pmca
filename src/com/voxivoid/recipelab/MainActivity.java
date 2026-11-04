@@ -2,12 +2,16 @@ package com.voxivoid.recipelab;
 
 import android.app.Activity;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Typeface;
 import android.hardware.Camera;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
+import android.os.HandlerThread;
+import android.os.SystemClock;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.SurfaceHolder;
@@ -17,6 +21,7 @@ import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.voxivoid.recipelab.transfer.ArwPreview;
 import com.voxivoid.recipelab.transfer.Logger;
 import com.voxivoid.recipelab.transfer.TransferMode;
 
@@ -25,11 +30,13 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStreamReader;
+import java.io.RandomAccessFile;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import io.nayuki.qrcodegen.QrCode;
 import static com.voxivoid.recipelab.Keys.*;
 import static com.voxivoid.recipelab.Params.*;
 
@@ -70,7 +77,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     /**
      * the questions the prompt asks: quality change, reset, discard a recipe's edits, a custom recipe's options, delete it
      */
-    private static final int P_QUALITY = 0, P_RESET = 1, P_DISCARD = 2, P_OPTIONS = 3, P_DELETE = 4, P_PP = 5;
+    private static final int P_QUALITY = 0, P_RESET = 1, P_DISCARD = 2, P_OPTIONS = 3, P_DELETE = 4, P_PP = 5, P_ADD = 6;
     private Runnable afterDiscard;                               // what the discard question goes on to do when answered Discard
     // the name editor, and what its OK does: keep a recipe's edits as a copy and store it, keep the camera's settings, rename
     private KeyboardView keyboard;
@@ -86,6 +93,30 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private SharedPreferences prefs;
     private MenuView menu;
     private boolean menuOpen = false;
+    // recipe QR codes: a custom recipe's (Share) or the scanner (Read Recipe QR Code), full screen while qrOpen
+    private QrView qr;
+    private boolean qrOpen = false, scanning = false;           // scanning: the scanner, not a recipe's code
+    private boolean scanShutter = false;                       // no live view frames came: the shutter reads a photo instead
+    private volatile boolean scanBusy = false;                 // a frame or a photo is being read; others are dropped meanwhile
+    private int scanFrames = 0;                                // frames the live view handed in since the scanner opened
+    private long notRecipeAt = 0;                              // when "not a recipe" was last said
+    private int scanPolls = 0;
+    private long scanShotAt;                                   // when the shutter went, for the log's timings
+    private static final int SCAN_POLL_MS = 200, SCAN_POLLS = 100;   // looked for every 200 ms, for 20 s
+    private java.util.Set<String> scanBefore;                  // the pictures on the card before the shutter: the new one is not among them
+    private File scanPhoto; private long scanPhotoLength = -1; // the new picture, and its size when last looked at (still being written?)
+    private Recipes.Recipe scanFound;                          // the recipe read, while the prompt asks to add it
+    private String scanName;                                   // the name it would be added under
+    // Share: the card screen (shape, Save image, Show QR code), the code full screen, and the save to playback
+    private boolean shareCard = false, shareQr = false, saving = false, resumed = false;
+    private int shareRow = SHARE_SAVE, cardShape = RecipeCardLayout.PORTRAIT;
+    private static final int SHARE_SHAPE = 0, SHARE_SAVE = 1, SHARE_QR = 2, SHARE_ROWS = 3;
+    private Recipes.Recipe shareRecipe;
+    private boolean[] shareModules;
+    private int shareSize;
+    private final CardPainter cardPainter = new CardPainter();      // the screen's; a save draws with its own
+    private final Runnable scanNoFrames = new Runnable() { public void run() { scanFallBack(); } };
+    private final Runnable scanPollPhoto = new Runnable() { public void run() { scanFindPhoto(); } };
     private int menuLevel = DevTools.LEVEL_APP, menuPage = PAGE_ROWS;   // which menu, and whether it shows rows or a read-only page
     private int menuSel = 0, settleIdx = DevTools.SETTLE_DEFAULT;   // menu: highlighted row · developer menu: chosen settle delay
     private int langChoice = Lang.AUTO;                         // the Language row: Lang.AUTO or a language
@@ -167,6 +198,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         prompt = (PromptView) findViewById(R.id.prompt);
         menu = (MenuView) findViewById(R.id.menu);
         keyboard = (KeyboardView) findViewById(R.id.keyboard);
+        qr = (QrView) findViewById(R.id.qr);
         chips = (LinearLayout) findViewById(R.id.chips);
         buildChips();
         actionsRow = (LinearLayout) findViewById(R.id.actions);
@@ -307,7 +339,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         Lang.use(Lang.resolve(langChoice, l == null ? null : l.getLanguage(), l == null ? null : l.getCountry()));
         Typeface tf = UiFont.of(this, Lang.current());
         UiFont.apply(findViewById(android.R.id.content), tf);
-        picker.setTypeface(tf); prompt.setTypeface(tf); menu.setTypeface(tf); hints.setTypeface(tf); keyboard.setTypeface(tf); sponsor.setTypeface(tf);
+        picker.setTypeface(tf); prompt.setTypeface(tf); menu.setTypeface(tf); qr.setTypeface(tf); hints.setTypeface(tf); keyboard.setTypeface(tf); sponsor.setTypeface(tf);
     }
 
     @Override
@@ -318,11 +350,9 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         int last = library.indexOfCustom(prefs.getString("customRecipe", null));
         if (last >= 0) recipe = last;
         lastPreviewLog = ""; origFlat = null;
+        resumed = true;
         try {
-            Class<?> cx = Class.forName("com.sony.scalar.hardware.CameraEx");
-            Method open = cx.getMethod("open", int.class, Class.forName("com.sony.scalar.hardware.CameraEx$OpenOptions"));
-            cameraEx = open.invoke(null, 0, null);
-            camera = (Camera) cx.getMethod("getNormalCamera").invoke(cameraEx);
+            openCamera();
             origFlat = camera.getParameters().flatten();
             holder.addCallback(this);
             previewOk = true;
@@ -337,16 +367,65 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         if (Params.asksPictureProfileOff(cur)) openPrompt(P_PP, Params.PP_DEFAULT);   // every time: no recipe shows while it runs (#90)
     }
 
+    /** Sony's camera, and the plain Android one inside it the app drives */
+    private void openCamera() throws Exception {
+        Class<?> cx = Class.forName("com.sony.scalar.hardware.CameraEx");
+        Method open = cx.getMethod("open", int.class, Class.forName("com.sony.scalar.hardware.CameraEx$OpenOptions"));
+        cameraEx = open.invoke(null, 0, null);
+        camera = (Camera) cx.getMethod("getNormalCamera").invoke(cameraEx);
+    }
+
+    /** lets go of the camera: its decoder refuses every photo while the app holds it (Playback) */
+    private void releaseCamera() {
+        try { if (camera != null) camera.stopPreview(); } catch (Throwable t) {}
+        try { if (cameraEx != null) cameraEx.getClass().getMethod("release").invoke(cameraEx); } catch (Throwable t) {}
+        cameraEx = null; camera = null;
+    }
+
+    /** the camera back after {@link #releaseCamera}, its live view on the screen the app already has, the look applied */
+    private void reopenCamera() {
+        try {
+            openCamera();
+            camera.setPreviewDisplay(holder);
+        } catch (Throwable t) { previewOk = false; previewErr = String.valueOf(t); logPreview("camera did not reopen: " + previewErr); return; }
+        previewOk = true;
+        try { applyPreview(); } catch (Throwable t) { logPreview("look not applied after reopening: " + t); }
+        // just reopened, the A6000 refuses startPreview ("startPreview failed") and the screen stays dark: asked again
+        // until it takes
+        restartTries = 0;
+        handler.removeCallbacks(restartPreview);
+        restartPreview.run();
+    }
+
+    private static final int RESTART_TRIES = 24, RESTART_MS = 250;
+    private int restartTries;
+    private final Runnable restartPreview = new Runnable() {
+        public void run() {
+            if (camera == null || !resumed) return;
+            try {
+                camera.startPreview();
+                if (restartTries > 0) logPreview("live view back after " + restartTries * RESTART_MS + " ms");
+                try { applyPreview(); } catch (Throwable t) { logPreview("look not applied after reopening: " + t); }
+            } catch (Throwable t) {
+                if (++restartTries < RESTART_TRIES) { handler.postDelayed(this, RESTART_MS); return; }
+                logPreview("live view did not come back in " + RESTART_TRIES * RESTART_MS + " ms: " + t);
+            }
+        }
+    };
+
     @Override
     protected void onPause() {
         super.onPause();
+        resumed = false;
         stopRun(false);                                          // a run cannot outlive the camera it shoots with
         stopTransfer();                                          // leaving the app stops Transfer to phone: hotspot off, auto power-off back
         closeMenu();
         closeName();
+        closeQr();
         if (promptOpen && promptKind >= P_DISCARD) { closePrompt(); afterDiscard = null; }   // about this recipe: the card is read again on the way back
         stopLogger();
-        handler.removeCallbacks(hideToast);
+        handler.removeCallbacks(restartPreview);
+        handler.removeCallbacks(hideToast); toast.setVisibility(View.GONE);   // gone with its timer, or it stays on coming back
         handler.removeCallbacks(enterHold); handler.removeCallbacks(menuHold); handler.removeCallbacks(trashHold);
         enter.reset(); menuKeyHold.reset(); trash.reset();
         holder.removeCallback(this);
@@ -356,6 +435,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         try { if (camera != null) camera.stopPreview(); } catch (Throwable t) {}
         try { if (cameraEx != null) cameraEx.getClass().getMethod("release").invoke(cameraEx); } catch (Throwable t) {}
         cameraEx = null; camera = null;
+        deleteScanPhotos();                                      // with the camera let go, as the camera's delete needs
     }
 
     @Override
@@ -538,6 +618,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             case P_OPTIONS: prompt.set(r.name, CustomRecipes.optionsBody(library.entry(recipe).file), CustomRecipes.options(), promptSel, null); break;
             case P_DELETE: prompt.set(CustomRecipes.deleteTitle(r.name), CustomRecipes.deleteBody(library.entry(recipe).file), CustomRecipes.deleteOptions(), promptSel, null); break;
             case P_PP: { String[] q = Params.pictureProfilePrompt(); prompt.set(q[0], q[1], Params.pictureProfileOptions(), promptSel, null); break; }
+            case P_ADD: prompt.set(Lang.t("qr_add_title", scanName), scanFound.summary(), CustomRecipes.addOptions(), promptSel, null); break;
             default: {
                 String[] q = Params.qualityPrompt(cur, edit);
                 String[] opts = { Lang.t("button_accept"), Lang.t("button_cancel") };
@@ -564,6 +645,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             case K_MENU: case K_SK1:
                 swallowMenuUp = true; closePrompt();
                 if (promptKind == P_DISCARD) afterDiscard = null;
+                if (promptKind == P_ADD) closeQr();
                 render(); return true;
         }
         return true;
@@ -578,8 +660,10 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
                 if (promptSel == CustomRecipes.DISCARD && then != null) then.run();
                 return;
             }
+            case P_ADD: if (promptSel == CustomRecipes.ADD) addScanned(); closeQr(); return;
             case P_OPTIONS:
-                if (promptSel == CustomRecipes.OPT_RENAME) openName(NAME_RENAME);
+                if (promptSel == CustomRecipes.OPT_SHARE) openShare();
+                else if (promptSel == CustomRecipes.OPT_RENAME) openName(NAME_RENAME);
                 else if (promptSel == CustomRecipes.OPT_DELETE) openPrompt(P_DELETE, CustomRecipes.DELETE_DEFAULT);
                 return;
             case P_DELETE: if (promptSel == 0) deleteCustom(); return;
@@ -704,6 +788,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             switch (menuSel) {
                 case DevTools.APP_BROWSE: closeMenu(); browse(); break;
                 case DevTools.APP_NEW: closeMenu(); openName(NAME_NEW); break;   // the camera's current settings, kept as a recipe
+                case DevTools.APP_READ_QR: closeMenu(); openScan(); break;
                 case DevTools.APP_TRANSFER: openTransfer(false); break;
                 case DevTools.APP_SYNC: openTransfer(true); break;
                 case DevTools.APP_PANEL: case DevTools.APP_LANG: stepMenuValue(+1); break;
@@ -933,6 +1018,484 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
      */
     private void resumePreview() { try { if (camera != null) camera.startPreview(); } catch (Throwable t) {} }
 
+    // ------------------------------------------------------------ recipe QR codes: Share, and Read Recipe QR Code
+    /** a custom recipe's options → Share: its code full screen, for a phone or another camera to read */
+    private void openShare() {
+        Recipes.Recipe r = library.get(recipe);
+        String link = RecipeShare.encode(r);
+        if (link == null) { showToast(Lang.t("qr_share_failed", r.name, String.valueOf(CustomRecipes.problem(r))), 0); return; }
+        QrCode code = QrCode.encodeText(link, QrCode.Ecc.MEDIUM);
+        boolean[] m = new boolean[code.size * code.size];
+        for (int y = 0; y < code.size; y++) for (int x = 0; x < code.size; x++) m[y * code.size + x] = code.getModule(x, y);
+        shareRecipe = r; shareModules = m; shareSize = code.size;
+        cardShape = Math.max(0, Math.min(RecipeCardLayout.SHAPES - 1, prefs.getInt("cardShape", RecipeCardLayout.PORTRAIT)));
+        qrOpen = true; scanning = false; shareCard = true; shareQr = false; shareRow = SHARE_SAVE;
+        renderShareCard();
+        showQr();
+        log(CardLog.QR, "share " + r.name + " " + link + " (" + code.size + " modules)");
+    }
+
+    /** Share's screen: the card in the chosen shape, and the rows — shape, Save image, Show QR code */
+    private void renderShareCard() {
+        cardPainter.setTypeface(UiFont.of(this, Lang.current()));
+        cardPainter.useStudioFonts(getAssets());
+        String[] rows = { Lang.t("share_shape"), Lang.t("share_save"), Lang.t("share_show_qr") };
+        qr.card(cardPainter, RecipeCardLayout.of(cardShape), shareRecipe, shareModules, shareSize, rows,
+                RecipeCardLayout.LABEL[cardShape], shareRow, Keys.hints(Keys.H_SHARE, caps));
+    }
+
+    /** the code alone, full screen, for someone next to the camera to scan; MENU goes back to the card */
+    private void showShareQr() {
+        shareCard = false; shareQr = true;
+        qr.share(shareModules, shareSize, shareRecipe.name, Lang.t("qr_share_hint"), Keys.hints(Keys.H_PAGE, caps));
+    }
+
+    private void stepShape(int dir) {
+        cardShape = RecipeCardLayout.next(cardShape, dir);
+        prefs.edit().putInt("cardShape", cardShape).commit();
+        renderShareCard();
+    }
+
+    /**
+     * Save image: the card drawn full size and saved as one of the camera's photos (Playback), so it shows in playback
+     * and travels as any photo does. The camera is let go meanwhile — its decoder refuses every photo while the app
+     * holds it — and opened again after. A few seconds; the screen says so.
+     */
+    private void saveCard() {
+        final Recipes.Recipe r = shareRecipe;
+        final RecipeCardLayout l = RecipeCardLayout.of(cardShape);
+        final boolean[] modules = shareModules;
+        final int size = shareSize;
+        final File dcim = new File(cardRoot(), "DCIM");
+        final android.content.ContentResolver cr = getContentResolver();
+        final CardPainter painter = new CardPainter();
+        painter.setTypeface(UiFont.of(this, Lang.current()));
+        painter.useStudioFonts(getAssets());
+        saving = true;
+        qr.cover(r.name, Lang.t("share_saving"), true, new Keys.Hints(new int[0], new int[0], new String[0]));
+        releaseCamera();
+        log(CardLog.QR, "save card " + r.name + " " + RecipeCardLayout.LABEL[l.shape] + " " + l.width + "x" + l.height);
+        final HandlerThread thread = new HandlerThread("card-save");
+        thread.start();
+        final Handler worker = new Handler(thread.getLooper());
+        final Playback.Log plog = new Playback.Log() { public void line(String s) { log(CardLog.QR, s); } };
+        worker.post(new Runnable() {
+            public void run() {
+                Playback.Target t = null;
+                try {
+                    t = Playback.prepare(cr, dcim, l.width, l.height, plog);
+                    plog.line("playback: image " + java.util.Arrays.toString(t.geometry));
+                    writeCard(t, painter.bitmap(l, r, modules, size), l);
+                    Playback.export(t, cr, dcim, worker, plog, new Playback.Done() {
+                        public void done(String path, String why) {
+                            if (path != null) log(CardLog.QR, ExifDates.align(new File(path)));
+                            savedCard(thread, path, why);
+                        }
+                    });
+                } catch (Throwable e) {
+                    Playback.discard(t);
+                    String why = String.valueOf(e instanceof java.lang.reflect.InvocationTargetException && e.getCause() != null ? e.getCause() : e);
+                    savedCard(thread, null, why.contains("no photo the camera could make") || why.contains("no card in the camera's database")
+                            ? Lang.t("share_need_photo") : why);
+                }
+            }
+        });
+    }
+
+    /** the card's pixels into the camera's image, 32 rows at a time, the bitmap let go after */
+    private static void writeCard(Playback.Target t, Bitmap b, RecipeCardLayout l) {
+        try {
+            int w = l.width, band = 32;
+            int[] px = new int[w * band];
+            int handle = NativePlayback.open(t.image, t.geometry, w, l.height);
+            for (int y = 0; y < l.height; y += band) {
+                int n = Math.min(band, l.height - y);
+                b.getPixels(px, 0, w, 0, y, w, n);
+                NativePlayback.rows(handle, px, w, y, n);
+            }
+            String why = NativePlayback.close(handle, l.height);
+            if (why != null) throw new IllegalStateException(why);
+        } finally {
+            b.recycle();
+        }
+    }
+
+    /** the save over, on the save's thread: back on the app's, the camera opened again and the card screen shown */
+    private void savedCard(final HandlerThread thread, final String path, final String why) {
+        handler.post(new Runnable() {
+            public void run() {
+                thread.quit();
+                saving = false;
+                log(CardLog.QR, path != null ? "saved card as " + path : "card not saved: " + why);
+                if (resumed) reopenCamera();
+                if (qrOpen && shareRecipe != null) { shareCard = true; renderShareCard(); }
+                showToast(path != null ? Lang.t("share_saved", new File(path).getName()) : Lang.t("share_save_failed", why), path != null ? 5000 : 0);
+            }
+        });
+    }
+
+    /**
+     * App menu → Read Recipe QR Code: the live view in a frame, each frame read for a code. A body whose live view hands
+     * no frames to the app (not known before trying: none of the app's other screens reads them) falls back to the
+     * shutter after a few seconds — the photo it takes is read instead, and stays on the card.
+     */
+    private void openScan() {
+        if (cardDir == null) { showToast(Lang.t("custom_need_card"), 4000); return; }
+        if (camera == null) { showToast(Lang.t("qr_no_photo", previewErr), 0); return; }
+        qrOpen = true; scanning = true; scanShutter = false; scanBusy = false; scanFrames = 0; scanFound = null;
+        renderScan(Lang.t("qr_scan_live"));
+        showQr();
+        int[] size = previewSize();
+        log(CardLog.QR, "scan: preview " + (size == null ? "size unknown" : size[0] + "x" + size[1]));
+        // three ways Android hands out live view frames; which (if any) this body honours is what the log tells
+        Camera.PreviewCallback cb = new Camera.PreviewCallback() {
+            public void onPreviewFrame(byte[] data, Camera c) { scanFrame(data); }
+        };
+        try { camera.setPreviewCallback(cb); } catch (Throwable t) { log(CardLog.QR, "scan: setPreviewCallback refused: " + t); }
+        try { camera.setOneShotPreviewCallback(cb); } catch (Throwable t) { log(CardLog.QR, "scan: setOneShotPreviewCallback refused: " + t); }
+        try {
+            camera.addCallbackBuffer(new byte[1920 * 1080 * 2]);
+            camera.setPreviewCallbackWithBuffer(cb);
+        } catch (Throwable t) { log(CardLog.QR, "scan: setPreviewCallbackWithBuffer refused: " + t); }
+        handler.postDelayed(scanNoFrames, 4000);
+    }
+
+    private void renderScan(String status) { qr.scan(Lang.t("qr_scan_title"), status, Keys.hints(Keys.H_PAGE, caps)); }
+
+    /** the QR screen over everything the panel shows */
+    private void showQr() {
+        panel.setVisibility(View.GONE); mini.setVisibility(View.GONE); picker.setVisibility(View.GONE); sponsor.setVisibility(View.GONE);
+        qr.setVisibility(View.VISIBLE);
+    }
+
+    private void closeQr() {
+        if (!qrOpen) return;
+        qrOpen = false; scanning = false; shareCard = false; shareQr = false;
+        handler.removeCallbacks(scanNoFrames); handler.removeCallbacks(scanPollPhoto);
+        try { if (camera != null) camera.setPreviewCallback(null); } catch (Throwable t) {}
+        qr.setVisibility(View.GONE);
+        render();
+    }
+
+    /** the live view's size, {width, height}; null when the camera will not say (the A6000 will not) */
+    private int[] previewSize() {
+        try { Camera.Size s = camera.getParameters().getPreviewSize(); return s == null ? null : new int[] { s.width, s.height }; }
+        catch (Throwable t) { return null; }
+    }
+
+    /**
+     * A live view frame: read on a thread of its own, one at a time — the frames that come meanwhile are dropped. A frame
+     * whose size the camera will not say cannot be read: it is logged once, and the shutter takes over as if none came.
+     */
+    private void scanFrame(final byte[] data) {
+        if (!scanning || scanShutter || promptOpen || data == null) return;
+        final int[] size = previewSize();
+        if (scanFrames++ == 0) log(CardLog.QR, "scan: first live view frame, " + data.length + " bytes" + (size == null ? ", size unknown" : ""));
+        try { camera.addCallbackBuffer(data); } catch (Throwable t) {}   // the buffer back, for the next one
+        if (size == null) return;
+        handler.removeCallbacks(scanNoFrames);
+        if (scanBusy) return;
+        final int w = size[0], h = size[1];
+        scanBusy = true;
+        new Thread(new Runnable() {
+            public void run() {
+                final String text = QrScan.fromLuminance(data, w, h);
+                handler.post(new Runnable() { public void run() { scanBusy = false; scanRead(text, false); } });
+            }
+        }, "qr-frame").start();
+    }
+
+    /** no frame that can be read came: the live view does not hand them out on this body, so the shutter takes over */
+    private void scanFallBack() {
+        if (!scanning) return;
+        scanShutter = true;
+        log(CardLog.QR, "scan: " + scanFrames + " live view frames in 4 s, none readable: reading photos instead");
+        renderScan(Lang.t("qr_scan_shutter"));
+    }
+
+    /** keys while a QR screen is up: MENU closes it; on the scanner the shutter reads a photo, a half-press focuses */
+    private boolean qrKey(int sc) {
+        if (saving) { keepCover(sc); return true; }               // the camera is let go while a card is saved: it must finish
+        if (scanning && scanShutter && scanBusy) {               // a photo being read: MENU still leaves, the rest waits
+            if (sc == K_MENU || sc == K_SK1) { swallowMenuUp = true; log(CardLog.QR, "scan: left while reading"); closeQr(); }
+            else keepCover(sc);
+            return true;
+        }
+        if (shareCard) return shareKey(sc);
+        switch (sc) {
+            case K_MENU: case K_SK1:
+                swallowMenuUp = true;
+                if (shareQr) { shareQr = false; shareCard = true; renderShareCard(); } else closeQr();   // the code: back to the card
+                return true;
+            case K_ENTER: if (shareQr) { shareQr = false; shareCard = true; renderShareCard(); } else if (!scanning) closeQr(); return true;
+            case K_S1: if (scanning) try { camera.autoFocus(null); } catch (Throwable t) { logPreview("autofocus refused: " + t); } return true;
+            case K_S2: if (scanning && !scanBusy) scanShoot(); return true;
+            default: return true;
+        }
+    }
+
+    /**
+     * A key while a card is saved or a photo read: nothing to do, but the black screen and its ring stay up. Seen once on
+     * an A6000, not again after a restart: a key took the ring away while the work went on. Logged, with what the screen
+     * was, so another time says why.
+     */
+    private void keepCover(int sc) {
+        log(CardLog.QR, "key " + sc + " while busy: screen " + (qr.isShown() ? "shown" : "hidden")
+                + ", window " + (hasWindowFocus() ? "focused" : "not focused"));
+        panel.setVisibility(View.GONE); mini.setVisibility(View.GONE); picker.setVisibility(View.GONE); sponsor.setVisibility(View.GONE);
+        qr.setVisibility(View.VISIBLE);
+        qr.bringToFront();
+        qr.invalidate();
+    }
+
+    /** keys on Share's card screen: up / down choose a row, left / right (and the dials) the shape, centre does the row */
+    private boolean shareKey(int sc) {
+        int t = turn(sc);
+        if (t != 0) { stepShape(t); return true; }
+        switch (sc) {
+            case K_UP: case K_DOWN:
+                shareRow = (shareRow + SHARE_ROWS + (sc == K_DOWN ? 1 : -1)) % SHARE_ROWS; renderShareCard(); return true;
+            case K_LEFT: stepShape(-1); return true;
+            case K_RIGHT: stepShape(+1); return true;
+            case K_ENTER:
+                if (shareRow == SHARE_SHAPE) stepShape(+1);
+                else if (shareRow == SHARE_SAVE) saveCard();
+                else showShareQr();
+                return true;
+            case K_MENU: case K_SK1: swallowMenuUp = true; closeQr(); return true;
+            default: return true;
+        }
+    }
+
+    /** the shutter on the scanner: a photo, then the newest picture on the card is read once the camera has written it */
+    private void scanShoot() {
+        scanPolls = 0; scanBusy = true; scanPhoto = null; scanPhotoLength = -1; scanShotAt = SystemClock.uptimeMillis();
+        // the card's clock is not the app's (files read an hour off on an A6000), so the new picture is the one not here now
+        scanBefore = photos(new File(cardRoot(), "DCIM"));
+        qr.cover(Lang.t("qr_scan_title"), Lang.t("qr_scan_reading"), true, Keys.hints(Keys.H_PAGE, caps));   // the live view off, the ring turning
+        try { shoot("read recipe QR code"); }
+        catch (Throwable t) { scanBusy = false; renderScan(Lang.t("qr_no_photo", String.valueOf(t))); return; }
+        handler.postDelayed(scanPollPhoto, SCAN_POLL_MS);
+    }
+
+    /**
+     * The photo the shutter took: a JPG (else an ARW) in DCIM that was not there before, once its size has stopped
+     * changing — the camera may still be writing it. Looked for every {@link #SCAN_POLL_MS} for a while.
+     */
+    private void scanFindPhoto() {
+        if (!scanning) { scanBusy = false; return; }
+        if (scanPhoto == null) scanPhoto = newPhoto(new File(cardRoot(), "DCIM"), scanBefore);
+        long length = scanPhoto == null ? -1 : scanPhoto.length();
+        if (scanPhoto == null || length <= 0 || length != scanPhotoLength) {
+            scanPhotoLength = length;
+            if (++scanPolls < SCAN_POLLS) { handler.postDelayed(scanPollPhoto, SCAN_POLL_MS); return; }
+            scanBusy = false; resumePreview(); renderScan(Lang.t("qr_no_photo", "no new picture in DCIM"));
+            log(CardLog.QR, "scan: no new picture in DCIM");
+            return;
+        }
+        resumePreview();
+        final File photo = scanPhoto;
+        final long found = SystemClock.uptimeMillis();
+        Runtime rt = Runtime.getRuntime();
+        log(CardLog.QR, "scan: reading " + photo.getPath() + " (" + photo.length() + " bytes), written " + (found - scanShotAt) + " ms after the shutter"
+                + "  ·  heap " + (rt.totalMemory() - rt.freeMemory()) / 1024 + " of " + rt.maxMemory() / 1024 + " KB");
+        new Thread(new Runnable() {
+            public void run() {
+                String text = null, failed = null;
+                try { text = readPhoto(photo); }
+                catch (Throwable t) { failed = String.valueOf(t); }
+                final String read = text, why = failed;
+                final long took = SystemClock.uptimeMillis() - found;
+                handler.post(new Runnable() {                    // the answer first: deleting can wait behind it
+                    public void run() {
+                        scanBusy = false;
+                        log(CardLog.QR, "scan: read in " + took + " ms, " + (SystemClock.uptimeMillis() - scanShotAt) + " ms after the shutter");
+                        if (why != null) { log(CardLog.QR, "scan: photo unreadable: " + why); renderScan(Lang.t("qr_no_photo", why)); return; }
+                        scanRead(read, true);
+                    }
+                });
+                handler.post(new Runnable() {                    // read or not: the picture was only ever a way to see the code
+                    public void run() { keepScanPhotos(); }
+                });
+            }
+        }, "qr-photo").start();
+    }
+
+    /** every .JPG and .ARW in the folders under {@code dcim}, by path */
+    private static java.util.Set<String> photos(File dcim) {
+        java.util.Set<String> out = new java.util.HashSet<String>();
+        File[] dirs = dcim.listFiles();
+        if (dirs == null) return out;
+        for (File dir : dirs) {
+            File[] files = dir.isDirectory() ? dir.listFiles() : null;
+            if (files == null) continue;
+            for (File f : files) {
+                String n = f.getName().toUpperCase(java.util.Locale.US);
+                if (n.endsWith(".JPG") || n.endsWith(".ARW")) out.add(f.getPath());
+            }
+        }
+        return out;
+    }
+
+    /** a picture under {@code dcim} not in {@code before}: the JPG when the shot wrote one, else the ARW; null when none */
+    private static File newPhoto(File dcim, java.util.Set<String> before) {
+        String p = QrScan.toRead(QrScan.added(before, photos(dcim)));
+        return p == null ? null : new File(p);
+    }
+
+    /** the scanner's photos, deleted once the app is left (deleteScanPhotos) */
+    private static final java.util.List<String> scanLeft = new java.util.ArrayList<String>();
+
+    /**
+     * What the scanner's shutter added to the card — the JPG and the ARW of the shot, not there before the press — set
+     * aside to be deleted when the app is left. Deleted now, the camera's own delete hung with the camera open (and the
+     * camera then stored no more shots), and letting the camera go for it left the live view dark (A6000, 2026-11-03).
+     * Playback, the only place they would show, is outside the app.
+     */
+    private void keepScanPhotos() {
+        int n = 0;
+        synchronized (scanLeft) {
+            for (String p : QrScan.added(scanBefore, photos(new File(cardRoot(), "DCIM"))))
+                if (!scanLeft.contains(p)) { scanLeft.add(p); n++; }
+        }
+        log(CardLog.QR, "scan: " + n + " files to delete when the app is left");
+    }
+
+    /**
+     * The scanner's photos deleted, on leaving the app with the camera let go: through the camera's own delete first
+     * ({@link Playback#deleteShot}) — a file deleted behind its back stays in playback as a picture it cannot display —
+     * then what that leaves as files. The camera's delete gets {@link #DB_DELETE_MS}; once it has not answered it is not
+     * asked again until the app starts over. Each deletion is logged.
+     */
+    private void deleteScanPhotos() {
+        final java.util.List<String> paths;
+        synchronized (scanLeft) { paths = new java.util.ArrayList<String>(scanLeft); scanLeft.clear(); }
+        if (paths.isEmpty()) return;
+        new Thread(new Runnable() {
+            public void run() {
+                for (String p : paths) {
+                    File f = new File(p);
+                    if (!f.exists()) continue;                     // the camera's delete took it with its pair
+                    long size = f.length();
+                    if (!dbDeleteStuck) {
+                        String why = dbDelete(p);
+                        log(CardLog.QR, "scan: " + p + ": " + why);
+                        if (!f.exists()) { log(CardLog.QR, "scan: deleted " + p + " (" + size + " bytes) from playback"); continue; }
+                    }
+                    log(CardLog.QR, f.delete() ? "scan: deleted " + p + " (" + size + " bytes)" : "scan: could not delete " + p);
+                }
+            }
+        }, "qr-clean").start();
+    }
+
+    private static final long DB_DELETE_MS = 3000;
+    private static volatile boolean dbDeleteStuck = false;       // the camera's delete did not answer: files only from then on
+
+    /** {@link Playback#deleteShot} on a thread of its own, waited for {@link #DB_DELETE_MS} at most */
+    private String dbDelete(final String path) {
+        final String[] out = new String[1];
+        Thread t = new Thread(new Runnable() {
+            public void run() { String r = Playback.deleteShot(getContentResolver(), path, new boolean[1]); synchronized (out) { out[0] = r; } }
+        }, "qr-delete");
+        t.setDaemon(true);
+        t.start();
+        try { t.join(DB_DELETE_MS); } catch (InterruptedException e) {}
+        synchronized (out) {
+            if (out[0] != null) return out[0];
+        }
+        dbDeleteStuck = true;
+        return "the camera's delete did not answer in " + DB_DELETE_MS + " ms";
+    }
+
+    /**
+     * A code in a photo: a JPEG scaled down, or the JPEG an ARW carries inside. Small first ({@link QrScan#QUICK} pixels
+     * across: a code that fills a fair part of the frame reads there, four times faster), then larger
+     * ({@link QrScan#FULL}) only when the small one held none.
+     */
+    private static String readPhoto(File photo) throws Exception {
+        String text = readPhoto(photo, QrScan.QUICK);
+        return text != null ? text : readPhoto(photo, QrScan.FULL);
+    }
+
+    private static String readPhoto(File photo, int across) throws Exception {
+        BitmapFactory.Options o = new BitmapFactory.Options();
+        o.inPreferredConfig = Bitmap.Config.RGB_565;
+        Bitmap b;
+        if (photo.getName().toUpperCase(java.util.Locale.US).endsWith(".ARW")) {
+            ArwPreview.Jpeg j = ArwPreview.locate(photo).pick(false);
+            if (j == null) throw new Exception("no preview in the ARW");
+            byte[] bytes = new byte[(int) j.length];
+            RandomAccessFile raf = new RandomAccessFile(photo, "r");
+            try { raf.seek(j.offset); raf.readFully(bytes); } finally { raf.close(); }
+            BitmapFactory.Options bounds = new BitmapFactory.Options();
+            bounds.inJustDecodeBounds = true;
+            BitmapFactory.decodeByteArray(bytes, 0, bytes.length, bounds);
+            o.inSampleSize = QrScan.sample(Math.max(bounds.outWidth, bounds.outHeight), across);
+            b = BitmapFactory.decodeByteArray(bytes, 0, bytes.length, o);
+        } else {
+            BitmapFactory.Options bounds = new BitmapFactory.Options();
+            bounds.inJustDecodeBounds = true;
+            BitmapFactory.decodeFile(photo.getPath(), bounds);
+            o.inSampleSize = QrScan.sample(Math.max(bounds.outWidth, bounds.outHeight), across);
+            b = BitmapFactory.decodeFile(photo.getPath(), o);
+        }
+        if (b == null) throw new Exception("the picture did not decode");
+        // the luminance only, a row at a time: a quarter of the memory of every pixel at once, which ran out (2026-11-03)
+        int w = b.getWidth(), h = b.getHeight();
+        byte[] y;
+        try {
+            y = new byte[w * h];
+            int[] row = new int[w];
+            for (int r = 0; r < h; r++) {
+                b.getPixels(row, 0, w, 0, r, w, 1);
+                QrScan.luminance(row, w, y, r * w);
+            }
+        } finally {
+            b.recycle();
+        }
+        return QrScan.fromLuminance(y, w, h);
+    }
+
+    /** what a frame or a photo held: a recipe is offered, anything else said and the scanner goes on */
+    private void scanRead(String text, boolean fromPhoto) {
+        if (!scanning || promptOpen) return;
+        if (text == null) {
+            if (fromPhoto) { renderScan(Lang.t("qr_no_code")); log(CardLog.QR, "scan: no code in the photo"); }
+            return;                                              // a frame without a code: the next one is read
+        }
+        log(CardLog.QR, "scan: read " + text);
+        switch (QrScan.kind(text)) {
+            case QrScan.NOT_RECIPE: {
+                long now = System.currentTimeMillis();
+                if (fromPhoto || now - notRecipeAt > 4000) { notRecipeAt = now; showToast(Lang.t("qr_not_recipe"), 3000); }
+                if (fromPhoto) renderScan(Lang.t("qr_scan_shutter"));
+                return;
+            }
+            case QrScan.UNREADABLE: showToast(Lang.t("qr_unreadable"), 6000); closeQr(); return;
+        }
+        Recipes.Recipe r = RecipeShare.decode(text);
+        List<CustomRecipes.Entry> have = new ArrayList<CustomRecipes.Entry>();
+        for (int i = 0; i < library.customCount(); i++) have.add(library.entry(Library.BASE + i));
+        String name = CustomRecipes.sharedName(r, have);
+        if (name == null) { showToast(Lang.t("qr_already", r.name), 4000); closeQr(); return; }
+        scanFound = r; scanName = name;
+        qr.cover(Lang.t("qr_scan_title"), "", false, Keys.hints(Keys.H_PAGE, caps));   // read: the ring stops, the question is asked over black
+        openPrompt(P_ADD, CustomRecipes.ADD_DEFAULT);
+    }
+
+    /** the add question answered Add: the recipe is written to the card and highlighted */
+    private void addScanned() {
+        Recipes.Recipe r = CustomRecipes.renamed(scanFound, scanName);
+        CustomRecipes.Entry e;
+        try { e = CustomRecipes.save(cardDir, r, madeOn(), null); }
+        catch (Throwable t) { log(CardLog.FAIL, "save " + r.name + ": " + t); showToast(Lang.t("custom_save_failed", String.valueOf(t.getMessage())), 0); return; }
+        log(CardLog.QR, "added " + r.name + " as " + e.file);
+        reloadCustoms();
+        follow(r.name);
+        stageRecipe(); applyPreview();
+        showToast(Lang.t("qr_added", r.name), 4000);
+    }
+
     // ------------------------------------------------------------ favourites (app storage, not the camera store: lost on uninstall)
     private void saveFavourites() {
         favStored = Favourites.encode(favs, library, favStored);
@@ -976,6 +1539,9 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         cardDir = findCardDir();
         CustomRecipes.Loaded l = CustomRecipes.load(cardDir);
         library.set(l.entries);
+        // each recipe's share link where a computer or a phone can copy it: the camera has no clipboard
+        try { if (CustomRecipes.writeLinks(cardDir, l.entries)) log(CardLog.QR, "links: " + CustomRecipes.path(CustomRecipes.LINKS) + " for " + l.entries.size() + " recipes"); }
+        catch (Throwable t) { log(CardLog.FAIL, "links: " + t); }
         if (!l.skipped.equals(skipped)) { skipped = l.skipped; skippedShown = false; }
         favs = Favourites.decode(favStored, library);
         if (keep != null) recipe = library.indexOfCustom(keep);
@@ -1443,6 +2009,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         if (running) return runKey(sc);
         if (promptOpen) return promptKey(sc);
         if (nameOpen) return nameKey(sc);
+        if (qrOpen) return qrKey(sc);
         if (menuOpen && menuPage == PAGE_TRANSFER && transfer != null) return transferKey(sc, e.getRepeatCount());
         if (menuOpen) return menuKey(sc);
         if (sc == K_ENTER) { enterDown(e.getRepeatCount()); return true; }
@@ -1487,6 +2054,11 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         if (isMenu(sc)) { handler.removeCallbacks(menuHold); menuKeyHold.up(); }
         if (sc == K_ENTER && (promptOpen || nameOpen || running)) { handler.removeCallbacks(enterHold); enter.reset(); }
         if (promptOpen || nameOpen) { if (isMenu(sc)) swallowMenuUp = false; return true; }
+        if (qrOpen) {                                            // the shutter and focus releases; nothing else leaves the screen
+            if (sc == K_S2) cancelCapture();
+            if (sc == K_S1) try { camera.cancelAutoFocus(); } catch (Throwable t) {}
+            return true;
+        }
         if (running) return true;                               // the release of whatever key started or stopped the run
         if (turn(sc) != 0) return true;
         switch (sc) {

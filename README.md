@@ -316,6 +316,13 @@ Leaving a changed recipe asks first: **Discard** or **Cancel**.
 
 ### Sharing
 
+- **Share:** in the brand list, **hold MENU** on a custom recipe → **Share**. Pick a shape (4:5, 1:1, 9:16), then
+  **Save image** (a picture with the settings and a QR code, in playback like a photo) or **Show QR code** (on the
+  screen, for someone next to you). A phone with [Recipe Lab Studio](https://recipelab.io/studio) adds the recipe by
+  scanning the code; anywhere else the link shows the recipe on recipelab.io.
+- **Links:** each recipe's link is in `RECIPES/LINKS.TXT` on the card, to copy into a chat or a post.
+- **Add a shared recipe:** **hold MENU** → **Read Recipe QR Code**, then press the shutter with the code in the frame.
+  The photo it takes is deleted once the code is read.
 - Each recipe is a small YAML file in `RECIPES` on the card — e.g. `RECIPES/GOLDENHO.YML`.
 - **Export:** connect the camera as *Mass Storage*. Copy the files out.
 - **Import:** copy a file into `RECIPES`. Keep its name short: up to 8 letters, then `.YML`. Reopen the app.
@@ -449,6 +456,10 @@ Ilford, Cinema…). The values in this app are re-derived for what the A6000 can
 
 License: [GPL-3.0](LICENSE), © 2026 André Domingues. Releases up to and including v1.7.0 were published under MIT.
 OpenMemories-Platform: MIT, © 2017 ma1co.
+[QR Code generator](https://www.nayuki.io/page/qr-code-generator-library) (`src/io/nayuki/qrcodegen`): MIT, © Project Nayuki.
+[ZXing](https://github.com/zxing/zxing) 3.3.3, the QR code reader subset (`src/com/google/zxing`): Apache-2.0, © ZXing authors
+(patched where the camera's Java lacks a call, marked "Recipe Lab:" in the source).
+Inter, Archivo and Space Mono, cut for the recipe card (`assets/fonts/Card*.ttf`): SIL OFL 1.1, © their project authors.
 
 Additional term under GPL-3.0 section 7(b): any copy or modified version must preserve the attribution
 "Based on Recipe Lab by André Domingues" in its source notices and, where it has an interactive user interface, in

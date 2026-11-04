@@ -176,6 +176,13 @@
         android:layout_height="fill_parent"
         android:visibility="gone" />
 
+    <!-- a recipe's QR code (Share), and Read Recipe QR Code over the live view; under the prompt, which asks to add -->
+    <com.voxivoid.recipelab.QrView
+        android:id="@+id/qr"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:visibility="gone" />
+
     <!-- RAW / JPEG prompt -->
     <com.voxivoid.recipelab.PromptView
         android:id="@+id/prompt"
