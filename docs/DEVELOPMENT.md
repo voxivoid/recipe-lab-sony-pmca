@@ -21,6 +21,7 @@ see [CONTRIBUTING.md](CONTRIBUTING.md).
 - [Building](#building)
 - [Unit tests](#unit-tests)
 - [Installing on the camera](#installing-on-the-camera)
+- [Emulator](#emulator)
 - [Versioning](#versioning)
 - [Adding recipes](#adding-recipes)
 
@@ -781,6 +782,38 @@ Windows half is `usbipd-win`: `winget install dorssel.usbipd-win` once from an A
 PowerShell, `usbipd bind --busid <id>` once per camera, then `usbipd.exe attach --wsl --busid
 <id>` after each replug. Forwarding a USB device needs a Windows-side driver either way —
 that part cannot be removed.
+
+## Emulator
+
+`tools/emulator.sh` runs the app in the Android emulator at the A6000's 640×480, with the camera's own scan codes for
+its keys. It is for what a screenshot can settle: layout, menus, pages, prompts, the browser, the legend, translations
+fitting, and key routes. It cannot settle anything about the camera.
+
+```bash
+export JAVA_HOME=$HOME/toolchains/jdk17      # keytool and apksigner, as for build.sh
+tools/emulator.sh setup                      # once: Android 7.0 image (pinned by SHA-1) and the RecipeLab AVD
+tools/emulator.sh start                      # boot, root adb, put sonykey on it
+tools/emulator.sh install                    # RecipeLab.apk, or any APK: a CI artifact works, no NDK needed
+tools/emulator.sh key WHEEL_CW WHEEL_CW      # two wheel clicks
+tools/emulator.sh key MENU:900               # MENU held 900 ms: the app menu
+tools/emulator.sh shot menu.png
+```
+
+- **Keys.** The emulator's keyboard declares the usual keys only, and Android drops every other code, which is most of
+  Sony's (MENU 514, Fn 520, the wheel, the shutter). `tools/emulator/sonykey.c` makes a uinput keyboard that declares
+  them all (except the 0x100–0x15f button block, which would make Android take it for a stylus or a gamepad), so the
+  app gets what a camera sends and no code path is emulator-only. It needs root, and is built static in Docker
+  (Alpine) on first use. Names are the ones in `Keys.java`; a number works too. Give the app a second after launching
+  and after a hold before the next keys, or they arrive while it is still opening.
+- **No native library.** `librecipelab.so` is ARM 32-bit, which nothing on an Apple Silicon Mac can run, so `install`
+  takes it out and signs again with a throwaway key (`out/emulator/debug.keystore`). Every settings-store read and write
+  fails as it would on a body without it: the *Read failed … librecipelab.so* toast is expected.
+- **No camera.** `CameraEx` does not exist, so there is no live preview (*no live preview: ClassNotFoundException*),
+  no shutter, autofocus or histogram data.
+- **Not the camera's screen.** 240 dpi is a guess nobody has read off a camera, the fonts are Android 7's (the bundled
+  CJK ones still load from the APK), and drawing speed says nothing about a camera's.
+- **Images.** arm64 on Apple Silicon (tried); x86_64 elsewhere (pinned, not tried). `DENSITY=` before `setup` changes
+  the density.
 
 ## Versioning
 
