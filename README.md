@@ -278,13 +278,19 @@ Open **Recipe Lab** from the Application List. The live view shows the look. The
 
 **Menu** — **hold MENU**
 
-- **Browse recipes** · **New recipe** · **Transfer to phone** · **Sync recipes** · **Panel visibility** · **Language** · **Reset settings** ·
+- **Browse recipes** · **New recipe** · **Transfer to phone** · **Sync recipes** · **Panel visibility** · **Language** · **Open with a key** · **Reset settings** ·
   **Save a bug report** · **About** · **Developer**.
 - **New recipe** saves the camera's current settings as a [custom recipe](#custom-recipes).
 - **Transfer to phone** sends your photos to the phone over Wi-Fi — see [Transfer to phone](#transfer-to-phone).
 - **Sync recipes** opens the same Wi-Fi link for custom recipes: [Recipe Lab Studio](https://recipelab.io/studio) copies the ones the phone lacks
   and sends the ones the card lacks. Leave the page with MENU and they are under Custom.
 - Languages: *Auto*, English, 简体中文, 繁體中文, 日本語, 한국어, Tiếng Việt.
+- **Open with a key** puts Recipe Lab on a button. Turn it on, leave the app, then in the camera's
+  `MENU → Custom Settings → Custom Key Settings` set a key (C1, say) to **Download Appli.**: that key now opens Recipe
+  Lab from the shooting screen, and keeps doing so after a power cycle. The camera still calls the function
+  *Download Appli.* — its menu names are its own. Turning the row off points it back at Sony's app store. Remove the app
+  and the key says *The application is either not set or has been uninstalled* until you set it to something else.
+  Tried on an A6000.
 
 ## Custom recipes
 

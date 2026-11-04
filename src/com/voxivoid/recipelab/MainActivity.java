@@ -1,6 +1,9 @@
 package com.voxivoid.recipelab;
 
 import android.app.Activity;
+import android.content.Context;
+import android.content.Intent;
+import android.content.pm.ResolveInfo;
 import android.content.SharedPreferences;
 import android.graphics.Typeface;
 import android.hardware.Camera;
@@ -25,6 +28,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStreamReader;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
@@ -89,6 +93,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private int menuLevel = DevTools.LEVEL_APP, menuPage = PAGE_ROWS;   // which menu, and whether it shows rows or a read-only page
     private int menuSel = 0, settleIdx = DevTools.SETTLE_DEFAULT;   // menu: highlighted row · developer menu: chosen settle delay
     private int langChoice = Lang.AUTO;                         // the Language row: Lang.AUTO or a language
+    private boolean keyOn = false;                              // Open with a key: the camera's Download Appli. key function opens the app
     private static final int PAGE_ROWS = 0, PAGE_ABOUT = 1, PAGE_TRANSFER = 2;
     private TransferMode transfer;                              // Transfer to phone, while its page is open (null otherwise)
     private boolean transferSync;                               // the page was opened as Sync recipes: same link, its own words
@@ -149,6 +154,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         favs = Favourites.decode(favStored, library);
         settleIdx = DevTools.clampSettle(prefs.getInt("settle", DevTools.SETTLE_DEFAULT));
         langChoice = Lang.parseChoice(prefs.getString("language", null));
+        keyOn = prefs.getBoolean("openWithKey", false);
         panel = findViewById(R.id.panel);
         picker = (PickerView) findViewById(R.id.picker);
         chipScroll = (HorizontalScrollView) findViewById(R.id.chipscroll);
@@ -335,6 +341,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             prefs.edit().putBoolean("keysNoticeSeen", true).commit();
         }
         if (Params.asksPictureProfileOff(cur)) openPrompt(P_PP, Params.PP_DEFAULT);   // every time: no recipe shows while it runs (#90)
+        if (keyOn) registerKey(getPackageName(), getComponentName().getClassName());   // again each time: another app may have taken it
     }
 
     @Override
@@ -674,7 +681,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             for (int i = 0; i < n; i++) {
                 labels[i] = app ? DevTools.appLabel(i) : DevTools.rowLabel(i, snapshotTaken, settleIdx);
                 details[i] = app ? DevTools.appDetail(i) : DevTools.rowDetail(i, snapshotTaken);
-                values[i] = app ? DevTools.appValue(i, overlay, langChoice) : DevTools.rowValue(i, settleIdx);
+                values[i] = app ? DevTools.appValue(i, overlay, langChoice, keyOn) : DevTools.rowValue(i, settleIdx);
             }
             if (app) faces[DevTools.APP_LANG] = UiFont.of(this, Lang.choiceScript(langChoice));   // 简体中文 in its own font, whatever the menu's
             boolean value = values[menuSel] != null;
@@ -706,7 +713,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
                 case DevTools.APP_NEW: closeMenu(); openName(NAME_NEW); break;   // the camera's current settings, kept as a recipe
                 case DevTools.APP_TRANSFER: openTransfer(false); break;
                 case DevTools.APP_SYNC: openTransfer(true); break;
-                case DevTools.APP_PANEL: case DevTools.APP_LANG: stepMenuValue(+1); break;
+                case DevTools.APP_PANEL: case DevTools.APP_LANG: case DevTools.APP_KEY: stepMenuValue(+1); break;
                 case DevTools.APP_RESET: closeMenu(); askReset(); break;
                 case DevTools.APP_REPORT: closeMenu(); saveReport(); break;
                 case DevTools.APP_ABOUT: menuPage = PAGE_ABOUT; renderMenu(); break;
@@ -731,6 +738,10 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             langChoice = Lang.nextChoice(langChoice, dir);
             prefs.edit().putString("language", Lang.choiceCode(langChoice)).commit();
             applyLanguage();                                     // the menu redraws in it straight away, the panel under it too
+        } else if (menuLevel == DevTools.LEVEL_APP && menuSel == DevTools.APP_KEY) {
+            keyOn = !keyOn;                                      // two values: either direction flips it
+            prefs.edit().putBoolean("openWithKey", keyOn).commit();
+            showToast(keyOn ? keyResult(registerKey(getPackageName(), getComponentName().getClassName()), "key_on_done", "key_on_failed") : keyResult(restoreStore(), "key_off_done", "key_off_failed"), 6000);
         } else if (menuLevel == DevTools.LEVEL_DEV && menuSel == DevTools.ROW_SETTLE) {
             settleIdx = DevTools.nextSettle(settleIdx, dir);
             prefs.edit().putInt("settle", settleIdx).commit();
@@ -760,6 +771,45 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         }
         return true;
     }
+
+    // ------------------------------------------------------------ Open with a key (app menu)
+    /**
+     * Points the camera's Download Appli. key function at {@code pkg}/{@code cls}, through Sony's undocumented
+     * {@code DAConnectionManager.registerCustomKeyInfo(package, activity, label)} (by reflection). Tried on an A6000: it
+     * returns true, a key set to Download Appli. then opens Recipe Lab, and that survives a power cycle. The menu still
+     * calls the function Download Appli. — that name is the camera's own, out of any app's reach. Null when the camera
+     * took it, else what went wrong; either way one line in LOG.TXT.
+     */
+    private String registerKey(String pkg, String cls) {
+        String why;
+        try {
+            Class<?> type = Class.forName("android.app.DAConnectionManager");
+            Object manager = type.getConstructor(Context.class).newInstance(this);
+            Object r = type.getMethod("registerCustomKeyInfo", String.class, String.class, String.class).invoke(manager, pkg, cls, appLabel(pkg));
+            why = Boolean.TRUE.equals(r) ? null : "the camera answered " + r;
+        } catch (InvocationTargetException t) { why = String.valueOf(t.getCause()); }
+        catch (Throwable t) { why = String.valueOf(t); }
+        log(CardLog.INFO, "open with a key: " + pkg + "/" + cls + (why == null ? " registered" : ": " + why));
+        return why;
+    }
+
+    /** Download Appli. back to Sony's app store, found by its package: untried on a camera, so said plainly when it fails */
+    private String restoreStore() {
+        try {
+            List<ResolveInfo> found = getPackageManager().queryIntentActivities(new Intent(Intent.ACTION_MAIN).setPackage(DevTools.STORE_PACKAGE), 0);
+            if (found.isEmpty()) return "no " + DevTools.STORE_PACKAGE;
+            return registerKey(DevTools.STORE_PACKAGE, found.get(0).activityInfo.name);
+        } catch (Throwable t) { return String.valueOf(t); }
+    }
+
+    /** an installed app's name, for Sony's third argument; the package when it has none */
+    private String appLabel(String pkg) {
+        try { return String.valueOf(getPackageManager().getApplicationInfo(pkg, 0).loadLabel(getPackageManager())); }
+        catch (Throwable t) { return pkg; }
+    }
+
+    /** the toast after a change: {@code done}, or {@code failed} with the reason */
+    private static String keyResult(String why, String done, String failed) { return why == null ? Lang.t(done) : Lang.t(failed, why); }
 
     // ------------------------------------------------------------ Transfer to phone (app menu): a page that serves the card over Wi-Fi
     /**
