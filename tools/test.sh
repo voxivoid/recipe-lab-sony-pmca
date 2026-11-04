@@ -38,6 +38,8 @@ UNITS=(
   src/com/voxivoid/recipelab/Library.java
   src/com/voxivoid/recipelab/NameEntry.java
   src/com/voxivoid/recipelab/DevTools.java
+  src/com/voxivoid/recipelab/DisplayOptions.java
+  src/com/voxivoid/recipelab/HistogramMath.java
   src/com/voxivoid/recipelab/Keys.java
   src/com/voxivoid/recipelab/KeyProbe.java
   src/com/voxivoid/recipelab/FocusOverlayModel.java

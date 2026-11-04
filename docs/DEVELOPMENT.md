@@ -129,7 +129,7 @@ down or the wheel move, the centre button runs a row, a short MENU goes back a l
 | **Browse recipes** | the brand list, as Fn opens it |
 | **New recipe** | the name editor, then the camera's current *stored* settings become a custom recipe ([Custom recipes](#custom-recipes)) |
 | **Transfer to phone** | a page of the menu that starts the camera's hotspot and serves the memory card for Recipe Lab Studio until MENU — [Transfer to phone](#transfer-to-phone) |
-| **Panel visibility** | a value — *Full* / *No keys* / *Label* / *Hidden* (`DevTools.PANELS`) — that left / right step through in place, wrapping, with the menu left open; centre steps forward. The same states trash cycles. *No keys* (`OV_QUIET`) is the full panel, chips and all (`Params.panelUp`), without the `HintBar` legend; closing the browser returns to it if it was left on it |
+| **Display >** | a submenu ([Display](#display)): Panel visibility, live histogram, composition grid, recipe counter, Restore defaults |
 | **Language** | a value — *Auto* / *English* / *简体中文* / *繁體中文* / *日本語* / *한국어* / *Tiếng Việt* — stepped the same way, kept in the app's preferences under `language` by code (`Lang.CODES`). The app redraws in it at once. *Auto* follows the camera's locale (`Lang.fromLocale`); each language's name is drawn in its own script and font. See [LOCALIZATION.md](LOCALIZATION.md) |
 | **Open with a key** | a value — on / off, kept under `openWithKey`, off on a fresh install. On calls Sony's undocumented `android.app.DAConnectionManager.registerCustomKeyInfo(package, activity, label)` by reflection with Recipe Lab's own names, and again on every `onResume` while it is on (another app may have taken the key). The camera then opens Recipe Lab from whichever key the user set to **Download Appli.** (`Settings$CustomKey.DOWNLOAD_APP`, 42) — tried on an A6000, where it returns true and survives a power cycle. The menu keeps the name *Download Appli.*: the firmware draws it from its own message table (`ValToMsgCustomLauncherAssign`). Off registers the first `MAIN` activity of Sony's store (`DevTools.STORE_PACKAGE`, `com.sony.scalar.dlsys.scalaramarket`) instead, which no camera has confirmed; a failure says so and points to Setting Reset. Every call is one `INFO` line in LOG.TXT. There is no unregister call, and none is needed for removal: with the app uninstalled, the A6000 answers the key with its own *The application is either not set or has been uninstalled. Please verify the "Custom Key Settings".* — a Sony feature with that case built in |
 | **Reset settings** | asks `DevTools.resetTitle()` (Cancel highlighted), then stages `Recipes.FACTORY` and stores it (`writeAll`, so the quality prompt still asks when it must). The same look as **Factory**, the first Sony recipe, which is in the list like the others (it was hidden once, and users went looking for it) |
@@ -151,6 +151,58 @@ The **developer menu** holds the tools that are not part of using the app:
 | **Key logger** | every key event on screen, newest first, and appended to `RECIPLAB/LOGS/KEYS.TXT` on the card (`keys.txt` in `getFilesDir()` without one): scan code, down / up, repeat count, Sony's logic code; the header is the model, the platform and what the probe found. Nothing else happens while it runs; **hold MENU** leaves |
 
 New functions go in as app menu rows, not on new keys — see [Keys on every body](#keys-on-every-body).
+
+### Display
+
+**Hold MENU → Display** (`DevTools.LEVEL_DISPLAY`, rows and rules in `DisplayOptions`): what sits over the live
+image, in one place. MENU goes back to the app menu on Display, a second MENU closes it.
+
+**Panel visibility**, the first row, is a value — *Full* / *No keys* / *Label* / *Hidden* (`DevTools.PANELS`) — that
+left / right step through in place, wrapping; centre steps forward. The same states trash cycles. The app opens on
+the one it was left on: `onPause` stores it under `panel` (left in the brand list, the panel closing it would return
+to) and `onCreate` reads it back through `DevTools.clampPanel`, so a stray value opens on Full. *No keys* (`OV_QUIET`) is the full panel, chips and all
+(`Params.panelUp`), without the `HintBar` legend; closing the browser returns to it if it was left on it.
+
+The next rows are one element each: left sets it OFF, right ON (setting the same value again changes nothing, nothing
+wraps), centre toggles. Every change is committed at once, one key per element in the app's preferences — never in
+the camera's store. Centre on **Restore defaults** puts them back, and the panel to Full, leaving the submenu open:
+
+| row | key | default | what it controls |
+|---|---|---|---|
+| Live histogram | `display.histogram` | off | `HistogramView`, top right of the live view |
+| Composition grid | `display.grid` | off | `CompositionGridView`, rule-of-thirds lines |
+| Recipe counter | `display.counter` | on | `@id/count`, the brand and position line over the name (never the name or its badges) |
+
+The key legend and the Label pill have no switches of their own: *No keys* and *Hidden* already take them away, and a
+second switch for each left trash with a press that changed nothing on screen. The histogram and grid show in all
+four panel states. The histogram and grid are shown only over the live image (`applyOverlays`): not over a menu or a
+page, the brand list, a question, the name editor, the key logger or a sample run, and not before the preview has
+started on the surface. Every place that opens or closes one of those calls `refreshOverlays()`, which applies the
+result once the key being handled is done; `onPause` applies it at once, so the listener comes off before the camera
+is released.
+
+**The histogram** is Sony's own preview analysis, not computed by the app: `SonyHistogramSource` registers a
+`CameraEx.PreviewAnalizeListener` by reflection (a `java.lang.reflect.Proxy`) while the histogram is shown, and
+`setPreviewAnalizeListener(null)` the moment it is not. The callback reads `AnalizedData.hist.Y`, takes at most one
+frame per 125 ms, and `HistogramMath.heights` turns it into 64 bars (unsigned bins, means of their share, scaled to the
+tallest), handing only the newest to the UI thread. Each registration has a generation, so a late callback from an
+earlier one is dropped. Nothing is ever drawn in place of data: input that is not a histogram (none, one bin, more than
+4096, all zero) is skipped; no valid frame for 2 s clears the graph; none at all 3 s after it was turned on, or an API
+the body lacks, leaves it empty and writes one `PREVIEW` line to the card's log (so a bug report carries it). A
+failed registration is tried again only after the next menu or other screen, never in a loop. There is deliberately no
+fallback through `Camera.setPreviewCallback`: extra preview frames on these bodies are a risk to the shutter that the
+histogram is not worth. The shutter key clears the graph until the next frame. R, G and B bins exist and are not drawn.
+
+**The grid** sits at a third and two thirds of the preview image: `DisplayOptions.contentRect` fits the preview size
+the camera reports (`getPreviewSize`, read when the surface is created) into the view, centred, leaving out letterbox
+bars. The A6000 (firmware 3.20) has no `preview-size` parameter at all; its live view takes the photo's shape, so the
+picture size (`getPictureSize`, 6000x4000 at 3:2) stands in. With neither it uses the whole view. Whether the camera letterboxes its image that way or stretches it over the
+surface has not been checked on a body.
+
+**Not yet verified on a camera.** None of this has been run on an A6000 or any other body: that the analysis callback
+exists and delivers `hist.Y`, how its bins are encoded, the frame rate, that registering it does not disturb the
+shutter (issue #100), and where the grid lands. The autofocus-point overlay is a separate feature; when it lands it
+adds its own row to `DisplayOptions`.
 
 ### Snapshot / diff tool
 
@@ -538,7 +590,7 @@ centre, MENU, trash, shutter — and Fn is the one shortcut on top:
 | store the recipe | centre | — |
 | favourite | hold centre | — |
 | brand list | hold MENU → Browse recipes | Fn |
-| hide the panel | trash, or hold MENU → Panel visibility | — |
+| hide the panel | trash, or hold MENU → Display → Panel visibility | — |
 | reset to factory | hold trash, or hold MENU → Reset settings — both ask first | — |
 | developer tools | hold MENU → Developer | — |
 | exit | MENU | — |
@@ -729,6 +781,8 @@ against a SHA-256 pinned in the script (`JUNIT_JAR=<path>` points it at a copy w
 | `ParamsChipsTest` | chip visibility, stepping (wrap vs clamp, the effect → SUB / quality side effects), LEFT/RIGHT and UP/DOWN landing spots, chip text |
 | `ParamsHudTest` | the meta line (warnings only: RAW under an effect, no live preview — the values are on the chips), the minimal pill, the quality prompt |
 | `ParamsToolsTest` | the snapshot tool's id list — including that `res/raw/ids.txt` is well formed and lists every slot the app writes — and its diff lines |
+| `DisplayOptionsTest` | Display: the panel row first, the defaults, one key per element, left off / right on / centre toggles, Restore defaults (options and panel), the submenu as its own level, every row named in every language, the grid's rectangle |
+| `HistogramMathTest` | the histogram's bars: unsigned bins, dark to bright, means of uneven shares, a narrow spike lowered not lost, no overflow, nothing drawn for input that is not a histogram, at most eight frames a second |
 | `DevToolsTest` | the app menu and developer menu rows, About, the Transfer to phone page (chip, card, problem and instruction lines, footer, in Chinese too) and the key logger's lines, settle delays, the sample run's progress / finish lines, and its manifest — a parsable line per recipe, in run order |
 | `KeysTest` | the press / hold gesture, the trash-hold guard, and that the legend never names a key the body lacks — every function on a universal key, Fn only when reported, the order pick · browse · save · fav · menu · hide · exit, the reset hold never hinted |
 | `FocusOverlayModelTest` | the autofocus boxes: area numbers matched by index then position, duplicates, unknown and negative numbers, disabled / inverted / out-of-range rectangles, the live image fitted into the view (3:2 in 16:9, 16:9 in 4:3), corners, centre and off-centre mapping, every status's state, release before a late result, stale sessions, the log line |
@@ -748,7 +802,7 @@ against a SHA-256 pinned in the script (`JUNIT_JAR=<path>` points it at a copy w
 | `LangTest` | the display language: every table has every key and keeps English's placeholders, every key the code asks for exists, the Language row's choices and what Auto resolves to, that samples.txt, locks.txt and favourites stay English in any language, and that each bundled font has a glyph for every character its table uses (read from the font's own cmap) |
 
 **What is not, and cannot be.** `MainActivity` (key dispatch, overlays, the camera and the JNI store), the
-Canvas views (`PickerView`, `PromptView`, `MenuView`, `KeyboardView`, `HintBar`, `Legend`, `FocusOverlayView`), `UiFont` and `jni/jni.cpp` need a running camera or an
+Canvas views (`PickerView`, `PromptView`, `MenuView`, `KeyboardView`, `HintBar`, `Legend`, `HistogramView`, `CompositionGridView`, `FocusOverlayView`), `SonyHistogramSource`, `UiFont` and `jni/jni.cpp` need a running camera or an
 Android runtime; there is no Gradle and no Robolectric here, and a mock of `CameraEx` would prove nothing. Those
 stay on the [on-camera checklist](CONTRIBUTING.md#on-the-camera). Likewise the slot ids themselves: a
 test can show that the app writes `0x01070175 = 6`, not that the camera means B&W by it.

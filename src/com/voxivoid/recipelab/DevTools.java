@@ -20,11 +20,11 @@ final class DevTools {
     static String title() { return Lang.t("dev_title"); }
     static String aboutTitle() { return Lang.t("about_title"); }
 
-    /** the two menu levels: the app menu a MENU hold opens, and the developer menu under it */
-    static final int LEVEL_APP = 0, LEVEL_DEV = 1;
+    /** the menu levels: the app menu a MENU hold opens, and the developer and Display overlays menus under it */
+    static final int LEVEL_APP = 0, LEVEL_DEV = 1, LEVEL_DISPLAY = 2;
 
     /** app menu rows, in display order */
-    static final int APP_BROWSE = 0, APP_NEW = 1, APP_TRANSFER = 2, APP_SYNC = 3, APP_PANEL = 4, APP_LANG = 5, APP_KEY = 6,
+    static final int APP_BROWSE = 0, APP_NEW = 1, APP_TRANSFER = 2, APP_SYNC = 3, APP_DISPLAY = 4, APP_LANG = 5, APP_KEY = 6,
             APP_RESET = 7, APP_REPORT = 8, APP_ABOUT = 9, APP_DEV = 10, APP_ROWS = 11;
 
     /** the icons the menus draw beside their rows (MenuView draws them: the camera font has no symbol glyphs) */
@@ -33,8 +33,8 @@ final class DevTools {
     private static final int[] APP_ICONS = { IC_BROWSE, IC_NEW, IC_TRANSFER, IC_SYNC, IC_PANEL, IC_LANGUAGE, IC_KEYS, IC_RESET, IC_REPORT, IC_ABOUT, IC_DEV };
     private static final int[] DEV_ICONS = { IC_SNAPSHOT, IC_LOCK, IC_SAMPLES, IC_CLOCK, IC_KEYS };
 
-    /** the icon of each row of a level, in row order */
-    static int[] icons(int level) { return (level == LEVEL_APP ? APP_ICONS : DEV_ICONS).clone(); }
+    /** the icon of each row of a level, in row order; null for Display, whose rows have none */
+    static int[] icons(int level) { return level == LEVEL_DISPLAY ? null : (level == LEVEL_APP ? APP_ICONS : DEV_ICONS).clone(); }
 
     /** developer menu rows, in display order */
     static final int ROW_SNAPSHOT = 0, ROW_LOCKS = 1, ROW_SAMPLES = 2, ROW_SETTLE = 3, ROW_KEYS = 4, ROWS = 5;
@@ -57,7 +57,7 @@ final class DevTools {
 
     // ------------------------------------------------------------ the app menu
     /** how many rows a level has */
-    static int rows(int level) { return level == LEVEL_APP ? APP_ROWS : ROWS; }
+    static int rows(int level) { return level == LEVEL_APP ? APP_ROWS : level == LEVEL_DISPLAY ? DisplayOptions.ROWS : ROWS; }
 
     /** the row above / below on a level, wrapping */
     static int nextRow(int level, int row, int dir) { int n = rows(level); return (row + n + dir) % n; }
@@ -69,7 +69,7 @@ final class DevTools {
             case APP_NEW: return Lang.t("menu_new");
             case APP_TRANSFER: return Lang.t("menu_transfer");
             case APP_SYNC: return Lang.t("menu_sync");
-            case APP_PANEL: return Lang.t("menu_panel");
+            case APP_DISPLAY: return Lang.t("menu_display");
             case APP_LANG: return Lang.t("menu_language");
             case APP_KEY: return Lang.t("menu_key");
             case APP_RESET: return Lang.t("menu_reset");
@@ -87,7 +87,7 @@ final class DevTools {
             case APP_NEW: return Lang.t("menu_new_detail");
             case APP_TRANSFER: return Lang.t("menu_transfer_detail");
             case APP_SYNC: return Lang.t("menu_sync_detail");
-            case APP_PANEL: return Lang.t("menu_panel_detail");
+            case APP_DISPLAY: return Lang.t("menu_display_detail");
             case APP_LANG: return Lang.t("menu_language_detail");
             case APP_KEY: return Lang.t("menu_key_detail");
             case APP_RESET: return Lang.t("menu_reset_detail");
@@ -100,12 +100,11 @@ final class DevTools {
 
     /**
      * The value an app menu row shows at its right edge, which left / right change in place; null for a row that has
-     * none. Panel visibility shows the panel state: Full, Label (the pill) or Hidden. Language shows the choice
-     * ({@link Lang#choiceLabel}): Auto, or a language by its own name. Open with a key shows on / off.
+     * none. Language shows the choice ({@link Lang#choiceLabel}): Auto, or a language by its own name. Open with a key
+     * shows on / off. The panel state is a row of the Display submenu ({@link DisplayOptions}).
      */
-    static String appValue(int row, int overlay, int langChoice, boolean keyOn) {
+    static String appValue(int row, int langChoice, boolean keyOn) {
         switch (row) {
-            case APP_PANEL: return panelLabel(overlay);
             case APP_LANG: return Lang.choiceLabel(langChoice);
             case APP_KEY: return Lang.t(keyOn ? "value_on" : "value_off");
             default: return null;
@@ -134,6 +133,12 @@ final class DevTools {
         int pos = 0;                                              // from anything else — the browser — as from full
         for (int i = 0; i < PANELS.length; i++) if (PANELS[i] == overlay) pos = i;
         return PANELS[(pos + PANELS.length + dir) % PANELS.length];
+    }
+
+    /** a stored panel state, as the app opens on it: one of {@link #PANELS}, anything else (the browser, a stray value) the full panel */
+    static int clampPanel(int overlay) {
+        for (int p : PANELS) if (p == overlay) return p;
+        return Params.OV_FULL;
     }
 
     /**
