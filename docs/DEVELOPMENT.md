@@ -13,6 +13,7 @@ see [CONTRIBUTING.md](CONTRIBUTING.md).
 - [App menu and developer menu](#app-menu-and-developer-menu)
 - [Exit rule](#exit-rule)
 - [Live preview](#live-preview)
+- [Autofocus boxes](#autofocus-boxes)
 - [Custom recipes](#custom-recipes)
 - [Transfer to phone](#transfer-to-phone)
 - [Keys on every body](#keys-on-every-body)
@@ -54,6 +55,10 @@ src/com/voxivoid/recipelab/
                                keys a body has — pure functions, no Android, covered by test/
   KeyProbe.java                asks the camera which keys it has and which model it is (Sony classes by reflection);
                                every answer is null off the camera — no Android, covered by test/
+  FocusOverlayModel.java       the autofocus boxes on a half-press: their state, which reported areas they are, where on the
+                               live image they go — no Android, covered by test/ (see Autofocus boxes)
+  FocusAreaBridge.java         Sony's CameraEx AF callbacks by reflection and dynamic proxies, copied into plain values —
+                               no Android, covered by test/ against a CameraEx double
   Lang.java                    the display language: the Language row's choice, what Auto resolves to, and the lookup
                                every word on screen goes through — no Android, covered by test/ (docs/LOCALIZATION.md)
   TextEn.java                  the English text, key by key: the source, and what every other table falls back to
@@ -70,6 +75,7 @@ src/com/voxivoid/recipelab/
                                Draws what Keys.hints builds: the four-way and the wheel are left out as self-evident,
                                a hold is its key's icon labelled "(hold)", and Fn, where the body has it, sits before
                                MENU when both close the list ("Fn / MENU close")
+  FocusOverlayView.java        Canvas-drawn autofocus boxes over the live view, under every other layer; takes no keys
   StarView.java                the star next to the recipe name when it is a favourite
   SponsorLine.java             the small "Love this app? Leave a tip!" line, with a drawn heart, at the top of
                                the live view on the Full and No keys panels (DevTools.sponsorLine, Ko-fi); the About page lists Ko-fi and GitHub Sponsors
@@ -83,6 +89,7 @@ res/                           layout, shape drawables, launcher icon
 assets/fonts/                  the CJK fonts: Noto Sans CJK SC / TC / JP / KR cut down to what the tables use (OFL)
 test/com/voxivoid/recipelab/   JUnit tests for the camera-free classes (see Unit tests); transfer/ for the server
 test/com/sony/scalar/sysutil/  test doubles of the Sony classes KeyProbe reflects on
+test/com/sony/scalar/hardware/ a test double of CameraEx's autofocus listeners, for FocusAreaBridge
 build.sh                       the build: ndk-build, aapt, javac, d8, zipalign, apksigner
 build.cmd                      the same seven steps on Windows
 tools/                         version computation, bumping, the unit tests, the CI gates, the font subsetter, and
@@ -257,6 +264,50 @@ Goes through `Camera.Parameters`: `color-mode`, `saturation`, `contrast`, `sharp
 **Key scan codes** (all in `Keys`, Sony's `ScalarInput` names): wheel 522 / 523, top dial 525 / 526, four-way 103 /
 108 / 105 / 106, centre 232, MENU 514 (SK1 229 on the NEX bodies), trash 595 (SK2 513), shutter 516 / 518, Fn 520.
 Every rotary code — KURU 522 / 523, DIAL_1 525 / 526, DIAL_2 528 / 529, DIAL_3 635 / 634 (clockwise / counter) — is a turn (`Keys.turn`) and does the same on every screen: bodies number their wheels differently (the A5100's one wheel arrives as DIAL_1). Read but not bound: AEL 532, C1 622, DISP 608, PLAY 207 (all swallowed), MOVIE 515 and the zoom lever 610 / 611 (passed on).
+
+## Autofocus boxes
+
+A half-press (S1) on the live view — Full, No keys, Label or Hidden — draws the area the camera reports for autofocus.
+Nothing else changes: S1 still calls `camera.autoFocus(null)` and S2 still goes through `shootKey()`; no focus mode,
+area or parameter is written. `FocusOverlayView` is a plain view over the `SurfaceView`, so the boxes are never in a
+photo.
+
+**The callbacks.** `FocusAreaBridge` sets three CameraEx listeners as dynamic proxies (the interfaces exist on the
+camera only), right after `CameraEx.open`, and sets them back to `null` before `release`:
+`setFocusAreaListener` → `onChanged(FocusAreaInfos, CameraEx)`, the catalog of areas (`rectInfos[]`: `index`, `enable`,
+an Android `Rect`); `setAutoFocusStartListener` → `onStart(CameraEx)`; `setAutoFocusDoneListener` →
+`onDone(int status, int[] areas, CameraEx)`. Signatures as in the OpenMemories-Framework stubs. Every payload is copied
+on Sony's thread and posted to the UI thread with the session number it was registered for. A body without a
+listener logs `af: listeners missing: …` once in LOG.TXT and shoots as before; a callback that throws logs
+`af: callback failed: …`.
+
+**What is drawn** (`FocusOverlayModel`, all of it tested):
+
+| status | box |
+|---|---|
+| S1 down, `onStart`, `STATUS_WORKING` (3) | amber dashed — and no box at all until a result names an area |
+| `STATUS_LOCK` (1) | green, solid, heavier |
+| `STATUS_LOCK_WARN` / `STATUS_LOCK_WARM` (2), any unknown status | amber double line: never shown as a lock |
+| `STATUS_CONTINUOUS` (4) | white, thin |
+| `STATUS_CLEAR` (0) | none |
+
+The numbers in `onDone` are matched to an area's `index`; only when no area has that index is the number taken as a
+position in `rectInfos` (sony-remote-reboot's rule). Disabled, inverted, empty or out-of-range rectangles and unknown
+numbers draw nothing — the overlay never guesses a centre box.
+
+**When they go.** At once on S1 release (no linger), on S2, on any recipe change (`stageRecipe`), when the brand list,
+a menu, a question, the name editor, the key logger or the sample run opens, and on pause. A result that arrives after
+the release, or from a camera session before the current one, is dropped, so a late callback never brings a box back.
+
+**Where they go.** The rectangles span −1000..1000 across the live image (`FocusOverlayModel.SOURCE_MIN` /
+`SOURCE_MAX`, as Android focus areas and sony-remote-reboot have it) — on an A6000 (firmware 3.20) all 26 areas Sony
+sends fall inside it, the widest `[-784,-819,785,820]`. The live image is taken to be the preview size
+(`getPreviewSize()`) fitted, centred, in the view; the A6000 has no `preview-size` parameter at all, so the picture size
+(`getPictureSize()`, 6000x4000 at 3:2) gives the shape instead. No rotation or mirroring is applied. Whether a box sits
+exactly on the camera's own AF frame is not yet checked. The first box of each session writes one line to LOG.TXT —
+`af: preview WxH view WxH state S  #index l,t,r,b > l,t,r,b` — which, with a photo of the screen with Flexible Spot moved
+off centre, is what settles it. With neither size there is no box. The first 12 AF events of each session (S1, the area list Sony sent, start, done and how many areas matched) are logged too, `af: …`, to see where a box is lost. `CameraEx.getFocusAreaInfos(int)` could seed the catalog
+before the first `onChanged`, but what its argument means is not known, so it is not called.
 
 ## Custom recipes
 
@@ -678,6 +729,8 @@ against a SHA-256 pinned in the script (`JUNIT_JAR=<path>` points it at a copy w
 | `ParamsToolsTest` | the snapshot tool's id list — including that `res/raw/ids.txt` is well formed and lists every slot the app writes — and its diff lines |
 | `DevToolsTest` | the app menu and developer menu rows, About, the Transfer to phone page (chip, card, problem and instruction lines, footer, in Chinese too) and the key logger's lines, settle delays, the sample run's progress / finish lines, and its manifest — a parsable line per recipe, in run order |
 | `KeysTest` | the press / hold gesture, the trash-hold guard, and that the legend never names a key the body lacks — every function on a universal key, Fn only when reported, the order pick · browse · save · fav · menu · hide · exit, the reset hold never hinted |
+| `FocusOverlayModelTest` | the autofocus boxes: area numbers matched by index then position, duplicates, unknown and negative numbers, disabled / inverted / out-of-range rectangles, the live image fitted into the view (3:2 in 16:9, 16:9 in 4:3), corners, centre and off-centre mapping, every status's state, release before a late result, stale sessions, the log line |
+| `FocusAreaBridgeTest` | Sony's AF listeners against a CameraEx double (`test/com/sony/scalar/hardware/`): all three set and unset, payloads copied with their session, holes kept, a missing listener or a throwing callback reported, never thrown, the proxies' `equals` / `hashCode` / `toString` |
 | `KeyProbeTest` | that the key probe answers "unknown" off the camera instead of throwing |
 | `KeyProbeCameraTest` | the key probe against test doubles of Sony's `ScalarInput`, `KeyStatus` and `ScalarProperties` (`test/com/sony/scalar/sysutil/`, shaped like the OpenMemories-Framework stubs): the reflection finds the real signatures, only `valid == 1` is a key, only `status == 1` is a press. The doubles throw for anything a test did not set up, which is how the "off the camera" answers stay null |
 | `FavouritesTest` | the favourites list — stored by name, unknown names dropped, marking order kept, toggle, the highlight after a removal, custom recipes as `custom:<name>` kept while their card is out — and the browser's group order: Favourites, Custom with its New row, the brands |
@@ -693,7 +746,7 @@ against a SHA-256 pinned in the script (`JUNIT_JAR=<path>` points it at a copy w
 | `LangTest` | the display language: every table has every key and keeps English's placeholders, every key the code asks for exists, the Language row's choices and what Auto resolves to, that samples.txt, locks.txt and favourites stay English in any language, and that each bundled font has a glyph for every character its table uses (read from the font's own cmap) |
 
 **What is not, and cannot be.** `MainActivity` (key dispatch, overlays, the camera and the JNI store), the
-Canvas views (`PickerView`, `PromptView`, `MenuView`, `KeyboardView`, `HintBar`, `Legend`), `UiFont` and `jni/jni.cpp` need a running camera or an
+Canvas views (`PickerView`, `PromptView`, `MenuView`, `KeyboardView`, `HintBar`, `Legend`, `FocusOverlayView`), `UiFont` and `jni/jni.cpp` need a running camera or an
 Android runtime; there is no Gradle and no Robolectric here, and a mock of `CameraEx` would prove nothing. Those
 stay on the [on-camera checklist](CONTRIBUTING.md#on-the-camera). Likewise the slot ids themselves: a
 test can show that the app writes `0x01070175 = 6`, not that the camera means B&W by it.

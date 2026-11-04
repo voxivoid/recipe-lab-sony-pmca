@@ -249,7 +249,16 @@ Open **Recipe Lab** from the Application List. The live view shows the look. The
 | **MENU** | leave the app · close a list |
 | **hold MENU** | app menu · in the brand list, a custom recipe's options |
 | **Fn** | brand list *(if your camera has Fn — everything works without it)* |
+| **shutter half-press** | focus, and show where the camera is focusing |
 | **shutter** | take a photo |
+
+**Focus boxes**
+
+- **Half-press the shutter** on the live view: the camera's autofocus area appears as a box.
+- **Amber dashed** — still focusing. **Green** — focus locked. **Amber double** — focus uncertain. **White** — continuous AF.
+- Let go and the box goes. It is never drawn on the photo, and never shows over the brand list, menus or questions.
+- No box with a manual lens, in MF, or when the camera does not say where it focused — the shutter works as before.
+- Tried in code only so far, not yet on a camera: the box may not line up with the camera's own focus frame.
 
 **Badges**
 

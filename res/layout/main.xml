@@ -8,6 +8,14 @@
         android:layout_width="fill_parent"
         android:layout_height="fill_parent" />
 
+    <!-- the autofocus boxes on a half-press: over the live view, under everything else, and never takes a key -->
+    <com.voxivoid.recipelab.FocusOverlayView
+        android:id="@+id/af"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:clickable="false"
+        android:focusable="false" />
+
     <!-- the sponsor ask, small, at the top of the live view on the Full and No keys panels -->
     <com.voxivoid.recipelab.SponsorLine
         android:id="@+id/sponsor"
