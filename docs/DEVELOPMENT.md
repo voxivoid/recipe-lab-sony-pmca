@@ -394,20 +394,29 @@ error correction M.
 
 ### On the camera
 
-**Share** (hold MENU on a custom recipe): the card screen, the picture on the left in the chosen shape (4:5, 1:1, 9:16,
+**Share** (hold MENU on a custom recipe): the card is Studio's — its layout (`RecipeCardLayout`), colours and fonts
+(`CardPainter`: static Latin cuts of Inter, Archivo and Space Mono made by `tools/card-fonts.py`, Flutter's letter
+spacing and line boxes; CJK lines in the language's font). The card screen, the picture on the left in the chosen shape (4:5, 1:1, 9:16,
 kept in the preferences as `cardShape`), rows on the right. **Save image** puts the picture into playback the way the
 overlay app does (`Playback`: the camera released, one of its photos decoded and scaled to the picture's size, the
 picture's rows written into it, `JpegExporter`, the camera opened again); it needs one photo the camera took on the
-card. **Show QR code** is the code alone, full screen.
+card. The exporter keeps that photo's DateTimeOriginal and DateTimeDigitized (its DateTime is the save time), so
+`ExifDates` sets both to DateTime in the saved file, in place. The camera's database files the card under that photo's date
+all the same (there is no call to change it), so the newest photo is the one used (`ImageCanvas.newestFirst`, by
+`content_created_utc_date_time`): the card then sits last in playback. On reopening, `startPreview` throws on the
+A6000 for a while; it is asked again every 250 ms (up to 6 s) until the live view is back, the look applied again. **Show QR code** is the code alone, full screen.
 
 **Read Recipe QR Code** (app menu): the A6000 hands out no live view frames (`getPreviewSize` fails), so after 4 s
 without a readable one the shutter takes over. The new picture is the one in DCIM that was not there before the press
 (the card's file times read an hour off the app's clock), read once its size stops changing, every 200 ms; small
 first (750 px across), larger (1500 px) only when that held no code. The answer shows first; then the shot is deleted
 through `AvindexStore.Images.Media.deleteImage(ContentResolver, Uri, long _id)` (found in the firmware's
-database_library), so playback does not keep a picture it cannot display. That call may not return while the camera
-is open: it gets 3 s, then the files are deleted directly and the call is not tried again until the app restarts.
-MENU leaves at any point. The log's `QR` lines time each step.
+database_library), so playback does not keep a picture it cannot display. Not straight away: with the camera open
+that call hung and the camera then stored no more shots until the app restarted, and letting the camera go for it
+left the live view dark. The shots are kept until the app is left (`onPause`, the camera released there anyway),
+then deleted; playback, the only place they would show, is outside the app. The call gets 3 s, then the files are
+deleted directly and it is not tried again until the app restarts. The photo is read a row at a time into luminance bytes (a quarter of the memory of its
+pixels; the whole-pixel read ran out of memory). MENU leaves at any point. The log's `QR` lines time each step.
 
 **RECIPES/LINKS.TXT**: each custom recipe's name and share link, as the camera has no clipboard
 (`CustomRecipes.linksText` / `writeLinks`). Brought up to date on every load of the folder (start, return from

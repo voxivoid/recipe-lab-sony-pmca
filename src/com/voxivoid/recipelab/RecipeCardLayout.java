@@ -11,7 +11,11 @@ final class RecipeCardLayout {
     /** the shapes, the common ones of feeds and chats: 4:5 a post, 1:1 a square, 9:16 a story. The first is the default */
     static final int PORTRAIT = 0, SQUARE = 1, STORY = 2, SHAPES = 3;
     static final String[] LABEL = { "4:5", "1:1", "9:16" };
-    static final int[] WIDTH = { 1080, 1080, 1080 }, HEIGHT = { 1350, 1080, 1920 };
+    /**
+     * Studio's sizes, but 4:5 two rows taller: the camera makes its images in heights of 8 rows, and refused 1350 (the
+     * A6000, 2026-11-03), so the card fills 1352 — 0.15 % off 4:5, which no feed notices.
+     */
+    static final int[] WIDTH = { 1080, 1080, 1080 }, HEIGHT = { 1352, 1080, 1920 };
 
     static final float MARGIN = 72, STRIPE = 12;
     /** what a story shows clear of the app's own bars, top and bottom */
@@ -90,6 +94,30 @@ final class RecipeCardLayout {
     }
 
     /** the line under the code: "Scan to add · recipelab.io" */
+    /**
+     * Whether Studio's card fonts (tools/card-fonts.py: ASCII, Latin-1, Latin Extended-A, Vietnamese and a few
+     * punctuation marks) hold every character of {@code s}; a line that is not is drawn in the language's own font.
+     */
+    static boolean latin(String s) {
+        for (int i = 0; i < s.length(); i++) {
+            char ch = s.charAt(i);
+            boolean ok = (ch >= 0x20 && ch < 0x7F) || (ch >= 0xA0 && ch < 0x180) || ch == 0x1A0 || ch == 0x1A1 || ch == 0x1AF
+                    || ch == 0x1B0 || (ch >= 0x300 && ch < 0x304) || ch == 0x309 || ch == 0x323 || (ch >= 0x1EA0 && ch < 0x1EFA)
+                    || ch == 0x2013 || ch == 0x2014 || ch == 0x2018 || ch == 0x2019 || ch == 0x201C || ch == 0x201D
+                    || ch == 0x2022 || ch == 0x2026 || ch == 0x2192 || ch == 0x2212;
+            if (!ok) return false;
+        }
+        return true;
+    }
+
+    /**
+     * Where a line's baseline goes, as Flutter places it: a line box {@code lineHeight} tall from {@code top}, its
+     * leading split above and below in proportion to the font's {@code ascent} and {@code descent} (both positive).
+     */
+    static float baseline(float top, float lineHeight, float ascent, float descent) {
+        return ascent + descent <= 0 ? top : top + ascent * lineHeight / (ascent + descent);
+    }
+
     static String scanLine() { return Lang.t("card_scan") + " · recipelab.io"; }
 
     private static String signed(int v) { return v > 0 ? "+" + v : String.valueOf(v); }

@@ -122,4 +122,27 @@ class QrScanTest {
         assertEquals("D/DSC2.ARW", QrScan.toRead(Arrays.asList("D/DSC2.ARW")), "a RAW-only shot is read through the JPEG it carries");
         assertNull(QrScan.toRead(Arrays.<String>asList()));
     }
+
+    @Test void aPhotoReadARowAtATimeReadsAsItDidWhole() {
+        int w = 1500, h = 1000;
+        int[] px = argb(grey(LINK, w, h, 400, 200, 12, false));
+        byte[] y = new byte[w * h];
+        int[] row = new int[w];
+        for (int r = 0; r < h; r++) {
+            System.arraycopy(px, r * w, row, 0, w);
+            QrScan.luminance(row, w, y, r * w);
+        }
+        assertEquals(LINK, QrScan.fromLuminance(y, w, h));
+    }
+
+    @Test void luminanceIsZxingsWeighting() {
+        byte[] out = new byte[5];
+        int[] px = { 0xFF000000, 0xFFFFFFFF, 0xFF102030, 0x00FF0000, 0xFF0000FF };
+        QrScan.luminance(px, 4, out, 1);
+        assertEquals(0, out[0], "before where it was asked to start: untouched");
+        assertEquals(0, out[1] & 0xFF, "black");
+        assertEquals(255, out[2] & 0xFF, "white");
+        assertEquals((0x10 + 2 * 0x20 + 0x30) / 4, out[3] & 0xFF, "green counts twice");
+        assertEquals(0xFF / 4, out[4] & 0xFF, "alpha ignored; only n pixels");
+    }
 }

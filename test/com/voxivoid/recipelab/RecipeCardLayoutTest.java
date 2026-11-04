@@ -12,15 +12,17 @@ class RecipeCardLayoutTest {
     @Test void theShapesAreStudiosFourFiveFirst() {
         assertEquals(Arrays.asList("4:5", "1:1", "9:16"), Arrays.asList(RecipeCardLayout.LABEL));
         assertEquals(RecipeCardLayout.SHAPES, RecipeCardLayout.LABEL.length);
-        int[][] sizes = { { 1080, 1350 }, { 1080, 1080 }, { 1080, 1920 } };
+        int[][] sizes = { { 1080, 1352 }, { 1080, 1080 }, { 1080, 1920 } };
         for (int s = 0; s < RecipeCardLayout.SHAPES; s++) {
             RecipeCardLayout l = RecipeCardLayout.of(s);
             assertEquals(s, l.shape);
             assertEquals(sizes[s][0], l.width);
             assertEquals(sizes[s][1], l.height);
             String[] wh = RecipeCardLayout.LABEL[s].split(":");
-            assertEquals(l.width * Integer.parseInt(wh[1]), l.height * Integer.parseInt(wh[0]), "its own ratio");
+            float ratio = (float) l.width / l.height, want = Float.parseFloat(wh[0]) / Float.parseFloat(wh[1]);
+            assertEquals(want, ratio, want * 0.002f, "its own ratio, within what the camera's sizes allow");
             assertEquals(0, l.width % 2, "UYVY: an even width");
+            assertEquals(0, l.height % 8, "the camera makes images in heights of 8 rows: it refused 1350");
         }
         assertEquals(RecipeCardLayout.PORTRAIT, 0, "the default");
     }
@@ -100,5 +102,32 @@ class RecipeCardLayoutTest {
         assertEquals("+1.0 EV", RecipeCardLayout.cells(keep)[7][1]);
         assertTrue(RecipeCardLayout.cells(keep)[5][1].contains("2"), "a DRO level");
         assertEquals("Scan to add · recipelab.io", RecipeCardLayout.scanLine());
+    }
+
+    @Test void studiosFontsDrawLatinAndVietnameseLines() {
+        assertTrue(RecipeCardLayout.latin("Sony PT (portrait) 2"));
+        assertTrue(RecipeCardLayout.latin("Toy camera · Normal"), "the middle dot");
+        assertTrue(RecipeCardLayout.latin("Auto A5 G−2"), "the minus sign");
+        assertTrue(RecipeCardLayout.latin("Cân bằng trắng"), "Vietnamese");
+        assertTrue(RecipeCardLayout.latin("ƠƯ ơư Ỹ"), "Vietnamese's own letters, both ends of its block");
+        assertTrue(RecipeCardLayout.latin("Quét để thêm · recipelab.io"));
+        assertTrue(RecipeCardLayout.latin(""));
+        assertTrue(RecipeCardLayout.latin("Naïve – “x” … → •"));
+        assertFalse(RecipeCardLayout.latin("クリエイティブスタイル"), "Japanese: its own font");
+        assertFalse(RecipeCardLayout.latin("白平衡"));
+        assertFalse(RecipeCardLayout.latin("화이트 밸런스"));
+        assertFalse(RecipeCardLayout.latin("Auto\u00a0\u1EFA"), "past Vietnamese");
+        assertFalse(RecipeCardLayout.latin("\u0180"), "past Latin Extended-A");
+        assertFalse(RecipeCardLayout.latin("a\tb"), "a control character");
+        assertFalse(RecipeCardLayout.latin("\u007f"));
+        assertFalse(RecipeCardLayout.latin("x\u2190"), "an arrow the cut does not hold");
+    }
+
+    @Test void aLineSitsInItsBoxAsFlutterPutsIt() {
+        // Inter at 64 px (ascent 1984, descent 494 per 2048) in Lab.title's 1.2 line: 76.8 px, split 62 : 15.44
+        assertEquals(100 + 76.8f * 62f / 77.44f, RecipeCardLayout.baseline(100, 76.8f, 62f, 15.44f), 1e-3f);
+        assertEquals(10 + 30f, RecipeCardLayout.baseline(10, 40, 30, 10), 1e-4f, "3 : 1 of a 40 px line");
+        assertEquals(10 + 15f, RecipeCardLayout.baseline(10, 20, 30, 10), 1e-4f, "a line smaller than the font");
+        assertEquals(5f, RecipeCardLayout.baseline(5, 20, 0, 0), "no metrics: the top");
     }
 }

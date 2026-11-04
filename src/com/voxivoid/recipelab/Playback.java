@@ -85,11 +85,14 @@ final class Playback {
             t.media = cards[0];
             t.before = new HashSet<String>(jpegs(dcim));
 
-            // any photo in the database, the camera's own folders first: the image is only a vessel for the card's pixels
-            List<String> ids = catalogIds(cr, t.media);
+            // a photo in the database, the newest first: the image is only a vessel for the card's pixels, but the camera
+            // files the card under that photo's date
+            List<String> dates = new ArrayList<String>();
+            List<String> ids = catalogIds(cr, t.media, dates);
 
             int tried = 0;
-            for (String id : ids) {
+            for (int k = 0; k < ids.size(); k++) {
+                String id = ids.get(k);
                 if (tried++ >= TEMPLATES) break;
                 StringBuilder why = new StringBuilder();
                 Object frame = decode(id, why);
@@ -109,7 +112,7 @@ final class Playback {
                     from = next;
                 }
                 t.frame = frame; t.image = from;
-                log.line("playback: made " + w + "x" + h + " from " + id + " (" + fw + "x" + fh + ")");
+                log.line("playback: made " + w + "x" + h + " from " + id + " (" + fw + "x" + fh + ", taken " + dates.get(k) + ")");
                 break;
             }
             if (t.image == null) throw new IllegalStateException("no photo the camera could make the picture from");
@@ -250,32 +253,45 @@ final class Playback {
         }
     }
 
+    /** the database's column for when a photo was taken; it decides where Save image's card is filed */
+    static final String TAKEN = "content_created_utc_date_time";
+
     /**
-     * Every JPEG in the database, by id: the lowest folder first — the camera's own count up from 100, and the samples
-     * and other folders a computer made sit high — and the newest file first in each.
+     * Every JPEG in the database, by id, the newest taken first (ImageCanvas.newestFirst). A database without the date
+     * column is listed as well, by folder and file; {@code dates}, when given, gets each one's date in the same order.
      */
-    static List<String> catalogIds(ContentResolver cr, String media) {
-        List<long[]> keyed = new ArrayList<long[]>();
+    static List<String> catalogIds(ContentResolver cr, String media, List<String> dates) {
         List<String> ids = new ArrayList<String>();
         Cursor c = null;
         try {
             Uri uri = (Uri) Class.forName("com.sony.scalar.provider.AvindexStore$Images$Media").getMethod("getContentUri", String.class).invoke(null, media);
-            c = cr.query(uri, new String[] { "_data", "dcf_folder_number", "dcf_file_number", "exist_jpeg" }, null, null, null);
+            String[] withDate = { "_data", "dcf_folder_number", "dcf_file_number", "exist_jpeg", TAKEN };
+            try { c = cr.query(uri, withDate, null, null, null); } catch (Throwable t) { c = null; }
+            if (c == null || c.getColumnIndex(TAKEN) < 0) {
+                if (c != null) c.close();
+                c = cr.query(uri, new String[] { "_data", "dcf_folder_number", "dcf_file_number", "exist_jpeg" }, null, null, null);
+            }
             if (c == null) return ids;
             int data = c.getColumnIndex("_data"), folder = c.getColumnIndex("dcf_folder_number"), file = c.getColumnIndex("dcf_file_number"),
-                    jpeg = c.getColumnIndex("exist_jpeg");
+                    jpeg = c.getColumnIndex("exist_jpeg"), taken = c.getColumnIndex(TAKEN);
             if (data < 0 || folder < 0 || file < 0 || jpeg < 0) return ids;
-            List<String> all = new ArrayList<String>();
+            List<String> all = new ArrayList<String>(), when = new ArrayList<String>();
+            List<Integer> folders = new ArrayList<Integer>(), files = new ArrayList<Integer>();
             while (c.moveToNext()) {
                 String id = c.getString(data);
                 if (c.getInt(jpeg) == 0 || id == null || !id.startsWith("avindex://")) continue;
-                keyed.add(new long[] { c.getInt(folder) * 100000L + (99999 - c.getInt(file)), all.size() });
                 all.add(id);
+                when.add(taken < 0 ? null : c.getString(taken));
+                folders.add(c.getInt(folder));
+                files.add(c.getInt(file));
             }
-            java.util.Collections.sort(keyed, new java.util.Comparator<long[]>() {
-                public int compare(long[] a, long[] b) { return a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0; }
-            });
-            for (long[] k : keyed) ids.add(all.get((int) k[1]));
+            int n = all.size();
+            int[] fo = new int[n], fi = new int[n];
+            for (int i = 0; i < n; i++) { fo[i] = folders.get(i); fi[i] = files.get(i); }
+            for (int i : ImageCanvas.newestFirst(when.toArray(new String[n]), fo, fi)) {
+                ids.add(all.get(i));
+                if (dates != null) dates.add(when.get(i));
+            }
         } catch (Throwable t) {
             // none, then
         } finally {

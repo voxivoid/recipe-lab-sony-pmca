@@ -53,6 +53,17 @@ final class QrScan {
         return read(new PlanarYUVLuminanceSource(y, width, height, 0, 0, width, height, false));
     }
 
+    /**
+     * {@code n} ARGB pixels as luminance bytes into {@code out} from {@code at}: (red + 2 × green + blue) / 4, as ZXing's
+     * RGBLuminanceSource has it, so a photo read a row at a time reads as it did whole.
+     */
+    static void luminance(int[] argb, int n, byte[] out, int at) {
+        for (int i = 0; i < n; i++) {
+            int p = argb[i];
+            out[at + i] = (byte) ((((p >> 16) & 0xFF) + 2 * ((p >> 8) & 0xFF) + (p & 0xFF)) / 4);
+        }
+    }
+
     /** the text of a QR code in ARGB pixels (a decoded photo); null when none */
     static String fromPixels(int[] argb, int width, int height) {
         if (argb == null || width <= 0 || height <= 0 || argb.length < width * height) return null;

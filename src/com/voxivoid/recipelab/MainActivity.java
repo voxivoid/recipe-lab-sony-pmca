@@ -387,11 +387,31 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         try {
             openCamera();
             camera.setPreviewDisplay(holder);
-            camera.startPreview();
-            previewOk = true;
-            applyPreview();
-        } catch (Throwable t) { previewOk = false; previewErr = String.valueOf(t); logPreview("camera did not reopen: " + previewErr); }
+        } catch (Throwable t) { previewOk = false; previewErr = String.valueOf(t); logPreview("camera did not reopen: " + previewErr); return; }
+        previewOk = true;
+        try { applyPreview(); } catch (Throwable t) { logPreview("look not applied after reopening: " + t); }
+        // just reopened, the A6000 refuses startPreview ("startPreview failed") and the screen stays dark: asked again
+        // until it takes
+        restartTries = 0;
+        handler.removeCallbacks(restartPreview);
+        restartPreview.run();
     }
+
+    private static final int RESTART_TRIES = 24, RESTART_MS = 250;
+    private int restartTries;
+    private final Runnable restartPreview = new Runnable() {
+        public void run() {
+            if (camera == null || !resumed) return;
+            try {
+                camera.startPreview();
+                if (restartTries > 0) logPreview("live view back after " + restartTries * RESTART_MS + " ms");
+                try { applyPreview(); } catch (Throwable t) { logPreview("look not applied after reopening: " + t); }
+            } catch (Throwable t) {
+                if (++restartTries < RESTART_TRIES) { handler.postDelayed(this, RESTART_MS); return; }
+                logPreview("live view did not come back in " + RESTART_TRIES * RESTART_MS + " ms: " + t);
+            }
+        }
+    };
 
     @Override
     protected void onPause() {
@@ -404,7 +424,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         closeQr();
         if (promptOpen && promptKind >= P_DISCARD) { closePrompt(); afterDiscard = null; }   // about this recipe: the card is read again on the way back
         stopLogger();
-        handler.removeCallbacks(hideToast);
+        handler.removeCallbacks(restartPreview);
+        handler.removeCallbacks(hideToast); toast.setVisibility(View.GONE);   // gone with its timer, or it stays on coming back
         handler.removeCallbacks(enterHold); handler.removeCallbacks(menuHold); handler.removeCallbacks(trashHold);
         enter.reset(); menuKeyHold.reset(); trash.reset();
         holder.removeCallback(this);
@@ -414,6 +435,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         try { if (camera != null) camera.stopPreview(); } catch (Throwable t) {}
         try { if (cameraEx != null) cameraEx.getClass().getMethod("release").invoke(cameraEx); } catch (Throwable t) {}
         cameraEx = null; camera = null;
+        deleteScanPhotos();                                      // with the camera let go, as the camera's delete needs
     }
 
     @Override
@@ -1016,6 +1038,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     /** Share's screen: the card in the chosen shape, and the rows — shape, Save image, Show QR code */
     private void renderShareCard() {
         cardPainter.setTypeface(UiFont.of(this, Lang.current()));
+        cardPainter.useStudioFonts(getAssets());
         String[] rows = { Lang.t("share_shape"), Lang.t("share_save"), Lang.t("share_show_qr") };
         qr.card(cardPainter, RecipeCardLayout.of(cardShape), shareRecipe, shareModules, shareSize, rows,
                 RecipeCardLayout.LABEL[cardShape], shareRow, Keys.hints(Keys.H_SHARE, caps));
@@ -1047,6 +1070,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         final android.content.ContentResolver cr = getContentResolver();
         final CardPainter painter = new CardPainter();
         painter.setTypeface(UiFont.of(this, Lang.current()));
+        painter.useStudioFonts(getAssets());
         saving = true;
         qr.cover(r.name, Lang.t("share_saving"), true, new Keys.Hints(new int[0], new int[0], new String[0]));
         releaseCamera();
@@ -1060,9 +1084,13 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
                 Playback.Target t = null;
                 try {
                     t = Playback.prepare(cr, dcim, l.width, l.height, plog);
+                    plog.line("playback: image " + java.util.Arrays.toString(t.geometry));
                     writeCard(t, painter.bitmap(l, r, modules, size), l);
                     Playback.export(t, cr, dcim, worker, plog, new Playback.Done() {
-                        public void done(String path, String why) { savedCard(thread, path, why); }
+                        public void done(String path, String why) {
+                            if (path != null) log(CardLog.QR, ExifDates.align(new File(path)));
+                            savedCard(thread, path, why);
+                        }
                     });
                 } catch (Throwable e) {
                     Playback.discard(t);
@@ -1268,7 +1296,9 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         resumePreview();
         final File photo = scanPhoto;
         final long found = SystemClock.uptimeMillis();
-        log(CardLog.QR, "scan: reading " + photo.getPath() + " (" + photo.length() + " bytes), written " + (found - scanShotAt) + " ms after the shutter");
+        Runtime rt = Runtime.getRuntime();
+        log(CardLog.QR, "scan: reading " + photo.getPath() + " (" + photo.length() + " bytes), written " + (found - scanShotAt) + " ms after the shutter"
+                + "  ·  heap " + (rt.totalMemory() - rt.freeMemory()) / 1024 + " of " + rt.maxMemory() / 1024 + " KB");
         new Thread(new Runnable() {
             public void run() {
                 String text = null, failed = null;
@@ -1284,7 +1314,9 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
                         scanRead(read, true);
                     }
                 });
-                deleteScanPhotos();                              // read or not: the picture was only ever a way to see the code
+                handler.post(new Runnable() {                    // read or not: the picture was only ever a way to see the code
+                    public void run() { keepScanPhotos(); }
+                });
             }
         }, "qr-photo").start();
     }
@@ -1311,27 +1343,49 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         return p == null ? null : new File(p);
     }
 
+    /** the scanner's photos, deleted once the app is left (deleteScanPhotos) */
+    private static final java.util.List<String> scanLeft = new java.util.ArrayList<String>();
+
     /**
-     * Deletes what the scanner's shutter added to the card — the JPG and the ARW of the shot — so reading codes leaves no
-     * pictures behind. Only files that were not there before the press; each deletion is logged. Through the camera's
-     * own delete first ({@link Playback#deleteShot}): a file deleted behind its back stays in playback as a picture it
-     * cannot display. What that leaves is deleted as a file. The camera's delete may never return (it hung on an A6000
-     * with the camera open): it gets {@link #DB_DELETE_MS}, and once it has not answered it is not asked again until the
-     * app starts over.
+     * What the scanner's shutter added to the card — the JPG and the ARW of the shot, not there before the press — set
+     * aside to be deleted when the app is left. Deleted now, the camera's own delete hung with the camera open (and the
+     * camera then stored no more shots), and letting the camera go for it left the live view dark (A6000, 2026-11-03).
+     * Playback, the only place they would show, is outside the app.
+     */
+    private void keepScanPhotos() {
+        int n = 0;
+        synchronized (scanLeft) {
+            for (String p : QrScan.added(scanBefore, photos(new File(cardRoot(), "DCIM"))))
+                if (!scanLeft.contains(p)) { scanLeft.add(p); n++; }
+        }
+        log(CardLog.QR, "scan: " + n + " files to delete when the app is left");
+    }
+
+    /**
+     * The scanner's photos deleted, on leaving the app with the camera let go: through the camera's own delete first
+     * ({@link Playback#deleteShot}) — a file deleted behind its back stays in playback as a picture it cannot display —
+     * then what that leaves as files. The camera's delete gets {@link #DB_DELETE_MS}; once it has not answered it is not
+     * asked again until the app starts over. Each deletion is logged.
      */
     private void deleteScanPhotos() {
-        java.util.Set<String> before = scanBefore;
-        for (String p : QrScan.added(before, photos(new File(cardRoot(), "DCIM")))) {
-            File f = new File(p);
-            if (!f.exists()) continue;                             // the camera's delete took it with its pair
-            long size = f.length();
-            if (!dbDeleteStuck) {
-                String why = dbDelete(p);
-                log(CardLog.QR, "scan: " + p + ": " + why);
-                if (!f.exists()) { log(CardLog.QR, "scan: deleted " + p + " (" + size + " bytes) from playback"); continue; }
+        final java.util.List<String> paths;
+        synchronized (scanLeft) { paths = new java.util.ArrayList<String>(scanLeft); scanLeft.clear(); }
+        if (paths.isEmpty()) return;
+        new Thread(new Runnable() {
+            public void run() {
+                for (String p : paths) {
+                    File f = new File(p);
+                    if (!f.exists()) continue;                     // the camera's delete took it with its pair
+                    long size = f.length();
+                    if (!dbDeleteStuck) {
+                        String why = dbDelete(p);
+                        log(CardLog.QR, "scan: " + p + ": " + why);
+                        if (!f.exists()) { log(CardLog.QR, "scan: deleted " + p + " (" + size + " bytes) from playback"); continue; }
+                    }
+                    log(CardLog.QR, f.delete() ? "scan: deleted " + p + " (" + size + " bytes)" : "scan: could not delete " + p);
+                }
             }
-            log(CardLog.QR, f.delete() ? "scan: deleted " + p + " (" + size + " bytes)" : "scan: could not delete " + p);
-        }
+        }, "qr-clean").start();
     }
 
     private static final long DB_DELETE_MS = 3000;
@@ -1386,11 +1440,20 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             b = BitmapFactory.decodeFile(photo.getPath(), o);
         }
         if (b == null) throw new Exception("the picture did not decode");
+        // the luminance only, a row at a time: a quarter of the memory of every pixel at once, which ran out (2026-11-03)
         int w = b.getWidth(), h = b.getHeight();
-        int[] px = new int[w * h];
-        b.getPixels(px, 0, w, 0, 0, w, h);
-        b.recycle();
-        return QrScan.fromPixels(px, w, h);
+        byte[] y;
+        try {
+            y = new byte[w * h];
+            int[] row = new int[w];
+            for (int r = 0; r < h; r++) {
+                b.getPixels(row, 0, w, 0, r, w, 1);
+                QrScan.luminance(row, w, y, r * w);
+            }
+        } finally {
+            b.recycle();
+        }
+        return QrScan.fromLuminance(y, w, h);
     }
 
     /** what a frame or a photo held: a recipe is offered, anything else said and the scanner goes on */
