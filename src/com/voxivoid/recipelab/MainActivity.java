@@ -214,6 +214,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         final Thread.UncaughtExceptionHandler was = Thread.getDefaultUncaughtExceptionHandler();
         Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
             public void uncaughtException(Thread th, Throwable t) {
+                flushHeld();                                     // the lines still held, then the crash: nothing waits now
                 log(CardLog.CRASH, CardLog.stack(t));            // written and closed before the app goes
                 if (was != null) was.uncaughtException(th, t);
             }
@@ -227,10 +228,43 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         catch (Throwable t) { return null; }
     }
 
+    /**
+     * A NEX-5R restarts the camera when the app writes to the card as it opens, before the UI has drawn (issue #130).
+     * So nothing is written to the card until {@link #CARD_DELAY_MS} after each opening: until then the log lines,
+     * and PARAMS.TXT, wait in memory.
+     */
+    private static final int CARD_DELAY_MS = 5000;
+    private static final StringBuilder held = new StringBuilder();
+    private static boolean cardOpen;
+    private String heldParams;                                   // PARAMS.TXT, waiting with the lines
+    private int heldParamsHash;
+
     /** one line of LOG.TXT; a log that cannot be written must never take the app down with it */
     private static void log(String kind, String msg) {
-        try { CardLog.append(CardLog.dir(cardRoot()), CardLog.LOG, CardLog.line(kind, msg)); } catch (Throwable t) {}
+        String line;
+        try { line = CardLog.line(kind, msg); } catch (Throwable t) { return; }
+        synchronized (held) { if (!cardOpen) { held.append(line); return; } }
+        try { CardLog.append(CardLog.dir(cardRoot()), CardLog.LOG, line); } catch (Throwable t) {}
     }
+
+    /** the card may be written from now on: the lines held so far go first */
+    private static void flushHeld() {
+        String text;
+        synchronized (held) { cardOpen = true; text = held.toString(); held.setLength(0); }
+        if (text.length() > 0) try { CardLog.append(CardLog.dir(cardRoot()), CardLog.LOG, text); } catch (Throwable t) {}
+    }
+
+    private final Runnable openCard = new Runnable() {
+        public void run() {
+            flushHeld();
+            if (heldParams == null) return;
+            String text = heldParams; heldParams = null;
+            try {
+                CardLog.replace(CardLog.dir(cardRoot()), CardLog.PARAMS, text);
+                prefs.edit().putInt("paramsHash", heldParamsHash).commit();
+            } catch (Throwable t) {}
+        }
+    };
 
     /**
      * Each opening: the body, the build and the mode dial; what the store holds, when it changed since it was last
@@ -254,10 +288,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         if (origFlat == null || dir == null) return;
         int hash = origFlat.hashCode();
         if (hash == prefs.getInt("paramsHash", 0) && new File(dir, CardLog.PARAMS).exists()) return;
-        try {
-            CardLog.replace(dir, CardLog.PARAMS, CardLog.paramsFile(CardLog.now() + "  " + head, origFlat));
-            prefs.edit().putInt("paramsHash", hash).commit();
-        } catch (Throwable t) {}
+        try { heldParams = CardLog.paramsFile(CardLog.now() + "  " + head, origFlat); heldParamsHash = hash; }   // written by openCard
+        catch (Throwable t) {}
     }
 
     /**
@@ -362,6 +394,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         logOpen();
         showRecipe();                                          // with the edits last applied, when the camera still holds them
         applyPreview(); render();
+        handler.postDelayed(openCard, CARD_DELAY_MS);            // the UI first, the card after (issue #130)
         if (!prefs.getBoolean("keysNoticeSeen", false)) {               // the keys moved in this build (issue #18): say so once
             showToast(Keys.notice(), 8000);
             prefs.edit().putBoolean("keysNoticeSeen", true).commit();
@@ -419,6 +452,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     protected void onPause() {
         super.onPause();
         resumed = false;
+        handler.removeCallbacks(openCard);                       // held lines wait for the next opening's delay
+        synchronized (held) { cardOpen = false; }
         stopRun(false);                                          // a run cannot outlive the camera it shoots with
         stopTransfer();                                          // leaving the app stops Transfer to phone: hotspot off, auto power-off back
         closeMenu();
