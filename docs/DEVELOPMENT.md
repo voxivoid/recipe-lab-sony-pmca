@@ -36,7 +36,8 @@ src/com/voxivoid/recipelab/
   Recipes.java                 the 77-entry table (the factory look, FACTORY, first in Sony, then the 76 others), brands,
                                GROUP_START / GROUP_COUNT, list navigation
   Favourites.java              the favourites list: stored by name in the app's preferences, and how the browser
-                               walks the Favourites and Custom groups — pure functions, no Android, covered by test/
+                               walks the All, Favourites and Custom groups, and the wheel's loop — pure functions, no
+                               Android, covered by test/
   CustomRecipes.java           custom recipes on the memory card: what a recipe may hold, names, file names, and reading /
                                writing the RECIPES folder — no Android, covered by test/
   RecipeFormats.java           the custom recipe file's versions: which RecipeFormat reads a file (its format line) and
@@ -72,7 +73,7 @@ src/com/voxivoid/recipelab/
   TextJa.java, TextKo.java, TextVi.java   Japanese, Korean and Vietnamese, the same way
   UiFont.java                  the typeface of each language: the camera's for English and Vietnamese, assets/fonts for the rest
   res/raw/ids.txt              every settings entry of 16 bytes or less, used by the snapshot/diff tool
-  PickerView.java              Canvas-drawn brand browser (Favourites, Custom, then the brands; an empty group says how to fill it)
+  PickerView.java              Canvas-drawn brand browser (All, Favourites, Custom, then the brands; an empty group says how to fill it)
   KeyboardView.java            Canvas-drawn name editor: the field and NameEntry's keyboard grid
   MenuView.java                Canvas-drawn full-screen list: the app menu, the developer menu (rows with drawn icons, DevTools.icons; some with a
                                value left / right change in place, between drawn arrows), and read-only pages
@@ -290,6 +291,9 @@ write to the card, PMCADemo, uses `PMCADEMO/LOG.TXT`. A first build that used `R
 to Z. An index moves when a recipe is added, renamed or deleted, so nothing persistent holds one: the recipe the app
 reopens on — the last one selected (centre in the brand list) or applied (a successful write, New recipe), whichever
 came last, never just the last one the wheel scrolled past (`rememberReopen`) — is kept as `customRecipe` (its name) beside `recipe`, and favourites by name.
+The group that recipe was selected from is what the wheel loops through on the main screen (issue #155), kept as
+`wheelGroup` by name (`Favourites.wheelKey`: `all`, `favourites`, `custom` or the brand); nothing stored, or a group
+left empty, loops through all of them.
 
 **The file.** YAML — a flat mapping, one `key: value` per line, `#` comments, values plain or quoted — UTF-8 (a BOM is
 ignored), English always, `.YML`. Anything else YAML allows (lists, nesting) and any line that is not `key: value` (an
@@ -753,7 +757,7 @@ against a SHA-256 pinned in the script (`JUNIT_JAR=<path>` points it at a copy w
 | `KeysTest` | the press / hold gesture, the trash-hold guard, and that the legend never names a key the body lacks — every function on a universal key, Fn only when reported, the order pick · browse · save · fav · menu · hide · exit, the reset hold never hinted |
 | `KeyProbeTest` | that the key probe answers "unknown" off the camera instead of throwing |
 | `KeyProbeCameraTest` | the key probe against test doubles of Sony's `ScalarInput`, `KeyStatus` and `ScalarProperties` (`test/com/sony/scalar/sysutil/`, shaped like the OpenMemories-Framework stubs): the reflection finds the real signatures, only `valid == 1` is a key, only `status == 1` is a press. The doubles throw for anything a test did not set up, which is how the "off the camera" answers stay null |
-| `FavouritesTest` | the favourites list — stored by name, unknown names dropped, marking order kept, toggle, the highlight after a removal, custom recipes as `custom:<name>` kept while their card is out — and the browser's group order: Favourites, Custom with its New row, the brands |
+| `FavouritesTest` | the favourites list — stored by name, unknown names dropped, marking order kept, toggle, the highlight after a removal, custom recipes as `custom:<name>` kept while their card is out — and the browser's group order: All, Favourites, Custom with its New row, the brands; the wheel looping through the group last picked from, stored by name, falling back to all when that group is empty |
 | `RecipeFormatsTest` | the file's versions: numbered 1, 2, 3 … with the newest written, every writer read back by its own reader, each file read by the version it names (a stand-in version 3 beside formats 1 and 2), format 2's family line (missing, another family, exact spelling), unknown versions skipped whole, the shared envelope |
 | `CardLogTest` | the log's 8.3 names and folder, appending and creating the folders, the roll-over (one old file, never the diff), the line format, the refused-write, written-slots and dropped-preview lines |
 | `CustomRecipesTest` | the recipe file: every built-in look survives a round trip, hand-edited files (BOM, CRLF, case, comments, unknown keys) still read, a newer format or any out-of-range value skips the file with the reason, names and default names, file names, and save / edit / rename / delete / load against a temporary folder |

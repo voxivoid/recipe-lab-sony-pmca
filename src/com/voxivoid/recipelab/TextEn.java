@@ -60,6 +60,7 @@ final class TextEn {
         { "lock_report_unreadable", "  ·  %1$d would not answer" },
 
         // ---- favourites and the brand list
+        { "group_all", "All" },
         { "group_favourites", "Favourites" },
         { "favourite_added", "%1$s added to Favourites" },
         { "favourite_removed", "%1$s removed from Favourites" },

@@ -46,6 +46,7 @@ final class TextZhHans {
         { "lock_report_none", "已检查 %1$d 个配方槽位  ·  没有只读项" },
         { "lock_report_some", "已检查 %1$d 个配方槽位  ·  %2$d 个只读：%3$s" },
         { "lock_report_unreadable", "  ·  %1$d 个无响应" },
+        { "group_all", "全部" },
         { "group_favourites", "收藏" },
         { "favourite_added", "%1$s 已加入收藏" },
         { "favourite_removed", "%1$s 已从收藏移除" },

@@ -47,6 +47,7 @@ final class TextKo {
         { "lock_report_none", "레시피 슬롯 %1$d개 확인  ·  읽기 전용 없음" },
         { "lock_report_some", "레시피 슬롯 %1$d개 확인  ·  읽기 전용 %2$d개: %3$s" },
         { "lock_report_unreadable", "  ·  %1$d개 응답 없음" },
+        { "group_all", "전체" },
         { "group_favourites", "즐겨찾기" },
         { "favourite_added", "%1$s 즐겨찾기에 추가됨" },
         { "favourite_removed", "%1$s 즐겨찾기에서 제거됨" },

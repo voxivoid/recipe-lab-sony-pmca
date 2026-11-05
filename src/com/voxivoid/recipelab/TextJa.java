@@ -47,6 +47,7 @@ final class TextJa {
         { "lock_report_none", "%1$d 個のレシピ枠を確認  ·  読み取り専用なし" },
         { "lock_report_some", "%1$d 個のレシピ枠を確認  ·  %2$d 個が読み取り専用：%3$s" },
         { "lock_report_unreadable", "  ·  %1$d 個が応答なし" },
+        { "group_all", "すべて" },
         { "group_favourites", "お気に入り" },
         { "favourite_added", "%1$s をお気に入りに追加しました" },
         { "favourite_removed", "%1$s をお気に入りから削除しました" },

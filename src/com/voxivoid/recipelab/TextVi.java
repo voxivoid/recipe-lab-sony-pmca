@@ -47,6 +47,7 @@ final class TextVi {
         { "lock_report_none", "Đã kiểm tra %1$d ô công thức  ·  không ô nào chỉ đọc" },
         { "lock_report_some", "Đã kiểm tra %1$d ô công thức  ·  %2$d chỉ đọc: %3$s" },
         { "lock_report_unreadable", "  ·  %1$d ô không phản hồi" },
+        { "group_all", "Tất cả" },
         { "group_favourites", "Yêu thích" },
         { "favourite_added", "Đã thêm %1$s vào Yêu thích" },
         { "favourite_removed", "Đã xóa %1$s khỏi Yêu thích" },

@@ -85,16 +85,20 @@ class FavouritesTest {
         assertEquals("Velvia removed from Favourites", Favourites.toggleMessage("Velvia", false));
     }
 
-    @Test void favouritesThenCustomSitFirstInTheBrandColumnAndTheColumnWraps() {
+    @Test void allThenFavouritesThenCustomSitFirstInTheBrandColumnAndTheColumnWraps() {
         int last = Recipes.GROUPS.length - 1;
+        assertEquals(Favourites.GROUP, Favourites.nextGroup(Favourites.ALL, +1), "down from All is Favourites");
         assertEquals(Favourites.CUSTOM, Favourites.nextGroup(Favourites.GROUP, +1), "down from Favourites is Custom");
         assertEquals(0, Favourites.nextGroup(Favourites.CUSTOM, +1), "down from Custom is the first brand");
         assertEquals(Favourites.CUSTOM, Favourites.nextGroup(0, -1));
-        assertEquals(Favourites.GROUP, Favourites.nextGroup(last, +1), "down from the last brand wraps to Favourites");
-        assertEquals(last, Favourites.nextGroup(Favourites.GROUP, -1));
-        assertEquals(0, Favourites.groupRow(Favourites.GROUP));
-        assertEquals(1, Favourites.groupRow(Favourites.CUSTOM));
-        assertEquals(2, Favourites.groupRow(0));
+        assertEquals(Favourites.ALL, Favourites.nextGroup(last, +1), "down from the last brand wraps to All");
+        assertEquals(last, Favourites.nextGroup(Favourites.ALL, -1));
+        assertEquals(0, Favourites.groupRow(Favourites.ALL));
+        assertEquals(1, Favourites.groupRow(Favourites.GROUP));
+        assertEquals(2, Favourites.groupRow(Favourites.CUSTOM));
+        assertEquals(3, Favourites.groupRow(0));
+        assertEquals(Recipes.GROUPS.length + 3, Favourites.groupRows());
+        assertEquals("All", Favourites.groupName(Favourites.ALL));
         for (int row = 0; row < Favourites.groupRows(); row++) assertEquals(row, Favourites.groupRow(Favourites.groupAt(row)));
         assertEquals("Favourites", Favourites.groupName(Favourites.GROUP));
         assertEquals("Custom", Favourites.groupName(Favourites.CUSTOM));
@@ -108,6 +112,7 @@ class FavouritesTest {
         assertEquals(-1, Favourites.landing(Favourites.GROUP, new ArrayList<Integer>(), LIB), "nothing to land on: the highlight stays put");
         assertEquals(-1, Favourites.landing(Favourites.CUSTOM, f, LIB), "a Custom group with only its New row previews nothing");
         assertEquals(Library.BASE, Favourites.landing(Favourites.CUSTOM, f, custom("Zed", "Alpha")), "the first custom recipe, A to Z");
+        assertEquals(-1, Favourites.landing(Favourites.ALL, f, LIB), "All holds the highlighted recipe already: it stays put");
     }
 
     @Test void nextWalksTheMarkingOrderAndWraps() {
@@ -122,13 +127,13 @@ class FavouritesTest {
 
     @Test void theBrowserOpensOnFavouritesWhenTheRecipeIsOne() {
         List<Integer> f = favs("Velvia");
-        assertEquals(Favourites.GROUP, Favourites.openingGroup(f, indexOf("Velvia"), LIB));
-        assertEquals(Recipes.ALL[indexOf("Acros")].group, Favourites.openingGroup(f, indexOf("Acros"), LIB));
-        assertEquals(0, Favourites.openingGroup(new ArrayList<Integer>(), 0, LIB));
+        assertEquals(Favourites.GROUP, Favourites.openingGroup(f, indexOf("Velvia"), LIB, 0));
+        assertEquals(Recipes.ALL[indexOf("Acros")].group, Favourites.openingGroup(f, indexOf("Acros"), LIB, Favourites.GROUP));
+        assertEquals(0, Favourites.openingGroup(new ArrayList<Integer>(), 0, LIB, Favourites.CUSTOM));
         Library lib = custom("Mine");
-        assertEquals(Favourites.CUSTOM, Favourites.openingGroup(f, Library.BASE, lib), "a custom recipe opens its own group");
+        assertEquals(Favourites.CUSTOM, Favourites.openingGroup(f, Library.BASE, lib, Favourites.GROUP), "a custom recipe opens its own group");
         f.add(Library.BASE);
-        assertEquals(Favourites.GROUP, Favourites.openingGroup(f, Library.BASE, lib), "unless it is a favourite");
+        assertEquals(Favourites.GROUP, Favourites.openingGroup(f, Library.BASE, lib, 0), "unless it is a favourite");
     }
 
     @Test void onlyANonEmptyGroupHasARecipeColumn() {
@@ -243,5 +248,87 @@ class FavouritesTest {
     @Test void theLastRecipeOfTheTableIsInItsBrand() {
         int last = Library.BASE - 1, g = Recipes.ALL[last].group;
         assertEquals(Recipes.GROUP_COUNT[g] - 1, Favourites.positionIn(g, last, new ArrayList<Integer>(), LIB));
+    }
+
+    // ------------------------------------------------------------ the wheel's loop (issue #155)
+    @Test void theBrowserOpensOnTheWheelsGroupWhenItHoldsTheRecipe() {
+        List<Integer> f = favs("Velvia");
+        int acros = indexOf("Acros"), brand = Recipes.ALL[acros].group;
+        assertEquals(Favourites.ALL, Favourites.openingGroup(f, indexOf("Velvia"), LIB, Favourites.ALL), "All holds every recipe");
+        assertEquals(brand, Favourites.openingGroup(f, acros, LIB, brand));
+        f.add(acros);
+        assertEquals(brand, Favourites.openingGroup(f, acros, LIB, brand), "the wheel's brand, though Acros is a favourite too");
+        assertEquals(Favourites.GROUP, Favourites.openingGroup(f, acros, LIB, Favourites.GROUP));
+    }
+
+    @Test void theAllGroupListsTheTableThenTheCustomRecipes() {
+        Library lib = custom("Mine", "Yours");
+        List<Integer> f = favs("Velvia");
+        assertEquals(Library.BASE + 2, Favourites.groupCount(Favourites.ALL, f, lib));
+        assertEquals(Recipes.FACTORY, Favourites.recipeAt(Favourites.ALL, 0, f, lib));
+        assertEquals(Library.BASE + 1, Favourites.recipeAt(Favourites.ALL, Library.BASE + 1, f, lib));
+        assertEquals(Library.BASE + 1, Favourites.positionIn(Favourites.ALL, Library.BASE + 1, f, lib));
+        assertEquals(-1, Favourites.positionIn(Favourites.ALL, Library.BASE + 2, f, lib), "no recipe there");
+        assertTrue(Favourites.hasRecipes(Favourites.ALL, f, LIB));
+    }
+
+    @Test void theWheelLoopsThroughAllByDefault() {
+        List<Integer> f = favs("Velvia");
+        assertEquals(1, Favourites.wheel(Favourites.ALL, 0, +1, f, LIB));
+        assertEquals(Library.BASE - 1, Favourites.wheel(Favourites.ALL, 0, -1, f, LIB), "wrapping");
+    }
+
+    @Test void theWheelLoopsThroughTheFavouritesOnly() {
+        List<Integer> f = favs("Acros", "Velvia", "Kodak Gold 200");
+        assertEquals(indexOf("Velvia"), Favourites.wheel(Favourites.GROUP, indexOf("Acros"), +1, f, LIB));
+        assertEquals(indexOf("Acros"), Favourites.wheel(Favourites.GROUP, indexOf("Kodak Gold 200"), +1, f, LIB), "wrapping");
+        assertEquals(indexOf("Kodak Gold 200"), Favourites.wheel(Favourites.GROUP, indexOf("Acros"), -1, f, LIB));
+        assertEquals(indexOf("Acros"), Favourites.wheel(Favourites.GROUP, indexOf("Provia"), +1, f, LIB), "from an unmarked one: the first");
+    }
+
+    @Test void theWheelLoopsThroughABrandOnly() {
+        int g = 3, start = Recipes.GROUP_START[g], n = Recipes.GROUP_COUNT[g];
+        List<Integer> f = new ArrayList<Integer>();
+        assertEquals(start + 1, Favourites.wheel(g, start, +1, f, LIB));
+        assertEquals(start + n - 1, Favourites.wheel(g, start, -1, f, LIB), "wrapping inside the brand");
+        assertEquals(start, Favourites.wheel(g, start + n - 1, +1, f, LIB));
+        assertEquals(start, Favourites.wheel(g, Recipes.GROUP_START[0], +1, f, LIB), "from another brand: the brand's first");
+        assertEquals(start, Favourites.wheel(g, Library.BASE, +1, f, custom("Mine")), "from a custom recipe too");
+    }
+
+    @Test void theWheelLoopsThroughTheCustomRecipesOnly() {
+        Library lib = custom("Alpha", "Beta");
+        List<Integer> f = new ArrayList<Integer>();
+        assertEquals(Library.BASE + 1, Favourites.wheel(Favourites.CUSTOM, Library.BASE, +1, f, lib));
+        assertEquals(Library.BASE, Favourites.wheel(Favourites.CUSTOM, Library.BASE + 1, +1, f, lib), "wrapping");
+    }
+
+    @Test void anEmptyLoopFallsBackToAll() {
+        assertEquals(1, Favourites.wheel(Favourites.GROUP, 0, +1, new ArrayList<Integer>(), LIB), "the last favourite unmarked");
+        assertEquals(1, Favourites.wheel(Favourites.CUSTOM, 0, +1, new ArrayList<Integer>(), LIB), "the card out");
+    }
+
+    @Test void thePanelCountsTheWheelsLoop() {
+        List<Integer> f = favs("Acros", "Velvia");
+        int velvia = indexOf("Velvia"), g = Recipes.ALL[velvia].group;
+        String brand = Recipes.groupLabel(g).toUpperCase();
+        assertEquals(brand + "   " + Recipes.position(velvia), Favourites.wheelCount(Favourites.ALL, velvia, f, LIB), "as before");
+        assertEquals("FAVOURITES   2 / 2", Favourites.wheelCount(Favourites.GROUP, velvia, f, LIB));
+        assertEquals("2 / 2", Favourites.wheelPosition(Favourites.GROUP, velvia, f, LIB));
+        assertEquals(brand + "   " + (velvia - Recipes.GROUP_START[g] + 1) + " / " + Recipes.GROUP_COUNT[g],
+                Favourites.wheelCount(g, velvia, f, LIB));
+        int provia = indexOf("Provia");
+        assertEquals(Recipes.groupLabel(Recipes.ALL[provia].group).toUpperCase() + "   " + Recipes.position(provia),
+                Favourites.wheelCount(Favourites.GROUP, provia, f, LIB), "outside the loop: where it sits among them all");
+        assertEquals(Recipes.position(provia), Favourites.wheelPosition(Favourites.GROUP, provia, f, LIB));
+    }
+
+    @Test void theWheelsGroupIsStoredByName() {
+        for (int g = 0; g < Recipes.GROUPS.length; g++) assertEquals(g, Favourites.wheelGroup(Favourites.wheelKey(g)));
+        for (int g : new int[] { Favourites.ALL, Favourites.GROUP, Favourites.CUSTOM })
+            assertEquals(g, Favourites.wheelGroup(Favourites.wheelKey(g)));
+        assertEquals("Sony", Favourites.wheelKey(0));
+        assertEquals(Favourites.ALL, Favourites.wheelGroup(null), "nothing stored: everything, as before");
+        assertEquals(Favourites.ALL, Favourites.wheelGroup("A brand long gone"));
     }
 }

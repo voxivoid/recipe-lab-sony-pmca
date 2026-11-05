@@ -268,8 +268,10 @@ Open **Recipe Lab** from the Application List. The live view shows the look. The
 
 **Brand list** — **Fn**, or **hold MENU → Browse recipes**
 
-- Left column: **Favourites**, **Custom**, then the brands. Right column: their recipes.
+- Left column: **All**, **Favourites**, **Custom**, then the brands. Right column: their recipes.
 - **left / right** switches column. **centre** picks.
+- The **wheel** then loops only through the list you picked from — your favourites, one brand — even after a restart.
+  Pick from **All** to loop through every recipe again.
 
 **Favourites**
 

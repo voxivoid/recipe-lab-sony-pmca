@@ -46,6 +46,7 @@ final class TextZhHant {
         { "lock_report_none", "已檢查 %1$d 個配方槽位  ·  沒有唯讀項目" },
         { "lock_report_some", "已檢查 %1$d 個配方槽位  ·  %2$d 個唯讀：%3$s" },
         { "lock_report_unreadable", "  ·  %1$d 個無回應" },
+        { "group_all", "全部" },
         { "group_favourites", "收藏" },
         { "favourite_added", "%1$s 已加入收藏" },
         { "favourite_removed", "%1$s 已從收藏移除" },

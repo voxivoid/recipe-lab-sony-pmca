@@ -161,7 +161,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private LinearLayout actionsRow;
     private final TextView[] actionBtn = new TextView[4];
     private int browserCol = COL_RECIPES;                 // browser: Params.COL_GROUPS or COL_RECIPES
-    private int browserGroup = 0;                     // browser: the group the brand column is on — Favourites.GROUP, .CUSTOM or a brand
+    private int browserGroup = 0;                     // browser: the group the brand column is on — Favourites.ALL, .GROUP, .CUSTOM or a brand
+    private int wheelGroup = Favourites.ALL;          // the group the wheel loops through: where the last recipe was picked (issue #155)
     private int lastChip = 0;                         // chip to return to when leaving the recipe line
     private final int[] cur = new int[N], edit = new int[N];
     private boolean previewOk = false;
@@ -178,6 +179,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         recipe = Math.max(0, Math.min(Recipes.ALL.length - 1, prefs.getInt("recipe", 0)));
         favStored = prefs.getString("favourites", "");
         favs = Favourites.decode(favStored, library);
+        wheelGroup = Favourites.wheelGroup(prefs.getString("wheelGroup", null));
         settleIdx = DevTools.clampSettle(prefs.getInt("settle", DevTools.SETTLE_DEFAULT));
         langChoice = Lang.parseChoice(prefs.getString("language", null));
         panel = findViewById(R.id.panel);
@@ -1771,8 +1773,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private void render() {
         Recipes.Recipe r = library.get(recipe);
         boolean dirty = dirty();
-        String pos = library.position(recipe);
-        String grp = Recipes.groupLabel(r.group).toUpperCase();
+        String pos = Favourites.wheelPosition(wheelGroup, recipe, favs, library);
         picker.setVisibility(overlay == OV_BROWSER ? View.VISIBLE : View.GONE);
         sponsor.setText(DevTools.sponsorLine());                     // the README's ask, small, over the live view
         sponsor.setVisibility(panelUp(overlay) ? View.VISIBLE : View.GONE);   // Full and No keys; Label and Hidden hide it
@@ -1784,7 +1785,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             String original = Recipes.originalName(r);            // a translated name keeps the canonical one under it
             nameOriginal.setText(original == null ? "" : original);
             nameOriginal.setVisibility(original == null ? View.GONE : View.VISIBLE);
-            count.setText(grp + "   " + pos);
+            count.setText(Favourites.wheelCount(wheelGroup, recipe, favs, library));
             tag.setText(Lang.t("tag_jpeg_only"));                    // a Picture Effect: the camera drops it under RAW
             tag.setTextColor(ACCENT);
             tag.setVisibility(edit[R_PE] != 0 ? View.VISIBLE : View.GONE);
@@ -1857,9 +1858,14 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
 
     private void setFocus(boolean f) { focus = f && row != 0 && !onButtons(); render(); }
 
-    /** the wheel, or left / right on the recipe line: the next recipe — after asking, when that would drop edits */
+    /**
+     * The wheel, or left / right on the recipe line: the next recipe of the group it was last picked from — after asking,
+     * when that would drop edits.
+     */
     private void nextRecipe(final int dir) {
-        unlessEditsLost(new Runnable() { public void run() { recipe = library.next(recipe, dir); showRecipe(); applyPreview(); render(); } });
+        unlessEditsLost(new Runnable() { public void run() {
+            recipe = Favourites.wheel(wheelGroup, recipe, dir, favs, library); showRecipe(); applyPreview(); render();
+        } });
     }
 
     /**
@@ -1877,7 +1883,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private void openBrowser(boolean open) {
         if (open) panelBefore = overlay;
         overlay = open ? OV_BROWSER : fullPanel(); row = 0; focus = false;
-        browserGroup = Favourites.openingGroup(favs, recipe, library);
+        browserGroup = Favourites.openingGroup(favs, recipe, library, wheelGroup);
         browserCol = COL_RECIPES;
         if (open && browserGroup == Favourites.CUSTOM) reportSkipped();
         render();
@@ -1885,8 +1891,9 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
 
     /** recipe column: the next / previous recipe of the group the browser is on, wrapping */
     private void nextInGroup(int dir) {
-        if (browserGroup == Favourites.CUSTOM) { int to = Favourites.nextCustom(recipe, dir, library); if (to < 0) return; recipe = to; }
-        else recipe = browserGroup == Favourites.GROUP ? Favourites.next(favs, recipe, dir) : Recipes.nextInGroup(recipe, dir);
+        int to = Favourites.nextIn(browserGroup, recipe, dir, favs, library);
+        if (to < 0) return;
+        recipe = to;
         showRecipe(); applyPreview(); render();
     }
 
@@ -1900,6 +1907,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private void pickInBrowser() {
         if (!Favourites.key(recipe, library).equals(prefs.getString("appliedRecipe", null))) forgetAppliedEdit();   // a new one chosen
         rememberReopen();                                        // a recipe chosen in the list is where the app reopens
+        wheelGroup = browserGroup;                               // and its group is what the wheel loops through
+        prefs.edit().putString("wheelGroup", Favourites.wheelKey(wheelGroup)).commit();
         openBrowser(false); showToast(Lang.t("status_recipe_previewed", Recipes.displayName(library.get(recipe))), 3000);
     }
 
