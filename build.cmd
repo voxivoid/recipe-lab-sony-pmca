@@ -24,7 +24,7 @@ copy /Y out\libs\armeabi\librecipelab.so out\apklib\lib\armeabi\ >nul
 echo [1/7] aapt R.java
 "%BT%\aapt.exe" package -f -m -J out\gen -M AndroidManifest.xml -S res -A assets -I "%AJ%" || exit /b 1
 echo [2/7] javac
-"%JAVA%\javac.exe" -encoding UTF-8 --release 8 -Xlint:-options -cp "%AJ%" -d out\classes out\gen\com\voxivoid\recipelab\R.java src\com\voxivoid\recipelab\*.java src\com\voxivoid\recipelab\transfer\*.java || exit /b 1
+"%JAVA%\javac.exe" -encoding UTF-8 --release 8 -Xlint:-options -cp "%AJ%" -d out\classes out\gen\com\voxivoid\recipelab\R.java src\com\voxivoid\recipelab\*.java src\com\voxivoid\recipelab\transfer\*.java src\io\nayuki\qrcodegen\*.java src\com\google\zxing\*.java src\com\google\zxing\common\*.java src\com\google\zxing\common\detector\*.java src\com\google\zxing\common\reedsolomon\*.java src\com\google\zxing\qrcode\*.java src\com\google\zxing\qrcode\decoder\*.java src\com\google\zxing\qrcode\detector\*.java || exit /b 1
 echo [3/7] d8
 setlocal enabledelayedexpansion
 set CLASSES=

@@ -57,7 +57,7 @@ class CustomRecipesTest {
     @Test void theFileReadsLikeTheChips() {
         String text = RecipeFormats.write(mine("Golden Hour", "Kodak Vision 200T (Asteroid City)"), "ILCE-6000");
         assertTrue(text.startsWith("# Recipe Lab custom recipe"), text);
-        for (String line : new String[] { "format: 1", "name: \"Golden Hour\"", "made-on: \"ILCE-6000\"", "style: neutral",
+        for (String line : new String[] { "format: 2", "family: sony-creative-style", "name: \"Golden Hour\"", "made-on: \"ILCE-6000\"", "style: neutral",
                 "saturation: -2", "contrast: -3", "effect: off", "white-balance: 5000K", "amber-blue: +2",
                 "green-magenta: +3", "exposure: +0.3", "dro: 3" })
             assertTrue(text.contains("\n" + line), line + " in\n" + text);
@@ -99,7 +99,7 @@ class CustomRecipesTest {
     @Test void aFileWithoutAFormatIsFormatOne() { assertEquals("Old", parse("name: Old\nstyle: mono").name); }
 
     @Test void aNewerFormatIsSkippedNotHalfRead() {
-        assertEquals("made by a newer Recipe Lab (format 2)", error("format: 2\nname: Future\nstyle: mono"));
+        assertEquals("made by a newer Recipe Lab (format 3)", error("format: 3\nname: Future\nstyle: mono"));
     }
 
     @Test void aFormatThatIsNotANumberIsRefused() {
@@ -357,7 +357,10 @@ class CustomRecipesTest {
     }
 
     @Test void theQuestionsHighlightTheHarmlessAnswer() {
-        assertEquals(Arrays.asList("Rename", "Delete", "Cancel"), Arrays.asList(CustomRecipes.options()), "favourites are hold centre, as on any recipe");
+        assertEquals(Arrays.asList("Rename", "Share", "Delete", "Cancel"), Arrays.asList(CustomRecipes.options()), "favourites are hold centre, as on any recipe");
+        assertEquals("Share", CustomRecipes.options()[CustomRecipes.OPT_SHARE]);
+        assertEquals("Rename", CustomRecipes.options()[CustomRecipes.OPT_RENAME]);
+        assertEquals("Delete", CustomRecipes.options()[CustomRecipes.OPT_DELETE]);
         assertEquals("Cancel", CustomRecipes.options()[CustomRecipes.OPT_DEFAULT], "a stray centre press after the hold does nothing");
         assertEquals("Cancel", CustomRecipes.deleteOptions()[CustomRecipes.DELETE_DEFAULT]);
         assertEquals("Cancel", CustomRecipes.discardOptions()[CustomRecipes.DISCARD_DEFAULT], "leaving by accident keeps the edits");
@@ -442,5 +445,103 @@ class CustomRecipesTest {
     @Test void aFileWithoutTheExtensionStillNamesANamelessRecipe() {
         assertEquals("Mine", RecipeFormats.parse("style: vivid", "Mine").recipe.name);
         assertEquals("Mine", RecipeFormats.parse("name: \"\"\nstyle: vivid", "Mine.YML").recipe.name, "an empty name line, as no name line");
+    }
+
+    // ------------------------------------------------------------ a recipe read from a QR code
+    private static Recipes.Recipe shared(String name, int sat) {
+        return new Recipes.Recipe(Recipes.CUSTOM, name, Recipes.VIVID, sat, 0, 0, Params.WB_KELVIN, 5600, 1, -1, 0, 3, 2, 0);
+    }
+
+    private static CustomRecipes.Entry have(Recipes.Recipe r) { return new CustomRecipes.Entry(r, "X.YML"); }
+
+    @Test void aSharedRecipeKeepsItsNameWhenNoneHasIt() {
+        assertEquals("Warm", CustomRecipes.sharedName(shared("Warm", 1), Arrays.asList(have(shared("Cool", 1)))));
+        assertEquals("Warm", CustomRecipes.sharedName(shared("Warm", 1), new java.util.ArrayList<CustomRecipes.Entry>()));
+    }
+
+    @Test void aSharedRecipeAlreadyHereIsNotAddedAgain() {
+        assertNull(CustomRecipes.sharedName(shared("Warm", 1), Arrays.asList(have(shared("WARM", 1)))), "same name in any case, same look");
+    }
+
+    @Test void aSharedRecipeWithATakenNameAndAnotherLookIsACopy() {
+        assertEquals("Warm 2", CustomRecipes.sharedName(shared("Warm", 1), Arrays.asList(have(shared("Warm", 2)))));
+        assertEquals("Warm 3", CustomRecipes.sharedName(shared("Warm", 1), Arrays.asList(have(shared("Warm", 2)), have(shared("Warm 2", 3)))));
+    }
+
+    @Test void sameLookComparesEveryValueButTheName() {
+        Recipes.Recipe a = shared("A", 1);
+        assertTrue(CustomRecipes.sameLook(a, shared("B", 1)));
+        Recipes.Recipe[] others = {
+            new Recipes.Recipe(Recipes.CUSTOM, "A", Recipes.STD, 1, 0, 0, Params.WB_KELVIN, 5600, 1, -1, 0, 3, 2, 0),
+            new Recipes.Recipe(Recipes.CUSTOM, "A", Recipes.VIVID, 2, 0, 0, Params.WB_KELVIN, 5600, 1, -1, 0, 3, 2, 0),
+            new Recipes.Recipe(Recipes.CUSTOM, "A", Recipes.VIVID, 1, 1, 0, Params.WB_KELVIN, 5600, 1, -1, 0, 3, 2, 0),
+            new Recipes.Recipe(Recipes.CUSTOM, "A", Recipes.VIVID, 1, 0, 1, Params.WB_KELVIN, 5600, 1, -1, 0, 3, 2, 0),
+            new Recipes.Recipe(Recipes.CUSTOM, "A", Recipes.VIVID, 1, 0, 0, Params.WB_AUTO, 0, 1, -1, 0, 3, 2, 0),
+            new Recipes.Recipe(Recipes.CUSTOM, "A", Recipes.VIVID, 1, 0, 0, Params.WB_KELVIN, 5700, 1, -1, 0, 3, 2, 0),
+            new Recipes.Recipe(Recipes.CUSTOM, "A", Recipes.VIVID, 1, 0, 0, Params.WB_KELVIN, 5600, 2, -1, 0, 3, 2, 0),
+            new Recipes.Recipe(Recipes.CUSTOM, "A", Recipes.VIVID, 1, 0, 0, Params.WB_KELVIN, 5600, 1, 0, 0, 3, 2, 0),
+            new Recipes.Recipe(Recipes.CUSTOM, "A", Recipes.VIVID, 1, 0, 0, Params.WB_KELVIN, 5600, 1, -1, 2, 3, 2, 0),
+            new Recipes.Recipe(Recipes.CUSTOM, "A", Recipes.VIVID, 1, 0, 0, Params.WB_KELVIN, 5600, 1, -1, 0, 4, 2, 0),
+            new Recipes.Recipe(Recipes.CUSTOM, "A", Recipes.VIVID, 1, 0, 0, Params.WB_KELVIN, 5600, 1, -1, 0, 3, 3, 0),
+        };
+        for (int i = 0; i < others.length; i++) assertFalse(CustomRecipes.sameLook(a, others[i]), "value " + i);
+        // white balance auto or keep: the kelvin left over does not count; an effect without options: its option does not count
+        Recipes.Recipe auto1 = new Recipes.Recipe(Recipes.CUSTOM, "A", Recipes.STD, 0, 0, 0, Params.WB_AUTO, 0, 0, 0, 0, 0, 6, 0);
+        Recipes.Recipe auto2 = new Recipes.Recipe(Recipes.CUSTOM, "A", Recipes.STD, 0, 0, 0, Params.WB_AUTO, 5000, 0, 0, 0, 0, 6, 1);
+        assertTrue(CustomRecipes.sameLook(auto1, auto2));
+        Recipes.Recipe toy1 = new Recipes.Recipe(Recipes.CUSTOM, "A", Recipes.STD, 0, 0, 0, Params.WB_AUTO, 0, 0, 0, 1, 0, 6, 1);
+        Recipes.Recipe toy2 = new Recipes.Recipe(Recipes.CUSTOM, "A", Recipes.STD, 0, 0, 0, Params.WB_AUTO, 0, 0, 0, 1, 0, 6, 2);
+        assertFalse(CustomRecipes.sameLook(toy1, toy2), "the Toy camera tone counts");
+    }
+
+    @Test void theAddQuestionHighlightsAdd() {
+        assertEquals(Arrays.asList("Add", "Cancel"), Arrays.asList(CustomRecipes.addOptions()));
+        assertEquals("Add", CustomRecipes.addOptions()[CustomRecipes.ADD_DEFAULT]);
+        assertEquals(CustomRecipes.ADD, CustomRecipes.ADD_DEFAULT);
+    }
+
+    // ---- the links file
+    private static CustomRecipes.Entry entry(String name, String file) {
+        return new CustomRecipes.Entry(CustomRecipes.renamed(recipe("Cinestill 800T"), name), file);
+    }
+
+    @Test void theLinksFileHasEachRecipesNameAndLink() {
+        CustomRecipes.Entry a = entry("Golden Hour", "GOLDENHO.YML"), b = entry("Night", "NIGHT.YML");
+        String text = CustomRecipes.linksText(Arrays.asList(a, b));
+        assertEquals("# " + Lang.t("links_file_header") + "\r\n"
+                + "\r\nGolden Hour\r\n" + RecipeShare.encode(a.recipe) + "\r\n"
+                + "\r\nNight\r\n" + RecipeShare.encode(b.recipe) + "\r\n", text);
+        assertEquals("Golden Hour", RecipeShare.decode(RecipeShare.encode(a.recipe)).name, "each link adds its recipe back");
+        assertNull(CustomRecipes.linksText(Collections.<CustomRecipes.Entry>emptyList()), "no recipes, no file");
+    }
+
+    @Test void theLinksFileIsWrittenOnlyWhenItChangesAndGoesWithTheLastRecipe() throws IOException {
+        File links = new File(dir, CustomRecipes.LINKS);
+        List<CustomRecipes.Entry> one = Collections.singletonList(entry("Golden Hour", "GOLDENHO.YML"));
+        assertTrue(CustomRecipes.writeLinks(dir, one));
+        assertEquals(CustomRecipes.linksText(one), new String(Files.readAllBytes(links.toPath()), StandardCharsets.UTF_8));
+        assertFalse(CustomRecipes.writeLinks(dir, one), "the same text: the card is not written again");
+        assertFalse(new File(dir, "LINKS.TMP").exists(), "no temporary file left");
+
+        List<CustomRecipes.Entry> two = Arrays.asList(one.get(0), entry("Night", "NIGHT.YML"));
+        assertTrue(CustomRecipes.writeLinks(dir, two), "a recipe added: rewritten");
+        assertEquals(CustomRecipes.linksText(two), new String(Files.readAllBytes(links.toPath()), StandardCharsets.UTF_8));
+
+        assertTrue(CustomRecipes.writeLinks(dir, Collections.<CustomRecipes.Entry>emptyList()), "the last recipe gone: the file goes");
+        assertFalse(links.exists());
+        assertFalse(CustomRecipes.writeLinks(dir, Collections.<CustomRecipes.Entry>emptyList()), "nothing to remove");
+    }
+
+    @Test void theLinksFileIsNoRecipeAndNeedsAFolder() throws IOException {
+        CustomRecipes.save(dir, recipe("Cinestill 800T"), "test", null);
+        CustomRecipes.Loaded l = CustomRecipes.load(dir);
+        assertTrue(CustomRecipes.writeLinks(dir, l.entries));
+        CustomRecipes.Loaded again = CustomRecipes.load(dir);
+        assertEquals(1, again.entries.size(), "LINKS.TXT is not read as a recipe");
+        assertTrue(again.skipped.isEmpty(), "nor skipped as a broken one");
+        File none = new File(dir, "NOPE");
+        assertFalse(CustomRecipes.writeLinks(none, l.entries));
+        assertFalse(none.exists(), "a missing folder is not made");
+        assertFalse(CustomRecipes.writeLinks(null, l.entries));
     }
 }

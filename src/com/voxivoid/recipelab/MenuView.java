@@ -394,6 +394,24 @@ public class MenuView extends View {
                 c.drawLine(cx - s, y2, cx - s + h, y2 + h, glyph);
                 return;
             }
+            case DevTools.IC_QR: {                                  // a QR code: three finder squares and a few modules
+                float q = s * 0.8f, m = s * 0.3f;
+                for (int i = 0; i < 3; i++) {
+                    float x = i == 1 ? cx + s - q : cx - s, y = i == 2 ? cy + s - q : cy - s;
+                    box.set(x, y, x + q, y + q);
+                    c.drawRect(box, glyph);
+                }
+                glyph.setStyle(Paint.Style.FILL);
+                for (int i = 0; i < 3; i++) {
+                    float x = i == 1 ? cx + s - q : cx - s, y = i == 2 ? cy + s - q : cy - s;
+                    box.set(x + q * 0.3f, y + q * 0.3f, x + q * 0.7f, y + q * 0.7f);
+                    c.drawRect(box, glyph);
+                }
+                box.set(cx + s * 0.25f, cy + s * 0.25f, cx + s * 0.25f + m, cy + s * 0.25f + m); c.drawRect(box, glyph);
+                box.set(cx + s - m, cy + s - m, cx + s, cy + s); c.drawRect(box, glyph);
+                box.set(cx - m / 2, cy - m / 2, cx + m / 2, cy + m / 2); c.drawRect(box, glyph);
+                return;
+            }
             case DevTools.IC_KEYS:                                  // a keyboard: case, two rows of keys, space bar
                 box.set(cx - s, cy - s * 0.65f, cx + s, cy + s * 0.65f);
                 c.drawRoundRect(box, 2 * d, 2 * d, glyph);

@@ -32,9 +32,21 @@ UNITS=(
   src/com/voxivoid/recipelab/Favourites.java
   src/com/voxivoid/recipelab/CustomRecipes.java
   src/com/voxivoid/recipelab/CardLog.java
+  src/com/voxivoid/recipelab/ExifDates.java
   src/com/voxivoid/recipelab/RecipeFormat.java
   src/com/voxivoid/recipelab/RecipeFormats.java
   src/com/voxivoid/recipelab/RecipeFormatV1.java
+  src/com/voxivoid/recipelab/RecipeFormatV2.java
+  src/com/voxivoid/recipelab/RecipeShare.java
+  src/com/voxivoid/recipelab/QrScan.java
+  src/com/voxivoid/recipelab/ImageCanvas.java
+  src/com/voxivoid/recipelab/RecipeCardLayout.java
+  # Recipe QR codes: drawn with Nayuki's generator (MIT), read with ZXing's QR reader (Apache-2.0), both vendored
+  src/io/nayuki/qrcodegen/BitBuffer.java
+  src/io/nayuki/qrcodegen/DataTooLongException.java
+  src/io/nayuki/qrcodegen/QrCode.java
+  src/io/nayuki/qrcodegen/QrSegment.java
+  $(find src/com/google/zxing -name '*.java')
   src/com/voxivoid/recipelab/Library.java
   src/com/voxivoid/recipelab/NameEntry.java
   src/com/voxivoid/recipelab/DevTools.java
