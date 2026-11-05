@@ -234,7 +234,7 @@ public class Recipes {
     public static String position(int i) { return (i + 1) + " / " + LISTED; }
 
     // ---- names on screen: the display language's, where it has one. The canonical English above stays the identifier
-    // that favourites, the sample manifest and the tests use, so a change of language never loses a mark.
+    // that favorites, the sample manifest and the tests use, so a change of language never loses a mark.
     /** a recipe's name as the panel and the list show it; a custom recipe's is the user's own, never translated */
     public static String displayName(Recipe r) { return r.isCustom() ? r.name : Lang.label("recipe_" + Lang.slug(r.name), r.name); }
     /** the canonical name, shown small under a translated one; null when the display name is the canonical one */

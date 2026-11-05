@@ -6,7 +6,7 @@ import android.graphics.Paint;
 import android.util.AttributeSet;
 import android.view.View;
 
-/** A filled star next to the recipe name: the recipe is a favourite. Canvas-drawn (the camera font has no star glyph). */
+/** A filled star next to the recipe name: the recipe is a favorite. Canvas-drawn (the camera font has no star glyph). */
 public class StarView extends View {
     private final Paint fill = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final float d;

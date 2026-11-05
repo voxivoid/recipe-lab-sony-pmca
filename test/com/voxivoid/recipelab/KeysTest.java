@@ -131,7 +131,7 @@ class KeysTest {
 
     @Test void onACustomRecipeInTheListAMenuHoldOpensItsOptions() {
         Keys.Hints h = Keys.hints(Keys.H_RECIPES_CUSTOM, NONE);
-        assertEquals(Arrays.asList("pick", "fav (hold)", "options (hold)", "close"), Arrays.asList(h.labels), "centre still marks a favourite");
+        assertEquals(Arrays.asList("pick", "fav (hold)", "options (hold)", "close"), Arrays.asList(h.labels), "centre still marks a favorite");
         assertEquals(Keys.I_MENU, h.icons[2], "the options are on MENU");
     }
 

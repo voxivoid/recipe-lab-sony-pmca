@@ -12,7 +12,7 @@ import java.util.Map;
  * {@link TextKo}, {@link TextVi}), a key → text pair
  * each. English is the source: a key another table lacks falls back to it. Recipe, brand, style, effect and quality
  * names are not in the English table at all — their canonical English lives in {@link Recipes} and {@link Params},
- * where the manifest, the favourites and the tests read it — so {@link #label} takes that canonical text as its
+ * where the manifest, the favorites and the tests read it — so {@link #label} takes that canonical text as its
  * fallback, and only a translation adds the key.
  *
  * What the app writes to files (samples.txt, the RECIPLAB logs, custom recipes) stays English whatever the menu says:
