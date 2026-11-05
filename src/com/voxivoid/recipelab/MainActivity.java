@@ -254,6 +254,72 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         if (text.length() > 0) try { CardLog.append(CardLog.dir(cardRoot()), CardLog.LOG, text); } catch (Throwable t) {}
     }
 
+    /*
+     * TEST BUILD ONLY (issue #130): which card operation restarts a NEX-5R. One step every CARD_DELAY_MS after each
+     * opening, its name on screen first, so the time the camera goes down names the step. Strings are not in Lang on
+     * purpose: this never ships.
+     */
+    private static final String[] PROBE_STEPS = {
+        "1/7 read the card (list RECIPLAB/LOGS)",
+        "2/7 create an empty file (PROBE.TXT)",
+        "3/7 write 16 bytes to PROBE.TXT",
+        "4/7 append a line to PROBE.TXT",
+        "5/7 rename PROBE.TXT to PROBE.OLD",
+        "6/7 delete PROBE.OLD",
+        "7/7 write the logs (LOG.TXT, PARAMS.TXT)",
+    };
+    private static final int PROBE_SHOW_MS = 1000;               // the step's name is on screen this long before it runs
+    private int probeStep;
+    /** names the step on screen; the step itself runs a second later, once the screen has drawn the name */
+    private final Runnable probe = new Runnable() {
+        public void run() {
+            if (!resumed || probeStep >= PROBE_STEPS.length) return;
+            showToast("Card test " + PROBE_STEPS[probeStep], CARD_DELAY_MS);
+            handler.postDelayed(probeDo, PROBE_SHOW_MS);
+        }
+    };
+    private final Runnable probeDo = new Runnable() {
+        public void run() {
+            if (!resumed || probeStep >= PROBE_STEPS.length) return;
+            int s = probeStep++;
+            String err = probeRun(s);
+            if (err != null) showToast("Card test " + PROBE_STEPS[s] + " FAILED: " + err, CARD_DELAY_MS);
+            if (probeStep < PROBE_STEPS.length) handler.postDelayed(probe, CARD_DELAY_MS - PROBE_SHOW_MS);
+            else showToast("Card test done: all 7 steps passed", 0);
+        }
+    };
+
+    /** one step of the card test; null when it went through, else what failed (the camera going down says the rest) */
+    private String probeRun(int step) {
+        try {
+            File dir = CardLog.dir(cardRoot());
+            if (dir == null) return "no card";
+            File f = new File(dir, "PROBE.TXT"), old = new File(dir, "PROBE.OLD");
+            switch (step) {
+                case 0: { String[] n = dir.list(); return n == null && dir.exists() ? "list returned null" : null; }
+                case 1:
+                    if (!dir.isDirectory() && !dir.mkdirs()) return "cannot create " + dir;
+                    if (f.exists()) f.delete();                  // left by a test the camera did not survive
+                    if (old.exists()) old.delete();
+                    return f.createNewFile() ? null : "createNewFile returned false";
+                case 2: {
+                    java.io.FileOutputStream o = new java.io.FileOutputStream(f);
+                    try { o.write("recipe lab test\n".getBytes("US-ASCII")); } finally { o.close(); }
+                    return null;
+                }
+                case 3: {
+                    java.io.FileWriter w = new java.io.FileWriter(f, true);
+                    try { w.write("appended\n"); } finally { w.close(); }
+                    return null;
+                }
+                case 4: return f.renameTo(old) ? null : "renameTo returned false";
+                case 5: return old.delete() ? null : "delete returned false";
+                case 6: openCard.run(); return null;
+            }
+            return null;
+        } catch (Throwable t) { return String.valueOf(t); }
+    }
+
     private final Runnable openCard = new Runnable() {
         public void run() {
             flushHeld();
@@ -394,7 +460,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         logOpen();
         showRecipe();                                          // with the edits last applied, when the camera still holds them
         applyPreview(); render();
-        handler.postDelayed(openCard, CARD_DELAY_MS);            // the UI first, the card after (issue #130)
+        probeStep = 0;
+        handler.postDelayed(probe, CARD_DELAY_MS);               // TEST BUILD (issue #130): the card, one step at a time
         if (!prefs.getBoolean("keysNoticeSeen", false)) {               // the keys moved in this build (issue #18): say so once
             showToast(Keys.notice(), 8000);
             prefs.edit().putBoolean("keysNoticeSeen", true).commit();
@@ -452,7 +519,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     protected void onPause() {
         super.onPause();
         resumed = false;
-        handler.removeCallbacks(openCard);                       // held lines wait for the next opening's delay
+        handler.removeCallbacks(probe); handler.removeCallbacks(probeDo);   // held lines wait for the next opening's delay
         synchronized (held) { cardOpen = false; }
         stopRun(false);                                          // a run cannot outlive the camera it shoots with
         stopTransfer();                                          // leaving the app stops Transfer to phone: hotspot off, auto power-off back
