@@ -824,9 +824,11 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             prefs.edit().putString("language", Lang.choiceCode(langChoice)).commit();
             applyLanguage();                                     // the menu redraws in it straight away, the panel under it too
         } else if (menuLevel == DevTools.LEVEL_APP && menuSel == DevTools.APP_KEY) {
-            keyOn = !keyOn;                                      // two values: either direction flips it
+            boolean on = !keyOn;                                 // two values: either direction flips it
+            String why = on ? registerKey(getPackageName(), getComponentName().getClassName()) : restoreStore();
+            keyOn = DevTools.keyRowOn(on, why);
             prefs.edit().putBoolean("openWithKey", keyOn).commit();
-            showToast(keyOn ? keyResult(registerKey(getPackageName(), getComponentName().getClassName()), "key_on_done", "key_on_failed") : keyResult(restoreStore(), "key_off_done", "key_off_failed"), 6000);
+            showToast(on ? keyResult(why, "key_on_done", "key_on_failed") : keyResult(why, "key_off_done", "key_off_failed"), 6000);
         } else if (menuLevel == DevTools.LEVEL_DEV && menuSel == DevTools.ROW_SETTLE) {
             settleIdx = DevTools.nextSettle(settleIdx, dir);
             prefs.edit().putInt("settle", settleIdx).commit();

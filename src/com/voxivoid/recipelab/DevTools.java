@@ -114,6 +114,9 @@ final class DevTools {
         }
     }
 
+    /** what the Open with a key row shows after a change: on only if the camera took it, so a refusal is not retried every opening */
+    static boolean keyRowOn(boolean wanted, String why) { return wanted && why == null; }
+
     /** Sony's app store: what the camera's Download Appli. key function opens until an app registers itself for it */
     static final String STORE_PACKAGE = "com.sony.scalar.dlsys.scalaramarket";
 

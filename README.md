@@ -288,7 +288,7 @@ Open **Recipe Lab** from the Application List. The live view shows the look. The
 - **Open with a key** puts Recipe Lab on a button. Turn it on, leave the app, then in the camera's
   `MENU → Custom Settings → Custom Key Settings` set a key (C1, say) to **Download Appli.**: that key now opens Recipe
   Lab from the shooting screen, and keeps doing so after a power cycle. The camera still calls the function
-  *Download Appli.* — its menu names are its own. Turning the row off points it back at Sony's app store. Remove the app
+  *Download Appli.* — its menu names are its own. Turning the row off is meant to point it back at Sony's app store (not yet tried on a camera). Remove the app
   and the key says *The application is either not set or has been uninstalled* until you set it to something else.
   Tried on an A6000.
 

@@ -13,6 +13,13 @@ import org.junit.jupiter.api.Test;
 class DevToolsTest {
 
     // ---- menu rows
+    @Test void openWithKeyStaysOnOnlyWhenTheCameraTookIt() {
+        assertTrue(DevTools.keyRowOn(true, null));
+        assertFalse(DevTools.keyRowOn(true, "the camera answered false"), "refused: the row goes back off");
+        assertFalse(DevTools.keyRowOn(false, null));
+        assertFalse(DevTools.keyRowOn(false, "no store"), "a failed off stays off: the message says what happened");
+    }
+
     @Test void everyRowHasALabelAndADetailLine() {
         for (int r = 0; r < DevTools.ROWS; r++) {
             for (boolean snapshotTaken : new boolean[] { false, true }) {
