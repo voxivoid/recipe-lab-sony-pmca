@@ -135,9 +135,9 @@ class CardLogTest {
     }
 
     @Test void theAppLineSaysWhatTheScreenShowed() {
-        assertEquals("recipe Velvia  PREVIEW EDITED  ·  language auto (en)  ·  custom recipes 2 (skipped: BAD.YML line 3)  ·  favourites 5",
+        assertEquals("recipe Velvia  PREVIEW EDITED  ·  language auto (en)  ·  custom recipes 2 (skipped: BAD.YML line 3)  ·  favorites 5",
                 CardLog.app("Velvia", false, true, "auto (en)", 2, Arrays.asList("BAD.YML line 3"), 5));
-        assertEquals("recipe Factory  ACTIVE  ·  language zh-Hans  ·  custom recipes 0  ·  favourites 0",
+        assertEquals("recipe Factory  ACTIVE  ·  language zh-Hans  ·  custom recipes 0  ·  favorites 0",
                 CardLog.app("Factory", true, false, "zh-Hans", 0, Arrays.<String>asList(), 0));
     }
 

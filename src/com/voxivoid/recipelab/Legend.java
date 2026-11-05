@@ -35,7 +35,7 @@ public class Legend {
 
     private static final Path STAR = new Path();
 
-    /** a five-point star centred on (cx, cy) with outer radius r — the favourite mark, shared by every view that draws one */
+    /** a five-point star centred on (cx, cy) with outer radius r — the favorite mark, shared by every view that draws one */
     public static void star(Canvas c, float cx, float cy, float r, Paint p) {
         STAR.reset();
         for (int i = 0; i < 10; i++) {

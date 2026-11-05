@@ -60,8 +60,6 @@ final class Library {
         return (i + listed + dir) % listed;
     }
 
-    /** where a recipe sits, as the panel shows it: "12 / 77" in the table, "2 / 5" among the custom ones */
-    String position(int i) {
-        return isCustom(i) ? (i - BASE + 1) + " / " + custom.size() : Recipes.position(i);
-    }
+    /** where a recipe sits among them all, as the panel shows it: "12 / 79" — the table's, then the custom ones */
+    String position(int i) { return (i + 1) + " / " + (BASE + custom.size()); }
 }

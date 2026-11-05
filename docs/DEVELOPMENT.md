@@ -35,8 +35,9 @@ src/com/voxivoid/recipelab/
                                navigation, HUD strings — pure functions, no Android, covered by test/
   Recipes.java                 the 77-entry table (the factory look, FACTORY, first in Sony, then the 76 others), brands,
                                GROUP_START / GROUP_COUNT, list navigation
-  Favourites.java              the favourites list: stored by name in the app's preferences, and how the browser
-                               walks the Favourites and Custom groups — pure functions, no Android, covered by test/
+  Favorites.java               the favorites list: stored by name in the app's preferences, and how the browser
+                               walks the All, Favorites and Custom groups, and the wheel's loop — pure functions, no
+                               Android, covered by test/
   CustomRecipes.java           custom recipes on the memory card: what a recipe may hold, names, file names, and reading /
                                writing the RECIPES folder — no Android, covered by test/
   RecipeFormats.java           the custom recipe file's versions: which RecipeFormat reads a file (its format line) and
@@ -72,16 +73,16 @@ src/com/voxivoid/recipelab/
   TextJa.java, TextKo.java, TextVi.java   Japanese, Korean and Vietnamese, the same way
   UiFont.java                  the typeface of each language: the camera's for English and Vietnamese, assets/fonts for the rest
   res/raw/ids.txt              every settings entry of 16 bytes or less, used by the snapshot/diff tool
-  PickerView.java              Canvas-drawn brand browser (Favourites, Custom, then the brands; an empty group says how to fill it)
+  PickerView.java              Canvas-drawn brand browser (All, Favorites, Custom, then the brands; an empty group says how to fill it)
   KeyboardView.java            Canvas-drawn name editor: the field and NameEntry's keyboard grid
   MenuView.java                Canvas-drawn full-screen list: the app menu, the developer menu (rows with drawn icons, DevTools.icons; some with a
                                value left / right change in place, between drawn arrows), and read-only pages
                                (About, the key logger)
-  Legend.java                  Canvas-drawn key icons and the favourite star, wrapped onto more lines when a row does not fit (Keys.lineCounts; camera font has no symbol glyphs).
+  Legend.java                  Canvas-drawn key icons and the favorite star, wrapped onto more lines when a row does not fit (Keys.lineCounts; camera font has no symbol glyphs).
                                Draws what Keys.hints builds: the four-way and the wheel are left out as self-evident,
                                a hold is its key's icon labelled "(hold)", and Fn, where the body has it, sits before
                                MENU when both close the list ("Fn / MENU close")
-  StarView.java                the star next to the recipe name when it is a favourite
+  StarView.java                the star next to the recipe name when it is a favorite
   SponsorLine.java             the small "Love this app? Leave a tip!" line, with a drawn heart, at the top of
                                the live view on the Full and No keys panels (DevTools.sponsorLine, Ko-fi); the About page lists Ko-fi and GitHub Sponsors
   HintBar.java                 legend view under the panel (uses Legend)
@@ -135,7 +136,7 @@ down or the wheel move, the centre button runs a row, a short MENU goes back a l
 | **Panel visibility** | a value — *Full* / *No keys* / *Label* / *Hidden* (`DevTools.PANELS`) — that left / right step through in place, wrapping, with the menu left open; centre steps forward. The same states trash cycles. *No keys* (`OV_QUIET`) is the full panel, chips and all (`Params.panelUp`), without the `HintBar` legend; closing the browser returns to it if it was left on it |
 | **Language** | a value — *Auto* / *English* / *简体中文* / *繁體中文* / *日本語* / *한국어* / *Tiếng Việt* — stepped the same way, kept in the app's preferences under `language` by code (`Lang.CODES`). The app redraws in it at once. *Auto* follows the camera's locale (`Lang.fromLocale`); each language's name is drawn in its own script and font. See [LOCALIZATION.md](LOCALIZATION.md) |
 | **Reset settings** | asks `DevTools.resetTitle()` (Cancel highlighted), then stages `Recipes.FACTORY` and stores it (`writeAll`, so the quality prompt still asks when it must). The same look as **Factory**, the first Sony recipe, which is in the list like the others (it was hidden once, and users went looking for it) |
-| **Save a bug report** | `saveReport()`: one file, `RECIPLAB/REPORT.TXT`, replaced on every save — the header, mode and `STATE` as of now, then the end of `LOG1.TXT` + `LOG.TXT` (48 KB), of `LOCKS.TXT`, `DIFF.TXT` and `KEYS.TXT` (8 KB each) and every camera parameter (`CardLog.report`). No card: a toast says so. Its second line is the app as shown (`CardLog.app`: the recipe, ACTIVE / PREVIEW, EDITED, the language, the custom recipes and any skipped file, the favourites), and the header carries the firmware (`KeyProbe.firmware`), so the bug form asks for this file and a description only, as most reporters are not developers |
+| **Save a bug report** | `saveReport()`: one file, `RECIPLAB/REPORT.TXT`, replaced on every save — the header, mode and `STATE` as of now, then the end of `LOG1.TXT` + `LOG.TXT` (48 KB), of `LOCKS.TXT`, `DIFF.TXT` and `KEYS.TXT` (8 KB each) and every camera parameter (`CardLog.report`). No card: a toast says so. Its second line is the app as shown (`CardLog.app`: the recipe, ACTIVE / PREVIEW, EDITED, the language, the custom recipes and any skipped file, the favorites), and the header carries the firmware (`KeyProbe.firmware`), so the bug form asks for this file and a description only, as most reporters are not developers |
 | **About** | the installed version (from `PackageManager` — never a string in the source, `tools/check-version.sh`), `model.name`, the firmware version (`ScalarProperties.getFirmwareVersion()`, `KeyProbe.firmware`), `version.platform`, the source URL, and the sponsor footer |
 | **Developer >** | the developer menu below |
 
@@ -289,7 +290,10 @@ write to the card, PMCADemo, uses `PMCADEMO/LOG.TXT`. A first build that used `R
 **Index.** `Library` puts them after the table: `recipe` in `0 .. BASE-1` is `Recipes.ALL`, `BASE ..` a custom recipe, A
 to Z. An index moves when a recipe is added, renamed or deleted, so nothing persistent holds one: the recipe the app
 reopens on — the last one selected (centre in the brand list) or applied (a successful write, New recipe), whichever
-came last, never just the last one the wheel scrolled past (`rememberReopen`) — is kept as `customRecipe` (its name) beside `recipe`, and favourites by name.
+came last, never just the last one the wheel scrolled past (`rememberReopen`) — is kept as `customRecipe` (its name) beside `recipe`, and favorites by name.
+The group that recipe was selected from is what the wheel loops through on the main screen (issue #155), kept as
+`wheelGroup` by name (`Favorites.wheelKey`: `all`, `favorites`, `custom` or the brand); nothing stored, or a group
+left empty, loops through all of them.
 
 **The file.** YAML — a flat mapping, one `key: value` per line, `#` comments, values plain or quoted — UTF-8 (a BOM is
 ignored), English always, `.YML`. Anything else YAML allows (lists, nesting) and any line that is not `key: value` (an
@@ -351,11 +355,11 @@ leaves the old file or the new one.
 | a recipe — any recipe — has edits (`Params.differsFromRecipe`) | they stay a preview, saved nowhere: the **EDITED** badge shows, and with the full panel up a row of buttons shows under the chips, `CustomRecipes.editActions(custom, applied)`, in this order: **Save** (custom only: its file rewritten, then written to the camera unless it has the values already — a built-in recipe never changes), **Apply** (the write; left out once the store has the values), **Save as new** (name editor on `copyName` — *Velvia 2*, *Golden Hour 2*, the name cleaned of what a name may not hold — then the new recipe is written to the camera too), **Discard** (asks *Discard edits?* first, then `stageRecipe`, and the write too when the edits had been applied). Down from the chips reaches the row (`Params.nextLine`: recipe → chips → buttons → recipe), left / right / the dial choose, centre presses; the legend is `H_ACTIONS` |
 | the badges | two, answering two questions: ACTIVE / PREVIEW — does the store have what the chips show (`dirty()`); and beside it **EDITED** (`badge_edited`) — are they not the recipe's own (`edited()`). ACTIVE EDITED is an applied edit, PREVIEW EDITED one not stored yet |
 | a write succeeded after edits (**Apply**; badges **ACTIVE** **EDITED**) | the chips keep what was written (`load()` only) instead of re-staging the recipe; a refused write re-stages the recipe |
-| reopening the app after an applied edit | `rememberAppliedEdit` keeps, after each successful write, which recipe (`Favourites.key`) and which rows (`Params.rowsText`) were written when they are not the recipe's own (prefs `appliedRecipe` / `appliedRows`). Whenever that recipe is shown again — on `onResume`, or coming back to it with the wheel or the brand list (`showRecipe`) — and the camera still holds the same look (`Params.showsAppliedEdit`), the stored rows replace the staged recipe: **ACTIVE** **EDITED** again. Selecting another recipe in the brand list, or any write that is not an edit, lets go of it; Discard and Reset stage the recipe's own values. A camera changed since — its own menus, another recipe — shows the recipe as before |
+| reopening the app after an applied edit | `rememberAppliedEdit` keeps, after each successful write, which recipe (`Favorites.key`) and which rows (`Params.rowsText`) were written when they are not the recipe's own (prefs `appliedRecipe` / `appliedRows`). Whenever that recipe is shown again — on `onResume`, or coming back to it with the wheel or the brand list (`showRecipe`) — and the camera still holds the same look (`Params.showsAppliedEdit`), the stored rows replace the staged recipe: **ACTIVE** **EDITED** again. Selecting another recipe in the brand list, or any write that is not an edit, lets go of it; Discard and Reset stage the recipe's own values. A camera changed since — its own menus, another recipe — shows the recipe as before |
 | centre on the recipe line with edits | *Discard edits to Velvia?* — **Discard** re-stages the recipe and writes it (the pick it asked for), **Cancel** highlighted. Saving and copying live only in the button row |
 | leaving an edited recipe — wheel / left / right on the recipe line, Fn or Browse recipes, MENU out of the app — with edits neither saved nor applied (`editsAtRisk`) | the same question; **Discard** goes on with the move (`unlessEditsLost`). After Apply the camera has the edits, so nothing is asked |
 | app menu → **New recipe** (`APP_NEW`, below Browse recipes) | name editor, then the camera's *stored* rows (`cur`) become the recipe — set a look in Sony's menus, bottle it. An unidentified style refuses with a toast before the editor opens |
-| hold MENU on a custom recipe in the brand list (`onCustomRow`) | **Rename**, **Delete** (asks again), **Cancel** — Cancel highlighted. MENU is press / hold there: the release closes the list, the hold (`HOLD_MS`) opens the options. Hold centre marks a favourite on every recipe, custom ones included. On the live screen hold MENU stays the app menu |
+| hold MENU on a custom recipe in the brand list (`onCustomRow`) | **Rename**, **Delete** (asks again), **Cancel** — Cancel highlighted. MENU is press / hold there: the release closes the list, the hold (`HOLD_MS`) opens the options. Hold centre marks a favorite on every recipe, custom ones included. On the live screen hold MENU stays the app menu |
 
 The name editor (`NameEntry`, `KeyboardView`) is a key grid on universal keys: four-way moves (wrapping, keeping the
 column across rows of different widths), wheel / dial walk cell by cell, centre types, trash deletes, MENU cancels, the
@@ -556,7 +560,7 @@ centre, MENU, trash, shutter — and Fn is the one shortcut on top:
 | function | every body | shortcut |
 |---|---|---|
 | store the recipe | centre | — |
-| favourite | hold centre | — |
+| favorite | hold centre | — |
 | brand list | hold MENU → Browse recipes | Fn |
 | hide the panel | trash, or hold MENU → Panel visibility | — |
 | reset to factory | hold trash, or hold MENU → Reset settings — both ask first | — |
@@ -569,7 +573,7 @@ of what it might be on a body where it is printed on the wheel's top (A6000, A51
 as `K_UP` — chip navigation works on the A6000 — but a body that sent 608 for it would have its wheel-up hide the panel
 or close the list. All three are swallowed on every screen and shown by the key logger.
 
-**Holds.** Three keys have a press and a hold (`Keys.Hold`, `HOLD_MS` 600 ms): centre (pick / favourite), MENU (exit /
+**Holds.** Three keys have a press and a hold (`Keys.Hold`, `HOLD_MS` 600 ms): centre (pick / favorite), MENU (exit /
 app menu) and trash (hide / ask to reset). The hold is timed with a `Handler.postDelayed` armed on the press and
 cancelled on the release, so it does not depend on the firmware delivering key-repeat events. Centre and MENU run their
 press action on the **release**; a hold that has fired swallows the release. Trash too: it hides the panel (or closes
@@ -599,9 +603,9 @@ direction on the platform-1 NEX bodies, which Sony's framework does.
 On the first launch of a build with these keys a toast says where things went (`Keys.NOTICE`, once, pref
 `keysNoticeSeen`).
 
-Favourites live in `getPreferences(MODE_PRIVATE)` under `favourites`, as recipe **names** joined with `|` (so a table
+Favorites live in `getPreferences(MODE_PRIVATE)` under `favorites`, as recipe **names** joined with `|` (so a table
 that gains a recipe does not shift the marks); a name the table no longer has is dropped on load. A custom recipe is
-stored as `custom:<name>`, and its mark is kept while its card is out (`Favourites.encode` carries over the custom names
+stored as `custom:<name>`, and its mark is kept while its card is out (`Favorites.encode` carries over the custom names
 it cannot resolve); rename moves it, delete drops it. They are app storage, not the camera settings store: a power cycle
 keeps them, an uninstall does not.
 
@@ -737,7 +741,7 @@ with the JUnit 5 console launcher, one jar fetched from Maven Central into `out/
 against a SHA-256 pinned in the script (`JUNIT_JAR=<path>` points it at a copy when offline). Reports land in
 `out/test/reports/`.
 
-**What is covered.** Everything that decides without the camera lives in `Params`, `Recipes`, `Favourites`,
+**What is covered.** Everything that decides without the camera lives in `Params`, `Recipes`, `Favorites`,
 `CustomRecipes`, `Library` and `NameEntry`, and the tests pin it down:
 
 | | |
@@ -753,11 +757,11 @@ against a SHA-256 pinned in the script (`JUNIT_JAR=<path>` points it at a copy w
 | `KeysTest` | the press / hold gesture, the trash-hold guard, and that the legend never names a key the body lacks — every function on a universal key, Fn only when reported, the order pick · browse · save · fav · menu · hide · exit, the reset hold never hinted |
 | `KeyProbeTest` | that the key probe answers "unknown" off the camera instead of throwing |
 | `KeyProbeCameraTest` | the key probe against test doubles of Sony's `ScalarInput`, `KeyStatus` and `ScalarProperties` (`test/com/sony/scalar/sysutil/`, shaped like the OpenMemories-Framework stubs): the reflection finds the real signatures, only `valid == 1` is a key, only `status == 1` is a press. The doubles throw for anything a test did not set up, which is how the "off the camera" answers stay null |
-| `FavouritesTest` | the favourites list — stored by name, unknown names dropped, marking order kept, toggle, the highlight after a removal, custom recipes as `custom:<name>` kept while their card is out — and the browser's group order: Favourites, Custom with its New row, the brands |
+| `FavoritesTest` | the favorites list — stored by name, unknown names dropped, marking order kept, toggle, the highlight after a removal, custom recipes as `custom:<name>` kept while their card is out — and the browser's group order: All, Favorites, Custom with its New row, the brands; the wheel looping through the group last picked from, stored by name, falling back to all when that group is empty |
 | `RecipeFormatsTest` | the file's versions: numbered 1, 2, 3 … with the newest written, every writer read back by its own reader, each file read by the version it names (a stand-in version 3 beside formats 1 and 2), format 2's family line (missing, another family, exact spelling), unknown versions skipped whole, the shared envelope |
 | `CardLogTest` | the log's 8.3 names and folder, appending and creating the folders, the roll-over (one old file, never the diff), the line format, the refused-write, written-slots and dropped-preview lines |
 | `CustomRecipesTest` | the recipe file: every built-in look survives a round trip, hand-edited files (BOM, CRLF, case, comments, unknown keys) still read, a newer format or any out-of-range value skips the file with the reason, names and default names, file names, and save / edit / rename / delete / load against a temporary folder |
-| `LibraryTest` | one index over the table and the custom recipes: the wheel walks into them and wraps, the panel counts them among themselves |
+| `LibraryTest` | one index over the table and the custom recipes: the wheel walks into them and wraps, the panel counts them in the total |
 | `NameEntryTest` | the name editor: the placeholder the first character replaces, capitals, delete, the length limit, walking the grid with the four-way and the wheel |
 | `TransferStateTest` | Transfer to phone's page state: the hotspot starting, up with its network and password (quotes off), failing and why, the start timeout |
 | `LinkServerTest` | the protocol 5 server on an ephemeral port against a temporary card, over real sockets: DELETE of a recipe file (removed, refused, missing), PUT of a recipe file (new, replaced, refused, too large, a folder that links out), `/api/info`, the ARW and JPEG listing, ARW and JPEG previews (the Exif thumbnail, the file itself, none), `/api/recipes` in any case, ranges, HEAD, 405, path traversal and symlinks that lead out, concurrent downloads, the counters |
@@ -765,7 +769,7 @@ against a SHA-256 pinned in the script (`JUNIT_JAR=<path>` points it at a copy w
 | `HttpRequestTest`, `ByteRangeTest`, `StorageRootTest`, `SmallPartsTest` | request parsing, `Range`, the path rules, JSON escaping, the info document, the rate meter |
 | `RecipeShareTest`, `QrScanTest` | the share code against the shared vectors, every field's range, refused codes; a generated code read back from a live view frame, a photo, small and off centre, light on dark; what a code holds; which pictures a press added and which to read; the photo's read size |
 | `RecipeCardLayoutTest`, `ImageCanvasTest` | the card in each shape: Studio's numbers, nothing overlapping or off the picture, a story inside its safe area, the cells' words; the scaler's steps and the memory checks of a picture into playback |
-| `LangTest` | the display language: every table has every key and keeps English's placeholders, every key the code asks for exists, the Language row's choices and what Auto resolves to, that samples.txt, locks.txt and favourites stay English in any language, and that each bundled font has a glyph for every character its table uses (read from the font's own cmap) |
+| `LangTest` | the display language: every table has every key and keeps English's placeholders, every key the code asks for exists, the Language row's choices and what Auto resolves to, that samples.txt, locks.txt and favorites stay English in any language, and that each bundled font has a glyph for every character its table uses (read from the font's own cmap) |
 
 **What is not, and cannot be.** `MainActivity` (key dispatch, overlays, the camera and the JNI store), the
 Canvas views (`PickerView`, `PromptView`, `MenuView`, `KeyboardView`, `HintBar`, `Legend`), `UiFont` and `jni/jni.cpp` need a running camera or an
@@ -773,7 +777,7 @@ Android runtime; there is no Gradle and no Robolectric here, and a mock of `Came
 stay on the [on-camera checklist](CONTRIBUTING.md#on-the-camera). Likewise the slot ids themselves: a
 test can show that the app writes `0x01070175 = 6`, not that the camera means B&W by it.
 
-**Keeping it that way.** New logic that does not need the camera goes into `Params` (or `Recipes`, `Favourites`,
+**Keeping it that way.** New logic that does not need the camera goes into `Params` (or `Recipes`, `Favorites`,
 `DevTools`, `Keys`, `KeyProbe`, `Lang`, or a new class listed in `UNITS` in `tools/test.sh`) with a test next to it, and is called from `MainActivity`, never the
 other way round. `tools/test.sh` compiles those classes without `android.jar` on purpose: an `android.*` import in either fails there before it fails in CI. Tests
 are plain JUnit 5 (`org.junit.jupiter.api`), one behaviour per method, no mocking library; `Fixtures` has a

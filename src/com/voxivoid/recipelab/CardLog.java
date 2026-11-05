@@ -109,10 +109,10 @@ final class CardLog {
      * camera holds it (ACTIVE / PREVIEW) and whether its values were changed (EDITED), the display language, and the
      * user's own recipes and marks.
      */
-    static String app(String recipe, boolean active, boolean edited, String language, int customs, List<String> skipped, int favourites) {
+    static String app(String recipe, boolean active, boolean edited, String language, int customs, List<String> skipped, int favorites) {
         return "recipe " + recipe + (active ? "  ACTIVE" : "  PREVIEW") + (edited ? " EDITED" : "") + "  ·  language " + language
                 + "  ·  custom recipes " + customs + (skipped.isEmpty() ? "" : " (skipped: " + join(skipped) + ")")
-                + "  ·  favourites " + favourites;
+                + "  ·  favorites " + favorites;
     }
 
     private static String join(List<String> l) { StringBuilder b = new StringBuilder(); for (String s : l) b.append(b.length() == 0 ? "" : "; ").append(s); return b.toString(); }

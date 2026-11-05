@@ -23,7 +23,7 @@ class LibraryTest {
     }
 
     @Test void customRecipesFollowTheTableAToZ() {
-        Library lib = FavouritesTest.custom("beta", "Alpha", "Gamma");
+        Library lib = FavoritesTest.custom("beta", "Alpha", "Gamma");
         assertTrue(lib.isCustom(Library.BASE));
         assertFalse(lib.isCustom(LAST_BUILT_IN));
         assertEquals(Arrays.asList("Alpha", "beta", "Gamma"), lib.customNames(), "ignoring case");
@@ -35,7 +35,7 @@ class LibraryTest {
     }
 
     @Test void theWheelWalksOnFromTheTableIntoTheCustomRecipesAndWraps() {
-        Library lib = FavouritesTest.custom("A", "B");
+        Library lib = FavoritesTest.custom("A", "B");
         assertEquals(Library.BASE, lib.next(LAST_BUILT_IN, +1));
         assertEquals(Library.BASE + 1, lib.next(Library.BASE, +1));
         assertEquals(Recipes.FACTORY, lib.next(Library.BASE + 1, +1), "past the last custom recipe: the first one, the factory look");
@@ -46,14 +46,15 @@ class LibraryTest {
         assertEquals(Recipes.LISTED + 2, seen, "one turn visits every listed recipe once");
     }
 
-    @Test void thePanelCountsCustomRecipesAmongThemselves() {
-        Library lib = FavouritesTest.custom("A", "B", "C");
-        assertEquals("2 / 3", lib.position(Library.BASE + 1));
-        assertEquals(Recipes.position(5), lib.position(5));
+    @Test void thePanelCountsTheCustomRecipesInTheTotal() {
+        Library lib = FavoritesTest.custom("A", "B", "C");
+        int total = Library.BASE + 3;
+        assertEquals((Library.BASE + 2) + " / " + total, lib.position(Library.BASE + 1), "after the table");
+        assertEquals("6 / " + total, lib.position(5));
     }
 
     @Test void anIndexLeftOverFromALongerListIsNotARecipe() {
-        Library lib = FavouritesTest.custom("A");
+        Library lib = FavoritesTest.custom("A");
         assertTrue(lib.valid(Library.BASE));
         lib.set(Arrays.<CustomRecipes.Entry>asList());
         assertFalse(lib.valid(Library.BASE), "after the card lost its recipes, MainActivity moves off this index");
@@ -61,7 +62,7 @@ class LibraryTest {
     }
 
     @Test void fromAnIndexThatIsNoRecipeTheWheelGoesToAnEnd() {
-        Library lib = FavouritesTest.custom("A", "B");
+        Library lib = FavoritesTest.custom("A", "B");
         assertEquals(0, lib.next(-1, +1));
         assertEquals(Library.BASE + 1, lib.next(-1, -1), "backwards: the last custom recipe");
         assertEquals(Library.BASE + 1, lib.next(Library.BASE + 2, -1));

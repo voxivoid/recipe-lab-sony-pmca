@@ -172,7 +172,7 @@ final class Keys {
             case H_RECIPE: {
                 Row r = new Row().add(I_ENTER, Lang.t("action_pick"));
                 if (caps.hasFn()) r.add(I_FN, Lang.t("action_browse"));
-                r.add(I_ENTER, Lang.t("action_favourite_hold"));
+                r.add(I_ENTER, Lang.t("action_favorite_hold"));
                 return r.add(I_MENU, Lang.t("action_menu_hold")).add(I_TRASH, Lang.t("action_hide")).add(I_MENU, Lang.t("action_exit")).done();
             }
             case H_CHIPS: {
@@ -183,8 +183,8 @@ final class Keys {
             case H_EDIT: return new Row().add(I_ENTER, Lang.t("action_done")).done();
             case H_ACTIONS: return new Row().add(I_LEFTRIGHT, Lang.t("action_move")).add(I_ENTER, Lang.t("action_select")).add(I_MENU, Lang.t("action_exit")).done();
             case H_BRANDS: return new Row().add(I_ENTER, Lang.t("action_recipes")).add(I_MENU, fn, Lang.t("action_close")).done();
-            case H_RECIPES: return new Row().add(I_ENTER, Lang.t("action_pick")).add(I_ENTER, Lang.t("action_favourite_hold")).add(I_MENU, fn, Lang.t("action_close")).done();
-            case H_RECIPES_CUSTOM: return new Row().add(I_ENTER, Lang.t("action_pick")).add(I_ENTER, Lang.t("action_favourite_hold"))
+            case H_RECIPES: return new Row().add(I_ENTER, Lang.t("action_pick")).add(I_ENTER, Lang.t("action_favorite_hold")).add(I_MENU, fn, Lang.t("action_close")).done();
+            case H_RECIPES_CUSTOM: return new Row().add(I_ENTER, Lang.t("action_pick")).add(I_ENTER, Lang.t("action_favorite_hold"))
                     .add(I_MENU, Lang.t("action_options_hold")).add(I_MENU, fn, Lang.t("action_close")).done();
             case H_NAME: return new Row().add(I_UPDOWN, Lang.t("action_move")).add(I_ENTER, Lang.t("action_type")).add(I_TRASH, Lang.t("action_delete_char")).add(I_MENU, Lang.t("action_cancel")).done();
             case H_MENU_TOP: return new Row().add(I_UPDOWN, Lang.t("action_move")).add(I_ENTER, Lang.t("action_select")).add(I_MENU, Lang.t("action_close")).done();

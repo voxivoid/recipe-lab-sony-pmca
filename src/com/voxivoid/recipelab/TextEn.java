@@ -59,12 +59,13 @@ final class TextEn {
         { "lock_report_some", "%1$d recipe slots checked  ·  %2$d read-only: %3$s" },
         { "lock_report_unreadable", "  ·  %1$d would not answer" },
 
-        // ---- favourites and the brand list
-        { "group_favourites", "Favourites" },
-        { "favourite_added", "%1$s added to Favourites" },
-        { "favourite_removed", "%1$s removed from Favourites" },
-        { "favourite_empty_title", "No favourites yet" },
-        { "favourite_empty_hint", "Hold the centre button on a recipe to keep it here" },
+        // ---- favorites and the brand list
+        { "group_all", "All" },
+        { "group_favorites", "Favorites" },
+        { "favorite_added", "%1$s added to Favorites" },
+        { "favorite_removed", "%1$s removed from Favorites" },
+        { "favorite_empty_title", "No favorites yet" },
+        { "favorite_empty_hint", "Hold the centre button on a recipe to keep it here" },
         { "picker_brand", "BRAND" },
 
         // ---- custom recipes (CustomRecipes): the Custom group, the questions, the name editor, the messages
@@ -151,7 +152,7 @@ final class TextEn {
         // ---- the legend
         { "action_pick", "pick" },
         { "action_browse", "browse" },
-        { "action_favourite_hold", "fav (hold)" },
+        { "action_favorite_hold", "fav (hold)" },
         { "action_menu_hold", "menu (hold)" },
         { "action_hide", "hide" },
         { "action_exit", "exit" },
@@ -194,7 +195,7 @@ final class TextEn {
 
         // ---- the app menu
         { "menu_browse", "Browse recipes" },
-        { "menu_browse_detail", "Brands and favourites" },
+        { "menu_browse_detail", "Brands and favorites" },
         { "menu_new", "New recipe" },
         { "menu_new_detail", "Saves the camera's current settings as a custom recipe" },
         { "menu_transfer", "Transfer to phone" },
