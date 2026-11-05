@@ -25,12 +25,12 @@ final class DevTools {
 
     /** app menu rows, in display order */
     static final int APP_BROWSE = 0, APP_NEW = 1, APP_READ_QR = 2, APP_TRANSFER = 3, APP_SYNC = 4, APP_PANEL = 5, APP_LANG = 6,
-            APP_RESET = 7, APP_REPORT = 8, APP_ABOUT = 9, APP_DEV = 10, APP_ROWS = 11;
+            APP_KEY = 7, APP_RESET = 8, APP_REPORT = 9, APP_ABOUT = 10, APP_DEV = 11, APP_ROWS = 12;
 
     /** the icons the menus draw beside their rows (MenuView draws them: the camera font has no symbol glyphs) */
     static final int IC_BROWSE = 0, IC_NEW = 1, IC_PANEL = 2, IC_LANGUAGE = 3, IC_RESET = 4, IC_ABOUT = 5, IC_DEV = 6,
             IC_SNAPSHOT = 7, IC_LOCK = 8, IC_SAMPLES = 9, IC_CLOCK = 10, IC_KEYS = 11, IC_REPORT = 12, IC_TRANSFER = 13, IC_SYNC = 14, IC_QR = 15;
-    private static final int[] APP_ICONS = { IC_BROWSE, IC_NEW, IC_QR, IC_TRANSFER, IC_SYNC, IC_PANEL, IC_LANGUAGE, IC_RESET, IC_REPORT, IC_ABOUT, IC_DEV };
+    private static final int[] APP_ICONS = { IC_BROWSE, IC_NEW, IC_QR, IC_TRANSFER, IC_SYNC, IC_PANEL, IC_LANGUAGE, IC_KEYS, IC_RESET, IC_REPORT, IC_ABOUT, IC_DEV };
     private static final int[] DEV_ICONS = { IC_SNAPSHOT, IC_LOCK, IC_SAMPLES, IC_CLOCK, IC_KEYS };
 
     /** the icon of each row of a level, in row order */
@@ -72,6 +72,7 @@ final class DevTools {
             case APP_SYNC: return Lang.t("menu_sync");
             case APP_PANEL: return Lang.t("menu_panel");
             case APP_LANG: return Lang.t("menu_language");
+            case APP_KEY: return Lang.t("menu_key");
             case APP_RESET: return Lang.t("menu_reset");
             case APP_REPORT: return Lang.t("menu_report");
             case APP_ABOUT: return Lang.t("menu_about");
@@ -90,6 +91,7 @@ final class DevTools {
             case APP_SYNC: return Lang.t("menu_sync_detail");
             case APP_PANEL: return Lang.t("menu_panel_detail");
             case APP_LANG: return Lang.t("menu_language_detail");
+            case APP_KEY: return Lang.t("menu_key_detail");
             case APP_RESET: return Lang.t("menu_reset_detail");
             case APP_REPORT: return Lang.t("menu_report_detail");
             case APP_ABOUT: return Lang.t("menu_about_detail");
@@ -101,15 +103,22 @@ final class DevTools {
     /**
      * The value an app menu row shows at its right edge, which left / right change in place; null for a row that has
      * none. Panel visibility shows the panel state: Full, Label (the pill) or Hidden. Language shows the choice
-     * ({@link Lang#choiceLabel}): Auto, or a language by its own name.
+     * ({@link Lang#choiceLabel}): Auto, or a language by its own name. Open with a key shows on / off.
      */
-    static String appValue(int row, int overlay, int langChoice) {
+    static String appValue(int row, int overlay, int langChoice, boolean keyOn) {
         switch (row) {
             case APP_PANEL: return panelLabel(overlay);
             case APP_LANG: return Lang.choiceLabel(langChoice);
+            case APP_KEY: return Lang.t(keyOn ? "value_on" : "value_off");
             default: return null;
         }
     }
+
+    /** what the Open with a key row shows after a change: on only if the camera took it, so a refusal is not retried every opening */
+    static boolean keyRowOn(boolean wanted, String why) { return wanted && why == null; }
+
+    /** Sony's app store: what the camera's Download Appli. key function opens until an app registers itself for it */
+    static final String STORE_PACKAGE = "com.sony.scalar.dlsys.scalaramarket";
 
     /** a panel state as the menu names it */
     static String panelLabel(int overlay) {

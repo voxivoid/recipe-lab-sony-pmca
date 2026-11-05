@@ -13,6 +13,13 @@ import org.junit.jupiter.api.Test;
 class DevToolsTest {
 
     // ---- menu rows
+    @Test void openWithKeyStaysOnOnlyWhenTheCameraTookIt() {
+        assertTrue(DevTools.keyRowOn(true, null));
+        assertFalse(DevTools.keyRowOn(true, "the camera answered false"), "refused: the row goes back off");
+        assertFalse(DevTools.keyRowOn(false, null));
+        assertFalse(DevTools.keyRowOn(false, "no store"), "a failed off stays off: the message says what happened");
+    }
+
     @Test void everyRowHasALabelAndADetailLine() {
         for (int r = 0; r < DevTools.ROWS; r++) {
             for (boolean snapshotTaken : new boolean[] { false, true }) {
@@ -63,7 +70,7 @@ class DevToolsTest {
         assertEquals(DevTools.ROWS, DevTools.rows(DevTools.LEVEL_DEV));
         String[] labels = new String[DevTools.APP_ROWS];
         for (int r = 0; r < DevTools.APP_ROWS; r++) labels[r] = DevTools.appLabel(r);
-        assertEquals(Arrays.asList("Browse recipes", "New recipe", "Read Recipe QR Code", "Transfer to phone", "Sync recipes", "Panel visibility", "Language", "Reset settings", "Save a bug report", "About", "Developer  >"), Arrays.asList(labels));
+        assertEquals(Arrays.asList("Browse recipes", "New recipe", "Read Recipe QR Code", "Transfer to phone", "Sync recipes", "Panel visibility", "Language", "Open with a key", "Reset settings", "Save a bug report", "About", "Developer  >"), Arrays.asList(labels));
         assertTrue(DevTools.appDetail(DevTools.APP_NEW).contains("current settings"), "the row says what it keeps");
         assertEquals(DevTools.APP_BROWSE, 0, "the menu opens on Browse, so a body without Fn is one press from the list");
     }
@@ -89,24 +96,24 @@ class DevToolsTest {
     }
 
     @Test void onlyThePanelAndLanguageRowsHaveAValue() {
-        assertEquals("Full", DevTools.appValue(DevTools.APP_PANEL, Params.OV_FULL, Lang.AUTO));
-        assertEquals("No keys", DevTools.appValue(DevTools.APP_PANEL, Params.OV_QUIET, Lang.AUTO));
-        assertEquals("Label", DevTools.appValue(DevTools.APP_PANEL, Params.OV_PILL, Lang.AUTO));
-        assertEquals("Hidden", DevTools.appValue(DevTools.APP_PANEL, Params.OV_HIDDEN, Lang.AUTO));
+        assertEquals("Full", DevTools.appValue(DevTools.APP_PANEL, Params.OV_FULL, Lang.AUTO, false));
+        assertEquals("No keys", DevTools.appValue(DevTools.APP_PANEL, Params.OV_QUIET, Lang.AUTO, false));
+        assertEquals("Label", DevTools.appValue(DevTools.APP_PANEL, Params.OV_PILL, Lang.AUTO, false));
+        assertEquals("Hidden", DevTools.appValue(DevTools.APP_PANEL, Params.OV_HIDDEN, Lang.AUTO, false));
         for (int r = 0; r < DevTools.APP_ROWS; r++)
-            if (r != DevTools.APP_PANEL && r != DevTools.APP_LANG) assertNull(DevTools.appValue(r, Params.OV_FULL, Lang.AUTO), "row " + r);
+            if (r != DevTools.APP_PANEL && r != DevTools.APP_LANG && r != DevTools.APP_KEY) assertNull(DevTools.appValue(r, Params.OV_FULL, Lang.AUTO, false), "row " + r);
         assertFalse(DevTools.appDetail(DevTools.APP_PANEL).contains("left / right"), "the drawn arrows say how to change it");
         assertFalse(DevTools.appDetail(DevTools.APP_LANG).contains("left / right"));
     }
 
     @Test void theLanguageRowNamesEachLanguageInItsOwnScript() {
-        assertEquals("Auto", DevTools.appValue(DevTools.APP_LANG, Params.OV_FULL, Lang.AUTO));
-        assertEquals("English", DevTools.appValue(DevTools.APP_LANG, Params.OV_FULL, Lang.EN));
-        assertEquals("简体中文", DevTools.appValue(DevTools.APP_LANG, Params.OV_FULL, Lang.ZH_HANS));
-        assertEquals("繁體中文", DevTools.appValue(DevTools.APP_LANG, Params.OV_FULL, Lang.ZH_HANT));
-        assertEquals("日本語", DevTools.appValue(DevTools.APP_LANG, Params.OV_FULL, Lang.JA));
-        assertEquals("한국어", DevTools.appValue(DevTools.APP_LANG, Params.OV_FULL, Lang.KO));
-        assertEquals("Tiếng Việt", DevTools.appValue(DevTools.APP_LANG, Params.OV_FULL, Lang.VI));
+        assertEquals("Auto", DevTools.appValue(DevTools.APP_LANG, Params.OV_FULL, Lang.AUTO, false));
+        assertEquals("English", DevTools.appValue(DevTools.APP_LANG, Params.OV_FULL, Lang.EN, false));
+        assertEquals("简体中文", DevTools.appValue(DevTools.APP_LANG, Params.OV_FULL, Lang.ZH_HANS, false));
+        assertEquals("繁體中文", DevTools.appValue(DevTools.APP_LANG, Params.OV_FULL, Lang.ZH_HANT, false));
+        assertEquals("日本語", DevTools.appValue(DevTools.APP_LANG, Params.OV_FULL, Lang.JA, false));
+        assertEquals("한국어", DevTools.appValue(DevTools.APP_LANG, Params.OV_FULL, Lang.KO, false));
+        assertEquals("Tiếng Việt", DevTools.appValue(DevTools.APP_LANG, Params.OV_FULL, Lang.VI, false));
     }
 
     @Test void leftRightWalkThePanelStatesAndWrap() {
@@ -129,7 +136,7 @@ class DevToolsTest {
     @Test void theTransferRowSaysWhatGoesWhere() {
         assertEquals("Transfer to phone", DevTools.appLabel(DevTools.APP_TRANSFER));
         assertEquals("Send RAWs and JPEGs to Recipe Lab Studio over Wi-Fi", DevTools.appDetail(DevTools.APP_TRANSFER));
-        assertNull(DevTools.appValue(DevTools.APP_TRANSFER, Params.OV_FULL, Lang.AUTO), "a row that opens a page, not a value");
+        assertNull(DevTools.appValue(DevTools.APP_TRANSFER, Params.OV_FULL, Lang.AUTO, false), "a row that opens a page, not a value");
         assertEquals("TRANSFER TO PHONE", DevTools.transferTitle());
     }
 
@@ -137,7 +144,7 @@ class DevToolsTest {
         assertEquals(DevTools.APP_TRANSFER + 1, DevTools.APP_SYNC);
         assertEquals("Sync recipes", DevTools.appLabel(DevTools.APP_SYNC));
         assertEquals("Exchange custom recipes with Recipe Lab Studio over Wi-Fi", DevTools.appDetail(DevTools.APP_SYNC));
-        assertNull(DevTools.appValue(DevTools.APP_SYNC, Params.OV_FULL, Lang.AUTO), "a row that opens a page, not a value");
+        assertNull(DevTools.appValue(DevTools.APP_SYNC, Params.OV_FULL, Lang.AUTO, false), "a row that opens a page, not a value");
         assertEquals("SYNC RECIPES", DevTools.syncTitle());
         TransferState s = started();
         assertTrue(DevTools.transferPage(s, new Stats(), 0, true).instruction.contains("Import → Sync recipes"));
@@ -349,5 +356,16 @@ class DevToolsTest {
             assertTrue(names.add(f[1]), f[1] + " is listed twice");
         }
         assertEquals(Recipes.ALL.length, names.size());
+    }
+
+    @Test void openWithAKeyIsAnOnOffRowThatSaysWhatToDoNext() {
+        assertEquals("Open with a key", DevTools.appLabel(DevTools.APP_KEY));
+        assertTrue(DevTools.appDetail(DevTools.APP_KEY).contains("Download Appli."), "the camera's own name for the function, which no app can change");
+        assertEquals("off", DevTools.appValue(DevTools.APP_KEY, Params.OV_FULL, Lang.AUTO, false));
+        assertEquals("on", DevTools.appValue(DevTools.APP_KEY, Params.OV_FULL, Lang.AUTO, true));
+        assertEquals(DevTools.APP_LANG + 1, DevTools.APP_KEY, "with the other settings, before the actions");
+        assertEquals(DevTools.IC_KEYS, DevTools.icons(DevTools.LEVEL_APP)[DevTools.APP_KEY]);
+        assertEquals("com.sony.scalar.dlsys.scalaramarket", DevTools.STORE_PACKAGE, "the A6000 firmware's store (fw 3.21)");
+        assertTrue(Lang.t("key_off_failed", "x").contains("Setting Reset"), "a failed off says how to undo it by hand");
     }
 }
