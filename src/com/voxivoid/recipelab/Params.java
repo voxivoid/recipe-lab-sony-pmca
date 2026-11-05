@@ -326,7 +326,7 @@ final class Params {
     }
 
     /**
-     * Whether the recipe shown ({@code key}, Favourites.key) should show the edits last applied rather than its own
+     * Whether the recipe shown ({@code key}, Favorites.key) should show the edits last applied rather than its own
      * values: it is the recipe they were applied to ({@code appliedKey}), and the camera ({@code cur}) still holds them.
      */
     static boolean showsAppliedEdit(String appliedKey, int[] appliedRows, String key, int[] cur) {
@@ -449,10 +449,10 @@ final class Params {
     static boolean onRecipeLine(int overlay, int row) { return row == R_RECIPE || !panelUp(overlay); }
 
     /**
-     * Whether a hold on the centre button marks a favourite where the user is. It does wherever a recipe is what the
+     * Whether a hold on the centre button marks a favorite where the user is. It does wherever a recipe is what the
      * screen is about; it does not on the chip strip, or on the browser's group column, where the highlight is a group.
      */
-    static boolean holdMarksFavourite(int overlay, int row, int browserCol) {
+    static boolean holdMarksFavorite(int overlay, int row, int browserCol) {
         return overlay == OV_BROWSER ? browserCol == COL_RECIPES : onRecipeLine(overlay, row);
     }
 

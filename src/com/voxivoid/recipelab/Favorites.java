@@ -4,12 +4,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * The favourites list and the browser's group order, without the camera: which recipes are marked, in the order
+ * The favorites list and the browser's group order, without the camera: which recipes are marked, in the order
  * they were marked, how the list is kept in the app's preferences, and how the browser walks it — the All group, the
- * Favourites group, the Custom group (the custom recipes, A to Z), then the brands — and the wheel's loop: the group the
+ * Favorites group, the Custom group (the custom recipes, A to Z), then the brands — and the wheel's loop: the group the
  * last recipe was picked from.
  *
- * A favourite is remembered by recipe <em>name</em>, not index, so the marks survive a build that inserts a recipe
+ * A favorite is remembered by recipe <em>name</em>, not index, so the marks survive a build that inserts a recipe
  * in the middle of the table; a built-in name the table no longer has is dropped on load. A custom recipe is stored as
  * {@link #CUSTOM_PREFIX} + its name, so it can share a name with a built-in one. Its mark outlives a card that is not
  * in the camera: {@link #encode} keeps the custom names it cannot see, and only deleting the recipe forgets it. The list
@@ -17,24 +17,26 @@ import java.util.List;
  *
  * MainActivity owns the list itself; this class decides. No android.* import may appear here (tools/test.sh).
  */
-final class Favourites {
-    private Favourites() {}
+final class Favorites {
+    private Favorites() {}
 
     /** the browser group that lists every recipe, the table's then the custom ones — the wheel's loop until one is narrowed */
     static final int ALL = -3;
-    /** the browser group that lists the favourites; brands are 0..GROUPS.length-1 */
+    /** the browser group that lists the favorites; brands are 0..GROUPS.length-1 */
     static final int GROUP = -1;
     /** the browser group that lists the custom recipes */
     static final int CUSTOM = Recipes.CUSTOM;
+    /** the preference the list is kept under: spelled as it shipped, so the marks of earlier versions are still found */
+    static final String PREF = "favourites";
     /** separates names in the stored string; no recipe name contains it (RecipesTest, CustomRecipes.nameChar) */
     static final String SEP = "|";
     /** marks a custom recipe's name in the stored string */
     static final String CUSTOM_PREFIX = "custom:";
-    /** the right column of an empty Favourites or Custom group; Custom without a card says so */
+    /** the right column of an empty Favorites or Custom group; Custom without a card says so */
     static String emptyTitle(int group, boolean card) {
-        return group != CUSTOM ? Lang.t("favourite_empty_title") : card ? Lang.t("custom_empty_title") : Lang.t("custom_no_card");
+        return group != CUSTOM ? Lang.t("favorite_empty_title") : card ? Lang.t("custom_empty_title") : Lang.t("custom_no_card");
     }
-    static String emptyHint(int group) { return Lang.t(group == CUSTOM ? "custom_empty_hint" : "favourite_empty_hint"); }
+    static String emptyHint(int group) { return Lang.t(group == CUSTOM ? "custom_empty_hint" : "favorite_empty_hint"); }
 
     // ------------------------------------------------------------ storage
     /** how a recipe is kept in the stored string */
@@ -96,7 +98,7 @@ final class Favourites {
     }
 
     // ------------------------------------------------------------ marking
-    /** marks an unmarked recipe (at the end) or unmarks a marked one; returns whether it is a favourite now */
+    /** marks an unmarked recipe (at the end) or unmarks a marked one; returns whether it is a favorite now */
     static boolean toggle(List<Integer> favs, int recipe) {
         int pos = favs.indexOf(recipe);
         if (pos >= 0) { favs.remove(pos); return false; }
@@ -104,23 +106,23 @@ final class Favourites {
         return true;
     }
 
-    /** the favourite to highlight after the one at {@code pos} was removed: the next one, else the new last, -1 when none */
+    /** the favorite to highlight after the one at {@code pos} was removed: the next one, else the new last, -1 when none */
     static int afterRemoval(List<Integer> favs, int pos) {
         if (favs.isEmpty()) return -1;
         return favs.get(Math.min(Math.max(0, pos), favs.size() - 1));
     }
 
     /** the toast after a toggle */
-    static String toggleMessage(String recipeName, boolean on) { return Lang.t(on ? "favourite_added" : "favourite_removed", recipeName); }
+    static String toggleMessage(String recipeName, boolean on) { return Lang.t(on ? "favorite_added" : "favorite_removed", recipeName); }
 
     // ------------------------------------------------------------ browser navigation
-    /** how many rows sit above the brands: All, Favourites, Custom */
+    /** how many rows sit above the brands: All, Favorites, Custom */
     static final int SPECIAL_ROWS = 3;
 
-    /** how many rows the brand column has: All, Favourites, Custom, the brands */
+    /** how many rows the brand column has: All, Favorites, Custom, the brands */
     static int groupRows() { return Recipes.GROUPS.length + SPECIAL_ROWS; }
 
-    /** the brand column's row for a group: All first, Favourites second, Custom third */
+    /** the brand column's row for a group: All first, Favorites second, Custom third */
     static int groupRow(int group) { return group == ALL ? 0 : group == GROUP ? 1 : group == CUSTOM ? 2 : group + SPECIAL_ROWS; }
 
     /** the group on a row of the brand column */
@@ -143,7 +145,7 @@ final class Favourites {
         return Recipes.GROUP_START[group];
     }
 
-    /** the favourite after / before {@code recipe} in marking order, wrapping; the first one when it is not marked; -1 when none */
+    /** the favorite after / before {@code recipe} in marking order, wrapping; the first one when it is not marked; -1 when none */
     static int next(List<Integer> favs, int recipe, int dir) {
         if (favs.isEmpty()) return -1;
         int pos = favs.indexOf(recipe);
@@ -161,7 +163,7 @@ final class Favourites {
 
     /**
      * The group the browser opens on: the wheel's group when it holds the recipe — so picking again keeps the loop — else
-     * Favourites when the recipe is one, else Custom or its brand.
+     * Favorites when the recipe is one, else Custom or its brand.
      */
     static int openingGroup(List<Integer> favs, int recipe, Library lib, int wheel) {
         if (positionIn(wheel, recipe, favs, lib) >= 0) return wheel;
@@ -171,7 +173,7 @@ final class Favourites {
 
     /** the group's name as the brand column shows it, in the display language */
     static String groupName(int group) {
-        return group == ALL ? Lang.t("group_all") : group == GROUP ? Lang.t("group_favourites") : Recipes.groupLabel(group);
+        return group == ALL ? Lang.t("group_all") : group == GROUP ? Lang.t("group_favorites") : Recipes.groupLabel(group);
     }
 
     /** how many recipes a group lists — what the brand column counts */
@@ -179,7 +181,7 @@ final class Favourites {
         return group == ALL ? Library.BASE + lib.customCount() : group == GROUP ? favs.size() : group == CUSTOM ? lib.customCount() : Recipes.GROUP_COUNT[group];
     }
 
-    /** whether a group has anything in its recipe column — an empty Favourites or Custom list has not */
+    /** whether a group has anything in its recipe column — an empty Favorites or Custom list has not */
     static boolean hasRecipes(int group, List<Integer> favs, Library lib) { return groupCount(group, favs, lib) > 0; }
 
     /** the recipe on row k of a group's column */
@@ -210,7 +212,7 @@ final class Favourites {
     // ------------------------------------------------------------ the wheel's loop (issue #155)
     /**
      * The recipe the wheel moves to on the main screen: the next one of the group the last recipe was picked from in the
-     * browser. A group left empty — the last favourite unmarked, the card out — loops through everything again.
+     * browser. A group left empty — the last favorite unmarked, the card out — loops through everything again.
      */
     static int wheel(int group, int recipe, int dir, List<Integer> favs, Library lib) {
         int to = nextIn(group, recipe, dir, favs, lib);
@@ -218,7 +220,7 @@ final class Favourites {
     }
 
     /**
-     * The panel's count: the group the wheel loops through and where the recipe sits in it ("FAVOURITES   2 / 5"); with All,
+     * The panel's count: the group the wheel loops through and where the recipe sits in it ("FAVORITES   2 / 5"); with All,
      * or a recipe outside the loop, the recipe's own brand and place among them all, as before.
      */
     static String wheelCount(int group, int recipe, List<Integer> favs, Library lib) {
@@ -235,13 +237,13 @@ final class Favourites {
 
     /** how the wheel's group is kept in the preferences: by name, so a brand added to the table does not move it */
     static String wheelKey(int group) {
-        return group == ALL ? "all" : group == GROUP ? "favourites" : group == CUSTOM ? "custom" : Recipes.GROUPS[group];
+        return group == ALL ? "all" : group == GROUP ? "favorites" : group == CUSTOM ? "custom" : Recipes.GROUPS[group];
     }
 
     /** the stored key -> the wheel's group; nothing stored, or a brand the table no longer has, is All */
     static int wheelGroup(String key) {
         if (key == null) return ALL;
-        if (key.equals("favourites")) return GROUP;
+        if (key.equals("favorites")) return GROUP;
         if (key.equals("custom")) return CUSTOM;
         for (int g = 0; g < Recipes.GROUPS.length; g++) if (Recipes.GROUPS[g].equals(key)) return g;
         return ALL;

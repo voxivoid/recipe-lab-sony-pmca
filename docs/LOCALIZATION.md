@@ -33,7 +33,7 @@ panel and in the brand list, because that is the name the looks are known by.
 
 What stays the same in every language:
 
-- **The recipe identifiers.** `Recipe.name` is the canonical English. Favourites are stored by it, so switching the
+- **The recipe identifiers.** `Recipe.name` is the canonical English. Favorites are stored by it, so switching the
   language never loses a mark.
 - **Every file the app writes** — `samples.txt`, and the logs in `RECIPLAB/LOGS` (`LOG.TXT`, `DIFF.TXT`, `KEYS.TXT`, `LOCKS.TXT`). Compatibility reports quote them,
   so they stay English and parsable. So do the custom recipe files in `RECIPES`: people trade them, and a file has to
@@ -55,7 +55,7 @@ All of it is camera-free and covered by `tools/test.sh`:
 | `UiFont.java` | Android side: the typeface each language is drawn in, applied to every view |
 
 **Names are not in the English table.** Recipe, brand, style, effect, sub-setting, quality and row names already exist
-as canonical English data in `Recipes` and `Params` — that is what the manifest, favourites and the tests read — so a
+as canonical English data in `Recipes` and `Params` — that is what the manifest, favorites and the tests read — so a
 translation adds them under a key made from that data with `Lang.slug`:
 
 | prefix | made from | example |

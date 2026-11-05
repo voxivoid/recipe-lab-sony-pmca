@@ -47,7 +47,7 @@
 - [Custom recipes](#custom-recipes)
   - [Making one](#making-one)
   - [The edit buttons](#the-edit-buttons)
-  - [Rename, delete, favourite](#rename-delete-favourite)
+  - [Rename, delete, favorite](#rename-delete-favorite)
   - [Sharing](#sharing)
 - [Transfer to phone](#transfer-to-phone)
 - [What it changes](#what-it-changes)
@@ -243,7 +243,7 @@ Open **Recipe Lab** from the Application List. The live view shows the look. The
 | **wheel**, **left / right**, **top dial** | next recipe on the name line · next chip on the chip row |
 | **up / down** | move between name, chips and edit buttons |
 | **centre** | pick the recipe · edit a chip · press a button |
-| **hold centre** | favourite on / off |
+| **hold centre** | favorite on / off |
 | **TRASH** | panel: full → no keys → label → hidden |
 | **hold TRASH** | back to the factory look (asks first) |
 | **MENU** | leave the app · close a list |
@@ -268,15 +268,15 @@ Open **Recipe Lab** from the Application List. The live view shows the look. The
 
 **Brand list** — **Fn**, or **hold MENU → Browse recipes**
 
-- Left column: **All**, **Favourites**, **Custom**, then the brands. Right column: their recipes.
+- Left column: **All**, **Favorites**, **Custom**, then the brands. Right column: their recipes.
 - **left / right** switches column. **centre** picks.
-- The **wheel** then loops only through the list you picked from — your favourites, one brand — even after a restart.
+- The **wheel** then loops only through the list you picked from — your favorites, one brand — even after a restart.
   Pick from **All** to loop through every recipe again.
 
-**Favourites**
+**Favorites**
 
 - **Hold centre** on a recipe. A star appears.
-- They wait under **Favourites**, in the order you marked them.
+- They wait under **Favorites**, in the order you marked them.
 
 **Menu** — **hold MENU**
 
@@ -311,10 +311,10 @@ Change any chip and buttons appear under the chips. Press **down** to reach them
 
 Leaving a changed recipe asks first: **Discard** or **Cancel**.
 
-### Rename, delete, favourite
+### Rename, delete, favorite
 
 - In the brand list, **hold MENU** on a custom recipe → **Rename** or **Delete**.
-- **Hold centre** → favourite, as on any recipe.
+- **Hold centre** → favorite, as on any recipe.
 
 ### Sharing
 

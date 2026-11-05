@@ -357,7 +357,7 @@ class CustomRecipesTest {
     }
 
     @Test void theQuestionsHighlightTheHarmlessAnswer() {
-        assertEquals(Arrays.asList("Rename", "Share", "Delete", "Cancel"), Arrays.asList(CustomRecipes.options()), "favourites are hold centre, as on any recipe");
+        assertEquals(Arrays.asList("Rename", "Share", "Delete", "Cancel"), Arrays.asList(CustomRecipes.options()), "favorites are hold centre, as on any recipe");
         assertEquals("Share", CustomRecipes.options()[CustomRecipes.OPT_SHARE]);
         assertEquals("Rename", CustomRecipes.options()[CustomRecipes.OPT_RENAME]);
         assertEquals("Delete", CustomRecipes.options()[CustomRecipes.OPT_DELETE]);

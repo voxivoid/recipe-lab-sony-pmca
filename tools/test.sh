@@ -29,7 +29,7 @@ if [ -n "${JAVA_HOME:-}" ]; then JAVA="$JAVA_HOME/bin"; else JAVA="$(dirname "$(
 UNITS=(
   src/com/voxivoid/recipelab/Recipes.java
   src/com/voxivoid/recipelab/Params.java
-  src/com/voxivoid/recipelab/Favourites.java
+  src/com/voxivoid/recipelab/Favorites.java
   src/com/voxivoid/recipelab/CustomRecipes.java
   src/com/voxivoid/recipelab/CardLog.java
   src/com/voxivoid/recipelab/ExifDates.java
