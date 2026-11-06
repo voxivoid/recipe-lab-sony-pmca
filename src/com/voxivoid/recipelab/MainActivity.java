@@ -262,15 +262,18 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
      * in Lang on purpose: this never ships.
      */
     private static final String[] PROBE_STEPS = {
-        "1/6 app memory: create a file",
-        "2/6 card: create a folder (RECIPLAB/RLTEST)",
-        "3/6 card: add a line to RECIPLAB/EXIST.TXT (made on a computer)",
-        "4/6 card: create a file in the top folder (RLTEST.TXT)",
-        "5/6 card: create a file in DCIM (DCIM/RLTEST.TXT)",
-        "6/6 card: create a file in PRIVATE (PRIVATE/RLTEST.TXT)",
+        "1/9 app memory: create a file",
+        "2/9 card: create a folder (RECIPLAB/RLTEST)",
+        "3/9 card: add a line to RECIPLAB/EXIST.TXT (made on a computer)",
+        "4/9 card: tell the camera the app is open, then create RECIPLAB/RLT4.TXT",
+        "5/9 card: stop the live view, create RECIPLAB/RLT5.TXT, start it again",
+        "6/9 card: close the camera, create RECIPLAB/RLT6.TXT, open it again",
+        "7/9 card: create a file in the top folder (RLTEST.TXT)",
+        "8/9 card: create a file in DCIM (DCIM/RLTEST.TXT)",
+        "9/9 card: create a file in PRIVATE (PRIVATE/RLTEST.TXT)",
     };
     private static final int PROBE_SHOW_MS = 1000;               // the step's name is on screen this long before it runs
-    private static final String PROBE_RESULTS = "probe2", PROBE_RUNNING = "probe2Running";
+    private static final String PROBE_RESULTS = "probe3", PROBE_RUNNING = "probe3Running";
     private int probeStep;
 
     /** the file or folder a step makes, so a step that crashed can say whether it was left behind */
@@ -280,9 +283,12 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             case 0: return new File(getFilesDir(), "RLTEST.TXT");
             case 1: return root == null ? null : new File(new File(root, CardLog.DIR), "RLTEST");
             case 2: return root == null ? null : new File(new File(root, CardLog.DIR), "EXIST.TXT");
-            case 3: return root == null ? null : new File(root, "RLTEST.TXT");
-            case 4: return root == null ? null : new File(new File(root, "DCIM"), "RLTEST.TXT");
-            case 5: return root == null ? null : new File(new File(root, "PRIVATE"), "RLTEST.TXT");
+            case 3: return root == null ? null : new File(new File(root, CardLog.DIR), "RLT4.TXT");
+            case 4: return root == null ? null : new File(new File(root, CardLog.DIR), "RLT5.TXT");
+            case 5: return root == null ? null : new File(new File(root, CardLog.DIR), "RLT6.TXT");
+            case 6: return root == null ? null : new File(root, "RLTEST.TXT");
+            case 7: return root == null ? null : new File(new File(root, "DCIM"), "RLTEST.TXT");
+            case 8: return root == null ? null : new File(new File(root, "PRIVATE"), "RLTEST.TXT");
         }
         return null;
     }
@@ -347,6 +353,12 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         }
     };
 
+    private static String probeCreate(File t) throws java.io.IOException {
+        java.io.FileOutputStream o = new java.io.FileOutputStream(t);
+        try { o.write("recipe lab test\n".getBytes("US-ASCII")); } finally { o.close(); }
+        return null;
+    }
+
     /** one step of the card test; null when it went through, else why not ("SKIPPED ..." when it could not be tried) */
     private String probeRun(int step) {
         try {
@@ -360,13 +372,32 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
                     try { w.write("recipe lab test\n"); } finally { w.close(); }
                     return null;
                 }
-                case 5: if (!t.getParentFile().isDirectory()) return "SKIPPED (no PRIVATE folder)";
-                    // fall through
-                default: {
-                    java.io.FileOutputStream o = new java.io.FileOutputStream(t);
-                    try { o.write("recipe lab test\n".getBytes("US-ASCII")); } finally { o.close(); }
-                    return null;
+                case 3: {
+                    // what Sony's framework expects of the app in front (PMCADemo sends it on every resume)
+                    android.content.Intent i = new android.content.Intent("com.android.server.DAConnectionManagerService.AppInfoReceive");
+                    i.putExtra("package_name", getComponentName().getPackageName());
+                    i.putExtra("class_name", getComponentName().getClassName());
+                    sendBroadcast(i);
+                    Thread.sleep(500);
+                    return probeCreate(t);
                 }
+                case 4: {
+                    if (camera == null) return "SKIPPED (no camera)";
+                    camera.stopPreview();
+                    String r;
+                    try { r = probeCreate(t); }
+                    finally { try { camera.startPreview(); applyPreview(); } catch (Throwable x) { logPreview("probe: preview not restarted: " + x); } }
+                    return r;
+                }
+                case 5: {
+                    releaseCamera();                             // as OpenMemories-Tweak writes: with no camera held
+                    String r;
+                    try { r = probeCreate(t); } finally { reopenCamera(); }
+                    return r;
+                }
+                case 8: if (!t.getParentFile().isDirectory()) return "SKIPPED (no PRIVATE folder)";
+                    // fall through
+                default: return probeCreate(t);
             }
         } catch (Throwable x) { return "FAILED (" + x + ")"; }
     }
