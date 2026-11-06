@@ -255,26 +255,78 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     }
 
     /*
-     * TEST BUILD ONLY (issue #130): which card operation restarts a NEX-5R. One step every CARD_DELAY_MS after each
-     * opening, its name on screen first, so the time the camera goes down names the step. Strings are not in Lang on
-     * purpose: this never ships.
+     * TEST BUILD ONLY (issue #130). A NEX-5R restarts when the app creates a file in RECIPLAB/LOGS. This finds out
+     * whether any file can be written: in the app's own memory, on the card in other folders, or into a file that is
+     * already there. Each step is marked in the app's settings BEFORE it runs, so a step that takes the camera down is
+     * found marked on the next opening and recorded as CRASH; the test then goes on with the next step. Strings are not
+     * in Lang on purpose: this never ships.
      */
     private static final String[] PROBE_STEPS = {
-        "1/7 read the card (list RECIPLAB/LOGS)",
-        "2/7 create an empty file (PROBE.TXT)",
-        "3/7 write 16 bytes to PROBE.TXT",
-        "4/7 append a line to PROBE.TXT",
-        "5/7 rename PROBE.TXT to PROBE.OLD",
-        "6/7 delete PROBE.OLD",
-        "7/7 write the logs (LOG.TXT, PARAMS.TXT)",
+        "1/6 app memory: create a file",
+        "2/6 card: create a folder (RECIPLAB/RLTEST)",
+        "3/6 card: add a line to RECIPLAB/EXIST.TXT (made on a computer)",
+        "4/6 card: create a file in the top folder (RLTEST.TXT)",
+        "5/6 card: create a file in DCIM (DCIM/RLTEST.TXT)",
+        "6/6 card: create a file in PRIVATE (PRIVATE/RLTEST.TXT)",
     };
     private static final int PROBE_SHOW_MS = 1000;               // the step's name is on screen this long before it runs
+    private static final String PROBE_RESULTS = "probe2", PROBE_RUNNING = "probe2Running";
     private int probeStep;
+
+    /** the file or folder a step makes, so a step that crashed can say whether it was left behind */
+    private File probeTarget(int step) {
+        File root = cardRoot();
+        switch (step) {
+            case 0: return new File(getFilesDir(), "RLTEST.TXT");
+            case 1: return root == null ? null : new File(new File(root, CardLog.DIR), "RLTEST");
+            case 2: return root == null ? null : new File(new File(root, CardLog.DIR), "EXIST.TXT");
+            case 3: return root == null ? null : new File(root, "RLTEST.TXT");
+            case 4: return root == null ? null : new File(new File(root, "DCIM"), "RLTEST.TXT");
+            case 5: return root == null ? null : new File(new File(root, "PRIVATE"), "RLTEST.TXT");
+        }
+        return null;
+    }
+
+    private String[] probeResults() {
+        String[] r = new String[PROBE_STEPS.length];
+        String[] got = prefs.getString(PROBE_RESULTS, "").split("\\|", -1);
+        for (int i = 0; i < r.length; i++) r[i] = i < got.length && got[i].length() > 0 ? got[i] : null;
+        return r;
+    }
+
+    private void probeSave(String[] r) {
+        StringBuilder b = new StringBuilder();
+        for (int i = 0; i < r.length; i++) { if (i > 0) b.append('|'); if (r[i] != null) b.append(r[i]); }
+        prefs.edit().putString(PROBE_RESULTS, b.toString()).commit();
+    }
+
+    private String probeSummary(String[] r) {
+        StringBuilder b = new StringBuilder("Card test results:");
+        for (int i = 0; i < r.length; i++) b.append("\n").append(PROBE_STEPS[i]).append(": ").append(r[i] == null ? "not run yet" : r[i]);
+        return b.toString();
+    }
+
+    /** each opening: a step marked running is one the camera did not survive; then the next step not yet run */
+    private void probeStart() {
+        String[] r = probeResults();
+        int crashed = prefs.getInt(PROBE_RUNNING, -1);
+        if (crashed >= 0 && crashed < r.length) {
+            File t = probeTarget(crashed);
+            r[crashed] = "CRASH (left on the card: " + (t != null && t.exists() ? "yes" : "no") + ")";
+            probeSave(r);
+            prefs.edit().putInt(PROBE_RUNNING, -1).commit();
+        }
+        probeStep = 0;
+        while (probeStep < r.length && r[probeStep] != null) probeStep++;
+        showToast(probeSummary(r), probeStep < r.length ? CARD_DELAY_MS - 500 : 0);
+        if (probeStep < r.length) handler.postDelayed(probe, CARD_DELAY_MS);
+    }
+
     /** names the step on screen; the step itself runs a second later, once the screen has drawn the name */
     private final Runnable probe = new Runnable() {
         public void run() {
             if (!resumed || probeStep >= PROBE_STEPS.length) return;
-            showToast("Card test " + PROBE_STEPS[probeStep], CARD_DELAY_MS);
+            showToast("Card test " + PROBE_STEPS[probeStep] + " ...", CARD_DELAY_MS);
             handler.postDelayed(probeDo, PROBE_SHOW_MS);
         }
     };
@@ -282,42 +334,41 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         public void run() {
             if (!resumed || probeStep >= PROBE_STEPS.length) return;
             int s = probeStep++;
+            prefs.edit().putInt(PROBE_RUNNING, s).commit();      // stays set if the camera goes down in the step
             String err = probeRun(s);
-            if (err != null) showToast("Card test " + PROBE_STEPS[s] + " FAILED: " + err, CARD_DELAY_MS);
-            if (probeStep < PROBE_STEPS.length) handler.postDelayed(probe, CARD_DELAY_MS - PROBE_SHOW_MS);
-            else showToast("Card test done: all 7 steps passed", 0);
+            prefs.edit().putInt(PROBE_RUNNING, -1).commit();
+            String[] r = probeResults();
+            r[s] = err == null ? "OK" : err;
+            probeSave(r);
+            if (probeStep < PROBE_STEPS.length) {
+                showToast("Card test " + PROBE_STEPS[s] + ": " + r[s], CARD_DELAY_MS);
+                handler.postDelayed(probe, CARD_DELAY_MS - PROBE_SHOW_MS);
+            } else showToast(probeSummary(r), 0);
         }
     };
 
-    /** one step of the card test; null when it went through, else what failed (the camera going down says the rest) */
+    /** one step of the card test; null when it went through, else why not ("SKIPPED ..." when it could not be tried) */
     private String probeRun(int step) {
         try {
-            File dir = CardLog.dir(cardRoot());
-            if (dir == null) return "no card";
-            File f = new File(dir, "PROBE.TXT"), old = new File(dir, "PROBE.OLD");
+            File t = probeTarget(step);
+            if (t == null) return "SKIPPED (no card)";
             switch (step) {
-                case 0: { String[] n = dir.list(); return n == null && dir.exists() ? "list returned null" : null; }
-                case 1:
-                    if (!dir.isDirectory() && !dir.mkdirs()) return "cannot create " + dir;
-                    if (f.exists()) f.delete();                  // left by a test the camera did not survive
-                    if (old.exists()) old.delete();
-                    return f.createNewFile() ? null : "createNewFile returned false";
+                case 1: return t.isDirectory() || t.mkdirs() ? null : "FAILED (mkdirs returned false)";
                 case 2: {
-                    java.io.FileOutputStream o = new java.io.FileOutputStream(f);
+                    if (!t.exists()) return "SKIPPED (no EXIST.TXT in RECIPLAB)";
+                    java.io.FileWriter w = new java.io.FileWriter(t, true);
+                    try { w.write("recipe lab test\n"); } finally { w.close(); }
+                    return null;
+                }
+                case 5: if (!t.getParentFile().isDirectory()) return "SKIPPED (no PRIVATE folder)";
+                    // fall through
+                default: {
+                    java.io.FileOutputStream o = new java.io.FileOutputStream(t);
                     try { o.write("recipe lab test\n".getBytes("US-ASCII")); } finally { o.close(); }
                     return null;
                 }
-                case 3: {
-                    java.io.FileWriter w = new java.io.FileWriter(f, true);
-                    try { w.write("appended\n"); } finally { w.close(); }
-                    return null;
-                }
-                case 4: return f.renameTo(old) ? null : "renameTo returned false";
-                case 5: return old.delete() ? null : "delete returned false";
-                case 6: openCard.run(); return null;
             }
-            return null;
-        } catch (Throwable t) { return String.valueOf(t); }
+        } catch (Throwable x) { return "FAILED (" + x + ")"; }
     }
 
     private final Runnable openCard = new Runnable() {
@@ -460,8 +511,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         logOpen();
         showRecipe();                                          // with the edits last applied, when the camera still holds them
         applyPreview(); render();
-        probeStep = 0;
-        handler.postDelayed(probe, CARD_DELAY_MS);               // TEST BUILD (issue #130): the card, one step at a time
+        probeStart();                                            // TEST BUILD (issue #130): what can be written, one step at a time
         if (!prefs.getBoolean("keysNoticeSeen", false)) {               // the keys moved in this build (issue #18): say so once
             showToast(Keys.notice(), 8000);
             prefs.edit().putBoolean("keysNoticeSeen", true).commit();
