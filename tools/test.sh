@@ -33,6 +33,8 @@ UNITS=(
   src/com/voxivoid/recipelab/CustomRecipes.java
   src/com/voxivoid/recipelab/CardLog.java
   src/com/voxivoid/recipelab/ExifDates.java
+  src/com/voxivoid/recipelab/Dcf.java
+  src/com/voxivoid/recipelab/TextFit.java
   src/com/voxivoid/recipelab/RecipeFormat.java
   src/com/voxivoid/recipelab/RecipeFormats.java
   src/com/voxivoid/recipelab/RecipeFormatV1.java
@@ -66,6 +68,7 @@ UNITS=(
   src/com/voxivoid/recipelab/transfer/ByteRange.java
   src/com/voxivoid/recipelab/transfer/FileIndex.java
   src/com/voxivoid/recipelab/transfer/HttpException.java
+  src/com/voxivoid/recipelab/transfer/HotspotConfig.java
   src/com/voxivoid/recipelab/transfer/HttpRequest.java
   src/com/voxivoid/recipelab/transfer/Json.java
   src/com/voxivoid/recipelab/transfer/LinkServer.java

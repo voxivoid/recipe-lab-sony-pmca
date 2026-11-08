@@ -488,7 +488,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     }
 
     /** the Factory recipe's quality: the camera's current one until the user changes it in the app, then remembered */
-    private int baseQuality() { int b = prefs.getInt("baseQuality", -1); b = b >= 0 && b < 4 ? b : cur[R_QUAL]; return b == Q_RAW ? Q_RAWJPG : b; }
+    private int baseQuality() { return Params.baseQuality(prefs.getInt("baseQuality", -1), cur[R_QUAL]); }
     private int recipeQuality(Recipes.Recipe r) { return Params.recipeQuality(r, baseQuality()); }
     /** user changed quality on the current recipe: CS recipes and JPEG choices on PE recipes redefine the Factory quality */
     private void qualityChanged() {
@@ -1923,7 +1923,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private void cycleOverlay() { overlay = DevTools.nextPanel(overlay, +1); render(); }
 
     /** the full panel to come back to from the browser: without its legend if that is how it was left, else with it */
-    private int fullPanel() { return overlay == OV_QUIET || (overlay == OV_BROWSER && panelBefore == OV_QUIET) ? OV_QUIET : OV_FULL; }
+    private int fullPanel() { return Params.fullPanel(overlay, panelBefore); }
 
     /** MENU held past HOLD_MS: the app menu, or out of the key logger; its release is swallowed either way */
     private void menuHoldFired() {

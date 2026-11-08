@@ -125,4 +125,18 @@ class ParamsCodecTest {
         assertTrue(redefinesBaseQuality(pe, Q_FINE));
         assertTrue(redefinesBaseQuality(pe, Q_STD));
     }
+
+    @Test void theFactoryQualityIsTheLastOneChosenElseTheCameras() {
+        assertEquals(Q_STD, baseQuality(Q_STD, Q_FINE), "chosen in the app: kept");
+        assertEquals(Q_FINE, baseQuality(Q_FINE, Q_STD));
+        assertEquals(Q_RAWJPG, baseQuality(Q_RAWJPG, Q_FINE));
+        assertEquals(Q_STD, baseQuality(-1, Q_STD), "nothing chosen yet: the camera's");
+        assertEquals(Q_FINE, baseQuality(4, Q_FINE), "a stored value that is no quality: the camera's");
+        assertEquals(Q_FINE, baseQuality(-2, Q_FINE));
+    }
+
+    @Test void rawAloneIsNeverTheFactoryQuality() {
+        assertEquals(Q_RAWJPG, baseQuality(Q_RAW, Q_FINE), "chosen");
+        assertEquals(Q_RAWJPG, baseQuality(-1, Q_RAW), "the camera's (#100)");
+    }
 }
