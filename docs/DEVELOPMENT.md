@@ -88,7 +88,7 @@ src/com/voxivoid/recipelab/
                                MENU when both close the list ("Fn / MENU close")
   StarView.java                the star next to the recipe name when it is a favorite
   SponsorLine.java             the small "Love this app? Leave a tip!" line, with a drawn heart, at the top of
-                               the live view on the Full and No keys panels (DevTools.sponsorLine, Ko-fi); the About page lists Ko-fi and GitHub Sponsors
+                               the live view on the Full panel only (DevTools.sponsorLine, Ko-fi); the About page lists Ko-fi and GitHub Sponsors
   HintBar.java                 legend view under the panel (uses Legend)
   NativeBackup.java            JNI: read / write / attr / sync
   transfer/                    Transfer to phone (see Transfer to phone): the camera hotspot and the protocol 5 HTTP
