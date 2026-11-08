@@ -116,7 +116,7 @@ public final class TransferMode {
         try { activity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON); } catch (Throwable t) { logger.error("screen on", t); }
         state.start(now());
         registerReceiver();
-        notifyAppInfo();
+        notifyAppInfo(activity);
         setAutoPowerOff(false);
         startServer();
         startHotspot();
@@ -163,8 +163,11 @@ public final class TransferMode {
         lastApoMs = now();
     }
 
-    /** Tells the camera's app framework which activity is in front (as PMCADemo does before it uses Wi-Fi). */
-    private void notifyAppInfo() {
+    /**
+     * Tells the camera's app framework which activity is in front, as PMCADemo does on every resume. Sent on every
+     * opening, not only before Wi-Fi: a NEX-5R restarts when an app creates a file on the card without it (issue #130).
+     */
+    public static void notifyAppInfo(Activity activity) {
         try {
             Intent i = new Intent(ACTION_APP_INFO);
             i.putExtra("package_name", activity.getComponentName().getPackageName());
