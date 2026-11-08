@@ -1,10 +1,13 @@
 package com.voxivoid.recipelab.transfer;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import org.junit.jupiter.api.Test;
 
-/** Json, the info document and Stats formatting. */
+/** Json, the info document, Stats formatting, Utf8, the silent Logger and the byte-counting stream. */
 class SmallPartsTest {
     @Test void jsonEscaping() {
         assertEquals("\"plain\"", Json.quote("plain"));
@@ -42,5 +45,32 @@ class SmallPartsTest {
         s.addBytes(1_000_000);
         assertEquals(840_000.0, s.sampleRate(2000), 1);             // 0.4 * 600k + 0.6 * 1M
         assertEquals(336_000.0, s.sampleRate(3000), 1);             // idle second decays it
+    }
+
+    @Test void utf8RoundTripsAndDecodesASlice() {
+        byte[] b = Utf8.bytes("x\u03b16000 caf\u00e9");
+        assertEquals(13, b.length);
+        assertEquals("x\u03b16000 caf\u00e9", Utf8.string(b));
+        assertEquals("\u03b1", Utf8.string(b, 1, 2));
+        assertEquals("caf\u00e9", Utf8.string(b, 8, 5));
+    }
+
+    @Test void theSilentLoggerTakesEverything() {
+        assertDoesNotThrow(() -> {
+            Logger.NONE.info("serving");
+            Logger.NONE.error("failed", new IOException("boom"));
+            Logger.NONE.error(null, null);
+        });
+    }
+
+    @Test void theCountingStreamCountsSingleBytesAndSlices() throws IOException {
+        ByteArrayOutputStream sink = new ByteArrayOutputStream();
+        Stats s = new Stats();
+        LinkServer.CountingOutputStream out = new LinkServer.CountingOutputStream(sink, s);
+        out.write('a');
+        out.write(new byte[] { 'x', 'b', 'c', 'y' }, 1, 2);
+        assertEquals(3, out.count());
+        assertEquals(3, s.bytesSent(), "every byte reaches the page's counter, one at a time or not");
+        assertEquals("abc", sink.toString("UTF-8"));
     }
 }

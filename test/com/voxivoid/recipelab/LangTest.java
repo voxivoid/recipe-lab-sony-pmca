@@ -339,4 +339,10 @@ class LangTest {
         }
         return out;
     }
+
+    @Test void hasAsksOneLanguagesTable() {
+        assertTrue(Lang.has(Lang.EN, "dev_title"));
+        assertTrue(Lang.has(Lang.ZH_HANT, "dev_title"));
+        assertFalse(Lang.has(Lang.EN, "no_such_key"));
+    }
 }

@@ -2,6 +2,7 @@ package com.voxivoid.recipelab.transfer;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
@@ -512,5 +513,21 @@ class LinkServerTest {
         assertTrue(thumb.body.length > 1000 && thumb.body.length < big.body.length);
         Response head = request("HEAD", "/files/" + rel);
         assertEquals(String.valueOf(real.length()), head.header("Content-Length"));
+    }
+
+    @Test void isRunningFollowsStartAndStop() throws IOException {
+        assertTrue(server.isRunning());
+        server.stop();
+        assertFalse(server.isRunning());
+        port = server.start(0);
+        assertTrue(server.isRunning());
+    }
+
+    @Test void aRequestWithoutABodyIsRouted() throws Exception {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        assertEquals(200, server.handle(HttpRequest.parse("GET /api/info HTTP/1.1\r\nHost: camera\r\n"), out));
+        String r = out.toString("UTF-8");
+        assertTrue(r.startsWith("HTTP/1.1 200"), r);
+        assertTrue(r.endsWith(Protocol.infoJson("ILCE-6000", "Sony \u03b16000")), r);
     }
 }

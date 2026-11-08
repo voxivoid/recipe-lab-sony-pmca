@@ -544,4 +544,10 @@ class CustomRecipesTest {
         assertFalse(none.exists(), "a missing folder is not made");
         assertFalse(CustomRecipes.writeLinks(null, l.entries));
     }
+
+    @Test void thePromptsNameTheRecipeAndItsFileOnTheCard() {
+        assertEquals("Delete Golden Hour?", CustomRecipes.deleteTitle("Golden Hour"));
+        assertEquals("Custom recipe, on the memory card as RECIPES/GOLDEN.TXT", CustomRecipes.optionsBody("GOLDEN.TXT"));
+        assertEquals("Your changes are not saved anywhere. Discarding brings back the recipe's own values.", CustomRecipes.discardBody());
+    }
 }
