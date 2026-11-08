@@ -1776,7 +1776,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         String pos = Favorites.wheelPosition(wheelGroup, recipe, favs, library);
         picker.setVisibility(overlay == OV_BROWSER ? View.VISIBLE : View.GONE);
         sponsor.setText(DevTools.sponsorLine());                     // the README's ask, small, over the live view
-        sponsor.setVisibility(panelUp(overlay) ? View.VISIBLE : View.GONE);   // Full and No keys; Label and Hidden hide it
+        sponsor.setVisibility(overlay == OV_FULL ? View.VISIBLE : View.GONE);   // Full only; No keys, Label and Hidden hide it
         if (overlay == OV_BROWSER) { panel.setVisibility(View.GONE); mini.setVisibility(View.GONE); picker.set(recipe, browserCol, browserGroup, favs, library, cardDir != null); return; }
         if (panelUp(overlay)) {
             panel.setVisibility(View.VISIBLE); mini.setVisibility(View.GONE);
