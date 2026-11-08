@@ -220,4 +220,113 @@ class ArwPreviewTest {
             raf.close();
         }
     }
+
+    // ---- damaged files: whatever the bytes, nothing throws and nothing points outside the file
+
+    private static void assertInside(File f, ArwPreview.Previews p, String what) {
+        for (ArwPreview.Jpeg j : new ArwPreview.Jpeg[] { p.large, p.small }) {
+            if (j == null) continue;
+            assertTrue(j.offset >= 0 && j.length > 0 && j.offset + j.length <= f.length(), what + ": " + j.offset + "+" + j.length);
+        }
+        assertTrue(p.orientation >= 1 && p.orientation <= 8, what);
+    }
+
+    @Test void anArwCutShortAnywhereIsNeverAProblem() throws IOException {
+        byte[] full = Fixtures.sonyLikeArw(true, 6, Fixtures.fakeJpeg(1616, 1080, 40), Fixtures.fakeJpeg(160, 120, 10));
+        for (int n = 0; n <= full.length; n++) {
+            File f = arw(Arrays.copyOf(full, n));
+            assertInside(f, ArwPreview.locate(f), "cut at " + n);
+        }
+    }
+
+    @Test void aDamagedArwIsNeverAProblem() throws IOException {
+        byte[] full = Fixtures.sonyLikeArw(false, 6, Fixtures.fakeJpeg(1616, 1080, 10), Fixtures.fakeJpeg(160, 120, 10));
+        for (int i = 0; i < full.length; i++) {
+            for (int v : new int[] { 0x00, 0xFF, 0x01 }) {
+                byte[] b = full.clone();
+                b[i] = (byte) v;
+                File f = arw(b);
+                assertInside(f, ArwPreview.locate(f), "byte " + i + " = " + v);
+            }
+        }
+    }
+
+    @Test void aJpegCutShortAnywhereIsNeverAProblem() throws IOException {
+        byte[] full = Fixtures.exifJpeg(true, 6, Fixtures.fakeJpeg(160, 120, 10), -1, 600, 400);
+        for (int n = 0; n <= Math.min(full.length, 400); n++) {
+            File f = jpg(Arrays.copyOf(full, n));
+            assertInside(f, ArwPreview.locateExif(f), "cut at " + n);
+        }
+    }
+
+    // ---- what is in front of a preview's size
+
+    /** a preview: SOI, {@code before}, a frame header {@code sof} (0: none) of 1616 x 1080, some data, EOI */
+    private static byte[] preview(int sof, int... before) {
+        java.io.ByteArrayOutputStream o = new java.io.ByteArrayOutputStream();
+        o.write(0xff); o.write(0xd8);
+        for (int x : before) o.write(x);
+        if (sof != 0) {
+            int[] h = { 0xff, sof, 0, 17, 8, 1080 >> 8, 1080 & 0xff, 1616 >> 8, 1616 & 0xff, 3 };
+            for (int x : h) o.write(x);
+            for (int i = 0; i < 9; i++) o.write(0);
+        }
+        for (int i = 0; i < 40; i++) o.write(i * 7 + 1);
+        o.write(0xff); o.write(0xd9);
+        return o.toByteArray();
+    }
+
+    private ArwPreview.Jpeg found(byte[] jpeg) throws IOException {
+        List<int[][]> chain = new ArrayList<int[][]>();
+        chain.add(new int[][] { Fixtures.e(0x0201, 4, -100), Fixtures.e(0x0202, 4, jpeg.length) });
+        return ArwPreview.locate(arw(Fixtures.tiff(true, chain, new ArrayList<int[][]>(), Arrays.asList(jpeg)))).pick(false);
+    }
+
+    @Test void theSizeIsReadFromBaselineExtendedAndProgressiveFrames() throws IOException {
+        for (int sof : new int[] { 0xc0, 0xc1, 0xc2 }) {
+            ArwPreview.Jpeg j = found(preview(sof));
+            assertNotNull(j, Integer.toHexString(sof));
+            assertEquals(1616, j.width);
+            assertEquals(1080, j.height);
+        }
+    }
+
+    @Test void fillBytesRestartsAndTablesBeforeTheFrameAreSteppedOver() throws IOException {
+        assertEquals(1616, found(preview(0xc0, 0xff)).width, "a fill byte");
+        assertEquals(1616, found(preview(0xc0, 0xff, 0xd0)).width, "a restart marker");
+        assertEquals(1616, found(preview(0xc0, 0xff, 0xc4, 0, 4, 0, 0)).width, "a Huffman table");
+    }
+
+    @Test void aPreviewThePhoneCouldNotShowIsNotOffered() throws IOException {
+        assertNull(found(preview(0xc3)), "lossless");
+        assertNull(found(preview(0xc9)), "arithmetic");
+        assertNull(found(preview(0)), "no frame header at all");
+        assertNull(found(preview(0xc0, 0xff, 0xda, 0, 2)), "image data before the frame header");
+        assertNull(found(preview(0xc0, 0xff, 0xe0, 0, 1)), "a segment length under two");
+        byte[] noWidth = preview(0xc0);
+        noWidth[2 + 7] = 0; noWidth[2 + 8] = 0;
+        assertNull(found(noWidth), "zero wide");
+    }
+
+    @Test void theExifSegmentIsFoundBehindFillBytesAndAnotherApp1() throws IOException {
+        byte[] plain = Fixtures.exifJpeg(true, 6, Fixtures.fakeJpeg(160, 120, 10));
+        java.io.ByteArrayOutputStream o = new java.io.ByteArrayOutputStream();
+        o.write(plain, 0, 2);
+        o.write(0xff);                                                   // a fill byte
+        byte[] xmp = { (byte) 0xff, (byte) 0xe1, 0, 8, 'h', 't', 't', 'p', ':', '/' };
+        o.write(xmp, 0, xmp.length);
+        o.write(plain, 2, plain.length - 2);
+        File f = jpg(o.toByteArray());
+        ArwPreview.Previews p = ArwPreview.locateExif(f);
+        assertNotNull(p.small);
+        assertEquals(160, p.small.width);
+        assertEquals(6, p.orientation);
+        assertSoiAndEoi(f, p.small);
+    }
+
+    @Test void aJpegSegmentLengthUnderTwoEndsTheSearch() throws IOException {
+        byte[] b = Fixtures.exifJpeg(true, 6, Fixtures.fakeJpeg(160, 120, 10));
+        b[4] = 0; b[5] = 1;                                              // the APP1's length
+        assertNull(ArwPreview.locateExif(jpg(b)).small);
+    }
 }

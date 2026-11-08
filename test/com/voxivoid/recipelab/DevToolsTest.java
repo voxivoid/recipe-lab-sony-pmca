@@ -350,4 +350,18 @@ class DevToolsTest {
         }
         assertEquals(Recipes.ALL.length, names.size());
     }
+
+    @Test void theMenuTitlesAndTheNoPreviewToastGoThroughLang() {
+        assertEquals("DEV TOOLS", DevTools.title());
+        assertEquals("ABOUT", DevTools.aboutTitle());
+        assertEquals("No live preview \u2014 the sample run needs the camera", DevTools.noPreview());
+        Lang.use(Lang.ZH_HANS);
+        try {
+            assertNotEquals("DEV TOOLS", DevTools.title());
+            assertNotEquals("ABOUT", DevTools.aboutTitle());
+            assertFalse(DevTools.noPreview().startsWith("No live preview"));
+        } finally {
+            Lang.use(Lang.EN);
+        }
+    }
 }

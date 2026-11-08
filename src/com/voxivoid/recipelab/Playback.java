@@ -83,7 +83,7 @@ final class Playback {
             String[] cards = (String[]) store.getMethod("getExternalMediaIds").invoke(null);
             if (cards == null || cards.length == 0) throw new IllegalStateException("no card in the camera's database");
             t.media = cards[0];
-            t.before = new HashSet<String>(jpegs(dcim));
+            t.before = new HashSet<String>(Dcf.jpegs(dcim));
 
             // a photo in the database, the newest first: the image is only a vessel for the card's pixels, but the camera
             // files the card under that photo's date
@@ -179,7 +179,7 @@ final class Playback {
     private static void look(final ContentResolver cr, final File dcim, final String media, final Set<String> before,
                              final Handler thread, final Log log, final Done done, final boolean[] over, final int tries) {
         List<String> fresh = new ArrayList<String>();
-        for (String p : jpegs(dcim)) if (!before.contains(p)) fresh.add(p);
+        for (String p : Dcf.jpegs(dcim)) if (!before.contains(p)) fresh.add(p);
         for (String p : fresh)
             if (catalogId(cr, media, p) != null) { over[0] = true; done.done(p, null); return; }
         if (tries + 1 >= LOOKS) {
@@ -194,7 +194,7 @@ final class Playback {
 
     /** a photo's id in the camera's database (avindex://…), by its DCF numbers, or null when the database has no JPEG for it */
     static String catalogId(ContentResolver cr, String media, String path) {
-        int[] n = dcfNumbers(path);
+        int[] n = Dcf.numbers(path);
         if (n == null) return null;
         Cursor c = null;
         try {
@@ -226,7 +226,7 @@ final class Playback {
      */
     static String deleteShot(ContentResolver cr, String path, boolean[] done) {
         done[0] = false;
-        int[] n = dcfNumbers(path);
+        int[] n = Dcf.numbers(path);
         if (n == null) return "not a camera file name";
         Cursor c = null;
         try {
@@ -368,33 +368,4 @@ final class Playback {
     }
 
     private static Object cause(Throwable t) { return t instanceof InvocationTargetException && t.getCause() != null ? t.getCause() : t; }
-
-    /** every JPEG in the folders under DCIM, by path */
-    static List<String> jpegs(File dcim) {
-        List<String> out = new ArrayList<String>();
-        File[] folders = dcim == null ? null : dcim.listFiles();
-        if (folders == null) return out;
-        for (File f : folders) {
-            if (!f.isDirectory()) continue;
-            String[] names = f.list();
-            if (names == null) continue;
-            for (String n : names) { String u = n.toUpperCase(java.util.Locale.US); if (u.endsWith(".JPG") || u.endsWith(".JPEG")) out.add(new File(f, n).getPath()); }
-        }
-        return out;
-    }
-
-    /**
-     * A DCF photo's numbers, as the camera's picture database keys it: DCIM/100MSDCF/DSC01234.JPG → { 100, 1234 }, the
-     * folder's first three digits and the name's last four; null for a path that is not named so.
-     */
-    static int[] dcfNumbers(String path) {
-        if (path == null) return null;
-        File f = new File(path), dir = f.getParentFile();
-        String name = f.getName(), folder = dir == null ? "" : dir.getName();
-        int dot = name.lastIndexOf('.');
-        if (dot != 8 || folder.length() != 8) return null;
-        String fd = folder.substring(0, 3), nd = name.substring(4, 8);
-        if (!fd.matches("[1-9][0-9]{2}") || !nd.matches("[0-9]{4}")) return null;
-        return new int[] { Integer.parseInt(fd), Integer.parseInt(nd) };
-    }
 }

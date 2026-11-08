@@ -251,36 +251,15 @@ public class MenuView extends View {
     }
 
     /** {@code s} cut to {@code max} wide with an ellipsis, or as it is when it fits */
-    private static String ellipsize(String s, Paint p, float max) {
-        if (s == null) return "";
-        if (p.measureText(s) <= max) return s;
-        String e = "…";
-        int n = s.length();
-        float ew = p.measureText(e);
-        while (n > 0 && p.measureText(s, 0, n) + ew > max) n--;
-        return s.substring(0, n).trim() + e;
-    }
+    private static String ellipsize(String s, Paint p, float max) { return TextFit.ellipsize(s, width(p), max); }
 
-    /**
-     * {@code s} broken into at most {@code maxLines} lines of {@code max} wide in {@link #wrapped}: at spaces where there
-     * are any, between characters where there are none (Chinese); the last line ellipsized if text is left. Returns the count.
-     */
-    private int wrap(String s, Paint p, float max, int maxLines) {
-        int count = 0, start = 0, len = s.length();
-        while (start < len && count < maxLines) {
-            while (start < len && s.charAt(start) == ' ') start++;
-            if (start >= len) break;
-            if (count == maxLines - 1) { wrapped[count++] = ellipsize(s.substring(start), p, max); break; }
-            int end = start + 1;
-            while (end < len && p.measureText(s, start, end + 1) <= max) end++;
-            if (end < len) {
-                int sp = s.lastIndexOf(' ', end);
-                if (sp > start) end = sp;
-            }
-            wrapped[count++] = s.substring(start, end);
-            start = end;
-        }
-        return count;
+    /** {@code s} wrapped into {@link #wrapped}, at most {@code maxLines} lines of {@code max} wide; returns the count */
+    private int wrap(String s, Paint p, float max, int maxLines) { return TextFit.wrap(s, width(p), max, wrapped, maxLines); }
+
+    private static TextFit.Width width(final Paint p) {
+        return new TextFit.Width() {
+            @Override public float of(String s, int start, int end) { return p.measureText(s, start, end); }
+        };
     }
 
     /** "◀ Full ▶" ending at {@code right}, centred on {@code cy}: the arrows say left / right change it */

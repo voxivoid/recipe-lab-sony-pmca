@@ -5,6 +5,7 @@ import static com.voxivoid.recipelab.Params.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -175,5 +176,14 @@ class ParamsWritesTest {
         // last kelvin recipe set it (Classic Cinema, 6000K); the Factory recipe says "auto", not "5500K"
         int[] expected = factoryRows(); expected[R_KELVIN] = 60;
         assertArrayEquals(expected, load(store), "back at the factory look");
+    }
+
+    @Test void aWriteIsItsSlotAndItsValue() {
+        assertEquals(new Write(0x01070175, 1), new Write(0x01070175, 1));
+        assertEquals(new Write(0x01070175, 1).hashCode(), new Write(0x01070175, 1).hashCode());
+        assertNotEquals(new Write(0x01070175, 1), new Write(0x01070175, 2));
+        assertNotEquals(new Write(0x01070175, 1), new Write(0x01070187, 1));
+        assertNotEquals(new Write(0x01070175, 1), "01070175=1");
+        assertEquals(1, new HashSet<Write>(Arrays.asList(new Write(0x01070175, 1), new Write(0x01070175, 1))).size());
     }
 }

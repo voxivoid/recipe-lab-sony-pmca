@@ -53,6 +53,8 @@ src/com/voxivoid/recipelab/
   Playback.java                a picture into playback as a photo the camera took (decode, scale, write rows, export) and
                                a shot deleted the camera's way; NativePlayback.java + jni/playback.c, jni/canvas.c write
                                the rows; ImageCanvas.java the sizes and memory checks — covered by test/
+  Dcf.java                     the camera's DCF folders: the JPEGs under DCIM, and the folder / file numbers the picture
+                               database files a photo under — no Android, covered by test/
   CardLog.java                 the shareable logs on the card, RECIPLAB/LOGS: LOG.TXT (opens, writes, failures, preview
                                values the camera did not keep, the shutter, crashes) and DIFF.TXT (the snapshot tool),
                                line format and roll-over — no Android, covered by test/
@@ -78,6 +80,8 @@ src/com/voxivoid/recipelab/
   MenuView.java                Canvas-drawn full-screen list: the app menu, the developer menu (rows with drawn icons, DevTools.icons; some with a
                                value left / right change in place, between drawn arrows), and read-only pages
                                (About, the key logger)
+  TextFit.java                 text cut to a width with an ellipsis, or wrapped onto a few lines (MenuView's pages); the
+                               width comes from the caller's Paint — no Android, covered by test/
   Legend.java                  Canvas-drawn key icons and the favorite star, wrapped onto more lines when a row does not fit (Keys.lineCounts; camera font has no symbol glyphs).
                                Draws what Keys.hints builds: the four-way and the wheel are left out as self-evident,
                                a hold is its key's icon labelled "(hold)", and Fn, where the body has it, sits before
@@ -88,7 +92,7 @@ src/com/voxivoid/recipelab/
   HintBar.java                 legend view under the panel (uses Legend)
   NativeBackup.java            JNI: read / write / attr / sync
   transfer/                    Transfer to phone (see Transfer to phone): the camera hotspot and the protocol 5 HTTP
-                               server for Recipe Lab Studio — no Android in it but Hotspot and TransferMode, covered by test/
+                               server for Recipe Lab Studio — no Android in it but Hotspot, HotspotP2p and TransferMode, covered by test/
 jni/jni.cpp                    Backup_read / Backup_write / Backup_sync_all via OpenMemories-Platform
 jni/platform/                  git submodule: ma1co/OpenMemories-Platform
 res/                           layout, shape drawables, launcher icon

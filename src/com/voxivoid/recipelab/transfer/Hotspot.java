@@ -153,24 +153,4 @@ final class Hotspot {
             }
         }
     }
-
-    /** the hotspot's network name, as the configuration holds it (perhaps in quotes; TransferState takes them off) */
-    static String ssid(Object config) {
-        return string(config, "getSsid");
-    }
-
-    static String password(Object config) {
-        return string(config, "getPreSharedKey");
-    }
-
-    private static String string(Object config, String getter) {
-        if (config == null) return null;
-        try {
-            Method m = config.getClass().getMethod(getter);
-            Object v = m.invoke(config);
-            return v == null ? null : v.toString();
-        } catch (Throwable t) {
-            return null;
-        }
-    }
 }

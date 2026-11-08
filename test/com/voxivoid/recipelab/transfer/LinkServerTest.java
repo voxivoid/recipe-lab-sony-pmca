@@ -2,6 +2,7 @@ package com.voxivoid.recipelab.transfer;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
@@ -512,5 +513,40 @@ class LinkServerTest {
         assertTrue(thumb.body.length > 1000 && thumb.body.length < big.body.length);
         Response head = request("HEAD", "/files/" + rel);
         assertEquals(String.valueOf(real.length()), head.header("Content-Length"));
+    }
+
+    @Test void isRunningFollowsStartAndStop() throws IOException {
+        assertTrue(server.isRunning());
+        server.stop();
+        assertFalse(server.isRunning());
+        port = server.start(0);
+        assertTrue(server.isRunning());
+    }
+
+    @Test void aRequestWithoutABodyIsRouted() throws Exception {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        assertEquals(200, server.handle(HttpRequest.parse("GET /api/info HTTP/1.1\r\nHost: camera\r\n"), out));
+        String r = out.toString("UTF-8");
+        assertTrue(r.startsWith("HTTP/1.1 200"), r);
+        assertTrue(r.endsWith(Protocol.infoJson("ILCE-6000", "Sony \u03b16000")), r);
+    }
+
+    @Test void putSaysSoWhenTheFolderCannotBeMade() throws IOException {
+        Fixtures.write(new File(card, "RECIPES"), "a file where the folder goes".getBytes("UTF-8"));
+        assertEquals(500, put("/files/RECIPES/A.YML", "x").status);
+        assertTrue(new File(card, "RECIPES").isFile(), "left as it was");
+    }
+
+    @Test void putSaysSoWhenTheFileCannotBeWritten() throws IOException {
+        Fixtures.write(new File(card, "RECIPES/SAVING.TMP/IN.USE"), new byte[] { 1 });   // the temporary name is taken
+        assertEquals(500, put("/files/RECIPES/A.YML", "x").status);
+        assertTrue(!new File(card, "RECIPES/A.YML").exists(), "nothing half-written takes the name");
+    }
+
+    @Test void putSaysSoWhenTheOldFileCannotBeReplaced() throws IOException {
+        Fixtures.write(new File(card, "RECIPES/A.YML/IN.USE"), new byte[] { 1 });        // a folder with the file's name
+        assertEquals(500, put("/files/RECIPES/A.YML", "x").status);
+        assertTrue(new File(card, "RECIPES/A.YML").isDirectory(), "what was there stays");
+        assertArrayEquals(new String[] { "A.YML" }, new File(card, "RECIPES").list(), "the temporary file is gone");
     }
 }

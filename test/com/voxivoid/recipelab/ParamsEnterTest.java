@@ -95,4 +95,18 @@ class ParamsEnterTest {
         assertFalse(menuHoldArms(OV_FULL, true), "MENU unfocuses the chip");
         assertFalse(menuHoldArms(OV_BROWSER, false), "MENU closes the browser");
     }
+
+    @Test void leavingTheBrowserGoesBackToTheFullPanelItCameFrom() {
+        assertEquals(OV_QUIET, fullPanel(OV_BROWSER, OV_QUIET), "the one without the legend, if that is how it was left");
+        assertEquals(OV_FULL, fullPanel(OV_BROWSER, OV_FULL));
+        assertEquals(OV_FULL, fullPanel(OV_BROWSER, OV_PILL), "the pill and hidden come back as the full panel");
+        assertEquals(OV_FULL, fullPanel(OV_BROWSER, OV_HIDDEN));
+    }
+
+    @Test void theFullPanelOfALiveScreenIsItsOwn() {
+        assertEquals(OV_QUIET, fullPanel(OV_QUIET, OV_FULL));
+        assertEquals(OV_FULL, fullPanel(OV_FULL, OV_QUIET), "where it was before only counts from the browser");
+        assertEquals(OV_FULL, fullPanel(OV_PILL, OV_QUIET));
+        assertEquals(OV_FULL, fullPanel(OV_HIDDEN, OV_FULL));
+    }
 }

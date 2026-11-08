@@ -2,9 +2,15 @@ package com.voxivoid.recipelab;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 /** The keys (issue #18): the press / hold gesture, the trash-hold guard, and a legend that only names keys the body has. */
@@ -241,5 +247,28 @@ class KeysTest {
             for (int n : Keys.lineCounts(widths, width, 4)) { assertTrue(n > 0, "no empty line"); sum += n; }
             assertEquals(widths.length, sum, "width " + width);
         }
+    }
+
+    @Test void everyKeyAReportAsksAboutHasAName() {
+        Set<String> names = new HashSet<String>();
+        for (int k : KeyProbe.REPORTED) {
+            String n = Keys.name(k);
+            assertFalse(n.isEmpty(), "code " + k + " has no name, so the report leaves a gap");
+            assertTrue(names.add(n), n + " names two codes");
+        }
+    }
+
+    @Test void everyScanCodeTheAppNamesIsNamedOnceInTheLogger() throws IllegalAccessException {
+        Map<String, Integer> byName = new HashMap<String, Integer>();
+        for (Field f : Keys.class.getDeclaredFields()) {
+            int m = f.getModifiers();
+            if (!f.getName().startsWith("K_") || f.getType() != int.class || !Modifier.isStatic(m) || !Modifier.isFinal(m)) continue;
+            int code = f.getInt(null);
+            String n = Keys.name(code);
+            assertFalse(n.isEmpty(), f.getName() + " (" + code + ") has no name in the key logger");
+            Integer other = byName.put(n, code);
+            assertTrue(other == null || other == code, n + " names both " + other + " and " + code);
+        }
+        assertTrue(byName.size() > 30, "the fields were found");
     }
 }

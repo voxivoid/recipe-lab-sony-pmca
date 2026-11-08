@@ -342,10 +342,10 @@ public final class TransferMode {
                 if (direct == Hotspot.STATE_ENABLED) startGroup();
             } else if (Hotspot.ACTION_GROUP_CREATE_SUCCESS.equals(action)) {
                 Object config = Hotspot.config(intent, activity.getClassLoader());
-                String ssid = Hotspot.ssid(config), pass = Hotspot.password(config);
+                String ssid = HotspotConfig.ssid(config), pass = HotspotConfig.password(config);
                 Object started = hotspot.startedConfig();             // the broadcast's copy could not be read: ours
-                if (ssid == null) ssid = Hotspot.ssid(started);
-                if (pass == null) pass = Hotspot.password(started);
+                if (ssid == null) ssid = HotspotConfig.ssid(started);
+                if (pass == null) pass = HotspotConfig.password(started);
                 step("group up: " + ssid + (pass == null ? "  no password" : "") + "  addresses " + ApiProbe.addresses());   // the password stays off the card
                 state.up(ssid, pass);
                 changed();
