@@ -36,6 +36,7 @@ final class Keys {
             case K_WHEEL_CW: return "WHEEL+"; case K_WHEEL_CCW: return "WHEEL-"; case K_DIAL_CW: return "DIAL+"; case K_DIAL_CCW: return "DIAL-";
             case K_DIAL2_CW: return "DIAL2+"; case K_DIAL2_CCW: return "DIAL2-"; case K_DIAL3_CW: return "DIAL3+"; case K_DIAL3_CCW: return "DIAL3-"; case K_MOVIE: return "MOVIE"; case 637: return "MOVIE2";
             case K_ZOOM_T: return "ZOOM_T"; case K_ZOOM_W: return "ZOOM_W"; case 533: return "AFMF";
+            case K_WHEEL_STATUS: return "WHEEL"; case K_DIAL_STATUS: return "DIAL";
             case K_AEL_LEVER: return "AEL_LEVER"; case K_AEL_AFMF: return "AEL_AFMF"; case 588: return "CUSTOM";
             case 623: return "C2"; case 659: return "C3"; case 572: return "MODE_DIAL"; case 519: return "FINDER";
             case 530: return "LENS"; case 591: return "UP_RIGHT"; case 592: return "DOWN_RIGHT"; case 593: return "UP_LEFT"; case 594: return "DOWN_LEFT";
