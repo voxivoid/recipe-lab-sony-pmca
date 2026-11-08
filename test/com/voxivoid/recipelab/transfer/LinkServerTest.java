@@ -530,4 +530,23 @@ class LinkServerTest {
         assertTrue(r.startsWith("HTTP/1.1 200"), r);
         assertTrue(r.endsWith(Protocol.infoJson("ILCE-6000", "Sony \u03b16000")), r);
     }
+
+    @Test void putSaysSoWhenTheFolderCannotBeMade() throws IOException {
+        Fixtures.write(new File(card, "RECIPES"), "a file where the folder goes".getBytes("UTF-8"));
+        assertEquals(500, put("/files/RECIPES/A.YML", "x").status);
+        assertTrue(new File(card, "RECIPES").isFile(), "left as it was");
+    }
+
+    @Test void putSaysSoWhenTheFileCannotBeWritten() throws IOException {
+        Fixtures.write(new File(card, "RECIPES/SAVING.TMP/IN.USE"), new byte[] { 1 });   // the temporary name is taken
+        assertEquals(500, put("/files/RECIPES/A.YML", "x").status);
+        assertTrue(!new File(card, "RECIPES/A.YML").exists(), "nothing half-written takes the name");
+    }
+
+    @Test void putSaysSoWhenTheOldFileCannotBeReplaced() throws IOException {
+        Fixtures.write(new File(card, "RECIPES/A.YML/IN.USE"), new byte[] { 1 });        // a folder with the file's name
+        assertEquals(500, put("/files/RECIPES/A.YML", "x").status);
+        assertTrue(new File(card, "RECIPES/A.YML").isDirectory(), "what was there stays");
+        assertArrayEquals(new String[] { "A.YML" }, new File(card, "RECIPES").list(), "the temporary file is gone");
+    }
 }

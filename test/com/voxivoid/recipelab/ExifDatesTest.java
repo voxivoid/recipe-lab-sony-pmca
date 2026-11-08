@@ -1,6 +1,7 @@
 package com.voxivoid.recipelab;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -130,5 +131,54 @@ class ExifDatesTest {
         assertEquals(1000, f.lastModified(), "not written again");
         assertEquals("dates: no file missing.JPG", ExifDates.align(new File(dir, "missing.JPG")));
         assertFalse(new File(dir, "missing.JPG").exists(), "not made");
+    }
+
+    @Test void theExifSegmentIsFoundBehindAnotherApp1() {
+        byte[] b = jpeg(true, NOW, SOURCE, SOURCE);
+        byte[] xmp = { (byte) 0xFF, (byte) 0xE1, 0, 8, 'h', 't', 't', 'p', ':', '/' };   // an APP1 that is not Exif
+        ByteArrayOutputStream o = new ByteArrayOutputStream();
+        o.write(b, 0, 2); o.write(xmp, 0, xmp.length); o.write(b, 2, b.length - 2);
+        byte[] withXmp = o.toByteArray();
+        assertEquals(ExifDates.tiffStart(b) + xmp.length, ExifDates.tiffStart(withXmp));
+        assertEquals("dates: was " + SOURCE + ", now " + NOW, ExifDates.align(withXmp));
+    }
+
+    @Test void aSegmentLengthUnderTwoEndsTheSearch() {
+        byte[] b = jpeg(true, NOW, SOURCE, SOURCE);
+        b[4] = 0; b[5] = 1;                                   // the APP0's length
+        assertEquals(-1, ExifDates.tiffStart(b));
+    }
+
+    @Test void aHeadCutShortAnywhereIsNeverAProblem() {
+        for (boolean le : new boolean[] { true, false }) {
+            byte[] full = jpeg(le, NOW, SOURCE, SOURCE);
+            for (int n = 0; n < full.length; n++) {
+                byte[] cut = Arrays.copyOf(full, n);
+                String said = assertDoesNotThrow(() -> ExifDates.align(cut), "cut at " + n);
+                assertTrue(said.startsWith("dates: "), said);
+            }
+        }
+    }
+
+    @Test void aDamagedHeadIsNeverAProblem() {
+        byte[] full = jpeg(true, NOW, SOURCE, SOURCE);
+        for (int i = 0; i < full.length; i++) {
+            for (int v : new int[] { 0x00, 0xFF, 0x7F, 0x80 }) {
+                byte[] b = full.clone();
+                b[i] = (byte) v;
+                int at = i;
+                assertEquals(full.length, assertDoesNotThrow(() -> { ExifDates.align(b); return b.length; }, "byte " + at + " = " + v));
+            }
+        }
+    }
+
+    @Test void aFileTheAppMayNotWriteSaysWhy(@TempDir File dir) throws Exception {
+        File f = new File(dir, "DSC07681.JPG");
+        Files.write(f.toPath(), jpeg(true, NOW, SOURCE, SOURCE));
+        assertTrue(f.setWritable(false));
+        assumeTrue(!f.canWrite(), "running as root: every file can be written");
+        String said = ExifDates.align(f);
+        assertTrue(said.startsWith("dates: java.io."), said);
+        assertTrue(has(Files.readAllBytes(f.toPath()), SOURCE), "untouched");
     }
 }
