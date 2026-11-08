@@ -116,7 +116,7 @@ public final class TransferMode {
         try { activity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON); } catch (Throwable t) { logger.error("screen on", t); }
         state.start(now());
         registerReceiver();
-        notifyAppInfo(activity);
+        notifyAppInfo(activity, null, null);
         setAutoPowerOff(false);
         startServer();
         startHotspot();
@@ -166,13 +166,16 @@ public final class TransferMode {
     /**
      * Tells the camera's app framework which activity is in front, as PMCADemo does on every resume. Sent on every
      * opening, not only before Wi-Fi: a NEX-5R restarts when an app creates a file on the card without it (issue #130).
+     * With {@code done}, it goes as an ordered broadcast, and {@code done} is called on {@code handler} once every
+     * receiver has had it; if sending fails, {@code done} is never called, so the caller needs its own fallback.
      */
-    public static void notifyAppInfo(Activity activity) {
+    public static void notifyAppInfo(Activity activity, BroadcastReceiver done, Handler handler) {
         try {
             Intent i = new Intent(ACTION_APP_INFO);
             i.putExtra("package_name", activity.getComponentName().getPackageName());
             i.putExtra("class_name", activity.getComponentName().getClassName());
-            activity.sendBroadcast(i);
+            if (done == null) activity.sendBroadcast(i);
+            else activity.sendOrderedBroadcast(i, null, done, handler, Activity.RESULT_OK, null, null);
         } catch (Throwable ignored) {
         }
     }

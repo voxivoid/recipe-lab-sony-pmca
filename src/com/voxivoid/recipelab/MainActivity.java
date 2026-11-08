@@ -1,6 +1,9 @@
 package com.voxivoid.recipelab;
 
 import android.app.Activity;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -229,15 +232,18 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     }
 
     /**
-     * A NEX-5R restarts the camera when the app writes to the card as it opens, before the UI has drawn (issue #130).
-     * So nothing is written to the card until {@link #CARD_DELAY_MS} after each opening: until then the log lines,
-     * and PARAMS.TXT, wait in memory.
+     * A NEX-5R restarts the camera when the app creates a file on the card before Sony's framework knows the app is in
+     * front (issue #130). So each opening tells it, and nothing is written to the card until the framework has handled
+     * that: the log lines, PARAMS.TXT and the recipes' links file wait in memory until then. If no answer comes, the
+     * card opens after {@link #CARD_FALLBACK_MS} anyway, and the log says so.
      */
-    private static final int CARD_DELAY_MS = 5000;
+    private static final int CARD_FALLBACK_MS = 3000;
     private static final StringBuilder held = new StringBuilder();
     private static boolean cardOpen;
     private String heldParams;                                   // PARAMS.TXT, waiting with the lines
     private int heldParamsHash;
+    private List<CustomRecipes.Entry> heldLinks;                 // the recipes whose links file waits for the card
+    private int cardOpening;                                     // an answer for an opening already left is ignored
 
     /** one line of LOG.TXT; a log that cannot be written must never take the app down with it */
     private static void log(String kind, String msg) {
@@ -254,15 +260,38 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         if (text.length() > 0) try { CardLog.append(CardLog.dir(cardRoot()), CardLog.LOG, text); } catch (Throwable t) {}
     }
 
-    private final Runnable openCard = new Runnable() {
+    private static boolean isCardOpen() { synchronized (held) { return cardOpen; } }
+
+    /** the card may be written from now on: what waited goes first */
+    private void openCard() {
+        flushHeld();
+        if (heldLinks != null) { List<CustomRecipes.Entry> l = heldLinks; heldLinks = null; writeLinks(l); }
+        if (heldParams == null) return;
+        String text = heldParams; heldParams = null;
+        try {
+            CardLog.replace(CardLog.dir(cardRoot()), CardLog.PARAMS, text);
+            prefs.edit().putInt("paramsHash", heldParamsHash).commit();
+        } catch (Throwable t) {}
+    }
+
+    /** each opening: tell the framework the app is in front, and open the card once it has handled that */
+    private void askCardOpen() {
+        final int opening = ++cardOpening;
+        TransferMode.notifyAppInfo(this, new BroadcastReceiver() {
+            @Override public void onReceive(Context c, Intent i) {   // called after every receiver has had it
+                if (opening != cardOpening) return;
+                handler.removeCallbacks(cardFallback);
+                openCard();
+            }
+        }, handler);
+        handler.postDelayed(cardFallback, CARD_FALLBACK_MS);
+    }
+
+    private final Runnable cardFallback = new Runnable() {
         public void run() {
-            flushHeld();
-            if (heldParams == null) return;
-            String text = heldParams; heldParams = null;
-            try {
-                CardLog.replace(CardLog.dir(cardRoot()), CardLog.PARAMS, text);
-                prefs.edit().putInt("paramsHash", heldParamsHash).commit();
-            } catch (Throwable t) {}
+            cardOpening++;                                       // a late answer must not open it twice
+            openCard();
+            log(CardLog.INFO, "card: no answer from the camera to the app-open notice in " + CARD_FALLBACK_MS + " ms, opened anyway");
         }
     };
 
@@ -379,7 +408,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     @Override
     protected void onResume() {
         super.onResume();
-        TransferMode.notifyAppInfo(this);                        // a NEX-5R restarts on any new card file without it (issue #130)
+        askCardOpen();                                           // nothing written to the card before its answer (issue #130)
         load();
         reloadCustoms();                                         // the card may have been edited over USB, or swapped
         int last = library.indexOfCustom(prefs.getString("customRecipe", null));
@@ -395,7 +424,6 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         logOpen();
         showRecipe();                                          // with the edits last applied, when the camera still holds them
         applyPreview(); render();
-        handler.postDelayed(openCard, CARD_DELAY_MS);            // the UI first, the card after (issue #130)
         if (!prefs.getBoolean("keysNoticeSeen", false)) {               // the keys moved in this build (issue #18): say so once
             showToast(Keys.notice(), 8000);
             prefs.edit().putBoolean("keysNoticeSeen", true).commit();
@@ -453,7 +481,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     protected void onPause() {
         super.onPause();
         resumed = false;
-        handler.removeCallbacks(openCard);                       // held lines wait for the next opening's delay
+        handler.removeCallbacks(cardFallback);                   // what is held waits for the next opening's answer
+        cardOpening++;
         synchronized (held) { cardOpen = false; }
         stopRun(false);                                          // a run cannot outlive the camera it shoots with
         stopTransfer();                                          // leaving the app stops Transfer to phone: hotspot off, auto power-off back
@@ -1572,14 +1601,18 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
      * Reads the card's recipes again. The highlighted custom recipe is followed by name, as its index can move; when it
      * is gone the first listed recipe takes its place. The favorites are decoded again for the new indexes.
      */
+    private void writeLinks(List<CustomRecipes.Entry> entries) {
+        try { if (CustomRecipes.writeLinks(cardDir, entries)) log(CardLog.QR, "links: " + CustomRecipes.path(CustomRecipes.LINKS) + " for " + entries.size() + " recipes"); }
+        catch (Throwable t) { log(CardLog.FAIL, "links: " + t); }
+    }
+
     private void reloadCustoms() {
         String keep = library.isCustom(recipe) ? library.get(recipe).name : null;
         cardDir = findCardDir();
         CustomRecipes.Loaded l = CustomRecipes.load(cardDir);
         library.set(l.entries);
         // each recipe's share link where a computer or a phone can copy it: the camera has no clipboard
-        try { if (CustomRecipes.writeLinks(cardDir, l.entries)) log(CardLog.QR, "links: " + CustomRecipes.path(CustomRecipes.LINKS) + " for " + l.entries.size() + " recipes"); }
-        catch (Throwable t) { log(CardLog.FAIL, "links: " + t); }
+        if (isCardOpen()) writeLinks(l.entries); else heldLinks = l.entries;
         if (!l.skipped.equals(skipped)) { skipped = l.skipped; skippedShown = false; }
         favs = Favorites.decode(favStored, library);
         if (keep != null) recipe = library.indexOfCustom(keep);
