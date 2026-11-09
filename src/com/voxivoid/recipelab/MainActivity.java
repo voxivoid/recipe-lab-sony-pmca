@@ -1,6 +1,9 @@
 package com.voxivoid.recipelab;
 
 import android.app.Activity;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -214,6 +217,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         final Thread.UncaughtExceptionHandler was = Thread.getDefaultUncaughtExceptionHandler();
         Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
             public void uncaughtException(Thread th, Throwable t) {
+                flushHeld();                                     // the lines still held, then the crash: nothing waits now
                 log(CardLog.CRASH, CardLog.stack(t));            // written and closed before the app goes
                 if (was != null) was.uncaughtException(th, t);
             }
@@ -227,10 +231,69 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         catch (Throwable t) { return null; }
     }
 
+    /**
+     * A NEX-5R restarts the camera when the app creates a file on the card before Sony's framework knows the app is in
+     * front (issue #130). So each opening tells it, and nothing is written to the card until the framework has handled
+     * that: the log lines, PARAMS.TXT and the recipes' links file wait in memory until then. If no answer comes, the
+     * card opens after {@link #CARD_FALLBACK_MS} anyway, and the log says so.
+     */
+    private static final int CARD_FALLBACK_MS = 3000;
+    private static final StringBuilder held = new StringBuilder();
+    private static boolean cardOpen;
+    private String heldParams;                                   // PARAMS.TXT, waiting with the lines
+    private int heldParamsHash;
+    private List<CustomRecipes.Entry> heldLinks;                 // the recipes whose links file waits for the card
+    private int cardOpening;                                     // an answer for an opening already left is ignored
+
     /** one line of LOG.TXT; a log that cannot be written must never take the app down with it */
     private static void log(String kind, String msg) {
-        try { CardLog.append(CardLog.dir(cardRoot()), CardLog.LOG, CardLog.line(kind, msg)); } catch (Throwable t) {}
+        String line;
+        try { line = CardLog.line(kind, msg); } catch (Throwable t) { return; }
+        synchronized (held) { if (!cardOpen) { held.append(line); return; } }
+        try { CardLog.append(CardLog.dir(cardRoot()), CardLog.LOG, line); } catch (Throwable t) {}
     }
+
+    /** the card may be written from now on: the lines held so far go first */
+    private static void flushHeld() {
+        String text;
+        synchronized (held) { cardOpen = true; text = held.toString(); held.setLength(0); }
+        if (text.length() > 0) try { CardLog.append(CardLog.dir(cardRoot()), CardLog.LOG, text); } catch (Throwable t) {}
+    }
+
+    private static boolean isCardOpen() { synchronized (held) { return cardOpen; } }
+
+    /** the card may be written from now on: what waited goes first */
+    private void openCard() {
+        flushHeld();
+        if (heldLinks != null) { List<CustomRecipes.Entry> l = heldLinks; heldLinks = null; writeLinks(l); }
+        if (heldParams == null) return;
+        String text = heldParams; heldParams = null;
+        try {
+            CardLog.replace(CardLog.dir(cardRoot()), CardLog.PARAMS, text);
+            prefs.edit().putInt("paramsHash", heldParamsHash).commit();
+        } catch (Throwable t) {}
+    }
+
+    /** each opening: tell the framework the app is in front, and open the card once it has handled that */
+    private void askCardOpen() {
+        final int opening = ++cardOpening;
+        TransferMode.notifyAppInfo(this, new BroadcastReceiver() {
+            @Override public void onReceive(Context c, Intent i) {   // called after every receiver has had it
+                if (opening != cardOpening) return;
+                handler.removeCallbacks(cardFallback);
+                openCard();
+            }
+        }, handler);
+        handler.postDelayed(cardFallback, CARD_FALLBACK_MS);
+    }
+
+    private final Runnable cardFallback = new Runnable() {
+        public void run() {
+            cardOpening++;                                       // a late answer must not open it twice
+            openCard();
+            log(CardLog.INFO, "card: no answer from the camera to the app-open notice in " + CARD_FALLBACK_MS + " ms, opened anyway");
+        }
+    };
 
     /**
      * Each opening: the body, the build and the mode dial; what the store holds, when it changed since it was last
@@ -254,10 +317,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         if (origFlat == null || dir == null) return;
         int hash = origFlat.hashCode();
         if (hash == prefs.getInt("paramsHash", 0) && new File(dir, CardLog.PARAMS).exists()) return;
-        try {
-            CardLog.replace(dir, CardLog.PARAMS, CardLog.paramsFile(CardLog.now() + "  " + head, origFlat));
-            prefs.edit().putInt("paramsHash", hash).commit();
-        } catch (Throwable t) {}
+        try { heldParams = CardLog.paramsFile(CardLog.now() + "  " + head, origFlat); heldParamsHash = hash; }   // written by openCard
+        catch (Throwable t) {}
     }
 
     /**
@@ -347,6 +408,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     @Override
     protected void onResume() {
         super.onResume();
+        askCardOpen();                                           // nothing written to the card before its answer (issue #130)
         load();
         reloadCustoms();                                         // the card may have been edited over USB, or swapped
         int last = library.indexOfCustom(prefs.getString("customRecipe", null));
@@ -419,6 +481,9 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     protected void onPause() {
         super.onPause();
         resumed = false;
+        handler.removeCallbacks(cardFallback);                   // what is held waits for the next opening's answer
+        cardOpening++;
+        synchronized (held) { cardOpen = false; }
         stopRun(false);                                          // a run cannot outlive the camera it shoots with
         stopTransfer();                                          // leaving the app stops Transfer to phone: hotspot off, auto power-off back
         closeMenu();
@@ -1536,14 +1601,18 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
      * Reads the card's recipes again. The highlighted custom recipe is followed by name, as its index can move; when it
      * is gone the first listed recipe takes its place. The favorites are decoded again for the new indexes.
      */
+    private void writeLinks(List<CustomRecipes.Entry> entries) {
+        try { if (CustomRecipes.writeLinks(cardDir, entries)) log(CardLog.QR, "links: " + CustomRecipes.path(CustomRecipes.LINKS) + " for " + entries.size() + " recipes"); }
+        catch (Throwable t) { log(CardLog.FAIL, "links: " + t); }
+    }
+
     private void reloadCustoms() {
         String keep = library.isCustom(recipe) ? library.get(recipe).name : null;
         cardDir = findCardDir();
         CustomRecipes.Loaded l = CustomRecipes.load(cardDir);
         library.set(l.entries);
         // each recipe's share link where a computer or a phone can copy it: the camera has no clipboard
-        try { if (CustomRecipes.writeLinks(cardDir, l.entries)) log(CardLog.QR, "links: " + CustomRecipes.path(CustomRecipes.LINKS) + " for " + l.entries.size() + " recipes"); }
-        catch (Throwable t) { log(CardLog.FAIL, "links: " + t); }
+        if (isCardOpen()) writeLinks(l.entries); else heldLinks = l.entries;
         if (!l.skipped.equals(skipped)) { skipped = l.skipped; skippedShown = false; }
         favs = Favorites.decode(favStored, library);
         if (keep != null) recipe = library.indexOfCustom(keep);
