@@ -11,7 +11,8 @@
     <a href="https://recipelab.io">Website</a> ·
     <a href="https://github.com/voxivoid/recipe-lab-sony-pmca/releases/latest/download/RecipeLab.apk">Download the app</a> ·
     <a href="https://recipelab.io/recipes">See every recipe</a> ·
-    <a href="https://recipelab.io/studio">Recipe Lab Studio</a>
+    <a href="https://recipelab.io/studio">Recipe Lab Studio</a> ·
+    <a href="https://discord.gg/TuJrY4Ypc">Discord</a>
   </sub>
 </p>
 
