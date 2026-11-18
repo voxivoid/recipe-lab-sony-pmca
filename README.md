@@ -281,12 +281,16 @@ Open **Recipe Lab** from the Application List. The live view shows the look. The
 
 **Menu** — **hold MENU**
 
-- **Browse recipes** · **New recipe** · **Transfer to phone** · **Sync recipes** · **Panel visibility** · **Language** · **Reset settings** ·
+- **Browse recipes** · **New recipe** · **Transfer to phone** · **Sync recipes** · **Picture profile** · **Panel visibility** · **Language** · **Reset settings** ·
   **Save a bug report** · **About** · **Developer**.
 - **New recipe** saves the camera's current settings as a [custom recipe](#custom-recipes).
 - **Transfer to phone** sends your photos to the phone over Wi-Fi — see [Transfer to phone](#transfer-to-phone).
 - **Sync recipes** opens the same Wi-Fi link for custom recipes: [Recipe Lab Studio](https://recipelab.io/studio) copies the ones the phone lacks
   and sends the ones the card lacks. Leave the page with MENU and they are under Custom.
+- **Picture profile** (A6000 firmware 3.21 only): left / right picks *Off*, *S-Log2* (S-Gamut), *S-Log3 Cine*
+  (S-Gamut3.Cine), *S-Log3* (S-Gamut3), *ITU709*, *HLG* (BT.2020) or *LogC3* (ARRI LogC3 EI 800, ALEXA Wide Gamut 3).
+  It is applied as you stop on it and covers live view, photos and video. It lives in the camera's memory only:
+  switching the camera off brings back the normal look, and opening the app brings the profile back.
 - Languages: *Auto*, English, 简体中文, 繁體中文, 日本語, 한국어, Tiếng Việt.
 
 ## Custom recipes
@@ -372,6 +376,11 @@ other way stops it too.
 
 Only camera settings you could set by hand: Creative Style and its saturation, contrast and sharpness sliders, white
 balance and its fine-tune, exposure compensation, DRO, Picture Effect. No firmware is touched, nothing is unlocked.
+
+The one exception is **Picture profile**, which is off unless you pick one. It writes the image processor's tone curve
+and colour matrix in memory, and it stops the camera's own code from overwriting them (two instructions, changed in
+memory only). Nothing goes to flash: switch the camera off, or pick *Off*, and it is stock again. It checks the
+camera's code first and refuses on anything that is not an A6000 on firmware 3.21.
 
 **Picture Effect recipes** (marked **JPEG only**) behave like the menu item does: the camera ignores Creative Style while one
 is on, and it only works with **Quality = JPEG** — set to RAW or RAW+JPEG, the camera drops the effect silently.

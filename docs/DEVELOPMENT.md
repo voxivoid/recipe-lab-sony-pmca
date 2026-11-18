@@ -137,6 +137,7 @@ down or the wheel move, the centre button runs a row, a short MENU goes back a l
 | **Browse recipes** | the brand list, as Fn opens it |
 | **New recipe** | the name editor, then the camera's current *stored* settings become a custom recipe ([Custom recipes](#custom-recipes)) |
 | **Transfer to phone** | a page of the menu that starts the camera's hotspot and serves the memory card for Recipe Lab Studio until MENU — [Transfer to phone](#transfer-to-phone) |
+| **Picture profile** | a value — *Off* and the six `IspProfiles` profiles — stepped the same way, kept under `ispProfile` by code (`IspProfiles.CODES`). It is applied 700 ms after the last step, and again by every `onResume`. See [Picture profiles](#picture-profiles) |
 | **Panel visibility** | a value — *Full* / *No keys* / *Label* / *Hidden* (`DevTools.PANELS`) — that left / right step through in place, wrapping, with the menu left open; centre steps forward. The same states trash cycles. *No keys* (`OV_QUIET`) is the full panel, chips and all (`Params.panelUp`), without the `HintBar` legend; closing the browser returns to it if it was left on it |
 | **Language** | a value — *Auto* / *English* / *简体中文* / *繁體中文* / *日本語* / *한국어* / *Tiếng Việt* — stepped the same way, kept in the app's preferences under `language` by code (`Lang.CODES`). The app redraws in it at once. *Auto* follows the camera's locale (`Lang.fromLocale`); each language's name is drawn in its own script and font. See [LOCALIZATION.md](LOCALIZATION.md) |
 | **Reset settings** | asks `DevTools.resetTitle()` (Cancel highlighted), then stages `Recipes.FACTORY` and stores it (`writeAll`, so the quality prompt still asks when it must). The same look as **Factory**, the first Sony recipe, which is in the list like the others (it was hidden once, and users went looking for it) |
@@ -257,6 +258,46 @@ a frame still carries the previous recipe's look. Shoot a run, then store two or
 and shoot them again — if the frames differ, raise the delay in the menu and shoot again. Same for
 `DevTools.SHUTTER_MS` and the `startPreview` between frames: both are what a capture needs on *this* body, and
 neither a build nor `tools/test.sh` can say anything about them.
+
+## Picture profiles
+
+A6000 FW 3.21 only, RAM only. The look comes from the ISP's SRAM, not from the settings store, so this is not a recipe slot:
+
+| what | where | how |
+|---|---|---|
+| gamma | PA `0xF3215300`, 96 × u32 | 10-bit output per knot. Knots are linear 11-bit input: 2..64 step 2, 68..128/4, 136..256/8, 272..512/16, 576..1024/64, 1152..1920/128, 2047 (`IspProfiles.KNOTS`). 18% grey sits at knot 76 |
+| colour matrix | PA `0xF321550C`, 9 × u32 | s16 Q10 in the low half, row-major, applied after white balance |
+| gamma setter | PA `0x83b67414` (av-cam VA `0x43b67414`), `00 f5 a8 30` | patched to `70 47 a8 30` (`bx lr`), so the camera stops rewriting the table |
+| matrix setter | PA `0x83b675e0`, `70 b5 0c 46` | patched to `70 47 0c 46` |
+
+Evidence and the wider register map are in the a6000-qemu research repo (`docs/A6000_ISP_REGISTER_MAP.md`).
+
+**The pieces:**
+
+- `IspProfiles` (camera-free, tested) builds the 96 gamma words and the Q14 gamut matrix `inv(M_target) · M_709` for each
+  profile, and writes them to `profile.bin`. The file is `RLPP`, version 1, flags, 96 words and 9 words, all LE32.
+  - Curves follow the published formulas: S-Log2 in legal range (grey 347), S-Log3 and LogC3 EI 800 as code values
+    (grey 420 and 400), and BT.709 clipped at 1 (grey 418).
+  - HLG follows BT.2100 with the BT.2408 scale (100% white at 75%, grey 387).
+  - Gamuts: S-Gamut = S-Gamut3, S-Gamut3.Cine, BT.2020 and ALEXA Wide Gamut 3. ITU709 keeps the camera's colour (identity).
+- `jni/rlisp/rlisp.c` is the root helper. It is freestanding (raw syscalls, no libc), built by `build.sh` / `build.cmd` with
+  the NDK's gcc and shipped as `lib/armeabi/librlisp.so` so the installer unpacks it executable. It runs `ping | apply |
+  off | status <dir>`.
+  - It checks both setters' bytes first, and anything that is neither stock nor patched means `RESULT REFUSE fw`.
+  - `apply` multiplies the gamut by the creative style's own stock matrix, adjusting the diagonal so each row sums to 1024.
+  - `apply` then freezes the setters, writes both tables and reads them back.
+  - `state.bin` remembers the stock matrix and the one last written, so after *Off* (our values stay until the camera's
+    next event) the stock is not recaptured from our own.
+  - It ends its `log` with one `RESULT …` line.
+- `NativeShell.exec` is `shell_exec_async` from the platform. It is OSAL message `0x940005` to the boot-in queue,
+  the same route OpenMemories-Tweak uses to start telnetd, and it runs the line as root. It is async, prints nothing,
+  and takes 255 characters at most. That shell lives outside Android's root, so `/x` in the app is `/android/x` there
+  (`IspProfiles.command`).
+- `MainActivity.ispApply` writes the file, deletes the old log, runs the helper and polls the log every 250 ms for 5 s
+  (`IspProfiles.result`). It runs one at a time, and a step taken meanwhile runs next. Opening the app is quiet: only a
+  problem is said. Every run goes to `LOG.TXT` with the helper's log.
+
+**By hand** (telnet, root): `librlisp.so status <dir>`, then `cat <dir>/log`. A battery pull is the full undo.
 
 ## Exit rule
 
