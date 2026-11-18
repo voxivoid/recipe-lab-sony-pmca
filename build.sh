@@ -52,6 +52,13 @@ rm -rf out/gen out/classes out/dex out/apklib
 mkdir -p out/gen out/classes out/dex out/apklib/lib/armeabi
 cp -f out/libs/armeabi/librecipelab.so out/apklib/lib/armeabi/
 
+# The picture-profile root helper: a freestanding static executable (no libc, no linker), shipped as a "lib" so the
+# installer unpacks it executable. It runs as root outside Android's root, where bionic is not at hand.
+echo "      rlisp (picture-profile root helper)"
+NDK_GCC="$(ls "$ANDROID_NDK"/toolchains/arm-linux-androideabi-4.9/prebuilt/*/bin/arm-linux-androideabi-gcc | head -n 1)"
+"$NDK_GCC" -std=gnu11 -march=armv7-a -marm -O2 -Wall -Werror -nostdlib -static -ffreestanding -fno-builtin -fno-pic \
+  -fno-stack-protector -Wl,-Ttext-segment=0x10000 -Wl,-e,_start -s -o out/apklib/lib/armeabi/librlisp.so jni/rlisp/rlisp.c
+
 # Version injection: aapt reads this copy, the checked-in manifest stays untouched.
 MANIFEST=out/AndroidManifest.xml
 sed -e "s/android:versionCode=\"[^\"]*\"/android:versionCode=\"$VERSION_CODE\"/" \
@@ -71,7 +78,7 @@ find out/classes -name '*.class' > out/classes.txt
 echo "[4/7] aapt package + dex + native lib"
 "$BT/aapt" package -f -M "$MANIFEST" -S res -A assets -I "$AJ" -F out/unaligned.apk
 ( cd out/dex   && "$BT/aapt" add ../unaligned.apk classes.dex )
-( cd out/apklib && "$BT/aapt" add ../unaligned.apk lib/armeabi/librecipelab.so )
+( cd out/apklib && "$BT/aapt" add ../unaligned.apk lib/armeabi/librecipelab.so lib/armeabi/librlisp.so )
 echo "[5/7] zipalign"
 "$BT/zipalign" -f 4 out/unaligned.apk out/aligned.apk
 

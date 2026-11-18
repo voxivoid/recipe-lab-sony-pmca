@@ -10,6 +10,7 @@
 extern "C"
 {
     #include "drivers/backup.h"
+    #include "api/shell.h"
 }
 
 using namespace std;
@@ -74,4 +75,17 @@ extern "C" JNIEXPORT jint Java_com_voxivoid_recipelab_NativeBackup_attr(JNIEnv *
 extern "C" JNIEXPORT void Java_com_voxivoid_recipelab_NativeBackup_sync(JNIEnv *env, jclass clazz)
 {
     Backup_sync_all();
+}
+
+/*
+ * com.voxivoid.recipelab.NativeShell: one command line to the camera's own root shell (the platform's shell_exec_async,
+ * as OpenMemories-Tweak starts telnetd). Asynchronous and without output: the command reports through a file.
+ */
+extern "C" JNIEXPORT void Java_com_voxivoid_recipelab_NativeShell_exec(JNIEnv *env, jclass clazz, jstring cmd)
+{
+    const char *c = env->GetStringUTFChars(cmd, NULL);
+    if (!c) return;
+    int res = shell_exec_async(c);
+    env->ReleaseStringUTFChars(cmd, c);
+    if (res) throw_native(env, res < 0 ? "command too long" : "shell_exec_async failed");
 }
