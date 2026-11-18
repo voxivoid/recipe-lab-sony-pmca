@@ -120,10 +120,13 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private int menuLevel = DevTools.LEVEL_APP, menuPage = PAGE_ROWS;   // which menu, and whether it shows rows or a read-only page
     private int menuSel = 0, settleIdx = DevTools.SETTLE_DEFAULT;   // menu: highlighted row · developer menu: chosen settle delay
     private int langChoice = Lang.AUTO;                         // the Language row: Lang.AUTO or a language
-    private int ispProfile = IspProfiles.OFF;                   // the Picture profile row (IspProfiles.*), applied again on every start
-    private int ispRunning = -1, ispQueued = -1, ispPolls;      // the profile the root helper is applying, the one asked for meanwhile
-    private boolean ispQuiet;                                   // the run started by opening the app: only a problem is said
-    private final Runnable ispApplySoon = new Runnable() { public void run() { ispApply(ispProfile, false); } };
+    // the picture profile (IspProfiles): the staged rows' look goes to the image processor through the root helper
+    private IspProfiles.Look ispStored;                         // the look of the recipe last stored: the profile rows' "cur", applied again on every start
+    private IspProfiles.Look ispLive;                           // what the image processor holds, as far as the app knows
+    private boolean ispKnown, ispRunning, ispQueued;            // ispLive is known · the helper is running · the rows changed meanwhile
+    private IspProfiles.Look ispRunningLook;                    // the look the running helper applies
+    private int ispPolls;
+    private final Runnable ispApplySoon = new Runnable() { public void run() { ispSync(true); } };
     private final Runnable ispPoll = new Runnable() { public void run() { ispCheck(); } };
     private static final int PAGE_ROWS = 0, PAGE_ABOUT = 1, PAGE_TRANSFER = 2;
     private TransferMode transfer;                              // Transfer to phone, while its page is open (null otherwise)
@@ -187,7 +190,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         wheelGroup = Favorites.wheelGroup(prefs.getString("wheelGroup", null));
         settleIdx = DevTools.clampSettle(prefs.getInt("settle", DevTools.SETTLE_DEFAULT));
         langChoice = Lang.parseChoice(prefs.getString("language", null));
-        ispProfile = IspProfiles.parse(prefs.getString("ispProfile", null));
+        ispStored = Params.lookFrom(prefs.getString("ispLook", null));
+        Params.profiles = IspProfiles.mayRun(KeyProbe.prop("model.name"));
         panel = findViewById(R.id.panel);
         picker = (PickerView) findViewById(R.id.picker);
         chipScroll = (HorizontalScrollView) findViewById(R.id.chipscroll);
@@ -359,6 +363,9 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         if (last >= 0) recipe = last;
         lastPreviewLog = ""; origFlat = null;
         resumed = true;
+        // the image processor is RAM only: a power cycle since the app last ran has made it stock. Without a stored
+        // profile it is stock either way (leaving the app puts the stored one back), so nothing needs running
+        ispKnown = ispStored == null; ispLive = null;
         try {
             openCamera();
             origFlat = camera.getParameters().flatten();
@@ -372,7 +379,6 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             showToast(Keys.notice(), 8000);
             prefs.edit().putBoolean("keysNoticeSeen", true).commit();
         }
-        if (ispProfile != IspProfiles.OFF) ispApply(ispProfile, true);   // RAM only: a power cycle forgot it
         if (Params.asksPictureProfileOff(cur)) openPrompt(P_PP, Params.PP_DEFAULT);   // every time: no recipe shows while it runs (#90)
     }
 
@@ -441,6 +447,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         // leave the live parameters equal to what is STORED (not to the launch snapshot): the camera writes some live
         // values (exposure bias, WB fine-tune) straight back into the settings store, which would undo a fresh store
         try { if (camera != null) { load(); System.arraycopy(cur, 0, edit, 0, N); applyPreview(); } } catch (Throwable t) {}
+        try { System.arraycopy(cur, 0, edit, 0, N); ispSync(true); } catch (Throwable t) {}   // the stored profile, not one being tried
         try { if (camera != null) camera.stopPreview(); } catch (Throwable t) {}
         try { if (cameraEx != null) cameraEx.getClass().getMethod("release").invoke(cameraEx); } catch (Throwable t) {}
         cameraEx = null; camera = null;
@@ -470,9 +477,11 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
                 int id = ROW_ID[i];
                 if (id == SUB_SLOT) { int sid = Recipes.subId(cur[R_PE]); cur[i] = edit[i] = sid == 0 ? 0 : rdu(sid); continue; }
                 if (id == QUALITY_SLOTS) { cur[i] = edit[i] = readQuality(); continue; }
+                if (id == ISP) continue;                          // the profile rows: below
                 cur[i] = edit[i] = Params.fromStore(id, NativeBackup.readByte(id));
             }
         } catch (Throwable t) { showToast(Lang.t("status_read_failed", String.valueOf(t.getMessage())), 0); log(CardLog.FAIL, "read: " + t); }
+        Params.putLook(ispStored, cur); Params.putLook(ispStored, edit);   // the store has no profile: the app keeps the stored one
     }
 
     private void stageRecipe() {
@@ -548,6 +557,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         if (written > 0) NativeBackup.sync();                    // Backup_sync_all is void: nothing to catch, nothing to report
         boolean ok = msg == null;
         if (ok) log(CardLog.WRITE, CardLog.written(what, ws));
+        if (ok) storeLook();
         if (ok) msg = Lang.t(n == 1 ? "status_picked_one" : "status_picked_many", n);
         // what was written is now the look: keep it on the chips — re-staging the recipe would drop edits just applied
         // to a built-in one ("Apply only"); after a refusal, the recipe is staged again, ready to retry
@@ -766,8 +776,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             Typeface[] faces = new Typeface[n];
             for (int i = 0; i < n; i++) {
                 labels[i] = app ? DevTools.appLabel(i) : DevTools.rowLabel(i, snapshotTaken, settleIdx);
-                details[i] = app ? DevTools.appDetail(i, ispProfile) : DevTools.rowDetail(i, snapshotTaken);
-                values[i] = app ? DevTools.appValue(i, overlay, langChoice, ispProfile) : DevTools.rowValue(i, settleIdx);
+                details[i] = app ? DevTools.appDetail(i) : DevTools.rowDetail(i, snapshotTaken);
+                values[i] = app ? DevTools.appValue(i, overlay, langChoice) : DevTools.rowValue(i, settleIdx);
             }
             if (app) faces[DevTools.APP_LANG] = UiFont.of(this, Lang.choiceScript(langChoice));   // 简体中文 in its own font, whatever the menu's
             boolean value = values[menuSel] != null;
@@ -800,7 +810,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
                 case DevTools.APP_READ_QR: closeMenu(); openScan(); break;
                 case DevTools.APP_TRANSFER: openTransfer(false); break;
                 case DevTools.APP_SYNC: openTransfer(true); break;
-                case DevTools.APP_PANEL: case DevTools.APP_LANG: case DevTools.APP_PROFILE: stepMenuValue(+1); break;
+                case DevTools.APP_PANEL: case DevTools.APP_LANG: stepMenuValue(+1); break;
                 case DevTools.APP_RESET: closeMenu(); askReset(); break;
                 case DevTools.APP_REPORT: closeMenu(); saveReport(); break;
                 case DevTools.APP_ABOUT: menuPage = PAGE_ABOUT; renderMenu(); break;
@@ -825,11 +835,6 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             langChoice = Lang.nextChoice(langChoice, dir);
             prefs.edit().putString("language", Lang.choiceCode(langChoice)).commit();
             applyLanguage();                                     // the menu redraws in it straight away, the panel under it too
-        } else if (menuLevel == DevTools.LEVEL_APP && menuSel == DevTools.APP_PROFILE) {
-            ispProfile = IspProfiles.next(ispProfile, dir);
-            prefs.edit().putString("ispProfile", IspProfiles.CODES[ispProfile]).commit();
-            handler.removeCallbacks(ispApplySoon);               // stepping through the list applies only where it stops
-            handler.postDelayed(ispApplySoon, ISP_SETTLE_MS);
         } else if (menuLevel == DevTools.LEVEL_DEV && menuSel == DevTools.ROW_SETTLE) {
             settleIdx = DevTools.nextSettle(settleIdx, dir);
             prefs.edit().putInt("settle", settleIdx).commit();
@@ -860,27 +865,47 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         return true;
     }
 
-    // ------------------------------------------------------------ Picture profile (app menu): the root helper writes the ISP
+    // ------------------------------------------------------------ Picture profile: the root helper writes the ISP
     private static final int ISP_SETTLE_MS = 700, ISP_POLL_MS = 250, ISP_POLLS = 20;
 
     /** the folder the helper reads its profile from and writes its log and state into */
     private File ispDir() { return new File(getFilesDir(), "isp"); }
 
+    /** a write went in: the staged profile is now the stored one, applied again on every start */
+    private void storeLook() {
+        IspProfiles.Look l = Params.look(edit);
+        ispStored = l == null ? null : l.normal();
+        prefs.edit().putString("ispLook", Params.lookText(ispStored)).commit();
+    }
+
+    private static boolean same(IspProfiles.Look a, IspProfiles.Look b) { return a == null ? b == null : a.equals(b); }
+
     /**
-     * Applies {@code p} (Off restores the camera's setters) through the root helper, then reads its log until it
-     * answers. One run at a time: a profile asked for meanwhile runs after it. {@code quiet}: only a problem is said.
+     * Brings the image processor to the staged rows' look, like the live preview does for the camera's parameters.
+     * {@code now}: at once; otherwise once the rows have stopped changing for a moment, so stepping a chip through its
+     * values runs the helper only where it stops.
      */
-    private void ispApply(int p, boolean quiet) {
-        if (ispRunning >= 0) { ispQueued = p; return; }
+    private void ispSync(boolean now) {
+        handler.removeCallbacks(ispApplySoon);
+        IspProfiles.Look want = Params.look(edit);
+        if (ispKnown && same(want, ispLive)) return;
+        if (!now) { handler.postDelayed(ispApplySoon, ISP_SETTLE_MS); return; }
+        if (ispRunning) { ispQueued = true; return; }
+        ispApply(want);
+    }
+
+    /** runs the helper for {@code l} (null restores the camera's setters), then reads its log until it answers */
+    private void ispApply(IspProfiles.Look l) {
         File dir = ispDir(), log = new File(dir, "log");
         String helper = getApplicationInfo().nativeLibraryDir + "/librlisp.so";
-        String cmd = IspProfiles.command(helper, p == IspProfiles.OFF ? "off" : "apply", dir.getPath());
+        String cmd = IspProfiles.command(helper, l == null ? "off" : "apply", dir.getPath());
+        ispLive = l; ispKnown = true;                            // also when it fails: not tried again until the rows change
         try {
             if (cmd == null) throw new IllegalStateException("command too long");
             if (!dir.isDirectory() && !dir.mkdirs()) throw new IllegalStateException("cannot create " + dir);
-            if (p != IspProfiles.OFF) {
+            if (l != null) {
                 FileOutputStream o = new FileOutputStream(new File(dir, "profile.bin"));
-                try { o.write(IspProfiles.encode(p)); } finally { o.close(); }
+                try { o.write(IspProfiles.encode(l)); } finally { o.close(); }
             }
             log.delete();
             NativeShell.exec(cmd);
@@ -889,31 +914,29 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             showToast(Lang.t("isp_error", String.valueOf(t.getMessage())), 0);
             return;
         }
-        ispRunning = p; ispQuiet = quiet; ispPolls = 0;
+        ispRunning = true; ispRunningLook = l; ispPolls = 0;
         handler.postDelayed(ispPoll, ISP_POLL_MS);
     }
 
-    /** one look at the helper's log: its answer, or another look a little later, or no answer at all */
+    /** one look at the helper's log: its answer, or another look a little later, or no answer at all. Only a problem is said */
     private void ispCheck() {
         String text = null;
         try { text = readSmall(new File(ispDir(), "log")); } catch (Throwable t) {}
         int r = IspProfiles.result(text);
         if (r == IspProfiles.R_PENDING && ++ispPolls < ISP_POLLS) { handler.postDelayed(ispPoll, ISP_POLL_MS); return; }
-        int p = ispRunning;
-        ispRunning = -1;
+        ispRunning = false;
         log(r == IspProfiles.R_OK || r == IspProfiles.R_OFF ? CardLog.INFO : CardLog.FAIL,
-                "isp " + IspProfiles.CODES[p] + ": " + (text == null ? "no log" : text.trim().replace('\n', ' ')));
+                "isp " + (ispRunningLook == null ? "off" : ispRunningLook.toString()) + ": " + (text == null ? "no log" : text.trim().replace('\n', ' ')));
         String msg = null;
         switch (r) {
-            case IspProfiles.R_OK: if (!ispQuiet) msg = Lang.t("isp_applied", IspProfiles.fullName(p)); break;
-            case IspProfiles.R_OFF: if (!ispQuiet) msg = Lang.t("isp_off_done"); break;
+            case IspProfiles.R_OK: case IspProfiles.R_OFF: break;
             case IspProfiles.R_REFUSED: msg = Lang.t("isp_refused"); break;
             case IspProfiles.R_MISMATCH: msg = Lang.t("isp_mismatch"); break;
             case IspProfiles.R_PENDING: msg = Lang.t("isp_no_root"); break;
             default: msg = Lang.t("isp_error", String.valueOf(IspProfiles.resultLine(text)));
         }
         if (msg != null) showToast(msg, 5000);
-        if (ispQueued >= 0) { int q = ispQueued; ispQueued = -1; if (q != p) ispApply(q, false); }
+        if (ispQueued) { ispQueued = false; ispSync(true); }
     }
 
     /** a short text file the app may read, whole; null when it is not there */
@@ -1104,6 +1127,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private void openShare() {
         Recipes.Recipe r = library.get(recipe);
         String link = RecipeShare.encode(r);
+        if (link == null && r.hasProfile()) { showToast(Lang.t("qr_share_profile"), 0); return; }
         if (link == null) { showToast(Lang.t("qr_share_failed", r.name, String.valueOf(CustomRecipes.problem(r))), 0); return; }
         QrCode code = QrCode.encodeText(link, QrCode.Ecc.MEDIUM);
         boolean[] m = new boolean[code.size * code.size];
@@ -1840,6 +1864,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             String mode = back.get(CardLog.MODE_KEY);              // read anyway: a dial turned with the app open costs nothing more
             if (mode != null && !mode.equals(lastMode)) { log(CardLog.INFO, "mode " + lastMode + " > " + mode); lastMode = mode; }
         } catch (Throwable t) { previewOk = false; previewErr = String.valueOf(t.getMessage()); logPreview("parameters refused: " + previewErr); }
+        finally { ispSync(false); }                              // the profile rows: the image processor, a moment later
     }
 
     // ------------------------------------------------------------ UI

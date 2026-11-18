@@ -17,7 +17,8 @@ import java.util.regex.Pattern;
  * build does not know is skipped as a whole, never half-read: it ends up in the camera's settings store.
  *
  * <h3>Writing</h3>
- * The app writes with the newest version ({@link #current}). The older writers stay, with their readers.
+ * The app writes a recipe with a picture profile in the newest version ({@link #current}), and every other recipe in
+ * format 2 ({@link #writerFor}). The older writers stay, with their readers.
  *
  * <h3>Adding a version</h3>
  * A key a reader does not know is ignored, so adding a key needs no new version. Changing what an existing key means
@@ -30,13 +31,19 @@ final class RecipeFormats {
     private RecipeFormats() {}
 
     /** every version the app reads, oldest first; the last is the one it writes */
-    static final RecipeFormat[] ALL = { new RecipeFormatV1(), new RecipeFormatV2() };
+    static final RecipeFormat[] ALL = { new RecipeFormatV1(), new RecipeFormatV2(), new RecipeFormatV3() };
 
-    /** the version the app writes: the newest */
+    /** the newest version */
     static RecipeFormat current() { return ALL[ALL.length - 1]; }
 
-    /** a recipe as a file of the newest version */
-    static String write(Recipes.Recipe r, String madeOn) { return current().write(r, madeOn); }
+    /**
+     * The version a recipe is written in: the newest for one with a picture profile, format 2 for one without, so a
+     * recipe that needs nothing new stays readable by apps and Studio versions that predate profiles.
+     */
+    static RecipeFormat writerFor(Recipes.Recipe r) { return r.hasProfile() ? current() : ALL[1]; }
+
+    /** a recipe as a file, in {@link #writerFor its version} */
+    static String write(Recipes.Recipe r, String madeOn) { return writerFor(r).write(r, madeOn); }
 
     /** a file's text read by the version it names; {@code fileName} names a recipe whose file has no name line */
     static CustomRecipes.Parsed parse(String text, String fileName) { return parse(text, fileName, ALL); }

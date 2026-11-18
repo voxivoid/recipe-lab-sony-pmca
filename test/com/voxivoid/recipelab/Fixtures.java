@@ -23,6 +23,7 @@ final class Fixtures {
     static int[] factoryRows() {
         int[] r = new int[N];
         r[R_STYLE] = Recipes.STD; r[R_WBMODE] = WB_AUTO; r[R_KELVIN] = 55; r[R_DRO] = Recipes.DRO_AUTO; r[R_QUAL] = Q_FINE;
+        Params.putLook(null, r);                                   // no picture profile
         return r;
     }
 
@@ -59,8 +60,14 @@ final class Fixtures {
             int id = ROW_ID[i];
             if (id == SUB_SLOT) { int sid = Recipes.subId(cur[R_PE]); cur[i] = sid == 0 ? 0 : byteAt(store, sid) & 0xff; continue; }
             if (id == QUALITY_SLOTS) { cur[i] = Params.qualityFromStore(byteAt(store, ID_QFMT) & 0xff, byteAt(store, ID_QJPG) & 0xff); continue; }
+            if (id == ISP) continue;
             cur[i] = Params.fromStore(id, byteAt(store, id));
         }
+        int[] kept = new int[N];                                   // the profile: what the app keeps, not the store
+        Params.putLook(null, kept);
+        for (int i = R_GAMMA; i <= R_SCURVE; i++) if (store.containsKey(lookKey(i))) kept[i] = store.get(lookKey(i));
+        IspProfiles.Look l = Params.look(kept);
+        Params.putLook(l == null ? null : l.normal(), cur);
         return cur;
     }
 
@@ -73,6 +80,14 @@ final class Fixtures {
     /** performs the writes the way NativeBackup.writeByte does: one byte each */
     static void apply(Map<Integer, Integer> store, List<Write> writes) {
         for (Write w : writes) store.put(w.id, w.value & 0xff);
+    }
+
+    /** where the fake store keeps what MainActivity keeps in its preferences: the stored picture profile, row by row */
+    static int lookKey(int row) { return -1000 - row; }
+
+    /** a store that went in: the staged profile becomes the kept one (MainActivity.storeLook) */
+    static void storeLook(Map<Integer, Integer> store, int[] edit) {
+        for (int i = R_GAMMA; i <= R_SCURVE; i++) store.put(lookKey(i), edit[i]);
     }
 
     static Write w(int id, int value) { return new Write(id, value); }

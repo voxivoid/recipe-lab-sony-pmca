@@ -99,8 +99,9 @@ class ParamsChipsTest {
     @Test void leftRightSkipHiddenChipsAndWrap() {
         int[] e = factoryRows();
         assertEquals(R_STYLE, nextChip(R_QUAL, +1, e));
-        assertEquals(R_DRO, nextChip(R_QUAL, -1, e));
-        assertEquals(R_QUAL, nextChip(R_DRO, +1, e));
+        assertEquals(R_GAMMA, nextChip(R_QUAL, -1, e), "GAMMA closes the strip; with it off the profile chips hide");
+        assertEquals(R_GAMMA, nextChip(R_DRO, +1, e));
+        assertEquals(R_QUAL, nextChip(R_GAMMA, +1, e));
         assertEquals(R_AB, nextChip(R_WBMODE, +1, e), "kelvin hidden in AWB");
         e[R_WBMODE] = WB_KELVIN;
         assertEquals(R_KELVIN, nextChip(R_WBMODE, +1, e));
@@ -116,7 +117,7 @@ class ParamsChipsTest {
         // row 0 is not in ORDER; it counts as position 0 (QUALITY), so RIGHT from it lands after QUALITY
         int[] e = factoryRows();
         assertEquals(R_STYLE, nextChip(R_RECIPE, +1, e));
-        assertEquals(R_DRO, nextChip(R_RECIPE, -1, e));
+        assertEquals(R_GAMMA, nextChip(R_RECIPE, -1, e));
     }
 
     @Test void downFromTheRecipeLineReturnsToTheLastChipIfStillVisible() {
@@ -156,5 +157,58 @@ class ParamsChipsTest {
         assertEquals("Lv2", fmt(R_DRO, 2, e));
         assertEquals("RAW+JPG", fmt(R_QUAL, Q_RAWJPG, e));
         assertEquals("?4", fmt(R_QUAL, 4, e));
+    }
+
+    // ------------------------------------------------------------ the picture profile rows
+    @Test void theProfileChipsShowOnlyWithAProfileAndTheirOwnOnlyWhenTheyDoSomething() {
+        int[] e = factoryRows();
+        assertTrue(rowVisible(R_GAMMA, e));
+        for (int r = R_GAMUT; r <= R_SCURVE; r++) assertFalse(rowVisible(r, e), ROW_NAME[r] + " with GAMMA off");
+        e[R_GAMMA] = IspProfiles.SLOG3;
+        for (int r = R_GAMUT; r <= R_SCURVE; r++) assertEquals(r != R_BRANGE && r != R_KSLOPE, rowVisible(r, e), ROW_NAME[r]);
+        e[R_BGAMMA] = 2;
+        assertTrue(rowVisible(R_BRANGE, e), "the range with black gamma");
+        e[R_KNEE] = 90;
+        assertTrue(rowVisible(R_KSLOPE, e), "the slope with a knee");
+        assertEquals(R_GAMUT, nextChip(R_GAMMA, +1, e));
+        assertEquals(R_QUAL, nextChip(R_SCURVE, +1, e));
+    }
+
+    @Test void theProfileChipsStepAndLabel() {
+        int[] e = factoryRows();
+        step(e, R_GAMMA, +1, Q_FINE);
+        assertEquals(IspProfiles.SLOG2, e[R_GAMMA]);
+        step(e, R_GAMMA, -1, Q_FINE); step(e, R_GAMMA, -1, Q_FINE);
+        assertEquals(IspProfiles.HLG, e[R_GAMMA], "a choice: wraps through Off");
+        assertEquals("HLG", fmt(R_GAMMA, e[R_GAMMA], e));
+        assertEquals(Lang.t("value_off"), fmt(R_GAMMA, IspProfiles.OFF, e));
+        assertEquals("S-Gamut3.Cine", fmt(R_GAMUT, IspProfiles.SGAMUT3_CINE, e));
+        assertEquals("Camera", fmt(R_GAMUT, IspProfiles.CAMERA, e));
+        assertEquals("Narrow", fmt(R_BRANGE, IspProfiles.NARROW, e));
+        assertEquals(Lang.t("value_off"), fmt(R_KNEE, IspProfiles.KNEE_OFF, e));
+        step(e, R_KNEE, +1, Q_FINE);
+        assertEquals(75, e[R_KNEE], "Off, then 75%");
+        assertEquals("75%", fmt(R_KNEE, e[R_KNEE], e));
+        e[R_KNEE] = 105; step(e, R_KNEE, +1, Q_FINE);
+        assertEquals(105, e[R_KNEE], "a number: clamps");
+        e[R_CSAT] = 32; step(e, R_CSAT, +1, Q_FINE);
+        assertEquals(32, e[R_CSAT]);
+        assertEquals("+5", fmt(R_SCURVE, 5, e));
+        assertEquals("-12", fmt(R_CSAT, -12, e));
+    }
+
+    @Test void anotherBodyShowsGammaOnlyToTurnAProfileOff() {
+        int[] e = factoryRows();
+        try {
+            Params.profiles = false;
+            assertFalse(rowVisible(R_GAMMA, e));
+            assertEquals(R_QUAL, nextChip(R_DRO, +1, e));
+            e[R_GAMMA] = IspProfiles.SLOG3;
+            assertTrue(rowVisible(R_GAMMA, e), "a profile recipe on another body: GAMMA can still go to off");
+        } finally { Params.profiles = true; }
+        assertTrue(IspProfiles.mayRun("ILCE-6000"));
+        assertTrue(IspProfiles.mayRun(null), "a body that does not say: the helper's own check decides");
+        assertFalse(IspProfiles.mayRun("ILCE-5100"));
+        assertFalse(IspProfiles.mayRun("NEX-6"));
     }
 }

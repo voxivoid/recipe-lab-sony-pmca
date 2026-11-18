@@ -39,6 +39,7 @@ UNITS=(
   src/com/voxivoid/recipelab/RecipeFormats.java
   src/com/voxivoid/recipelab/RecipeFormatV1.java
   src/com/voxivoid/recipelab/RecipeFormatV2.java
+  src/com/voxivoid/recipelab/RecipeFormatV3.java
   src/com/voxivoid/recipelab/RecipeShare.java
   src/com/voxivoid/recipelab/QrScan.java
   src/com/voxivoid/recipelab/ImageCanvas.java
