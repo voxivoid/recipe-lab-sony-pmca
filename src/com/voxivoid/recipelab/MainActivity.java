@@ -120,6 +120,11 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private int menuLevel = DevTools.LEVEL_APP, menuPage = PAGE_ROWS;   // which menu, and whether it shows rows or a read-only page
     private int menuSel = 0, settleIdx = DevTools.SETTLE_DEFAULT;   // menu: highlighted row · developer menu: chosen settle delay
     private int langChoice = Lang.AUTO;                         // the Language row: Lang.AUTO or a language
+    private int ispProfile = IspProfiles.OFF;                   // the Picture profile row (IspProfiles.*), applied again on every start
+    private int ispRunning = -1, ispQueued = -1, ispPolls;      // the profile the root helper is applying, the one asked for meanwhile
+    private boolean ispQuiet;                                   // the run started by opening the app: only a problem is said
+    private final Runnable ispApplySoon = new Runnable() { public void run() { ispApply(ispProfile, false); } };
+    private final Runnable ispPoll = new Runnable() { public void run() { ispCheck(); } };
     private static final int PAGE_ROWS = 0, PAGE_ABOUT = 1, PAGE_TRANSFER = 2;
     private TransferMode transfer;                              // Transfer to phone, while its page is open (null otherwise)
     private boolean transferSync;                               // the page was opened as Sync recipes: same link, its own words
@@ -182,6 +187,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         wheelGroup = Favorites.wheelGroup(prefs.getString("wheelGroup", null));
         settleIdx = DevTools.clampSettle(prefs.getInt("settle", DevTools.SETTLE_DEFAULT));
         langChoice = Lang.parseChoice(prefs.getString("language", null));
+        ispProfile = IspProfiles.parse(prefs.getString("ispProfile", null));
         panel = findViewById(R.id.panel);
         picker = (PickerView) findViewById(R.id.picker);
         chipScroll = (HorizontalScrollView) findViewById(R.id.chipscroll);
@@ -366,6 +372,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             showToast(Keys.notice(), 8000);
             prefs.edit().putBoolean("keysNoticeSeen", true).commit();
         }
+        if (ispProfile != IspProfiles.OFF) ispApply(ispProfile, true);   // RAM only: a power cycle forgot it
         if (Params.asksPictureProfileOff(cur)) openPrompt(P_PP, Params.PP_DEFAULT);   // every time: no recipe shows while it runs (#90)
     }
 
@@ -759,8 +766,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             Typeface[] faces = new Typeface[n];
             for (int i = 0; i < n; i++) {
                 labels[i] = app ? DevTools.appLabel(i) : DevTools.rowLabel(i, snapshotTaken, settleIdx);
-                details[i] = app ? DevTools.appDetail(i) : DevTools.rowDetail(i, snapshotTaken);
-                values[i] = app ? DevTools.appValue(i, overlay, langChoice) : DevTools.rowValue(i, settleIdx);
+                details[i] = app ? DevTools.appDetail(i, ispProfile) : DevTools.rowDetail(i, snapshotTaken);
+                values[i] = app ? DevTools.appValue(i, overlay, langChoice, ispProfile) : DevTools.rowValue(i, settleIdx);
             }
             if (app) faces[DevTools.APP_LANG] = UiFont.of(this, Lang.choiceScript(langChoice));   // 简体中文 in its own font, whatever the menu's
             boolean value = values[menuSel] != null;
@@ -793,7 +800,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
                 case DevTools.APP_READ_QR: closeMenu(); openScan(); break;
                 case DevTools.APP_TRANSFER: openTransfer(false); break;
                 case DevTools.APP_SYNC: openTransfer(true); break;
-                case DevTools.APP_PANEL: case DevTools.APP_LANG: stepMenuValue(+1); break;
+                case DevTools.APP_PANEL: case DevTools.APP_LANG: case DevTools.APP_PROFILE: stepMenuValue(+1); break;
                 case DevTools.APP_RESET: closeMenu(); askReset(); break;
                 case DevTools.APP_REPORT: closeMenu(); saveReport(); break;
                 case DevTools.APP_ABOUT: menuPage = PAGE_ABOUT; renderMenu(); break;
@@ -818,6 +825,11 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             langChoice = Lang.nextChoice(langChoice, dir);
             prefs.edit().putString("language", Lang.choiceCode(langChoice)).commit();
             applyLanguage();                                     // the menu redraws in it straight away, the panel under it too
+        } else if (menuLevel == DevTools.LEVEL_APP && menuSel == DevTools.APP_PROFILE) {
+            ispProfile = IspProfiles.next(ispProfile, dir);
+            prefs.edit().putString("ispProfile", IspProfiles.CODES[ispProfile]).commit();
+            handler.removeCallbacks(ispApplySoon);               // stepping through the list applies only where it stops
+            handler.postDelayed(ispApplySoon, ISP_SETTLE_MS);
         } else if (menuLevel == DevTools.LEVEL_DEV && menuSel == DevTools.ROW_SETTLE) {
             settleIdx = DevTools.nextSettle(settleIdx, dir);
             prefs.edit().putInt("settle", settleIdx).commit();
@@ -846,6 +858,73 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
                 return true;
         }
         return true;
+    }
+
+    // ------------------------------------------------------------ Picture profile (app menu): the root helper writes the ISP
+    private static final int ISP_SETTLE_MS = 700, ISP_POLL_MS = 250, ISP_POLLS = 20;
+
+    /** the folder the helper reads its profile from and writes its log and state into */
+    private File ispDir() { return new File(getFilesDir(), "isp"); }
+
+    /**
+     * Applies {@code p} (Off restores the camera's setters) through the root helper, then reads its log until it
+     * answers. One run at a time: a profile asked for meanwhile runs after it. {@code quiet}: only a problem is said.
+     */
+    private void ispApply(int p, boolean quiet) {
+        if (ispRunning >= 0) { ispQueued = p; return; }
+        File dir = ispDir(), log = new File(dir, "log");
+        String helper = getApplicationInfo().nativeLibraryDir + "/librlisp.so";
+        String cmd = IspProfiles.command(helper, p == IspProfiles.OFF ? "off" : "apply", dir.getPath());
+        try {
+            if (cmd == null) throw new IllegalStateException("command too long");
+            if (!dir.isDirectory() && !dir.mkdirs()) throw new IllegalStateException("cannot create " + dir);
+            if (p != IspProfiles.OFF) {
+                FileOutputStream o = new FileOutputStream(new File(dir, "profile.bin"));
+                try { o.write(IspProfiles.encode(p)); } finally { o.close(); }
+            }
+            log.delete();
+            NativeShell.exec(cmd);
+        } catch (Throwable t) {
+            log(CardLog.FAIL, "isp: " + t);
+            showToast(Lang.t("isp_error", String.valueOf(t.getMessage())), 0);
+            return;
+        }
+        ispRunning = p; ispQuiet = quiet; ispPolls = 0;
+        handler.postDelayed(ispPoll, ISP_POLL_MS);
+    }
+
+    /** one look at the helper's log: its answer, or another look a little later, or no answer at all */
+    private void ispCheck() {
+        String text = null;
+        try { text = readSmall(new File(ispDir(), "log")); } catch (Throwable t) {}
+        int r = IspProfiles.result(text);
+        if (r == IspProfiles.R_PENDING && ++ispPolls < ISP_POLLS) { handler.postDelayed(ispPoll, ISP_POLL_MS); return; }
+        int p = ispRunning;
+        ispRunning = -1;
+        log(r == IspProfiles.R_OK || r == IspProfiles.R_OFF ? CardLog.INFO : CardLog.FAIL,
+                "isp " + IspProfiles.CODES[p] + ": " + (text == null ? "no log" : text.trim().replace('\n', ' ')));
+        String msg = null;
+        switch (r) {
+            case IspProfiles.R_OK: if (!ispQuiet) msg = Lang.t("isp_applied", IspProfiles.fullName(p)); break;
+            case IspProfiles.R_OFF: if (!ispQuiet) msg = Lang.t("isp_off_done"); break;
+            case IspProfiles.R_REFUSED: msg = Lang.t("isp_refused"); break;
+            case IspProfiles.R_MISMATCH: msg = Lang.t("isp_mismatch"); break;
+            case IspProfiles.R_PENDING: msg = Lang.t("isp_no_root"); break;
+            default: msg = Lang.t("isp_error", String.valueOf(IspProfiles.resultLine(text)));
+        }
+        if (msg != null) showToast(msg, 5000);
+        if (ispQueued >= 0) { int q = ispQueued; ispQueued = -1; if (q != p) ispApply(q, false); }
+    }
+
+    /** a short text file the app may read, whole; null when it is not there */
+    private static String readSmall(File f) throws java.io.IOException {
+        if (!f.exists()) return null;
+        FileInputStream in = new FileInputStream(f);
+        try {
+            byte[] b = new byte[4096]; int n = 0, r;
+            while (n < b.length && (r = in.read(b, n, b.length - n)) > 0) n += r;
+            return new String(b, 0, n, "UTF-8");
+        } finally { in.close(); }
     }
 
     // ------------------------------------------------------------ Transfer to phone (app menu): a page that serves the card over Wi-Fi

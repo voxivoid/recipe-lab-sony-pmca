@@ -24,13 +24,13 @@ final class DevTools {
     static final int LEVEL_APP = 0, LEVEL_DEV = 1;
 
     /** app menu rows, in display order */
-    static final int APP_BROWSE = 0, APP_NEW = 1, APP_READ_QR = 2, APP_TRANSFER = 3, APP_SYNC = 4, APP_PANEL = 5, APP_LANG = 6,
-            APP_RESET = 7, APP_REPORT = 8, APP_ABOUT = 9, APP_DEV = 10, APP_ROWS = 11;
+    static final int APP_BROWSE = 0, APP_NEW = 1, APP_READ_QR = 2, APP_TRANSFER = 3, APP_SYNC = 4, APP_PROFILE = 5, APP_PANEL = 6,
+            APP_LANG = 7, APP_RESET = 8, APP_REPORT = 9, APP_ABOUT = 10, APP_DEV = 11, APP_ROWS = 12;
 
     /** the icons the menus draw beside their rows (MenuView draws them: the camera font has no symbol glyphs) */
     static final int IC_BROWSE = 0, IC_NEW = 1, IC_PANEL = 2, IC_LANGUAGE = 3, IC_RESET = 4, IC_ABOUT = 5, IC_DEV = 6,
-            IC_SNAPSHOT = 7, IC_LOCK = 8, IC_SAMPLES = 9, IC_CLOCK = 10, IC_KEYS = 11, IC_REPORT = 12, IC_TRANSFER = 13, IC_SYNC = 14, IC_QR = 15;
-    private static final int[] APP_ICONS = { IC_BROWSE, IC_NEW, IC_QR, IC_TRANSFER, IC_SYNC, IC_PANEL, IC_LANGUAGE, IC_RESET, IC_REPORT, IC_ABOUT, IC_DEV };
+            IC_SNAPSHOT = 7, IC_LOCK = 8, IC_SAMPLES = 9, IC_CLOCK = 10, IC_KEYS = 11, IC_REPORT = 12, IC_TRANSFER = 13, IC_SYNC = 14, IC_QR = 15, IC_PROFILE = 16;
+    private static final int[] APP_ICONS = { IC_BROWSE, IC_NEW, IC_QR, IC_TRANSFER, IC_SYNC, IC_PROFILE, IC_PANEL, IC_LANGUAGE, IC_RESET, IC_REPORT, IC_ABOUT, IC_DEV };
     private static final int[] DEV_ICONS = { IC_SNAPSHOT, IC_LOCK, IC_SAMPLES, IC_CLOCK, IC_KEYS };
 
     /** the icon of each row of a level, in row order */
@@ -70,6 +70,7 @@ final class DevTools {
             case APP_READ_QR: return Lang.t("menu_read_qr");
             case APP_TRANSFER: return Lang.t("menu_transfer");
             case APP_SYNC: return Lang.t("menu_sync");
+            case APP_PROFILE: return Lang.t("menu_profile");
             case APP_PANEL: return Lang.t("menu_panel");
             case APP_LANG: return Lang.t("menu_language");
             case APP_RESET: return Lang.t("menu_reset");
@@ -80,6 +81,11 @@ final class DevTools {
         }
     }
 
+    /** the line under an app menu row's title, the Picture profile row naming the profile's curve and gamut when one is on */
+    static String appDetail(int row, int profile) {
+        return row == APP_PROFILE && profile != IspProfiles.OFF ? IspProfiles.fullName(profile) : appDetail(row);
+    }
+
     /** the line under an app menu row's title */
     static String appDetail(int row) {
         switch (row) {
@@ -88,6 +94,7 @@ final class DevTools {
             case APP_READ_QR: return Lang.t("menu_read_qr_detail");
             case APP_TRANSFER: return Lang.t("menu_transfer_detail");
             case APP_SYNC: return Lang.t("menu_sync_detail");
+            case APP_PROFILE: return Lang.t("menu_profile_detail");
             case APP_PANEL: return Lang.t("menu_panel_detail");
             case APP_LANG: return Lang.t("menu_language_detail");
             case APP_RESET: return Lang.t("menu_reset_detail");
@@ -103,8 +110,12 @@ final class DevTools {
      * none. Panel visibility shows the panel state: Full, Label (the pill) or Hidden. Language shows the choice
      * ({@link Lang#choiceLabel}): Auto, or a language by its own name.
      */
-    static String appValue(int row, int overlay, int langChoice) {
+    static String appValue(int row, int overlay, int langChoice) { return appValue(row, overlay, langChoice, IspProfiles.OFF); }
+
+    /** the same, with the Picture profile row showing {@code profile} (IspProfiles.*) */
+    static String appValue(int row, int overlay, int langChoice, int profile) {
         switch (row) {
+            case APP_PROFILE: return IspProfiles.label(profile);
             case APP_PANEL: return panelLabel(overlay);
             case APP_LANG: return Lang.choiceLabel(langChoice);
             default: return null;
