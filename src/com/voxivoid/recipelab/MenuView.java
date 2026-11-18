@@ -391,6 +391,17 @@ public class MenuView extends View {
                 box.set(cx - m / 2, cy - m / 2, cx + m / 2, cy + m / 2); c.drawRect(box, glyph);
                 return;
             }
+            case DevTools.IC_PROFILE: {                             // a tone curve in its frame: a log shape rising fast, then flattening
+                box.set(cx - s, cy - s, cx + s, cy + s);
+                c.drawRect(box, glyph);
+                float px = cx - s, py = cy + s;
+                for (int k = 1; k <= 8; k++) {
+                    float t = k / 8f, x = cx - s + 2 * s * t, y = cy + s - 2 * s * 0.85f * (float) Math.sqrt(t);
+                    c.drawLine(px, py, x, y, glyph);
+                    px = x; py = y;
+                }
+                return;
+            }
             case DevTools.IC_KEYS:                                  // a keyboard: case, two rows of keys, space bar
                 box.set(cx - s, cy - s * 0.65f, cx + s, cy + s * 0.65f);
                 c.drawRoundRect(box, 2 * d, 2 * d, glyph);
