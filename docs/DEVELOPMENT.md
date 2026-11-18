@@ -33,7 +33,8 @@ src/com/voxivoid/recipelab/
   MainActivity.java            UI state, key handling, the camera (CameraEx via reflection), store + sync
   Params.java                  the parameter rows: slot ids, store encodings, preview parameters, chip
                                navigation, HUD strings — pure functions, no Android, covered by test/
-  Recipes.java                 the 77-entry table (the factory look, FACTORY, first in Sony, then the 76 others), brands,
+  Recipes.java                 the 83-entry table (the factory look, FACTORY, first in Sony, then the 76 others, then the
+                               six picture profiles in Profiles), brands,
                                GROUP_START / GROUP_COUNT, list navigation
   Favorites.java               the favorites list: stored by name in the app's preferences, and how the browser
                                walks the All, Favorites and Custom groups, and the wheel's loop — pure functions, no
@@ -137,7 +138,6 @@ down or the wheel move, the centre button runs a row, a short MENU goes back a l
 | **Browse recipes** | the brand list, as Fn opens it |
 | **New recipe** | the name editor, then the camera's current *stored* settings become a custom recipe ([Custom recipes](#custom-recipes)) |
 | **Transfer to phone** | a page of the menu that starts the camera's hotspot and serves the memory card for Recipe Lab Studio until MENU — [Transfer to phone](#transfer-to-phone) |
-| **Picture profile** | a value — *Off* and the six `IspProfiles` profiles — stepped the same way, kept under `ispProfile` by code (`IspProfiles.CODES`). It is applied 700 ms after the last step, and again by every `onResume`. See [Picture profiles](#picture-profiles) |
 | **Panel visibility** | a value — *Full* / *No keys* / *Label* / *Hidden* (`DevTools.PANELS`) — that left / right step through in place, wrapping, with the menu left open; centre steps forward. The same states trash cycles. *No keys* (`OV_QUIET`) is the full panel, chips and all (`Params.panelUp`), without the `HintBar` legend; closing the browser returns to it if it was left on it |
 | **Language** | a value — *Auto* / *English* / *简体中文* / *繁體中文* / *日本語* / *한국어* / *Tiếng Việt* — stepped the same way, kept in the app's preferences under `language` by code (`Lang.CODES`). The app redraws in it at once. *Auto* follows the camera's locale (`Lang.fromLocale`); each language's name is drawn in its own script and font. See [LOCALIZATION.md](LOCALIZATION.md) |
 | **Reset settings** | asks `DevTools.resetTitle()` (Cancel highlighted), then stages `Recipes.FACTORY` and stores it (`writeAll`, so the quality prompt still asks when it must). The same look as **Factory**, the first Sony recipe, which is in the list like the others (it was hidden once, and users went looking for it) |
@@ -154,7 +154,7 @@ The **developer menu** holds the tools that are not part of using the app:
 |---|---|
 | **Settings snapshot** / **Settings diff** | the snapshot / diff tool below; the row's name says which half is next |
 | **Read-only check — 26 slots** | the read-only check below: does this body flag any slot a recipe writes |
-| **Shoot samples — 77 recipes** | the sample run below |
+| **Shoot samples — 83 recipes** | the sample run below |
 | **Settle delay** | a value — the delay the sample run waits after applying a recipe; left / right step through 0.8 / 1.2 / 2.0 / 3.0 / 5.0 s in place (centre steps forward), kept in the app's preferences |
 | **Key logger** | every key event on screen, newest first, and appended to `RECIPLAB/LOGS/KEYS.TXT` on the card (`keys.txt` in `getFilesDir()` without one): scan code, down / up, repeat count, Sony's logic code; the header is the model, the platform and what the probe found. Nothing else happens while it runs; **hold MENU** leaves |
 
@@ -240,7 +240,7 @@ One frame per recipe, in table order — the capture half of issue #17. The run 
    press / release, automated
 4. next recipe, until the table ends
 
-While it runs, a sticky line counts the frames (`Shooting 12 / 77 · Velvia — MENU stops`) and **every key is
+While it runs, a sticky line counts the frames (`Shooting 12 / 83 · Velvia — MENU stops`) and **every key is
 swallowed** so nothing walks the table underneath it; **MENU** stops the run. The run also stops in `onPause` — it
 cannot outlive the camera it shoots with. When it ends, the recipe the user was on is staged again.
 
@@ -248,7 +248,7 @@ The frames are identified by **order**: the camera names the files, and the run 
 `samples.txt` in `getFilesDir()`, one line per frame —
 
 ```
-# recipe-lab samples  ·  77 frames in recipe order  ·  settle 1200 ms  ·  frame|recipe|brand|values
+# recipe-lab samples  ·  83 frames in recipe order  ·  settle 1200 ms  ·  frame|recipe|brand|values
 01|FACTORY (ST)|Sony|Standard  0/0
 02|Sony PT (portrait)|Sony|Portrait  0/0
 ```
@@ -261,7 +261,8 @@ neither a build nor `tools/test.sh` can say anything about them.
 
 ## Picture profiles
 
-A6000 FW 3.21 only, RAM only. The look comes from the ISP's SRAM, not from the settings store, so this is not a recipe slot:
+A6000 FW 3.21 only, RAM only. A picture profile is part of a recipe — the GAMMA chip and the nine after it — but its
+look goes to the ISP's SRAM, not to the settings store:
 
 | what | where | how |
 |---|---|---|
@@ -272,10 +273,40 @@ A6000 FW 3.21 only, RAM only. The look comes from the ISP's SRAM, not from the s
 
 Evidence and the wider register map are in the a6000-qemu research repo (`docs/A6000_ISP_REGISTER_MAP.md`).
 
+**The look** (`IspProfiles.Look`, one chip each, all visible only while GAMMA is not *Off*):
+
+| chip | values | what it does to the tables |
+|---|---|---|
+| GAMMA | *Off*, S-Log2, S-Log3, LogC3, ITU709, HLG | the base curve. *Off* is no profile: the helper's `off`, the other chips hidden |
+| COLOR | Camera (BT.709, no change), S-Gamut3 (= S-Gamut), S-Gamut3.Cine, BT.2020, ARRI WG3 | the gamut matrix `inv(M_target) · M_709` |
+| BLACK | -15 .. +15 | black level: 3 code values per step at black, fading to none at white |
+| B.GAMMA, B.RANGE | -7 .. +7; Narrow / Middle / Wide (15 / 25 / 40% of the output) | black gamma: `top · (y/top)^e` under the range, `e = 2^(-0.6·level/7)`. B.RANGE shows only with B.GAMMA ≠ 0 |
+| KNEE, SLOPE | *Off*, 75 .. 105%; -5 .. +5 | above the point, `kp + (y - kp) · 0.25 · 2^(slope/5)`, on the curve's unclipped values (BT.709 and HLG go on rising past 1 for it). SLOPE shows only with a knee |
+| C.SAT | -32 .. +32 | `(1 - s)·luma + s·I`, `s = 1 + sat/32`, BT.709 luma: -32 is black and white |
+| PHASE | -7 .. +7 | a rotation of every hue about the grey axis, 3° a step |
+| S-CURVE | -7 .. +7 | contrast about middle grey: a power curve each side of it with slope `2^(0.6·c/7)` at grey |
+
+The order is a Sony Picture Profile's: knee, black gamma, S-curve, black level on the curve; then gamut, phase,
+saturation in the matrix. Every adjustment keeps 0 and 1023 where they are and grey stays grey, so a neutral look is the
+published curve exactly (`IspProfilesTest` holds the reference words). A range with no black gamma or a slope with no
+knee is not part of the look (`Look.normal`): it is neither dirty nor saved.
+
+**How the app drives it.** The profile rows are rows like the others (`Params.R_GAMMA .. R_SCURVE`), with `ROW_ID` `ISP`:
+no store slot, so `Params.writes` never has them, but they are dirty, staged and saved like any row. Their `cur` is the
+look of the recipe last stored, which the app keeps in its preferences (`ispLook`, `Params.lookText`). The staged look
+(`edit`) goes to the image processor like a live preview: `applyPreview` ends with `ispSync`, which runs the helper
+700 ms after the rows stop changing, and only when the look differs from what the processor holds. A successful write
+(`writeAll`) makes the staged look the stored one (`storeLook`); leaving the app (`onPause`) puts the stored one back. On
+`onResume` the processor may have been reset by a power cycle, so a stored look is applied again; with none stored the
+helper is not run at all. The built-in Profiles group holds the six published pairings, Standard, auto WB, DRO off.
+On a body whose `model.name` is not `ILCE-6000` (`IspProfiles.mayRun`, read once into `Params.profiles`) the GAMMA chip
+is hidden unless a profile is staged, so it can still be turned off; the Profiles group stays listed, and the helper
+refuses there with a toast. A body that does not report its model keeps the chip, and the helper's firmware check decides.
+
 **The pieces:**
 
-- `IspProfiles` (camera-free, tested) builds the 96 gamma words and the Q14 gamut matrix `inv(M_target) · M_709` for each
-  profile, and writes them to `profile.bin`. The file is `RLPP`, version 1, flags, 96 words and 9 words, all LE32.
+- `IspProfiles` (camera-free, tested) builds the 96 gamma words and the Q14 matrix of a look, and writes them to
+  `profile.bin`. The file is `RLPP`, version 1, flags, 96 words and 9 words, all LE32.
   - Curves follow the published formulas: S-Log2 in legal range (grey 347), S-Log3 and LogC3 EI 800 as code values
     (grey 420 and 400), and BT.709 clipped at 1 (grey 418).
   - HLG follows BT.2100 with the BT.2408 scale (100% white at 75%, grey 387).
@@ -294,8 +325,10 @@ Evidence and the wider register map are in the a6000-qemu research repo (`docs/A
   and takes 255 characters at most. That shell lives outside Android's root, so `/x` in the app is `/android/x` there
   (`IspProfiles.command`).
 - `MainActivity.ispApply` writes the file, deletes the old log, runs the helper and polls the log every 250 ms for 5 s
-  (`IspProfiles.result`). It runs one at a time, and a step taken meanwhile runs next. Opening the app is quiet: only a
-  problem is said. Every run goes to `LOG.TXT` with the helper's log.
+  (`IspProfiles.result`). It runs one at a time, and a change made meanwhile runs next. Only a problem is said (a toast);
+  every run goes to `LOG.TXT` with the look and the helper's log.
+- A profile recipe cannot be shared as a QR code: share code version 1 has no room for it (`RecipeShare.encode` gives
+  none, Share says so). Nor is it in `LINKS.TXT`.
 
 **By hand** (telnet, root): `librlisp.so status <dir>`, then `cat <dir>/log`. A battery pull is the full undo.
 
@@ -344,12 +377,13 @@ left empty, loops through all of them.
 ignored), English always, `.YML`. Anything else YAML allows (lists, nesting) and any line that is not `key: value` (an
 old `key = value` file included) skips the file with its line number. The name is always written quoted, so other YAML
 tools read it as text; note that strict YAML 1.1 tools read `dro: off` as false — the app reads every value as text.
-Format 2 (`RecipeFormatV2`) is what the app writes: format 1's keys (below) plus `family`. Format 1 (`RecipeFormatV1`)
-files, written by v1.11.1 and earlier, are still read.
+Format 2 (`RecipeFormatV2`) is what the app writes for a recipe without a picture profile: format 1's keys (below)
+plus `family`. A recipe with one is written in format 3 (`RecipeFormatV3`): format 2's keys plus the profile's
+(`RecipeFormats.writerFor`). Format 1 (`RecipeFormatV1`) files, written by v1.11.1 and earlier, are still read.
 
 | key | values | missing → |
 |---|---|---|
-| `format` | the reader to use; this build writes `2` and reads `1` and `2` | 1 |
+| `format` | the reader to use; this build writes `2`, or `3` for a recipe with a picture profile, and reads `1` to `3` | 1 |
 | `family` | format 2 only, required: the cameras the values are for. `sony-creative-style` — every body Recipe Lab runs on (Creative Style, Picture Effect, DRO, white balance fine tune). Another family's file (a Canon's, from a later Recipe Lab Studio) is skipped, *made for other cameras* — never read as Sony's | format 2: the file is skipped |
 | `name` | 1–24 of `A–Z a–z 0–9` and ` -.'()&+` — what the name editor can type and every bundled font can draw | the file name |
 | `made-on` | the model it was saved on (`model.name`), informational — setting ids differ across bodies | — |
@@ -361,6 +395,13 @@ files, written by v1.11.1 and earlier, are still read.
 | `amber-blue`, `green-magenta` | -7 .. +7, amber / green positive | 0 |
 | `exposure` | -5.0 .. +5.0 in thirds, as the chip shows it: `+0.7`, `-1.3`, `0` | 0 |
 | `dro` | `off`, `auto`, `1` .. `5` | auto |
+| `gamma` | format 3 only: `off`, `s-log2`, `s-log3`, `logc3`, `itu709`, `hlg`. `off` is a recipe without a profile, and the keys below are not read | off |
+| `color-mode` | `camera`, `s-gamut3`, `s-gamut3-cine`, `bt2020`, `awg3` | camera |
+| `black-level` | -15 .. +15 | 0 |
+| `black-gamma`, `black-gamma-range` | -7 .. +7; `narrow`, `middle`, `wide` | 0; middle |
+| `knee`, `knee-slope` | `off` or 75 .. 105 (percent); -5 .. +5 | off; 0 |
+| `color-saturation` | -32 .. +32 | 0 |
+| `color-phase`, `s-curve` | -7 .. +7 | 0 |
 
 Quality is not part of a recipe: it follows the Factory base like every other recipe.
 
@@ -381,6 +422,9 @@ app writes with the newest (`RecipeFormats.current()`). The YAML envelope every 
   family line in a format 1 file would let a Canon recipe be read as Sony's on v1.11.1. Those apps skip a format 2
   file instead. The cost: a card from a newer camera, or recipes Studio sends, are not read by v1.11.1 or earlier —
   protocol 5 is how Studio knows a camera reads them.
+- Format 3 exists for the picture profile: an older app, or a Studio that predates it, would read a profile recipe's
+  Creative Style keys and drop the rest — another look under the same name. They skip a format 3 file instead, and a
+  recipe without a profile stays format 2 so they keep reading it.
 
 **Untrusted input.** A file may come from anyone. Every value is checked against what the store takes
 (`CustomRecipes.problem`, the same ranges as the chips); one bad value skips the file with the reason, nothing is
@@ -791,7 +835,7 @@ against a SHA-256 pinned in the script (`JUNIT_JAR=<path>` points it at a copy w
 
 | | |
 |---|---|
-| `RecipesTest` | the table itself — 77 entries (76 listed + the factory look, which navigation skips), group order, every value inside its row's range, kelvin in whole hundreds, sub-parameters that exist for the effect; labels, `summary()`, wrap-around navigation |
+| `RecipesTest` | the table itself — 83 entries (the factory look, the 76 film looks and the six picture profiles), group order, every value inside its row's range, kelvin in whole hundreds, sub-parameters that exist for the effect; labels, `summary()`, wrap-around navigation |
 | `ParamsCodecTest` | how the store encodes each row (DRO bytes, any Picture Profile reading as on, magenta-positive G-M, the quality pair, signed vs unsigned slots) and how it reads back |
 | `ParamsWritesTest` | which bytes ENTER writes for a recipe — golden lists for a few, and every recipe stored over a factory camera, then on top of each other, read back through the same decoder |
 | `ParamsPreviewTest` | the `Camera.Parameters` the live preview sets, recipe by recipe |

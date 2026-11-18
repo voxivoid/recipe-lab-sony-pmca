@@ -27,54 +27,173 @@ class IspProfilesTest {
         for (int i = 1; i < 96; i++) assertTrue(IspProfiles.KNOTS[i] > IspProfiles.KNOTS[i - 1]);
     }
 
+    // the six built-in profiles: a curve and a colour mode, no adjustment
+    static final IspProfiles.Look P_SLOG2 = new IspProfiles.Look(IspProfiles.SLOG2, IspProfiles.SGAMUT3),
+            P_SLOG3_CINE = new IspProfiles.Look(IspProfiles.SLOG3, IspProfiles.SGAMUT3_CINE),
+            P_SLOG3 = new IspProfiles.Look(IspProfiles.SLOG3, IspProfiles.SGAMUT3),
+            P_ITU709 = new IspProfiles.Look(IspProfiles.ITU709, IspProfiles.CAMERA),
+            P_HLG = new IspProfiles.Look(IspProfiles.HLG, IspProfiles.BT2020),
+            P_LOGC3 = new IspProfiles.Look(IspProfiles.LOGC3, IspProfiles.AWG3);
+
+    /** a look with one adjustment set: the curve and gamut of {@code base}, everything else neutral but {@code f} */
+    static IspProfiles.Look with(IspProfiles.Look b, int black, int bg, int range, int knee, int slope, int sat, int phase, int con) {
+        return new IspProfiles.Look(b.curve, b.gamut, black, bg, range, knee, slope, sat, phase, con);
+    }
+
     @Test void gammaMatchesTheReferenceImplementation() {
-        assertArrayEquals(SLOG2, IspProfiles.gamma(IspProfiles.SLOG2));
-        assertArrayEquals(SLOG3, IspProfiles.gamma(IspProfiles.SLOG3));
-        assertArrayEquals(SLOG3, IspProfiles.gamma(IspProfiles.SLOG3_CINE), "one curve, two gamuts");
-        assertArrayEquals(LOGC3, IspProfiles.gamma(IspProfiles.LOGC3));
-        assertArrayEquals(ITU709, IspProfiles.gamma(IspProfiles.ITU709));
-        assertArrayEquals(HLG, IspProfiles.gamma(IspProfiles.HLG));
-        assertNull(IspProfiles.gamma(IspProfiles.OFF));
+        assertArrayEquals(SLOG2, IspProfiles.gamma(P_SLOG2));
+        assertArrayEquals(SLOG3, IspProfiles.gamma(P_SLOG3));
+        assertArrayEquals(SLOG3, IspProfiles.gamma(P_SLOG3_CINE), "one curve, two gamuts");
+        assertArrayEquals(LOGC3, IspProfiles.gamma(P_LOGC3));
+        assertArrayEquals(ITU709, IspProfiles.gamma(P_ITU709));
+        assertArrayEquals(HLG, IspProfiles.gamma(P_HLG));
+        assertNull(IspProfiles.gamma(null));
     }
 
     @Test void middleGreyLandsWhereEachSpecPutsIt() {
         int grey = 34;                                             // knot 76 = 18% grey
         assertEquals(76, IspProfiles.KNOTS[grey]);
-        assertEquals(347, IspProfiles.gamma(IspProfiles.SLOG2)[grey], "S-Log2: 32% IRE = 347");
-        assertEquals(420, IspProfiles.gamma(IspProfiles.SLOG3)[grey], "S-Log3: code 420");
-        assertEquals(400, IspProfiles.gamma(IspProfiles.LOGC3)[grey], "LogC3 EI800: code 400");
-        assertEquals(418, IspProfiles.gamma(IspProfiles.ITU709)[grey], "BT.709: 40.9%");
-        assertEquals(387, IspProfiles.gamma(IspProfiles.HLG)[grey], "HLG: ~38% (BT.2408)");
-    }
-
-    @Test void everyCurveIsMonotoneAndTenBit() {
-        for (int p = 1; p < IspProfiles.COUNT; p++) {
-            int[] g = IspProfiles.gamma(p);
-            for (int i = 0; i < 96; i++) {
-                assertTrue(g[i] >= 0 && g[i] <= 1023, "profile " + p);
-                if (i > 0) assertTrue(g[i] >= g[i - 1], "profile " + p + " knot " + i);
-            }
-        }
+        assertEquals(347, IspProfiles.gamma(P_SLOG2)[grey], "S-Log2: 32% IRE = 347");
+        assertEquals(420, IspProfiles.gamma(P_SLOG3)[grey], "S-Log3: code 420");
+        assertEquals(400, IspProfiles.gamma(P_LOGC3)[grey], "LogC3 EI800: code 400");
+        assertEquals(418, IspProfiles.gamma(P_ITU709)[grey], "BT.709: 40.9%");
+        assertEquals(387, IspProfiles.gamma(P_HLG)[grey], "HLG: ~38% (BT.2408)");
     }
 
     @Test void gamutMatricesMatchTheReference() {
-        assertArrayEquals(new int[] { 9274, 5616, 1494, 1261, 13092, 2031, 366, 1779, 14239 }, IspProfiles.gamutQ14(IspProfiles.SLOG3));
-        assertArrayEquals(IspProfiles.gamutQ14(IspProfiles.SLOG3), IspProfiles.gamutQ14(IspProfiles.SLOG2), "S-Gamut = S-Gamut3 primaries");
-        assertArrayEquals(new int[] { 10579, 4245, 1560, 1434, 12447, 2503, 606, 2118, 13660 }, IspProfiles.gamutQ14(IspProfiles.SLOG3_CINE));
-        assertArrayEquals(new int[] { 10279, 5395, 710, 1132, 15066, 186, 269, 1442, 14673 }, IspProfiles.gamutQ14(IspProfiles.HLG));
-        assertArrayEquals(new int[] { 10343, 4437, 1604, 603, 12993, 2788, 285, 2438, 13661 }, IspProfiles.gamutQ14(IspProfiles.LOGC3));
-        assertArrayEquals(new int[] { 16384, 0, 0, 0, 16384, 0, 0, 0, 16384 }, IspProfiles.gamutQ14(IspProfiles.ITU709), "709 keeps the camera's colour");
+        assertArrayEquals(new int[] { 9274, 5616, 1494, 1261, 13092, 2031, 366, 1779, 14239 }, IspProfiles.matrixQ14(P_SLOG3));
+        assertArrayEquals(IspProfiles.matrixQ14(P_SLOG3), IspProfiles.matrixQ14(P_SLOG2), "S-Gamut = S-Gamut3 primaries");
+        assertArrayEquals(new int[] { 10579, 4245, 1560, 1434, 12447, 2503, 606, 2118, 13660 }, IspProfiles.matrixQ14(P_SLOG3_CINE));
+        assertArrayEquals(new int[] { 10279, 5395, 710, 1132, 15066, 186, 269, 1442, 14673 }, IspProfiles.matrixQ14(P_HLG));
+        assertArrayEquals(new int[] { 10343, 4437, 1604, 603, 12993, 2788, 285, 2438, 13661 }, IspProfiles.matrixQ14(P_LOGC3));
+        assertArrayEquals(new int[] { 16384, 0, 0, 0, 16384, 0, 0, 0, 16384 }, IspProfiles.matrixQ14(P_ITU709), "the camera's colour, untouched");
     }
 
-    @Test void everyGamutKeepsWhite() {
-        for (int p = 1; p < IspProfiles.COUNT; p++) {
-            int[] q = IspProfiles.gamutQ14(p);
-            for (int r = 0; r < 3; r++) assertEquals(16384, q[r * 3] + q[r * 3 + 1] + q[r * 3 + 2], "profile " + p + " row " + r);
+    // ------------------------------------------------------------ the adjustments
+    @Test void theKneeBendsOnlyAboveItsPoint() {
+        int[] base = IspProfiles.gamma(P_ITU709), knee = IspProfiles.gamma(with(P_ITU709, 0, 0, 1, 90, 0, 0, 0, 0));
+        int kp = (int) Math.round(0.90 * 1023);
+        boolean bent = false;
+        for (int i = 0; i < 96; i++) {
+            if (base[i] <= kp) assertEquals(base[i], knee[i], "below the point: knot " + i);
+            else { assertTrue(knee[i] <= base[i], "above: knot " + i); bent |= knee[i] < base[i]; }
+        }
+        assertTrue(bent);
+        assertTrue(knee[73] < 1023, "a 709 highlight that clipped now rolls off");
+        int[] steep = IspProfiles.gamma(with(P_ITU709, 0, 0, 1, 90, IspProfiles.SLOPE_MAX, 0, 0, 0));
+        int[] flat = IspProfiles.gamma(with(P_ITU709, 0, 0, 1, 90, -IspProfiles.SLOPE_MAX, 0, 0, 0));
+        assertTrue(steep[72] > knee[72] && knee[72] > flat[72], "slope +5 keeps more of the highlight than -5");
+    }
+
+    @Test void blackGammaReshapesOnlyItsRange() {
+        int[] base = IspProfiles.gamma(P_SLOG3);
+        for (int range = 0; range < 3; range++) {
+            int[] up = IspProfiles.gamma(with(P_SLOG3, 0, 7, range, IspProfiles.KNEE_OFF, 0, 0, 0, 0));
+            int[] down = IspProfiles.gamma(with(P_SLOG3, 0, -7, range, IspProfiles.KNEE_OFF, 0, 0, 0, 0));
+            double top = IspProfiles.RANGE_TOP[range] * 1023;
+            for (int i = 0; i < 96; i++) {
+                if (base[i] >= top) { assertEquals(base[i], up[i], "above the range: knot " + i); assertEquals(base[i], down[i]); }
+                else { assertTrue(up[i] >= base[i]); assertTrue(down[i] <= base[i]); }
+            }
+            assertTrue(up[0] > base[0] && down[0] < base[0], "range " + range);
         }
     }
 
+    @Test void theSCurvePivotsOnGrey() {
+        int[] base = IspProfiles.gamma(P_ITU709), more = IspProfiles.gamma(with(P_ITU709, 0, 0, 1, IspProfiles.KNEE_OFF, 0, 0, 0, 7)),
+                less = IspProfiles.gamma(with(P_ITU709, 0, 0, 1, IspProfiles.KNEE_OFF, 0, 0, 0, -7));
+        assertEquals(base[34], more[34], 1, "grey stays");
+        assertEquals(base[34], less[34], 1);
+        assertTrue(more[10] < base[10] && less[10] > base[10], "shadows: deeper with more contrast");
+        assertTrue(more[60] > base[60] && less[60] < base[60], "highlights: brighter with more contrast");
+    }
+
+    @Test void blackLevelMovesBlackAndLeavesWhite() {
+        int[] base = IspProfiles.gamma(P_SLOG2), up = IspProfiles.gamma(with(P_SLOG2, 15, 0, 1, IspProfiles.KNEE_OFF, 0, 0, 0, 0)),
+                down = IspProfiles.gamma(with(P_SLOG2, -15, 0, 1, IspProfiles.KNEE_OFF, 0, 0, 0, 0));
+        double shift = 15 * IspProfiles.BLACK_STEP * (1 - base[0] / 1023.0);
+        assertEquals(base[0] + shift, up[0], 1);
+        assertEquals(base[0] - shift, down[0], 1);
+        assertTrue(Math.abs(up[95] - base[95]) < Math.abs(up[0] - base[0]), "less at the top than at black");
+    }
+
+    @Test void saturationAndPhaseKeepGrey() {
+        for (int g = 0; g < IspProfiles.GAMUTS; g++)
+            for (int sat : new int[] { -32, -10, 0, 17, 32 })
+                for (int ph : new int[] { -7, 0, 3, 7 }) {
+                    int[] q = IspProfiles.matrixQ14(new IspProfiles.Look(IspProfiles.SLOG3, g, 0, 0, 1, IspProfiles.KNEE_OFF, 0, sat, ph, 0));
+                    for (int r = 0; r < 3; r++) assertEquals(16384, q[r * 3] + q[r * 3 + 1] + q[r * 3 + 2], "gamut " + g + " sat " + sat + " phase " + ph);
+                }
+    }
+
+    @Test void saturationMinus32IsBlackAndWhite() {
+        int[] q = IspProfiles.matrixQ14(with(P_ITU709, 0, 0, 1, IspProfiles.KNEE_OFF, 0, -32, 0, 0));
+        for (int r = 1; r < 3; r++) for (int c = 0; c < 3; c++) assertEquals(q[c], q[r * 3 + c], 1, "every row is luma");
+        assertEquals(Math.round(0.7152 * 16384), q[1], 1);
+    }
+
+    @Test void phaseTurnsHues() {
+        double[][] m = IspProfiles.phase(7);
+        double[] red = { m[0][0], m[1][0], m[2][0] };                 // where pure red goes
+        assertTrue(red[0] > red[1] && red[0] > red[2], "still mostly red");
+        assertNotEquals(red[1], red[2], 1e-6, "but turned");
+        assertArrayEquals(new double[] { 1, 0, 0 }, IspProfiles.phase(0)[0], 1e-12);
+    }
+
+    @Test void everyCombinationIsMonotoneAndTenBit() {
+        int[][] values = { { -15, 0, 15 }, { -7, 0, 7 }, { 0, 1, 2 }, { IspProfiles.KNEE_OFF, 75, 105 }, { -5, 5 }, { -7, 0, 7 } };
+        for (int c = 1; c < IspProfiles.CURVES; c++)
+            for (int bl : values[0]) for (int bg : values[1]) for (int rg : values[2]) for (int k : values[3]) for (int sl : values[4]) for (int con : values[5]) {
+                IspProfiles.Look l = new IspProfiles.Look(c, IspProfiles.CAMERA, bl, bg, rg, k, sl, 0, 0, con);
+                assertNull(l.problem());
+                int[] g = IspProfiles.gamma(l);
+                for (int i = 0; i < 96; i++) {
+                    assertTrue(g[i] >= 0 && g[i] <= 1023, l + " knot " + i);
+                    if (i > 0) assertTrue(g[i] >= g[i - 1], l + " knot " + i);
+                }
+            }
+    }
+
+    // ------------------------------------------------------------ the look as a value
+    @Test void aLookOutOfRangeSaysWhichValue() {
+        assertNull(P_SLOG3.problem());
+        assertEquals("gamma", new IspProfiles.Look(IspProfiles.OFF, 0).problem());
+        assertEquals("gamma", new IspProfiles.Look(IspProfiles.CURVES, 0).problem());
+        assertEquals("color-mode", new IspProfiles.Look(1, IspProfiles.GAMUTS).problem());
+        assertEquals("black-level", with(P_SLOG3, 16, 0, 1, 74, 0, 0, 0, 0).problem());
+        assertEquals("black-gamma", with(P_SLOG3, 0, -8, 1, 74, 0, 0, 0, 0).problem());
+        assertEquals("black-gamma-range", with(P_SLOG3, 0, 0, 3, 74, 0, 0, 0, 0).problem());
+        assertEquals("knee", with(P_SLOG3, 0, 0, 1, 106, 0, 0, 0, 0).problem());
+        assertEquals("knee", with(P_SLOG3, 0, 0, 1, 50, 0, 0, 0, 0).problem());
+        assertEquals("knee-slope", with(P_SLOG3, 0, 0, 1, 90, 6, 0, 0, 0).problem());
+        assertEquals("color-saturation", with(P_SLOG3, 0, 0, 1, 74, 0, 33, 0, 0).problem());
+        assertEquals("color-phase", with(P_SLOG3, 0, 0, 1, 74, 0, 0, -8, 0).problem());
+        assertEquals("s-curve", with(P_SLOG3, 0, 0, 1, 74, 0, 0, 0, 8).problem());
+    }
+
+    @Test void valuesThatDoNothingDoNotMakeTwoLooksDiffer() {
+        assertEquals(P_SLOG3, with(P_SLOG3, 0, 0, IspProfiles.WIDE, IspProfiles.KNEE_OFF, 3, 0, 0, 0), "a range with no black gamma, a slope with no knee");
+        assertEquals(P_SLOG3.hashCode(), with(P_SLOG3, 0, 0, IspProfiles.WIDE, IspProfiles.KNEE_OFF, 3, 0, 0, 0).hashCode());
+        assertNotEquals(P_SLOG3, with(P_SLOG3, 0, 2, IspProfiles.WIDE, IspProfiles.KNEE_OFF, 0, 0, 0, 0));
+        assertNotEquals(P_SLOG3, P_SLOG3_CINE);
+        assertArrayEquals(IspProfiles.gamma(P_SLOG3), IspProfiles.gamma(with(P_SLOG3, 0, 0, IspProfiles.WIDE, IspProfiles.KNEE_OFF, 3, 0, 0, 0)));
+    }
+
+    @Test void labels() {
+        assertEquals("S-Log3 / S-Gamut3.Cine", P_SLOG3_CINE.name());
+        assertEquals("ITU709 / Camera", P_ITU709.name());
+        assertEquals(Lang.t("value_off"), IspProfiles.curveLabel(IspProfiles.OFF));
+        assertEquals(Lang.t("value_off"), IspProfiles.kneeLabel(IspProfiles.KNEE_OFF));
+        assertEquals("95%", IspProfiles.kneeLabel(95));
+        assertEquals("Wide", IspProfiles.rangeLabel(IspProfiles.WIDE));
+        assertEquals(IspProfiles.CURVES, IspProfiles.CURVE_CODES.length);
+        assertEquals(IspProfiles.GAMUTS, IspProfiles.GAMUT_CODES.length);
+        assertEquals(2, IspProfiles.indexOf(IspProfiles.CURVE_CODES, "s-log3"));
+        assertEquals(-1, IspProfiles.indexOf(IspProfiles.CURVE_CODES, "cine4"));
+    }
+
     @Test void theFileIsWhatTheHelperReads() {
-        byte[] b = IspProfiles.encode(IspProfiles.SLOG2);
+        byte[] b = IspProfiles.encode(P_SLOG2);
         assertEquals(432, b.length);
         assertEquals(IspProfiles.FILE_SIZE, b.length);
         assertEquals("RLPP", new String(b, 0, 4, java.nio.charset.StandardCharsets.US_ASCII));
@@ -83,18 +202,17 @@ class IspProfilesTest {
         assertEquals(106, le(b, 12));
         assertEquals(852, le(b, 12 + 95 * 4));
         assertEquals(9274, le(b, 12 + 96 * 4));
-        int cine = le(IspProfiles.encode(IspProfiles.SLOG3_CINE), 12 + 96 * 4 + 7 * 4);
-        assertEquals(2118, cine);
-        assertThrows(IllegalArgumentException.class, () -> IspProfiles.encode(IspProfiles.OFF));
+        assertEquals(2118, le(IspProfiles.encode(P_SLOG3_CINE), 12 + 96 * 4 + 7 * 4));
+        assertThrows(IllegalArgumentException.class, () -> IspProfiles.encode(null));
+        assertThrows(IllegalArgumentException.class, () -> IspProfiles.encode(with(P_SLOG3, 99, 0, 1, 74, 0, 0, 0, 0)));
     }
 
-    @Test void everyProfileFileCarriesItsCurveAndGamut() {
-        for (int p = 1; p < IspProfiles.COUNT; p++) {
-            byte[] e = IspProfiles.encode(p);
-            int[] g = IspProfiles.gamma(p), t = IspProfiles.gamutQ14(p);
-            for (int i = 0; i < 96; i++) assertEquals(g[i], le(e, 12 + i * 4), "profile " + p);
-            for (int i = 0; i < 9; i++) assertEquals(t[i], le(e, 12 + 96 * 4 + i * 4), "profile " + p);
-        }
+    @Test void theFileCarriesTheAdjustedTables() {
+        IspProfiles.Look l = new IspProfiles.Look(IspProfiles.HLG, IspProfiles.BT2020, -4, 3, IspProfiles.WIDE, 92, 2, 10, -3, 4);
+        byte[] e = IspProfiles.encode(l);
+        int[] g = IspProfiles.gamma(l), t = IspProfiles.matrixQ14(l);
+        for (int i = 0; i < 96; i++) assertEquals(g[i], le(e, 12 + i * 4));
+        for (int i = 0; i < 9; i++) assertEquals(t[i], le(e, 12 + 96 * 4 + i * 4));
     }
 
     @Test void theCommandRunsOutsideTheChroot() {
@@ -118,20 +236,6 @@ class IspProfilesTest {
         assertEquals(IspProfiles.R_MISMATCH, IspProfiles.result("MISMATCH 3\nRESULT MISMATCH\n"));
         assertEquals(IspProfiles.R_ERROR, IspProfiles.result("RLISP 1 apply\nRESULT ERR open /dev/mem\n"));
         assertEquals(IspProfiles.R_STATUS, IspProfiles.result("RESULT STATUS on\n"));
-    }
-
-    @Test void preferencesRoundTripAndUnknownIsOff() {
-        for (int p = 0; p < IspProfiles.COUNT; p++) assertEquals(p, IspProfiles.parse(IspProfiles.CODES[p]));
-        assertEquals(IspProfiles.OFF, IspProfiles.parse(null));
-        assertEquals(IspProfiles.OFF, IspProfiles.parse("cine4"));
-    }
-
-    @Test void leftAndRightWalkEveryProfileAndWrap() {
-        assertEquals(IspProfiles.SLOG2, IspProfiles.next(IspProfiles.OFF, +1));
-        assertEquals(IspProfiles.LOGC3, IspProfiles.next(IspProfiles.OFF, -1));
-        assertEquals(IspProfiles.OFF, IspProfiles.next(IspProfiles.LOGC3, +1));
-        for (int p = 1; p < IspProfiles.COUNT; p++) assertFalse(IspProfiles.label(p).isEmpty());
-        assertEquals("Off", IspProfiles.label(IspProfiles.OFF));
     }
 
     private static int le(byte[] b, int o) { return (b[o] & 0xFF) | (b[o + 1] & 0xFF) << 8 | (b[o + 2] & 0xFF) << 16 | b[o + 3] << 24; }

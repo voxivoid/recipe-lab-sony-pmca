@@ -65,7 +65,8 @@ Recipe Lab is a small app that runs on the camera itself — on Sony cameras tha
 as the A6000, A6300, A6500 and A7 II (see [Compatibility](#compatibility)). It comes with 76 colour recipes that
 recreate the looks of other cameras — Fuji film simulations, Ricoh GR image controls, Leica, Hasselblad, Canon and
 Nikon colour, Sony's newer Creative Looks — and of classic film stocks from Kodak, Fuji, Cinestill, Agfa and Ilford.
-You can also make your own, and share them.
+You can also make your own, and share them. On an A6000 with firmware 3.21 it adds
+[picture profiles](#picture-profiles): S-Log2, S-Log3, HLG and more, with the adjustments of Sony's Picture Profile menu.
 
 **Recipe Lab has a phone app too.** [**Recipe Lab Studio**](https://recipelab.io/studio) develops your RAWs on iPhone,
 iPad and Android with these same looks, plus the film grain and mist a camera cannot do. The camera sends it photos
@@ -78,6 +79,8 @@ mode**, photo and video, with the app closed. Turn it off and on, it is still th
 > **Honest note.** The A6000 has no Picture Profile menu and cannot store tone curves. Every recipe is built only from
 > what this camera *can* keep: Creative Style, saturation, contrast, sharpness, white balance, exposure bias, Picture
 > Effect and one hidden colour setting Sony never exposed. So these are approximations of a look, not copies of another brand's colour science.
+> The [picture profiles](#picture-profiles) are the exception: they write the tone curve into the camera's memory, so
+> they last until it is switched off, and the app puts them back each time it opens.
 
 ## The recipes
 
@@ -281,17 +284,39 @@ Open **Recipe Lab** from the Application List. The live view shows the look. The
 
 **Menu** — **hold MENU**
 
-- **Browse recipes** · **New recipe** · **Transfer to phone** · **Sync recipes** · **Picture profile** · **Panel visibility** · **Language** · **Reset settings** ·
+- **Browse recipes** · **New recipe** · **Transfer to phone** · **Sync recipes** · **Panel visibility** · **Language** · **Reset settings** ·
   **Save a bug report** · **About** · **Developer**.
 - **New recipe** saves the camera's current settings as a [custom recipe](#custom-recipes).
 - **Transfer to phone** sends your photos to the phone over Wi-Fi — see [Transfer to phone](#transfer-to-phone).
 - **Sync recipes** opens the same Wi-Fi link for custom recipes: [Recipe Lab Studio](https://recipelab.io/studio) copies the ones the phone lacks
   and sends the ones the card lacks. Leave the page with MENU and they are under Custom.
-- **Picture profile** (A6000 firmware 3.21 only): left / right picks *Off*, *S-Log2* (S-Gamut), *S-Log3 Cine*
-  (S-Gamut3.Cine), *S-Log3* (S-Gamut3), *ITU709*, *HLG* (BT.2020) or *LogC3* (ARRI LogC3 EI 800, ALEXA Wide Gamut 3).
-  It is applied as you stop on it and covers live view, photos and video. It lives in the camera's memory only:
-  switching the camera off brings back the normal look, and opening the app brings the profile back.
 - Languages: *Auto*, English, 简体中文, 繁體中文, 日本語, 한국어, Tiếng Việt.
+
+## Picture profiles
+
+**A6000 on firmware 3.21 only.** The **Profiles** group holds six picture profiles: *S-Log2* (S-Gamut), *S-Log3 Cine*
+(S-Gamut3.Cine), *S-Log3* (S-Gamut3), *ITU709*, *HLG* (BT.2020) and *LogC3* (ARRI LogC3 EI 800, ALEXA Wide Gamut 3).
+They are recipes like the others: pick one, edit it, save it as your own.
+
+Any recipe can carry a profile: the **GAMMA** chip, last in the row, turns one on, and the chips after it shape it the way
+a Sony Picture Profile menu does:
+
+| chip | what it changes |
+|---|---|
+| **GAMMA** | the tone curve: *off*, S-Log2, S-Log3, LogC3, ITU709 or HLG |
+| **COLOR** | the colour mode (gamut): *Camera* keeps the camera's colour; S-Gamut3, S-Gamut3.Cine, BT.2020, ARRI WG3 |
+| **BLACK** | black level, -15 .. +15 |
+| **B.GAMMA**, **B.RANGE** | black gamma: lifts (+) or sinks (−) the shadows, over a narrow, middle or wide range |
+| **KNEE**, **SLOPE** | a highlight roll-off from 75 to 105%, and how steep it is |
+| **C.SAT** | colour saturation, -32 (black and white) .. +32 |
+| **PHASE** | colour phase: turns every hue a little, -7 .. +7 |
+| **S-CURVE** | contrast around middle grey, -7 .. +7 |
+
+The profile covers live view, photos and video, and shows as you change the chips. It lives in the camera's memory
+only: switching the camera off brings back the normal look, and opening the app brings the profile of the recipe you
+last picked back. It shapes the JPEG and video, never the RAW. DRO and the style's own contrast reshape the
+picture too, so the built-in profiles turn DRO off. A recipe with a profile cannot be shared as a QR code yet, and a
+Recipe Lab Studio or app version from before profiles skips its file rather than read half of it.
 
 ## Custom recipes
 
@@ -377,10 +402,10 @@ other way stops it too.
 Only camera settings you could set by hand: Creative Style and its saturation, contrast and sharpness sliders, white
 balance and its fine-tune, exposure compensation, DRO, Picture Effect. No firmware is touched, nothing is unlocked.
 
-The one exception is **Picture profile**, which is off unless you pick one. It writes the image processor's tone curve
+The one exception is a recipe with a [picture profile](#picture-profiles). It writes the image processor's tone curve
 and colour matrix in memory, and it stops the camera's own code from overwriting them (two instructions, changed in
-memory only). Nothing goes to flash: switch the camera off, or pick *Off*, and it is stock again. It checks the
-camera's code first and refuses on anything that is not an A6000 on firmware 3.21.
+memory only). Nothing goes to flash: switch the camera off, or pick a recipe without a profile, and it is stock again.
+It checks the camera's code first and refuses on anything that is not an A6000 on firmware 3.21.
 
 **Picture Effect recipes** (marked **JPEG only**) behave like the menu item does: the camera ignores Creative Style while one
 is on, and it only works with **Quality = JPEG** — set to RAW or RAW+JPEG, the camera drops the effect silently.

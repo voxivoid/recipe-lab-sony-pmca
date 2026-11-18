@@ -95,12 +95,12 @@ final class CustomRecipes {
         int wb = rows[R_WBMODE] == WB_AUTO || rows[R_WBMODE] == WB_KELVIN ? rows[R_WBMODE] : 0, pe = rows[R_PE];
         return new Recipes.Recipe(Recipes.CUSTOM, name, rows[R_STYLE], rows[R_SAT], rows[R_CON], rows[R_SHARP],
                 wb, wb == WB_KELVIN ? rows[R_KELVIN] * 100 : 0, rows[R_AB], rows[R_GM], pe, rows[R_EV], rows[R_DRO],
-                Recipes.subValues(pe) != null ? rows[R_SUB] : 0);
+                Recipes.subValues(pe) != null ? rows[R_SUB] : 0, look(rows) == null ? null : look(rows).normal());
     }
 
     /** the same recipe under another name */
     static Recipes.Recipe renamed(Recipes.Recipe r, String name) {
-        return new Recipes.Recipe(Recipes.CUSTOM, name, r.style, r.sat, r.con, r.sharp, r.wbMode, r.kelvin, r.ab, r.gm, r.pe, r.ev, r.dro, r.sub);
+        return new Recipes.Recipe(Recipes.CUSTOM, name, r.style, r.sat, r.con, r.sharp, r.wbMode, r.kelvin, r.ab, r.gm, r.pe, r.ev, r.dro, r.sub, r.look);
     }
 
     /** null when every value is one the settings store takes; else the first that is not, as the file would spell it */
@@ -118,6 +118,7 @@ final class CustomRecipes {
         if (!in(r.gm, -7, 7)) return bad("green-magenta", r.gm);
         if (!in(r.ev, ROW_MIN[R_EV], ROW_MAX[R_EV])) return bad("exposure", r.ev);
         if (!in(r.dro, 0, Recipes.DRO_AUTO)) return bad("dro", r.dro);
+        if (r.look != null && r.look.problem() != null) return bad(r.look.problem(), r.look.toString());
         return null;
     }
 

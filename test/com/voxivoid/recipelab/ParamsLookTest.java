@@ -69,4 +69,78 @@ class ParamsLookTest {
         assertFalse(showsAppliedEdit(null, applied, "Velvia", applied), "nothing applied");
         assertFalse(showsAppliedEdit("Velvia", null, "Velvia", applied), "a stored look this build cannot read");
     }
+
+    // ------------------------------------------------------------ the picture profile rows
+    @Test void aProfileRecipeStagesItsLookAndAnyOtherClearsIt() {
+        int[] e = factoryRows();
+        Params.stage(recipe("S-Log3 Cine"), e);
+        assertEquals(new IspProfiles.Look(IspProfiles.SLOG3, IspProfiles.SGAMUT3_CINE), Params.look(e));
+        assertEquals(Recipes.DRO_OFF, e[R_DRO], "DRO off: nothing reshapes the curve");
+        Params.stage(recipe("Velvia"), e);
+        assertNull(Params.look(e), "a recipe without a profile turns it off");
+        assertArrayEquals(factoryLookRows(), java.util.Arrays.copyOfRange(e, R_GAMMA, R_SCURVE + 1), "and leaves the profile rows neutral");
+    }
+
+    private static int[] factoryLookRows() { return java.util.Arrays.copyOfRange(factoryRows(), R_GAMMA, R_SCURVE + 1); }
+
+    @Test void profileRowsAreNeverStoreWritesButDoMakeTheRecipeDirty() {
+        int[] cur = factoryRows(), e = cur.clone();
+        e[R_GAMMA] = IspProfiles.SLOG2; e[R_CSAT] = 4;
+        assertTrue(rowDirty(R_GAMMA, cur, e, 0));
+        assertTrue(rowDirty(R_CSAT, cur, e, 0));
+        assertEquals(2, dirtyRows(cur, e, 0));
+        assertTrue(writes(cur, e, 0).isEmpty(), "the image processor's, not the store's");
+    }
+
+    @Test void aProfileRowThatDoesNothingIsNotDirty() {
+        int[] cur = factoryRows(), e = cur.clone();
+        e[R_CSAT] = 9;
+        assertFalse(rowDirty(R_CSAT, cur, e, 0), "no profile on either side");
+        cur[R_GAMMA] = e[R_GAMMA] = IspProfiles.SLOG3;
+        e[R_BRANGE] = IspProfiles.WIDE; e[R_KSLOPE] = 3;
+        assertFalse(rowDirty(R_BRANGE, cur, e, 0), "a range with no black gamma");
+        assertFalse(rowDirty(R_KSLOPE, cur, e, 0), "a slope with no knee");
+        assertTrue(rowDirty(R_CSAT, cur, e, 0));
+    }
+
+    @Test void theSameLookIgnoresProfileRowsThatDoNothing() {
+        int[] a = factoryRows(), b = a.clone();
+        b[R_PHASE] = 3;
+        assertTrue(sameLook(a, b), "no profile: the adjustments are not the look");
+        a[R_GAMMA] = b[R_GAMMA] = IspProfiles.LOGC3;
+        assertFalse(sameLook(a, b));
+        b[R_PHASE] = 0; b[R_KSLOPE] = 2;
+        assertTrue(sameLook(a, b), "a slope with no knee");
+        assertTrue(differsFromRecipe(recipe("LogC3"), withPhase(recipe("LogC3"), 1)));
+    }
+
+    private static int[] withPhase(Recipes.Recipe r, int phase) {
+        int[] e = factoryRows();
+        Params.stage(r, e);
+        e[R_PHASE] = phase;
+        return e;
+    }
+
+    @Test void theKeptLookRoundTripsAndAnythingElseIsNone() {
+        IspProfiles.Look l = new IspProfiles.Look(IspProfiles.HLG, IspProfiles.BT2020, -3, 4, IspProfiles.NARROW, 88, -2, 12, 5, -6);
+        assertEquals(l, Params.lookFrom(Params.lookText(l)));
+        assertEquals("0", Params.lookText(null));
+        assertNull(Params.lookFrom("0"));
+        assertNull(Params.lookFrom(null));
+        assertNull(Params.lookFrom("1,2,3"), "a build with other rows");
+        assertNull(Params.lookFrom("2,0,99,0,1,74,0,0,0,0"), "out of range");
+        assertNull(Params.lookFrom("2,0,x,0,1,74,0,0,0,0"));
+    }
+
+    @Test void aCustomRecipeKeepsTheStagedLook() {
+        int[] e = factoryRows();
+        Params.stage(recipe("S-Log3"), e);
+        e[R_BLACK] = 5; e[R_KSLOPE] = 4;                           // the slope does nothing without a knee
+        Recipes.Recipe r = CustomRecipes.recipe("Mine", e);
+        assertEquals(new IspProfiles.Look(IspProfiles.SLOG3, IspProfiles.SGAMUT3, 5, 0, IspProfiles.MIDDLE, IspProfiles.KNEE_OFF, 0, 0, 0, 0), r.look);
+        assertEquals(0, r.look.slope, "kept as the neutral value");
+        assertNull(CustomRecipes.problem(r));
+        assertNull(CustomRecipes.recipe("Plain", factoryRows()).look);
+    }
 }
+

@@ -33,8 +33,8 @@ class DevToolsTest {
     }
 
     @Test void theSampleRowNamesTheWholeTable() {
-        assertEquals("Shoot samples — 77 recipes", DevTools.rowLabel(DevTools.ROW_SAMPLES, false, 0));
-        assertEquals(77, Recipes.ALL.length, "the label counts the table, so the table is what it must count");
+        assertEquals("Shoot samples — 83 recipes", DevTools.rowLabel(DevTools.ROW_SAMPLES, false, 0));
+        assertEquals(83, Recipes.ALL.length, "the label counts the table, so the table is what it must count");
     }
 
     @Test void oneTurnOfTheMenuVisitsEveryRowItDefines() {
@@ -63,7 +63,7 @@ class DevToolsTest {
         assertEquals(DevTools.ROWS, DevTools.rows(DevTools.LEVEL_DEV));
         String[] labels = new String[DevTools.APP_ROWS];
         for (int r = 0; r < DevTools.APP_ROWS; r++) labels[r] = DevTools.appLabel(r);
-        assertEquals(Arrays.asList("Browse recipes", "New recipe", "Read Recipe QR Code", "Transfer to phone", "Sync recipes", "Picture profile", "Panel visibility", "Language", "Reset settings", "Save a bug report", "About", "Developer  >"), Arrays.asList(labels));
+        assertEquals(Arrays.asList("Browse recipes", "New recipe", "Read Recipe QR Code", "Transfer to phone", "Sync recipes", "Panel visibility", "Language", "Reset settings", "Save a bug report", "About", "Developer  >"), Arrays.asList(labels));
         assertTrue(DevTools.appDetail(DevTools.APP_NEW).contains("current settings"), "the row says what it keeps");
         assertEquals(DevTools.APP_BROWSE, 0, "the menu opens on Browse, so a body without Fn is one press from the list");
     }
@@ -88,22 +88,13 @@ class DevToolsTest {
         for (int r = 0; r < DevTools.APP_ROWS; r++) assertFalse(DevTools.appDetail(r).isEmpty(), "row " + r);
     }
 
-    @Test void thePictureProfileRowShowsTheProfileAndNamesItsGamut() {
-        assertEquals("Off", DevTools.appValue(DevTools.APP_PROFILE, Params.OV_FULL, Lang.AUTO, IspProfiles.OFF));
-        assertEquals("S-Log3 Cine", DevTools.appValue(DevTools.APP_PROFILE, Params.OV_FULL, Lang.AUTO, IspProfiles.SLOG3_CINE));
-        assertEquals("S-Log3 / S-Gamut3.Cine", DevTools.appDetail(DevTools.APP_PROFILE, IspProfiles.SLOG3_CINE));
-        assertEquals(DevTools.appDetail(DevTools.APP_PROFILE), DevTools.appDetail(DevTools.APP_PROFILE, IspProfiles.OFF), "Off says what the row does");
-        assertEquals(DevTools.appDetail(DevTools.APP_LANG), DevTools.appDetail(DevTools.APP_LANG, IspProfiles.LOGC3));
-        assertEquals(DevTools.IC_PROFILE, DevTools.icons(DevTools.LEVEL_APP)[DevTools.APP_PROFILE]);
-    }
-
-    @Test void onlyThePanelLanguageAndProfileRowsHaveAValue() {
+    @Test void onlyThePanelAndLanguageRowsHaveAValue() {
         assertEquals("Full", DevTools.appValue(DevTools.APP_PANEL, Params.OV_FULL, Lang.AUTO));
         assertEquals("No keys", DevTools.appValue(DevTools.APP_PANEL, Params.OV_QUIET, Lang.AUTO));
         assertEquals("Label", DevTools.appValue(DevTools.APP_PANEL, Params.OV_PILL, Lang.AUTO));
         assertEquals("Hidden", DevTools.appValue(DevTools.APP_PANEL, Params.OV_HIDDEN, Lang.AUTO));
         for (int r = 0; r < DevTools.APP_ROWS; r++)
-            if (r != DevTools.APP_PANEL && r != DevTools.APP_LANG && r != DevTools.APP_PROFILE) assertNull(DevTools.appValue(r, Params.OV_FULL, Lang.AUTO), "row " + r);
+            if (r != DevTools.APP_PANEL && r != DevTools.APP_LANG) assertNull(DevTools.appValue(r, Params.OV_FULL, Lang.AUTO), "row " + r);
         assertFalse(DevTools.appDetail(DevTools.APP_PANEL).contains("left / right"), "the drawn arrows say how to change it");
         assertFalse(DevTools.appDetail(DevTools.APP_LANG).contains("left / right"));
     }
