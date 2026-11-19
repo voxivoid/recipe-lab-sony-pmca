@@ -298,9 +298,9 @@ look of the recipe last stored, which the app keeps in its preferences (`ispLook
 700 ms after the rows stop changing, and only when the look differs from what the processor holds. A successful write
 (`writeAll`) makes the staged look the stored one (`storeLook`); leaving the app (`onPause`) puts the stored one back. On
 `onResume` the processor may have been reset by a power cycle, so a stored look is applied again; with none stored the
-helper is not run at all. The built-in Profiles group holds the six published pairings, Standard, auto WB, DRO off.
+helper is not run at all. The built-in Pic Profiles group holds the six published pairings, Standard, auto WB, DRO off.
 On a body whose `model.name` is not `ILCE-6000` (`IspProfiles.mayRun`, read once into `Params.profiles`) the GAMMA chip
-is hidden unless a profile is staged, so it can still be turned off; the Profiles group stays listed, and the helper
+is hidden unless a profile is staged, so it can still be turned off; the Pic Profiles group stays listed, and the helper
 refuses there with a toast. A body that does not report its model keeps the chip, and the helper's firmware check decides.
 
 **The pieces:**

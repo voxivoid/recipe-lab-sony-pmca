@@ -351,7 +351,7 @@ final class TextJa {
         { "group_pana_olympus", "パナソニック / オリンパス" },
         { "group_other_stocks", "その他のフィルム" },
         { "group_ilford", "イルフォード" },
-        { "group_profiles", "ピクチャープロファイル" },
+        { "group_pic_profiles", "ピクチャープロファイル" },
 
         // ---- recipes: the display name; the canonical English stays the identifier
         { "recipe_factory_st", "ファクトリー スタンダード" },

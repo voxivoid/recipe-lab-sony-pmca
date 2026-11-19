@@ -349,7 +349,7 @@ final class TextZhHans {
         { "group_pana_olympus", "松下 / 奥林巴斯" },
         { "group_other_stocks", "其他胶片" },
         { "group_ilford", "伊尔福" },
-        { "group_profiles", "图片配置文件" },
+        { "group_pic_profiles", "图片配置文件" },
 
         // ---- recipes: the display name; the canonical English stays the identifier
         { "recipe_factory_st", "出厂标准" },

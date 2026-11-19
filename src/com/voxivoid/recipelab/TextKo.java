@@ -351,7 +351,7 @@ final class TextKo {
         { "group_pana_olympus", "파나소닉 / 올림푸스" },
         { "group_other_stocks", "기타 필름" },
         { "group_ilford", "일포드" },
-        { "group_profiles", "픽처 프로필" },
+        { "group_pic_profiles", "픽처 프로필" },
 
         // ---- recipes: the display name; the canonical English stays the identifier
         { "recipe_factory_st", "팩토리 스탠다드" },

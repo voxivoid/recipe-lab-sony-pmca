@@ -351,7 +351,7 @@ final class TextVi {
         { "group_pana_olympus", "Panasonic / Olympus" },
         { "group_other_stocks", "Film khác" },
         { "group_ilford", "Ilford" },
-        { "group_profiles", "Picture Profile" },
+        { "group_pic_profiles", "Picture Profile" },
 
         // ---- recipes: the display name; the canonical English stays the identifier
         { "recipe_factory_st", "Factory Standard" },
