@@ -294,7 +294,7 @@ Open **Recipe Lab** from the Application List. The live view shows the look. The
 
 ## Picture profiles
 
-**A6000 on firmware 3.21 only.** The **Profiles** group holds six picture profiles: *S-Log2* (S-Gamut), *S-Log3 Cine*
+**A6000 on firmware 3.21 only.** The **Pic Profiles** group holds six picture profiles: *S-Log2* (S-Gamut), *S-Log3 Cine*
 (S-Gamut3.Cine), *S-Log3* (S-Gamut3), *ITU709*, *HLG* (BT.2020) and *LogC3* (ARRI LogC3 EI 800, ALEXA Wide Gamut 3).
 They are recipes like the others: pick one, edit it, save it as your own.
 

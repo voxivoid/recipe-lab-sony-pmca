@@ -110,7 +110,7 @@ public class Recipes {
     }
 
     // ---- groups (brands) — recipes below MUST be listed in group order
-    public static final String[] GROUPS = { "Sony", "Fuji Sim", "Fuji Film", "Kodak", "Cine", "Ricoh GR", "Leica", "Hasselblad", "Canon / Nikon", "Pana / Olympus", "Other Stocks", "Ilford", "Profiles" };
+    public static final String[] GROUPS = { "Sony", "Fuji Sim", "Fuji Film", "Kodak", "Cine", "Ricoh GR", "Leica", "Hasselblad", "Canon / Nikon", "Pana / Olympus", "Other Stocks", "Ilford", "Pic Profiles" };
     /** the group of a custom recipe: not a brand, so never an index into GROUPS */
     public static final int CUSTOM = -2;
     private static final int SONY = 0, FSIM = 1, FFILM = 2, KODAK = 3, CINE = 4, RICOH = 5, LEICA = 6, HASSEL = 7, CANIK = 8, PANOLY = 9, OTHER = 10, ILFORD = 11, PROFILES = 12;
@@ -205,7 +205,7 @@ public class Recipes {
         new Recipe(ILFORD,"Ilford Delta 100",                    MONO,     0,  1,  1, AUTO, 0,     0,  0),
         new Recipe(ILFORD,"Ilford Delta 3200",                   MONO,     0,  3, -2, AUTO, 0,     0,  0,  0,  2, 6),
         new Recipe(ILFORD,"Ilford Pan F 50",                     MONO,     0,  2,  2, AUTO, 0,     0,  0),
-        // ---- Picture profiles (A6000 firmware 3.21): the published curves and gamuts, DRO off so nothing reshapes the curve
+        // ---- Pic Profiles: picture profiles (A6000 firmware 3.21): the published curves and gamuts, DRO off so nothing reshapes the curve
         profile("S-Log2",       IspProfiles.SLOG2,  IspProfiles.SGAMUT3),
         profile("S-Log3 Cine",  IspProfiles.SLOG3,  IspProfiles.SGAMUT3_CINE),
         profile("S-Log3",       IspProfiles.SLOG3,  IspProfiles.SGAMUT3),
