@@ -16,6 +16,8 @@ final class TextVi {
         { "value_off", "tắt" },
         { "value_on", "bật" },
         { "value_kelvin", "kelvin" },
+        { "value_style", "kiểu" },
+        { "value_effect", "hiệu ứng" },
         { "value_level", "Mức %1$d" },
         { "value_seconds", "%1$s s" },
         { "value_unknown", "không rõ" },
@@ -287,6 +289,7 @@ final class TextVi {
         { "row_c_sat", "Độ bão hòa màu" },
         { "row_phase", "Pha màu" },
         { "row_s_curve", "Đường cong S" },
+        { "row_look", "Diện mạo" },
 
         // ---- Creative Styles, by runtime name
         { "style_standard", "Chuẩn" },

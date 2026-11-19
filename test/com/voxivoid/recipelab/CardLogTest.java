@@ -89,7 +89,8 @@ class CardLogTest {
         String st = CardLog.state(rows);
         assertTrue(st.startsWith("STYLE=3 SAT=-1 CON=0"), st);
         assertFalse(st.contains("RECIPE"), st);
-        assertEquals(Params.ROW_NAME.length - 1, st.split(" ").length);
+        assertEquals(Params.ROW_NAME.length - 2, st.split(" ").length);
+        assertFalse(st.contains("LOOK"), st);
     }
 
     @Test void rollsOnlyAFileThatHasSomethingInIt() {

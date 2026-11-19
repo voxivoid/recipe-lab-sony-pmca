@@ -136,7 +136,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private SponsorLine sponsor;
     private LinearLayout chips;
     private final TextView[] chipLabel = new TextView[N], chipValue = new TextView[N];
-    private final View[] chip = new View[N];
+    private final View[] chip = new View[N], chipSep = new View[N];   // chipSep: the line before a chip that starts a group
     private final Handler handler = new Handler();
     private final Runnable hideToast = new Runnable() { public void run() { toast.setVisibility(View.GONE); } };
     // press / hold of the three keys that have both: centre (pick / favorite), MENU (exit / app menu), trash (hide / factory)
@@ -316,6 +316,13 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
 
     private void buildChips() {
         for (int i : ORDER) {
+            View sep = new View(this);
+            sep.setBackgroundColor(DIM);
+            LinearLayout.LayoutParams sp = new LinearLayout.LayoutParams(dp(1), LinearLayout.LayoutParams.MATCH_PARENT);
+            sp.rightMargin = dp(5); sp.topMargin = dp(4); sp.bottomMargin = dp(4);
+            sep.setLayoutParams(sp);
+            chips.addView(sep);
+            chipSep[i] = sep;
             LinearLayout c = new LinearLayout(this);
             c.setOrientation(LinearLayout.VERTICAL);
             c.setGravity(Gravity.CENTER_HORIZONTAL);
@@ -477,7 +484,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
                 int id = ROW_ID[i];
                 if (id == SUB_SLOT) { int sid = Recipes.subId(cur[R_PE]); cur[i] = edit[i] = sid == 0 ? 0 : rdu(sid); continue; }
                 if (id == QUALITY_SLOTS) { cur[i] = edit[i] = readQuality(); continue; }
-                if (id == ISP) continue;                          // the profile rows: below
+                if (id == ISP || id == NO_SLOT) continue;       // the profile rows: below; LOOK has no slot
                 cur[i] = edit[i] = Params.fromStore(id, NativeBackup.readByte(id));
             }
         } catch (Throwable t) { showToast(Lang.t("status_read_failed", String.valueOf(t.getMessage())), 0); log(CardLog.FAIL, "read: " + t); }
@@ -1915,6 +1922,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             }
             for (int i : ORDER) {
                 chip[i].setVisibility(rowVisible(i) ? View.VISIBLE : View.GONE);
+                chipSep[i].setVisibility(Params.separatorBefore(i, edit) ? View.VISIBLE : View.GONE);
                 boolean sel = i == row && !onActions, ch = rowDirty(i), foc = sel && focus;
                 chip[i].setBackgroundResource(foc ? R.drawable.chip_sel : sel ? R.drawable.chip_hi : R.drawable.chip);
                 chipLabel[i].setText(Params.rowName(i));

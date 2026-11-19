@@ -15,6 +15,8 @@ final class TextZhHant {
         { "value_off", "關閉" },
         { "value_on", "開" },
         { "value_kelvin", "色溫" },
+        { "value_style", "風格" },
+        { "value_effect", "效果" },
         { "value_level", "等級 %1$d" },
         { "value_seconds", "%1$s 秒" },
         { "value_unknown", "未知" },
@@ -285,6 +287,7 @@ final class TextZhHant {
         { "row_c_sat", "色彩飽和度" },
         { "row_phase", "色相" },
         { "row_s_curve", "S 曲線" },
+        { "row_look", "類型" },
 
         // ---- Creative Styles, by runtime name
         { "style_standard", "標準" },

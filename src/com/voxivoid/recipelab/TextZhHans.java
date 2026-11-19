@@ -15,6 +15,8 @@ final class TextZhHans {
         { "value_off", "关闭" },
         { "value_on", "开" },
         { "value_kelvin", "色温" },
+        { "value_style", "风格" },
+        { "value_effect", "效果" },
         { "value_level", "等级 %1$d" },
         { "value_seconds", "%1$s 秒" },
         { "value_unknown", "未知" },
@@ -285,6 +287,7 @@ final class TextZhHans {
         { "row_c_sat", "色彩饱和度" },
         { "row_phase", "色相" },
         { "row_s_curve", "S 曲线" },
+        { "row_look", "类型" },
 
         // ---- Creative Styles, by runtime name
         { "style_standard", "标准" },

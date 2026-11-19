@@ -139,10 +139,13 @@ final class CardLog {
         return sb.toString();
     }
 
-    /** what the store holds for every recipe row, by the rows' English names: {@code STYLE=1 SAT=0 …} */
+    /** what the store holds for every recipe row (LOOK aside), by the rows' English names: {@code STYLE=1 SAT=0 …} */
     static String state(int[] rows) {
         StringBuilder sb = new StringBuilder();
-        for (int i = 1; i < rows.length && i < Params.ROW_NAME.length; i++) sb.append(i > 1 ? " " : "").append(Params.ROW_NAME[i]).append('=').append(rows[i]);
+        for (int i = 1; i < rows.length && i < Params.ROW_NAME.length; i++) {
+            if (i == Params.R_LOOK) continue;   // no setting of its own: EFFECT says it
+            sb.append(sb.length() > 0 ? " " : "").append(Params.ROW_NAME[i]).append('=').append(rows[i]);
+        }
         return sb.toString();
     }
 

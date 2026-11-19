@@ -21,6 +21,8 @@ final class TextEn {
         { "value_off", "off" },
         { "value_on", "on" },
         { "value_kelvin", "kelvin" },
+        { "value_style", "style" },
+        { "value_effect", "effect" },
         { "value_level", "Lv%1$d" },
         { "value_seconds", "%1$s s" },
         { "value_unknown", "unknown" },

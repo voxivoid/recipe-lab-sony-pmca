@@ -14,12 +14,14 @@ class ParamsChipsTest {
         for (int r : new int[] { R_STYLE, R_SAT, R_CON, R_SHARP }) assertTrue(rowVisible(r, e), ROW_NAME[r]);
         assertFalse(rowVisible(R_PP, e), "the Picture Profile row has no chip");
         assertFalse(rowVisible(R_SUB, e));
+        assertFalse(rowVisible(R_PE, e), "no effect: LOOK says style, and EFFECT hides");
+        assertTrue(rowVisible(R_LOOK, e));
         e[R_PE] = Recipes.PE_RETRO;
         for (int r : new int[] { R_STYLE, R_SAT, R_CON, R_SHARP }) assertFalse(rowVisible(r, e), ROW_NAME[r]);
         assertFalse(rowVisible(R_SUB, e), "Retro has no sub-parameter");
         e[R_PE] = Recipes.PE_TOY;
         assertTrue(rowVisible(R_SUB, e));
-        for (int r : new int[] { R_PE, R_WBMODE, R_AB, R_GM, R_EV, R_DRO, R_QUAL }) assertTrue(rowVisible(r, e), ROW_NAME[r]);
+        for (int r : new int[] { R_LOOK, R_PE, R_WBMODE, R_AB, R_GM, R_EV, R_DRO, R_QUAL }) assertTrue(rowVisible(r, e), ROW_NAME[r]);
     }
 
     @Test void kelvinChipOnlyInColourTemperatureMode() {
@@ -80,12 +82,53 @@ class ParamsChipsTest {
 
         e[R_PE] = Recipes.PE_TOY; e[R_QUAL] = Q_FINE;
         step(e, R_PE, -1, Q_RAW);
-        assertEquals(Recipes.PE_OFF, e[R_PE]);
-        assertEquals(Q_RAW, e[R_QUAL], "back to the recipe's quality once the effect is off");
-
-        e[R_PE] = Recipes.PE_OFF; step(e, R_PE, +1, Q_STD);
+        assertEquals(Recipes.PE_KEYS.length - 1, e[R_PE], "the effects wrap past off: turning one off is LOOK's");
+        step(e, R_PE, +1, Q_STD);
         assertEquals(Recipes.PE_TOY, e[R_PE]);
         assertEquals(Q_STD, e[R_QUAL], "a JPEG base is kept as is");
+    }
+
+    @Test void lookTogglesStyleAndEffectAndComesBackToTheEffectLeft() {
+        int[] e = factoryRows(); e[R_QUAL] = Q_RAWJPG;
+        assertEquals("style", fmt(R_LOOK, e[R_LOOK], e));
+        assertFalse(step(e, R_LOOK, +1, Q_RAWJPG));
+        assertEquals(Recipes.PE_TOY, e[R_PE], "the first effect when none was left");
+        assertEquals(Q_FINE, e[R_QUAL], "an effect cannot shoot RAW");
+        assertEquals("effect", fmt(R_LOOK, e[R_LOOK], e));
+        step(e, R_PE, +1, Q_RAWJPG); step(e, R_PE, +1, Q_RAWJPG); e[R_SUB] = 1;
+        step(e, R_LOOK, -1, Q_RAWJPG);
+        assertEquals(Recipes.PE_OFF, e[R_PE]);
+        assertEquals(0, e[R_SUB]);
+        assertEquals(Q_RAWJPG, e[R_QUAL], "back to the recipe's quality once the effect is off");
+        step(e, R_LOOK, +1, Q_RAWJPG);
+        assertEquals(3, e[R_PE], "Effect → Style → Effect lands on the effect left");
+    }
+
+    @Test void lookIsShownChangedButNeverWrittenOrCounted() {
+        int[] cur = factoryRows(); cur[R_QUAL] = Q_FINE; int[] e = cur.clone();
+        step(e, R_LOOK, +1, Q_FINE);
+        assertTrue(rowDirty(R_LOOK, cur, e, 0));
+        assertEquals(1, dirtyRows(cur, e, 0), "EFFECT is the one change; LOOK only shows it");
+        for (Write w : writes(cur, e, 0)) assertNotEquals(0, w.id, "no write for LOOK");
+        step(e, R_LOOK, +1, Q_FINE);
+        assertFalse(rowDirty(R_LOOK, cur, e, 0));
+        assertTrue(sameLook(cur, e), "the effect LOOK remembers is not part of the look");
+    }
+
+    @Test void separatorsSetTheGroupsApart() {
+        int[] e = factoryRows();
+        assertFalse(separatorBefore(R_QUAL, e), "nothing before the first chip");
+        assertTrue(separatorBefore(R_LOOK, e));
+        assertFalse(separatorBefore(R_STYLE, e));
+        assertTrue(separatorBefore(R_WBMODE, e));
+        assertFalse(separatorBefore(R_AB, e));
+        assertTrue(separatorBefore(R_EV, e));
+        assertTrue(separatorBefore(R_GAMMA, e));
+        assertFalse(separatorBefore(R_KELVIN, e), "hidden in AWB");
+        e[R_PE] = Recipes.PE_RETRO;
+        assertFalse(separatorBefore(R_STYLE, e), "hidden under an effect");
+        assertFalse(separatorBefore(R_PE, e));
+        for (int r : ORDER) assertEquals(chipGroup(r) == G_PROFILE, ispRow(r), ROW_NAME[r]);
     }
 
     @Test void onlyAQualityStepReportsAChoice() {
@@ -98,7 +141,8 @@ class ParamsChipsTest {
 
     @Test void leftRightSkipHiddenChipsAndWrap() {
         int[] e = factoryRows();
-        assertEquals(R_STYLE, nextChip(R_QUAL, +1, e));
+        assertEquals(R_LOOK, nextChip(R_QUAL, +1, e));
+        assertEquals(R_STYLE, nextChip(R_LOOK, +1, e));
         assertEquals(R_GAMMA, nextChip(R_QUAL, -1, e), "GAMMA closes the strip; with it off the profile chips hide");
         assertEquals(R_GAMMA, nextChip(R_DRO, +1, e));
         assertEquals(R_QUAL, nextChip(R_GAMMA, +1, e));
@@ -106,9 +150,9 @@ class ParamsChipsTest {
         e[R_WBMODE] = WB_KELVIN;
         assertEquals(R_KELVIN, nextChip(R_WBMODE, +1, e));
         e[R_PE] = Recipes.PE_HIGHKEY;
-        assertEquals(R_PE, nextChip(R_QUAL, +1, e), "style chips hidden under an effect");
+        assertEquals(R_PE, nextChip(R_LOOK, +1, e), "style chips hidden under an effect");
         assertEquals(R_SUB, nextChip(R_PE, +1, e));
-        assertEquals(R_QUAL, nextChip(R_PE, -1, e));
+        assertEquals(R_LOOK, nextChip(R_PE, -1, e));
         e[R_PE] = Recipes.PE_RETRO;
         assertEquals(R_WBMODE, nextChip(R_PE, +1, e), "no SUB for Retro");
     }
@@ -116,7 +160,7 @@ class ParamsChipsTest {
     @Test void fromTheRecipeLineRightGoesToTheSecondChipLikeTheOriginal() {
         // row 0 is not in ORDER; it counts as position 0 (QUALITY), so RIGHT from it lands after QUALITY
         int[] e = factoryRows();
-        assertEquals(R_STYLE, nextChip(R_RECIPE, +1, e));
+        assertEquals(R_LOOK, nextChip(R_RECIPE, +1, e));
         assertEquals(R_GAMMA, nextChip(R_RECIPE, -1, e));
     }
 

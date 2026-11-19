@@ -60,7 +60,7 @@ final class Fixtures {
             int id = ROW_ID[i];
             if (id == SUB_SLOT) { int sid = Recipes.subId(cur[R_PE]); cur[i] = sid == 0 ? 0 : byteAt(store, sid) & 0xff; continue; }
             if (id == QUALITY_SLOTS) { cur[i] = Params.qualityFromStore(byteAt(store, ID_QFMT) & 0xff, byteAt(store, ID_QJPG) & 0xff); continue; }
-            if (id == ISP) continue;
+            if (id == ISP || id == NO_SLOT) continue;
             cur[i] = Params.fromStore(id, byteAt(store, id));
         }
         int[] kept = new int[N];                                   // the profile: what the app keeps, not the store
