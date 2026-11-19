@@ -51,16 +51,22 @@ final class Params {
      * settings-store slot: the root helper writes them into the image processor, and the app keeps the applied ones itself.
      */
     static final int R_GAMMA = 15, R_GAMUT = 16, R_BLACK = 17, R_BGAMMA = 18, R_BRANGE = 19, R_KNEE = 20, R_KSLOPE = 21, R_CSAT = 22, R_PHASE = 23, R_SCURVE = 24;
+    /**
+     * The LOOK chip picks a Creative Style or a Picture Effect, as the camera has one or the other. It has no slot: what it
+     * shows is read from R_PE, and its own value is only the effect to go back to, so Effect → Style → Effect lands on
+     * the effect left (0: none yet, which lands on the first).
+     */
+    static final int R_LOOK = 25;
     /** ROW_ID markers for rows without a fixed slot */
     static final int NO_SLOT = 0, SUB_SLOT = -1 /* depends on the staged effect */, QUALITY_SLOTS = -2 /* two slots, each mirrored */, ISP = -3 /* the image processor, not the store */;
     static final String[] ROW_NAME = { "RECIPE", "STYLE", "SAT", "CON", "SHARP", "PP", "EFFECT", "SUB", "WB", "KELVIN", "A-B", "G-M", "EV", "DRO", "QUALITY",
-            "GAMMA", "COLOR", "BLACK", "B.GAMMA", "B.RANGE", "KNEE", "SLOPE", "C.SAT", "PHASE", "S-CURVE" };
+            "GAMMA", "COLOR", "BLACK", "B.GAMMA", "B.RANGE", "KNEE", "SLOPE", "C.SAT", "PHASE", "S-CURVE", "LOOK" };
     static final int[] ROW_ID = { NO_SLOT, ID_STYLE, ID_SAT, ID_CON, ID_SHARP, ID_PP_NO, ID_PE, SUB_SLOT, ID_WB_MODE, ID_WB_TEMP, ID_WB_AB, ID_WB_GM, ID_EV, ID_DRO, QUALITY_SLOTS,
-            ISP, ISP, ISP, ISP, ISP, ISP, ISP, ISP, ISP, ISP };
+            ISP, ISP, ISP, ISP, ISP, ISP, ISP, ISP, ISP, ISP, NO_SLOT };
     static final int[] ROW_MIN = { 0, 1, -3, -3, -3, 0, 0, 0, 0, 25, -7, -7, -15, 0, 0,
-            IspProfiles.OFF, 0, -IspProfiles.BLACK_MAX, -IspProfiles.BGAMMA_MAX, 0, IspProfiles.KNEE_OFF, -IspProfiles.SLOPE_MAX, -IspProfiles.SAT_MAX, -IspProfiles.PHASE_MAX, -IspProfiles.CONTRAST_MAX };
+            IspProfiles.OFF, 0, -IspProfiles.BLACK_MAX, -IspProfiles.BGAMMA_MAX, 0, IspProfiles.KNEE_OFF, -IspProfiles.SLOPE_MAX, -IspProfiles.SAT_MAX, -IspProfiles.PHASE_MAX, -IspProfiles.CONTRAST_MAX, 0 };
     static final int[] ROW_MAX = { 0, 14, 3, 3, 3, 1, 13, 4, 20, 99, 7, 7, 15, 6, 3,
-            IspProfiles.CURVES - 1, IspProfiles.GAMUTS - 1, IspProfiles.BLACK_MAX, IspProfiles.BGAMMA_MAX, IspProfiles.RANGE_CODES.length - 1, IspProfiles.KNEE_MAX, IspProfiles.SLOPE_MAX, IspProfiles.SAT_MAX, IspProfiles.PHASE_MAX, IspProfiles.CONTRAST_MAX };
+            IspProfiles.CURVES - 1, IspProfiles.GAMUTS - 1, IspProfiles.BLACK_MAX, IspProfiles.BGAMMA_MAX, IspProfiles.RANGE_CODES.length - 1, IspProfiles.KNEE_MAX, IspProfiles.SLOPE_MAX, IspProfiles.SAT_MAX, IspProfiles.PHASE_MAX, IspProfiles.CONTRAST_MAX, Recipes.PE_KEYS.length - 1 };
     static final int N = ROW_ID.length;
 
     /** a row's name as its chip shows it, in the display language; ROW_NAME is the English */
@@ -68,8 +74,21 @@ final class Params {
     /** a quality as the chip and the messages show it, in the display language; Q_LABEL is the English */
     static String qualityLabel(int q) { return q >= 0 && q < Q_LABEL.length ? Lang.label("quality_" + Lang.slug(Q_LABEL[q]), Q_LABEL[q]) : "?" + q; }
     /** chip display / navigation order (quality first) */
-    static final int[] ORDER = { R_QUAL, R_STYLE, R_SAT, R_CON, R_SHARP, R_PE, R_SUB, R_WBMODE, R_KELVIN, R_AB, R_GM, R_EV, R_DRO,
+    static final int[] ORDER = { R_QUAL, R_LOOK, R_STYLE, R_SAT, R_CON, R_SHARP, R_PE, R_SUB, R_WBMODE, R_KELVIN, R_AB, R_GM, R_EV, R_DRO,
             R_GAMMA, R_GAMUT, R_BLACK, R_BGAMMA, R_BRANGE, R_KNEE, R_KSLOPE, R_CSAT, R_PHASE, R_SCURVE };   // R_PP has no chip
+
+    /** the chip groups a separator sets apart: quality, the look (style or effect), white balance, exposure, the picture profile */
+    static final int G_QUALITY = 0, G_LOOK = 1, G_WB = 2, G_EXPOSURE = 3, G_PROFILE = 4;
+
+    static int chipGroup(int row) {
+        switch (row) {
+            case R_QUAL: return G_QUALITY;
+            case R_LOOK: case R_STYLE: case R_SAT: case R_CON: case R_SHARP: case R_PE: case R_SUB: return G_LOOK;
+            case R_WBMODE: case R_KELVIN: case R_AB: case R_GM: return G_WB;
+            case R_EV: case R_DRO: return G_EXPOSURE;
+            default: return G_PROFILE;
+        }
+    }
     /** the overlay MainActivity is in: the full panel, the pill, nothing, the browser, or the full panel without its key legend */
     static final int OV_FULL = 0, OV_PILL = 1, OV_HIDDEN = 2, OV_BROWSER = 3, OV_QUIET = 4;
     /** whether the overlay shows the full panel, with its chips — with or without the key legend under it */
@@ -207,6 +226,7 @@ final class Params {
      */
     static boolean rowDirty(int row, int[] cur, int[] edit, int storedSub) {
         if (row == R_QUAL) return edit[row] != cur[row];
+        if (row == R_LOOK) return (edit[R_PE] != 0) != (cur[R_PE] != 0);   // shown changed, never written: R_PE is what is stored
         if ((row == R_AB || row == R_GM) && edit[R_WBMODE] != cur[R_WBMODE]) return true;   // new WB mode → its own fine-tune pair must be written
         if (row == R_SUB) return Recipes.subId(edit[R_PE]) != 0 && edit[row] != storedSub;
         if (ispRow(row)) return (ispRowMatters(row, edit) || ispRowMatters(row, cur)) && edit[row] != cur[row];
@@ -216,7 +236,7 @@ final class Params {
     /** number of dirty rows — what the "Stored n values" toast counts */
     static int dirtyRows(int[] cur, int[] edit, int storedSub) {
         int n = 0;
-        for (int i = 1; i < N; i++) if (rowDirty(i, cur, edit, storedSub)) n++;
+        for (int i = 1; i < N; i++) if (i != R_LOOK && rowDirty(i, cur, edit, storedSub)) n++;
         return n;
     }
 
@@ -233,7 +253,7 @@ final class Params {
     static List<Write> writes(int[] cur, int[] edit, int storedSub) {
         List<Write> w = new ArrayList<Write>();
         for (int i = 1; i < N; i++) {
-            if (ispRow(i) || !rowDirty(i, cur, edit, storedSub)) continue;   // the profile is the image processor's, not the store's
+            if (ispRow(i) || i == R_LOOK || !rowDirty(i, cur, edit, storedSub)) continue;   // the profile is the image processor's, not the store's
             int v = edit[i];
             if (i == R_QUAL) {
                 w.add(new Write(ID_QFMT, Q_FMT_CODE[v])); w.add(new Write(ID_QFMT2, Q_FMT_CODE[v]));
@@ -392,7 +412,7 @@ final class Params {
      */
     static boolean sameLook(int[] a, int[] b) {
         for (int i = 1; i < N; i++) {
-            if (i == R_QUAL || i == R_PP) continue;
+            if (i == R_QUAL || i == R_PP || i == R_LOOK) continue;
             if (i == R_KELVIN && a[R_WBMODE] != WB_KELVIN) continue;
             if (i == R_SUB && Recipes.subValues(a[R_PE]) == null) continue;
             if (ispRow(i) && !ispRowMatters(i, a)) continue;
@@ -463,6 +483,7 @@ final class Params {
         switch (row) {
             case R_STYLE: case R_SAT: case R_CON: case R_SHARP: return !pe;
             case R_PP: return false;
+            case R_PE: return pe;
             case R_SUB: return pe && Recipes.subId(edit[R_PE]) != 0;
             case R_KELVIN: return edit[R_WBMODE] == WB_KELVIN;
             case R_GAMMA: return profiles || edit[R_GAMMA] != IspProfiles.OFF;   // another body: shown only to turn one off
@@ -471,23 +492,43 @@ final class Params {
     }
 
     /** enumerated rows (names, not numbers) scroll endlessly */
-    static boolean isChoice(int row) { return row == R_STYLE || row == R_PE || row == R_SUB || row == R_QUAL || row == R_DRO || row == R_WBMODE || row == R_GAMMA || row == R_GAMUT || row == R_BRANGE; }
+    static boolean isChoice(int row) { return row == R_LOOK || row == R_STYLE || row == R_PE || row == R_SUB || row == R_QUAL || row == R_DRO || row == R_WBMODE || row == R_GAMMA || row == R_GAMUT || row == R_BRANGE; }
 
     /**
-     * One step on the focused chip: choices wrap, numbers clamp, WB toggles auto/kelvin, SUB cycles the staged
-     * effect's values. Changing the effect resets SUB and re-derives quality from {@code recipeQuality} (the current
+     * One step on the focused chip: choices wrap, numbers clamp, WB toggles auto/kelvin, LOOK toggles style/effect,
+     * EFFECT cycles the effects (never off), SUB cycles the staged effect's values. Changing the effect resets SUB and re-derives quality from {@code recipeQuality} (the current
      * recipe's quality from the Factory base), forcing JPEG when an effect is on. Returns true when the user changed
      * quality directly, which redefines the Factory base.
      */
     static boolean step(int[] edit, int row, int dir, int recipeQuality) {
+        if (row == R_LOOK) {
+            if (edit[R_PE] != 0) { edit[R_LOOK] = edit[R_PE]; edit[R_PE] = 0; }
+            else edit[R_PE] = edit[R_LOOK] > 0 && edit[R_LOOK] < Recipes.PE_KEYS.length ? edit[R_LOOK] : 1;
+            effectChanged(edit, recipeQuality);
+            return false;
+        }
+        if (row == R_PE) { int n = ROW_MAX[row]; edit[row] = 1 + ((edit[row] - 1 + n + dir) % n); effectChanged(edit, recipeQuality); return false; }   // the effects wrap; off is the LOOK chip's
         if (row == R_WBMODE) { edit[R_WBMODE] = edit[R_WBMODE] == WB_KELVIN ? WB_AUTO : WB_KELVIN; return false; }
         if (row == R_SUB) { String[] sv = Recipes.subValues(edit[R_PE]); int n = sv == null ? 1 : sv.length; edit[R_SUB] = (edit[R_SUB] + n + dir) % n; return false; }
         if (row == R_STYLE) { int n = ROW_MAX[row] - ROW_MIN[row] + 1; do { edit[row] = ROW_MIN[row] + ((edit[row] - ROW_MIN[row] + n + dir) % n); } while (!Recipes.styleKnown(edit[row])); return false; }   // unidentified enum values are skipped
         if (isChoice(row)) { int n = ROW_MAX[row] - ROW_MIN[row] + 1; edit[row] = ROW_MIN[row] + ((edit[row] - ROW_MIN[row] + n + dir) % n); }   // choices wrap around
         else edit[row] = clamp(edit[row] + dir, ROW_MIN[row], ROW_MAX[row]);                                                                  // numbers clamp
         if (row == R_QUAL && edit[R_QUAL] == Q_RAW) edit[R_QUAL] = dir > 0 ? Q_RAWJPG : Q_STD;   // RAW alone is not offered
-        if (row == R_PE) { edit[R_SUB] = 0; edit[R_QUAL] = recipeQuality; if (edit[R_PE] != 0 && edit[R_QUAL] <= Q_RAWJPG) edit[R_QUAL] = Q_FINE; }
         return row == R_QUAL;
+    }
+
+    /** a new effect (or none): SUB starts over, and quality is the recipe's again, JPEG while an effect is on */
+    private static void effectChanged(int[] edit, int recipeQuality) {
+        edit[R_SUB] = 0; edit[R_QUAL] = recipeQuality;
+        if (edit[R_PE] != 0 && edit[R_QUAL] <= Q_RAWJPG) edit[R_QUAL] = Q_FINE;
+    }
+
+    /** whether a separator stands before this chip: it is shown, and the chip shown before it is of another group */
+    static boolean separatorBefore(int row, int[] edit) {
+        if (!rowVisible(row, edit)) return false;
+        int prev = -1;
+        for (int k = 0; k < ORDER.length && ORDER[k] != row; k++) if (rowVisible(ORDER[k], edit)) prev = ORDER[k];
+        return prev >= 0 && chipGroup(prev) != chipGroup(row);
     }
 
     /** LEFT/RIGHT inside the chip strip: the next / previous visible chip in ORDER, wrapping */
@@ -559,6 +600,7 @@ final class Params {
     static String fmt(int row, int v, int[] edit) {
         switch (row) {
             case R_STYLE: return Recipes.styleLabel(v);
+            case R_LOOK: return Lang.t(edit[R_PE] != 0 ? "value_effect" : "value_style");
             case R_PP: return Lang.t(v == 0 ? "value_off" : "value_on");
             case R_WBMODE: return v == WB_AUTO ? Lang.t("value_auto") : v == WB_KELVIN ? Lang.t("value_kelvin") : String.valueOf(v);
             case R_KELVIN: return edit[R_WBMODE] == WB_KELVIN ? (v * 100) + "K" : "-";

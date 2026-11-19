@@ -16,6 +16,8 @@ final class TextJa {
         { "value_off", "オフ" },
         { "value_on", "オン" },
         { "value_kelvin", "色温度" },
+        { "value_style", "スタイル" },
+        { "value_effect", "効果" },
         { "value_level", "Lv%1$d" },
         { "value_seconds", "%1$s 秒" },
         { "value_unknown", "不明" },
@@ -287,6 +289,7 @@ final class TextJa {
         { "row_c_sat", "色の濃さ" },
         { "row_phase", "色相" },
         { "row_s_curve", "Sカーブ" },
+        { "row_look", "ルック" },
 
         // ---- Creative Styles, by runtime name
         { "style_standard", "スタンダード" },

@@ -266,6 +266,8 @@ Open **Recipe Lab** from the Application List. The live view shows the look. The
 **Change a value**
 
 - Go **down** to the chips. **centre** a chip. **up / down** changes it. **centre** again to finish.
+- The chips come in groups: quality, the look, white balance, exposure, then the picture profile. The **LOOK** chip picks
+  a Creative Style or a Picture Effect, and only that one's chips show.
 - It is only a preview until you choose.
 - Buttons appear under the chips: **Apply**, **Save as new**, **Discard** — and **Save** on your own recipes.
 - See [Custom recipes](#custom-recipes).

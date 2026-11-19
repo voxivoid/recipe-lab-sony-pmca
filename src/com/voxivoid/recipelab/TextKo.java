@@ -16,6 +16,8 @@ final class TextKo {
         { "value_off", "끔" },
         { "value_on", "켬" },
         { "value_kelvin", "색온도" },
+        { "value_style", "스타일" },
+        { "value_effect", "효과" },
         { "value_level", "Lv%1$d" },
         { "value_seconds", "%1$s초" },
         { "value_unknown", "알 수 없음" },
@@ -287,6 +289,7 @@ final class TextKo {
         { "row_c_sat", "색 농도" },
         { "row_phase", "색상" },
         { "row_s_curve", "S 커브" },
+        { "row_look", "룩" },
 
         // ---- Creative Styles, by runtime name
         { "style_standard", "스탠다드" },
