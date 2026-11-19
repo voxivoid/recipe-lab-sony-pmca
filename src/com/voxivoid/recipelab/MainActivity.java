@@ -332,7 +332,10 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             c.setLayoutParams(lp);
             TextView l = new TextView(this); l.setTextSize(9);                    // its text is set by render(), in the display language
             TextView v = new TextView(this); v.setTextSize(13); v.setTypeface(Typeface.DEFAULT_BOLD); v.setSingleLine(true);
-            c.addView(l); c.addView(v);
+            // WRAP_CONTENT, not the vertical layout's default MATCH_PARENT: a TextView of fixed width never asks for a
+            // new layout when its text grows, so the chip kept its first width and cut a longer value (S-Log2) short
+            int wrap = LinearLayout.LayoutParams.WRAP_CONTENT;
+            c.addView(l, new LinearLayout.LayoutParams(wrap, wrap)); c.addView(v, new LinearLayout.LayoutParams(wrap, wrap));
             chips.addView(c);
             chip[i] = c; chipLabel[i] = l; chipValue[i] = v;
         }
