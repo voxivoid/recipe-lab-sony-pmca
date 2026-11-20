@@ -20,6 +20,9 @@
  *
  * The log always ends with one "RESULT ..." line, which is what the app waits for.
  *
+ * Approach (ISP tables written through /dev/mem by a freestanding helper) after ivica00/bionz-x-research's arri_isp
+ * / "Arrivederci" (MIT, (c) 2026 ivica00, https://github.com/ivica00/bionz-x-research); the A6000 map and code here are our own.
+ *
  * Freestanding (no libc): built by build.sh/build.cmd with the NDK's gcc and shipped as lib/armeabi/librlisp.so so
  * the installer unpacks it executable. Register map and evidence: docs/PICTURE-PROFILES.md.
  */
