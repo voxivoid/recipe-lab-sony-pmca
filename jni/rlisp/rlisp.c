@@ -336,6 +336,21 @@ struct state { u8 magic[4]; long stock[NM], last[NM]; };
 
 static long round_q14(long x) { return x >= 0 ? (x + 8192) >> 14 : -((-x + 8192) >> 14); }
 
+/*
+ * Is this a creative style's matrix? Every one seen sums to exactly 1024 per row (white stays white). The A6000 also
+ * shows transient ones (1837 -17 -8 / -35 1341 -6 / -4 -2 1950, rows 1812/1300/1944) while a style settles; built on,
+ * forcing the rows back to 1024 cuts the diagonal so far that a lower saturation swaps hues (orange <-> blue).
+ */
+#define STOCK_SLACK 16
+static int stock_ok(const long *s)
+{
+    for (int r = 0; r < 3; r++) {
+        long sum = s[r * 3] + s[r * 3 + 1] + s[r * 3 + 2];
+        if (sum < 1024 - STOCK_SLACK || sum > 1024 + STOCK_SLACK) return 0;
+    }
+    return 1;
+}
+
 static void read_profile(struct profile *p)
 {
     if (read_file(path(g_dir, "profile.bin"), p, sizeof *p) != (long)sizeof *p || p->magic[0] != 'R' || p->magic[1] != 'L'
@@ -350,17 +365,25 @@ static void cmd_apply(const struct profile *pp, const int st[2])
     for (int i = 0; i < NM; i++) live[i] = s16(isp(g_row->matrix_pa)[i]);
     if (p.flags & F_MATRIX) {
         /* The stock matrix is the creative style's own. It is only read clean while both setters are the camera's and
-         * the register does not still hold what we wrote last (Off leaves our values until the camera's next event). */
+         * the register does not still hold what we wrote last (Off leaves our values until the camera's next event),
+         * and only when it looks like a style's (stock_ok): a transient is never built on. A saved stock that fails
+         * (one an older helper took) is dropped. With no good stock at all, the ISP really is not ready. */
         static struct state s;
         int have = read_file(path(g_dir, "state.bin"), &s, sizeof s) == (long)sizeof s && s.magic[0] == 'R' && s.magic[3] == 'T';
         int ours = have;
         for (int i = 0; i < NM && ours; i++) if (live[i] != s.last[i]) ours = 0;
-        if (have && st[0] == ST_ORIG && st[1] == ST_ORIG) {
+        int kept = have && stock_ok(s.stock);
+        if (kept && st[0] == ST_ORIG && st[1] == ST_ORIG) {
             out("STOCK kept\n");
-        } else if (!ours) {
+        } else if (!ours && stock_ok(live)) {
             for (int i = 0; i < NM; i++) s.stock[i] = live[i];
             out(st[0] == ST_ORIG ? "STOCK captured\n" : "STOCK recaptured\n");
-        } else out("STOCK kept\n");
+        } else if (kept) {
+            out(ours ? "STOCK kept\n" : "STOCK kept, live not a style's\n");
+        } else {
+            print_tables();
+            finish("REFUSE isp", 2);
+        }
         for (int r = 0; r < 3; r++) {
             long sum = 0;
             for (int c = 0; c < 3; c++) {

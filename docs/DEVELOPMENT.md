@@ -331,6 +331,9 @@ does not report its model is not supported.
     means `REFUSE isp`, and the log then carries both tables. The matrix is not judged: the A6000's own rows sum
     anywhere from about 690 to 1950 (Q10) in normal use. Every refusal but `isp` also drops `<dir>/stop`, which ends the boot loop.
   - `apply` multiplies the gamut by the creative style's own stock matrix, adjusting the diagonal so each row sums to 1024.
+    A stock is only taken when its rows sum to 1024 ± 16, as every style's do: the A6000 also shows transient matrices
+    (rows 1812/1300/1944) that, built on, make a lower saturation swap hues. Otherwise the saved stock is kept, and with
+    no good one at all `apply` refuses (`REFUSE isp`, both tables in the log).
   - `apply` then freezes the setters, writes both tables and reads them back.
   - `state.bin` remembers the stock matrix and the one last written, so after *Off* (our values stay until the camera's
     next event) the stock is not recaptured from our own.
