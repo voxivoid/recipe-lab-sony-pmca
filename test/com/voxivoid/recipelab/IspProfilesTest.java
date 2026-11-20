@@ -223,6 +223,64 @@ class IspProfilesTest {
         assertNull(IspProfiles.command("/h", "apply", longDir.toString()), "the shell takes 255 characters at most");
     }
 
+    /** the paths the A6000 gave (boot.log): the command must fit them */
+    static final String CAMERA_HELPER = "/data/lib/com.voxivoid.recipelab/lib/librlisp.so", CARD_DIR = "/mnt/sdcard/RECIPLAB/ISP";
+
+    @Test void theKeepAliveLoopFitsTheShellWithTheCamerasPaths() {
+        String cmd = IspProfiles.bootCommand(CAMERA_HELPER, CARD_DIR);
+        assertNotNull(cmd);
+        assertTrue(cmd.length() <= IspProfiles.MAX_COMMAND, cmd.length() + " characters");
+        assertTrue(cmd.startsWith("h=/android" + CAMERA_HELPER + ";d=/android" + CARD_DIR + ";"), "outside the chroot");
+        StringBuilder longDir = new StringBuilder("/");
+        for (int i = 0; i < 200; i++) longDir.append('d');
+        assertNull(IspProfiles.bootCommand(CAMERA_HELPER, longDir.toString()), "too long: null, never cut");
+    }
+
+    @Test void theKeepAliveLoopAppliesOnceThenReappliesForTwoMinutes() {
+        String cmd = IspProfiles.bootCommand(CAMERA_HELPER, CARD_DIR);
+        int apply = cmd.indexOf("$h apply $d"), loop = cmd.indexOf("for ");
+        assertTrue(apply >= 0 && apply < loop, "one apply before the loop");
+        assertEquals(1, count(cmd, "$h apply $d"));
+        assertEquals(1, count(cmd, "$h reapply $d"), "the loop only reapplies (a no-op while gamma matches)");
+        assertFalse(cmd.replace("&&", "").contains("&"), "foreground: a backgrounded loop does not survive the shell");
+        // iterations = product of the two for-lists; the ISP init rewrites gamma 30-60 s after boot
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("for \\w in ([0-9 ]+);do").matcher(cmd);
+        int iterations = 1, lists = 0;
+        while (m.find()) { iterations *= m.group(1).trim().split(" ").length; lists++; }
+        assertEquals(2, lists);
+        java.util.regex.Matcher s = java.util.regex.Pattern.compile("sleep (\\d+)").matcher(cmd);
+        assertTrue(s.find());
+        int sleep = Integer.parseInt(s.group(1));
+        assertTrue(sleep <= 2, "the app waits at most this long for the loop to let go of the shell");
+        assertTrue(iterations * sleep >= 90, "covers ISP init with margin: " + iterations * sleep + " s");
+    }
+
+    @Test void theKeepAliveLoopEndsOnStopOrAppBeforeEveryReapply() {
+        String cmd = IspProfiles.bootCommand(CAMERA_HELPER, CARD_DIR);
+        int check = cmd.indexOf("[ -f $d/stop -o -f $d/app ]&&exit"), reapply = cmd.indexOf("$h reapply $d");
+        assertTrue(check >= 0, "Off (stop) and the open app (app) end it");
+        assertTrue(cmd.indexOf("sleep") < check && check < reapply, "sleep, check, then reapply: never a write after the app opened");
+        assertFalse(cmd.substring(0, cmd.indexOf("for ")).contains("$d/app"),
+                "no early exit on app: a stale file must not stop the boot apply");
+    }
+
+    @Test void aDroppedCommandIsSentAgain() {
+        assertFalse(IspProfiles.resend(null, IspProfiles.RESEND_POLLS - 1, 0), "the helper gets a moment to start");
+        assertTrue(IspProfiles.resend(null, IspProfiles.RESEND_POLLS, 0), "no log: the shell dropped it");
+        assertTrue(IspProfiles.resend(null, IspProfiles.RESEND_POLLS, IspProfiles.RESENDS - 1));
+        assertFalse(IspProfiles.resend(null, IspProfiles.RESEND_POLLS, IspProfiles.RESENDS), "then it gives up and says so");
+        assertFalse(IspProfiles.resend("", IspProfiles.RESEND_POLLS, 0), "an empty log: the helper is running");
+        assertFalse(IspProfiles.resend("RLISP 1 apply\n", IspProfiles.RESEND_POLLS, 0), "running: never twice");
+        assertTrue(IspProfiles.RESEND_POLLS * IspProfiles.RESENDS * 250 >= 2 * 2000 + 1000,
+                "resends outlast the loop's longest sleep plus a reapply");
+    }
+
+    private static int count(String s, String part) {
+        int n = 0;
+        for (int i = s.indexOf(part); i >= 0; i = s.indexOf(part, i + 1)) n++;
+        return n;
+    }
+
     @Test void theLogIsReadByItsResultLine() {
         assertEquals(IspProfiles.R_PENDING, IspProfiles.result(null));
         assertEquals(IspProfiles.R_PENDING, IspProfiles.result(""));

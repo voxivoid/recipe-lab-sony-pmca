@@ -341,6 +341,17 @@ final class IspProfiles {
         return cmd.length() <= MAX_COMMAND ? cmd : null;
     }
 
+    /** polls (of the app's 250 ms) with no log before a command counts as dropped, and how often it is sent again */
+    static final int RESEND_POLLS = 4, RESENDS = 12;
+
+    /**
+     * Whether to send the helper's command again: the helper writes its log first thing, so none after
+     * {@link #RESEND_POLLS} polls means the shell was busy (it runs one command at a time) and dropped it.
+     */
+    static boolean resend(String log, int polls, int resends) {
+        return log == null && polls >= RESEND_POLLS && resends < RESENDS;
+    }
+
     /** what the helper's log says */
     static final int R_PENDING = 0, R_OK = 1, R_OFF = 2, R_PONG = 3, R_REFUSED = 4, R_MISMATCH = 5, R_ERROR = 6, R_STATUS = 7;
 
