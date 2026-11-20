@@ -125,7 +125,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private IspProfiles.Look ispLive;                           // what the image processor holds, as far as the app knows
     private boolean ispKnown, ispRunning, ispQueued;            // ispLive is known · the helper is running · the rows changed meanwhile
     private IspProfiles.Look ispRunningLook;                    // the look the running helper applies
-    private int ispPolls;
+    private int ispPolls, ispResends;
+    private String ispCmd;                                      // the running helper's command line, sent again when the shell dropped it
     private final Runnable ispApplySoon = new Runnable() { public void run() { ispSync(true); } };
     private final Runnable ispPoll = new Runnable() { public void run() { ispCheck(); } };
     private static final int PAGE_ROWS = 0, PAGE_ABOUT = 1, PAGE_TRANSFER = 2;
@@ -378,6 +379,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         // the image processor is RAM only: a power cycle since the app last ran has made it stock. Without a stored
         // profile it is stock either way (leaving the app puts the stored one back), so nothing needs running
         ispKnown = ispStored == null; ispLive = null;
+        BootReceiver.appOpened();                                // the keep-alive loop lets go of the root shell
+        pullState();
         try {
             openCamera();
             origFlat = camera.getParameters().flatten();
@@ -459,7 +462,13 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         // leave the live parameters equal to what is STORED (not to the launch snapshot): the camera writes some live
         // values (exposure bias, WB fine-tune) straight back into the settings store, which would undo a fresh store
         try { if (camera != null) { load(); System.arraycopy(cur, 0, edit, 0, N); applyPreview(); } } catch (Throwable t) {}
-        try { System.arraycopy(cur, 0, edit, 0, N); ispSync(true); } catch (Throwable t) {}   // the stored profile, not one being tried
+        try {                                                    // the stored profile, not one being tried
+            System.arraycopy(cur, 0, edit, 0, N);
+            handler.removeCallbacks(ispApplySoon); handler.removeCallbacks(ispPoll);
+            // a loop, not one apply: the camera rewrites gamma at its own times (ISP init, after boot) with the app gone
+            if (ispStored != null && BootReceiver.startLoop(this, ispStored)) { ispRunning = false; ispQueued = false; }
+            else { ispRunning = false; ispSync(true); }
+        } catch (Throwable t) {}
         try { if (camera != null) camera.stopPreview(); } catch (Throwable t) {}
         try { if (cameraEx != null) cameraEx.getClass().getMethod("release").invoke(cameraEx); } catch (Throwable t) {}
         cameraEx = null; camera = null;
@@ -878,7 +887,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     }
 
     // ------------------------------------------------------------ Picture profile: the root helper writes the ISP
-    private static final int ISP_SETTLE_MS = 700, ISP_POLL_MS = 250, ISP_POLLS = 20;
+    private static final int ISP_SETTLE_MS = 700, ISP_POLL_MS = 250, ISP_POLLS = 20, ISP_RESEND_POLLS = 4, ISP_RESENDS = 12;
 
     /** the folder the helper reads its profile from and writes its log and state into */
     private File ispDir() { return new File(getFilesDir(), "isp"); }
@@ -888,6 +897,23 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         IspProfiles.Look l = Params.look(edit);
         ispStored = l == null ? null : l.normal();
         prefs.edit().putString("ispLook", Params.lookText(ispStored)).commit();
+        persistLook(ispStored);                                  // the SD card copy the boot receiver reads
+    }
+
+    /**
+     * Writes the look tag to the SD card so the boot receiver can apply it at power-on. SharedPreferences live on a
+     * ramdisk and are lost; the card is persistent. When l is null, the file is removed (no profile to apply at boot).
+     */
+    private static void persistLook(IspProfiles.Look l) {
+        try {
+            File dir = BootReceiver.dir();
+            if (dir == null) return;
+            File f = new File(dir, "look.txt");
+            if (l == null) { f.delete(); return; }
+            dir.mkdirs();
+            FileOutputStream o = new FileOutputStream(f);
+            try { o.write(Params.lookText(l).getBytes()); } finally { o.close(); }
+        } catch (Throwable t) {}                                 // best-effort: opening the app still restores the profile
     }
 
     private static boolean same(IspProfiles.Look a, IspProfiles.Look b) { return a == null ? b == null : a.equals(b); }
@@ -918,7 +944,23 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             if (l != null) {
                 FileOutputStream o = new FileOutputStream(new File(dir, "profile.bin"));
                 try { o.write(IspProfiles.encode(l)); } finally { o.close(); }
+            } else {
+                new File(dir, "state.bin").delete();
             }
+            try {
+                File sd = BootReceiver.dir();
+                if (sd != null) {
+                    sd.mkdirs();
+                    if (l != null) {
+                        new File(sd, "stop").delete();
+                        FileOutputStream bo = new FileOutputStream(new File(sd, "profile.bin"));
+                        try { bo.write(IspProfiles.encode(l)); } finally { bo.close(); }
+                    } else {
+                        new FileOutputStream(new File(sd, "stop")).close();
+                        new File(sd, "state.bin").delete();          // stock is read fresh next time, not an old style's
+                    }
+                }
+            } catch (Throwable ignored) {}
             log.delete();
             NativeShell.exec(cmd);
         } catch (Throwable t) {
@@ -926,7 +968,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             showToast(Lang.t("isp_error", String.valueOf(t.getMessage())), 0);
             return;
         }
-        ispRunning = true; ispRunningLook = l; ispPolls = 0;
+        ispRunning = true; ispRunningLook = l; ispPolls = 0; ispResends = 0; ispCmd = cmd;
         handler.postDelayed(ispPoll, ISP_POLL_MS);
     }
 
@@ -935,13 +977,22 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         String text = null;
         try { text = readSmall(new File(ispDir(), "log")); } catch (Throwable t) {}
         int r = IspProfiles.result(text);
-        if (r == IspProfiles.R_PENDING && ++ispPolls < ISP_POLLS) { handler.postDelayed(ispPoll, ISP_POLL_MS); return; }
+        ++ispPolls;
+        // the helper writes its log first thing: none after a second means the shell was busy (the keep-alive loop
+        // ending) and dropped the command, so send it again rather than wait
+        if (text == null && ispPolls >= ISP_RESEND_POLLS && ispResends < ISP_RESENDS) {
+            ispResends++; ispPolls = 0;
+            try { NativeShell.exec(ispCmd); } catch (Throwable t) {}
+            handler.postDelayed(ispPoll, ISP_POLL_MS); return;
+        }
+        if (r == IspProfiles.R_PENDING && ispPolls < ISP_POLLS) { handler.postDelayed(ispPoll, ISP_POLL_MS); return; }
         ispRunning = false;
         log(r == IspProfiles.R_OK || r == IspProfiles.R_OFF ? CardLog.INFO : CardLog.FAIL,
                 "isp " + (ispRunningLook == null ? "off" : ispRunningLook.toString()) + ": " + (text == null ? "no log" : text.trim().replace('\n', ' ')));
         String msg = null;
         switch (r) {
-            case IspProfiles.R_OK: case IspProfiles.R_OFF: break;
+            case IspProfiles.R_OK: syncState(); break;
+            case IspProfiles.R_OFF: break;
             case IspProfiles.R_REFUSED: msg = Lang.t("isp_refused"); break;
             case IspProfiles.R_MISMATCH: msg = Lang.t("isp_mismatch"); break;
             case IspProfiles.R_PENDING: msg = Lang.t("isp_no_root"); break;
@@ -949,6 +1000,27 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         }
         if (msg != null) showToast(msg, 5000);
         if (ispQueued) { ispQueued = false; ispSync(true); }
+    }
+
+    /** state.bin (stock matrix + the matrix last written) to the card, for the boot / keep-alive loop */
+    private void syncState() { copyState(ispDir(), BootReceiver.dir()); }
+
+    /** the loop may have written the matrix since: its state.bin is the newest, or the app takes our matrix for stock */
+    private void pullState() { copyState(BootReceiver.dir(), ispDir()); }
+
+    private static void copyState(File from, File to) {
+        try {
+            if (from == null || to == null) return;
+            File src = new File(from, "state.bin");
+            if (!src.exists()) return;
+            to.mkdirs();
+            FileInputStream in = new FileInputStream(src);
+            try {
+                FileOutputStream out = new FileOutputStream(new File(to, "state.bin"));
+                try { byte[] buf = new byte[512]; int n; while ((n = in.read(buf)) > 0) out.write(buf, 0, n); }
+                finally { out.close(); }
+            } finally { in.close(); }
+        } catch (Throwable ignored) {}
     }
 
     /** a short text file the app may read, whole; null when it is not there */

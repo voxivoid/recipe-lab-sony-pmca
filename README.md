@@ -79,8 +79,8 @@ mode**, photo and video, with the app closed. Turn it off and on, it is still th
 > **Honest note.** The A6000 has no Picture Profile menu and cannot store tone curves. Every recipe is built only from
 > what this camera *can* keep: Creative Style, saturation, contrast, sharpness, white balance, exposure bias, Picture
 > Effect and one hidden colour setting Sony never exposed. So these are approximations of a look, not copies of another brand's colour science.
-> The [picture profiles](#picture-profiles) are the exception: they write the tone curve into the camera's memory, so
-> they last until it is switched off, and the app puts them back each time it opens.
+> The [picture profiles](#picture-profiles) are the exception: they write the tone curve into the camera's memory, and
+> the app puts them back by itself after each power-on.
 
 ## The recipes
 
@@ -315,8 +315,8 @@ a Sony Picture Profile menu does:
 | **S-CURVE** | contrast around middle grey, -7 .. +7 |
 
 The profile covers live view, photos and video, and shows as you change the chips. It lives in the camera's memory
-only: switching the camera off brings back the normal look, and opening the app brings the profile of the recipe you
-last picked back. It shapes the JPEG and video, never the RAW. DRO and the style's own contrast reshape the
+only, so the app puts it back by itself at every power-on, without being opened: for up to a minute after switching
+on, live view can show the normal look before the profile returns. It shapes the JPEG and video, never the RAW. DRO and the style's own contrast reshape the
 picture too, so the built-in profiles turn DRO off. A recipe with a profile cannot be shared as a QR code yet, and a
 Recipe Lab Studio or app version from before profiles skips its file rather than read half of it.
 
