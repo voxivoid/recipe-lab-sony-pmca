@@ -327,8 +327,9 @@ does not report its model is not supported.
     `RESULT REFUSE body` or `REFUSE fw <wanted>`, a row not yet enabled `REFUSE untested`.
   - It finds av-cam's load address (the row's, a cached one in `<dir>/base`, or the one page-aligned base in System RAM
     where both setters match), reads `/dev/mem` only inside `/proc/iomem`'s System RAM, and compares the full 32 bytes
-    at each setter with the row: neither stock nor patched means `REFUSE sig`. Live tables that do not look like a gamma
-    table and a matrix mean `REFUSE isp`. Every refusal but `isp` also drops `<dir>/stop`, which ends the boot loop.
+    at each setter with the row: neither stock nor patched means `REFUSE sig`. A live gamma table with a word over 10 bits
+    means `REFUSE isp`, and the log then carries both tables. The matrix is not judged: the A6000's own rows sum
+    anywhere from about 690 to 1950 (Q10) in normal use. Every refusal but `isp` also drops `<dir>/stop`, which ends the boot loop.
   - `apply` multiplies the gamut by the creative style's own stock matrix, adjusting the diagonal so each row sums to 1024.
   - `apply` then freezes the setters, writes both tables and reads them back.
   - `state.bin` remembers the stock matrix and the one last written, so after *Off* (our values stay until the camera's
