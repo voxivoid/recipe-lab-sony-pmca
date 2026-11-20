@@ -246,16 +246,20 @@ final class IspProfiles {
     /** the matrix from BT.709 RGB to a colour mode's gamut: inv(M_target) · M_709 */
     static double[][] gamut(int g) { return multiply(inverse(rgbToXyz(primaries(g), D65)), rgbToXyz(P709, D65)); }
 
-    /** BT.709 luma: what saturation keeps */
-    static final double[] LUMA = { 0.2126, 0.7152, 0.0722 };
+    /**
+     * A colour mode's luminance weights: the Y row of its RGB → XYZ matrix, what saturation keeps. Saturation runs on
+     * the colour mode's own RGB, so BT.709's weights there would brighten or darken colours (S-Gamut3 blue 2.4x at -32).
+     */
+    static double[] luma(int gamut) { return rgbToXyz(primaries(gamut), D65)[1]; }
     /** colour phase: degrees of hue rotation per step */
     static final double PHASE_DEGREES = 3;
 
     /** saturation -32..+32: -32 is black and white, +32 twice the colour; grey stays grey */
-    static double[][] saturation(int sat) {
+    static double[][] saturation(int sat, int gamut) {
         double s = 1 + sat / (double) SAT_MAX;
+        double[] y = luma(gamut);
         double[][] m = new double[3][3];
-        for (int i = 0; i < 3; i++) for (int j = 0; j < 3; j++) m[i][j] = (1 - s) * LUMA[j] + (i == j ? s : 0);
+        for (int i = 0; i < 3; i++) for (int j = 0; j < 3; j++) m[i][j] = (1 - s) * y[j] + (i == j ? s : 0);
         return m;
     }
 
@@ -266,7 +270,7 @@ final class IspProfiles {
     }
 
     /** the whole colour side of a look: gamut, then phase, then saturation */
-    static double[][] matrix(Look l) { return multiply(saturation(l.sat), multiply(phase(l.phase), gamut(l.gamut))); }
+    static double[][] matrix(Look l) { return multiply(saturation(l.sat, l.gamut), multiply(phase(l.phase), gamut(l.gamut))); }
 
     /** the look's matrix in Q14, row-major (the helper multiplies the camera's stock matrix by it) */
     static int[] matrixQ14(Look l) {

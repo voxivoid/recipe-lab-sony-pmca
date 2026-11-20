@@ -287,7 +287,7 @@ Evidence and the wider register map are in the a6000-qemu research repo (`docs/A
 | BLACK | -15 .. +15 | black level: 3 code values per step at black, fading to none at white |
 | B.GAMMA, B.RANGE | -7 .. +7; Narrow / Middle / Wide (15 / 25 / 40% of the output) | black gamma: `top · (y/top)^e` under the range, `e = 2^(-0.6·level/7)`. B.RANGE shows only with B.GAMMA ≠ 0 |
 | KNEE, SLOPE | *Off*, 75 .. 105%; -5 .. +5 | above the point, `kp + (y - kp) · 0.25 · 2^(slope/5)`, on the curve's unclipped values (BT.709 and HLG go on rising past 1 for it). SLOPE shows only with a knee |
-| C.SAT | -32 .. +32 | `(1 - s)·luma + s·I`, `s = 1 + sat/32`, BT.709 luma: -32 is black and white |
+| C.SAT | -32 .. +32 | `(1 - s)·luma + s·I`, `s = 1 + sat/32`, the colour mode's own luminance weights (its Y row): -32 is black and white, and no colour gets brighter or darker |
 | PHASE | -7 .. +7 | a rotation of every hue about the grey axis, 3° a step |
 | S-CURVE | -7 .. +7 | contrast about middle grey: a power curve each side of it with slope `2^(0.6·c/7)` at grey |
 

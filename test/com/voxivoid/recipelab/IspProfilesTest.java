@@ -114,14 +114,19 @@ class IspProfilesTest {
     }
 
     @Test void saturationKeepsLumaAndPhaseIsARotation() {
-        for (int sat = -32; sat <= 32; sat += 8) {
-            double[][] s = IspProfiles.saturation(sat);
-            for (int j = 0; j < 3; j++) {
-                double y = 0;
-                for (int i = 0; i < 3; i++) y += IspProfiles.LUMA[i] * s[i][j];
-                assertEquals(IspProfiles.LUMA[j], y, 1e-12, "sat " + sat + ": a colour's luma does not move");
+        for (int g = 0; g < IspProfiles.GAMUTS; g++) {
+            double[] luma = IspProfiles.luma(g);
+            assertEquals(1, luma[0] + luma[1] + luma[2], 1e-9, "gamut " + g + ": white has luminance 1");
+            for (int sat = -32; sat <= 32; sat += 8) {
+                double[][] s = IspProfiles.saturation(sat, g);
+                for (int j = 0; j < 3; j++) {
+                    double y = 0;
+                    for (int i = 0; i < 3; i++) y += luma[i] * s[i][j];
+                    assertEquals(luma[j], y, 1e-12, "gamut " + g + " sat " + sat + ": a colour's luminance does not move");
+                }
             }
         }
+        assertArrayEquals(new double[] { 0.2126, 0.7152, 0.0722 }, IspProfiles.luma(IspProfiles.CAMERA), 1e-4, "the camera's: BT.709");
         for (int ph = -7; ph <= 7; ph++) {
             double[][] p = IspProfiles.phase(ph), back = IspProfiles.multiply(p, IspProfiles.phase(-ph));
             for (int i = 0; i < 3; i++) for (int j = 0; j < 3; j++) {
