@@ -261,6 +261,10 @@ neither a build nor `tools/test.sh` can say anything about them.
 
 ## Picture profiles
 
+How the profile survives a power cycle (boot event, keep-alive loop, the shell's limits, what failed): read
+[PICTURE-PROFILES.md](PICTURE-PROFILES.md) before changing `BootReceiver`, `IspProfiles.bootCommand` or the `isp*`
+code in `MainActivity`.
+
 A6000 FW 3.21 only, RAM only. A picture profile is part of a recipe — the GAMMA chip and the nine after it — but its
 look goes to the ISP's SRAM, not to the settings store:
 

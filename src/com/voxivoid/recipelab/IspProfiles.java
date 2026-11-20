@@ -330,6 +330,17 @@ final class IspProfiles {
         return cmd.length() <= MAX_COMMAND ? cmd : null;
     }
 
+    /**
+     * The keep-alive command: apply once, then reapply every 2 s for about 2 minutes. The loop keeps the OSAL shell (and
+     * the CPU) alive; {@code reapply} is a no-op when gamma already matches. A {@code stop} file (Off) or {@code app}
+     * file (the app is open and needs the shell) ends it within 2 s. Null when too long.
+     */
+    static String bootCommand(String helper, String dir) {
+        String h = ROOT_PREFIX + helper, d = ROOT_PREFIX + dir;
+        String cmd = "h=" + h + ";d=" + d + ";$h apply $d;for a in 1 2 3 4 5 6;do for b in 1 2 3 4 5 6 7 8 9 0;do sleep 2;[ -f $d/stop -o -f $d/app ]&&exit;$h reapply $d;done;done";
+        return cmd.length() <= MAX_COMMAND ? cmd : null;
+    }
+
     /** what the helper's log says */
     static final int R_PENDING = 0, R_OK = 1, R_OFF = 2, R_PONG = 3, R_REFUSED = 4, R_MISMATCH = 5, R_ERROR = 6, R_STATUS = 7;
 

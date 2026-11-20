@@ -8,6 +8,7 @@
  *
  *   rlisp ping   <dir>      write "RESULT PONG uid=<n>" to <dir>/log: is the root shell there?
  *   rlisp apply  <dir>      apply <dir>/profile.bin (written by IspProfiles.encode)
+ *   rlisp reapply <dir>     like apply, but skip the write if gamma already matches (boot retries)
  *   rlisp off    <dir>      restore the setters; the camera puts its own look back at its next event
  *   rlisp status <dir>      setter states, first gamma words, the matrix
  *
@@ -190,12 +191,11 @@ static void cmd_apply(const char *dir)
         int have = read_file(path(dir, "state.bin"), &s, sizeof s) == (long)sizeof s && s.magic[0] == 'R' && s.magic[3] == 'T';
         int ours = have;
         for (int i = 0; i < NM && ours; i++) if (live[i] != s.last[i]) ours = 0;
-        if (st[0] == ST_ORIG && st[1] == ST_ORIG && !ours) {
+        if (have && st[0] == ST_ORIG && st[1] == ST_ORIG) {
+            out("STOCK kept\n");
+        } else if (!ours) {
             for (int i = 0; i < NM; i++) s.stock[i] = live[i];
-            out("STOCK captured\n");
-        } else if (!have) {
-            for (int i = 0; i < NM; i++) s.stock[i] = STD_MATRIX[i];
-            out("STOCK standard\n");
+            out(st[0] == ST_ORIG ? "STOCK captured\n" : "STOCK recaptured\n");
         } else out("STOCK kept\n");
         for (int r = 0; r < 3; r++) {
             long sum = 0;
@@ -234,6 +234,25 @@ static void cmd_off(void)
     finish("OFF", 0);
 }
 
+static void cmd_reapply(const char *dir)
+{
+    static struct profile p;
+    if (read_file(path(dir, "profile.bin"), &p, sizeof p) != (long)sizeof p || p.magic[0] != 'R' || p.magic[1] != 'L'
+        || p.magic[2] != 'P' || p.magic[3] != 'P' || p.version != 1)
+        fail("profile.bin missing or not version 1");
+    int st[2]; check_fw(st);
+    if (p.flags & F_GAMMA) {
+        volatile ul *g = isp(GAMMA_PA);
+        int match = 1;
+        for (int i = 0; i < NG && match; i++) if (g[i] != (p.gamma[i] & 0x3FF)) match = 0;
+        if (match) {
+            out("GAMMA "); for (int i = 0; i < 6; i++) { outd(g[i]); out(" "); } out("\n");
+            finish("MATCH", 0);
+        }
+    }
+    cmd_apply(dir);
+}
+
 static void cmd_status(void)
 {
     int st[2]; check_fw(st);
@@ -251,6 +270,7 @@ void cmain(int argc, char **argv)
     out("RLISP 1 "); out(op); out("\n");
     if (streq(op, "ping")) { out("RESULT PONG uid="); outd(sc(SYS_getuid32, 0, 0, 0, 0, 0)); out("\n"); sc(SYS_exit, 0, 0, 0, 0, 0); }
     else if (streq(op, "apply")) cmd_apply(dir);
+    else if (streq(op, "reapply")) cmd_reapply(dir);
     else if (streq(op, "off")) cmd_off();
     else if (streq(op, "status")) cmd_status();
     fail("unknown command");
