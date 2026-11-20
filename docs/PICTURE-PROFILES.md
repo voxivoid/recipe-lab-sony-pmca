@@ -147,6 +147,21 @@ white-stays-white correction. The stock matrix comes from `state.bin`:
 5. **Off deletes the card `state.bin`**, so the next capture reads the real stock and not an old creative style's.
 6. **The loop must run in the foreground.** See "Backgrounded loop" below.
 7. Keep `bootCommand` within 255 chars (`IspProfiles.MAX_COMMAND`). It returns null when too long, and nothing runs.
+8. **Never refuse to write because of what the live tables hold.** The A6000 shows all of these in normal use, and a
+   check that rejects any one of them breaks the profile (the power-cycle one silently: the boot loop just refuses
+   60 times):
+
+   | When | Gamma (first words, max) | Matrix |
+   |------|--------------------------|--------|
+   | Right after power-on, before ISP init | `5 11 17 23 29 35`, max **1732** (over 10 bits) | identity `1024 0 0 …` |
+   | Shortly after *Off*, Standard, no effect | `127 159 175 255 212 255`, not monotone | `1837 -17 -8 / -35 1341 -6 / -4 -2 1950` |
+   | After *Off* | `127 159 191 207 244 239`, not monotone | `-66 -1 -81 / -3 1852 -265 / -19 -65 -292` |
+
+   Only the setters' 32-byte signatures decide whether the helper acts. The live matrix decides only **which stock**
+   to build on (`stock_ok`, Standard as the fallback), never whether to write.
+9. **Every change to `rlisp`, `BootReceiver` or the boot command is tested with a real power-off**, not only in the
+   app: switch off with a log profile on, switch on, wait a minute, and check live view. Opening the app re-applies
+   the profile and hides a broken boot path.
 
 ---
 

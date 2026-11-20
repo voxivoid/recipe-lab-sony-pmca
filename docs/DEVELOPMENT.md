@@ -329,9 +329,10 @@ does not report its model is not supported.
     `RESULT REFUSE body` or `REFUSE fw <wanted>`, a row not yet enabled `REFUSE untested`.
   - It finds av-cam's load address (the row's, a cached one in `<dir>/base`, or the one page-aligned base in System RAM
     where both setters match), reads `/dev/mem` only inside `/proc/iomem`'s System RAM, and compares the full 32 bytes
-    at each setter with the row: neither stock nor patched means `REFUSE sig`. A live gamma table with a word over 10 bits
-    means `REFUSE isp`, and the log then carries both tables. The matrix is not judged: the A6000's own rows sum
-    anywhere from about 690 to 1950 (Q10) in normal use. Every refusal but `isp` also drops `<dir>/stop`, which ends the boot loop.
+    at each setter with the row: neither stock nor patched means `REFUSE sig`. The live tables never stop a write: the A6000
+    shows a gamma word of 1732 before ISP init and matrix rows far from 1024 in normal use
+    ([PICTURE-PROFILES.md, rule 8](PICTURE-PROFILES.md#rules-that-must-not-break)). Every refusal drops `<dir>/stop`,
+    which ends the boot loop.
   - `apply` multiplies the gamut by the creative style's own stock matrix, adjusting the diagonal so each row sums to 1024.
     A stock is only taken when its rows sum to 1024 ± 16, as every style's do: the A6000 also shows transient matrices
     (rows 1812/1300/1944) that, built on, make a lower saturation swap hues. Otherwise the saved stock is kept, and with
@@ -371,7 +372,7 @@ A row of `bodies.h` comes from that body's newest Sony updater, with the a6000-q
 3. The row goes into `bodies.h` and into `IspBodies.ROWS` (`IspBodiesTest` checks both agree). With `enabled` 0 the
    body says "not confirmed yet" and its bug report carries the probe; the 15 rows from the first port are on, with the
    A6000's base as a first guess, so owners can try the profile itself.
-4. A probe from that body that says `ROW disabled`, `BASE …`, both setters `original` and `ISP sane` switches the row
+4. A probe from that body that says `ROW disabled`, `BASE …`, and both setters `original` switches the row
    on (`enabled` 1 in both places), with the base it found written into the row.
 
 av-cam's load address lives in each camera's `Backup.bin`, not in the updater, which is why the probe finds it.
