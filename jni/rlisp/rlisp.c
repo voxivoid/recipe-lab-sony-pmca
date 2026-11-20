@@ -289,10 +289,8 @@ static volatile ul *isp(ul pa)
 static int s16(ul w) { w &= 0xFFFF; return w & 0x8000 ? (int)w - 65536 : (int)w; }
 
 /*
- * Does the live gamma table look like one? Every word is 10-bit (all zero is allowed: before ISP init the table is
- * empty); a page that is not the ISP's fails. The matrix is not judged: the A6000 holds rows summing anywhere from
- * about 690 to 1950 (Q10) in normal use, and is not monotone in its gamma either, so neither says "not the ISP".
- * The setters' 32-byte signatures are what prove the row is this camera's.
+ * For probe only, as information for a new body's owner: is every gamma word 10-bit? Never a reason to refuse a write;
+ * before ISP init the A6000's own table reaches 1732 (docs/PICTURE-PROFILES.md, rule 8).
  */
 static int isp_sane(void)
 {
@@ -324,7 +322,8 @@ static void check_body(int st[2], int need_enabled)
         out(i ? "SETTER matrix " : "SETTER gamma "); out(state_name(st[i])); out("\n");
     }
     if (st[0] == ST_UNKNOWN || st[1] == ST_UNKNOWN) refuse_for_good("REFUSE sig");
-    if (!isp_sane()) { print_tables(); finish("REFUSE isp", 2); }   /* not for good: the ISP may still be starting */
+    /* No check of the live tables here: the A6000 shows a gamma word of 1732 before ISP init, and matrices whose rows sum
+     * anywhere from -376 to 1950, all in normal use (docs/PICTURE-PROFILES.md, rule 8). The signatures above decide. */
 }
 
 /* ---- the profile the app wrote (IspProfiles.encode) ---- */
@@ -510,8 +509,8 @@ static void cmd_probe(void)
         }
         if (st[0] != ST_UNKNOWN && st[1] != ST_UNKNOWN) {
             print_tables();
-            ok = isp_sane();
-            out(ok ? "ISP sane\n" : "ISP not sane\n");
+            ok = 1;                                       /* the signatures decide; the tables are information only */
+            out(isp_sane() ? "ISP sane\n" : "ISP gamma over 10 bits (normal before ISP init)\n");
         }
     }
     finish(ok ? "PROBE ok" : "PROBE fail", 0);
