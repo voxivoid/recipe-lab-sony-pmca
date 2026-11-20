@@ -69,6 +69,73 @@ class IspProfilesTest {
         assertArrayEquals(new int[] { 16384, 0, 0, 0, 16384, 0, 0, 0, 16384 }, IspProfiles.matrixQ14(P_ITU709), "the camera's colour, untouched");
     }
 
+    // ------------------------------------------------------------ properties any correct curve or gamut has
+    @Test void everyCurveRisesAndIsContinuousAtItsBreakpoint() {
+        for (int c = 1; c < IspProfiles.CURVES; c++) {
+            double prev = IspProfiles.curveCode(c, 0);
+            for (int i = 1; i <= 4000; i++) {
+                double r = 5.0 * i / 4000, code = IspProfiles.curveCode(c, r);
+                assertTrue(code > prev, IspProfiles.CURVE_CODES[c] + " at " + r);
+                prev = code;
+            }
+        }
+        // the two pieces of each log curve meet; BT.709's do not quite (4.5 * 0.018 vs 0.0812), as the spec has it
+        double[][] cuts = { { IspProfiles.SLOG3, 0.01125 }, { IspProfiles.LOGC3, 0.010591 }, { IspProfiles.HLG, 1.0 / 12 / IspProfiles.HLG_WHITE } };
+        for (double[] cut : cuts) {
+            int c = (int) cut[0];
+            assertEquals(IspProfiles.curveCode(c, cut[1] * (1 - 1e-9)), IspProfiles.curveCode(c, cut[1] * (1 + 1e-9)), 1e-3, IspProfiles.CURVE_CODES[c]);
+        }
+    }
+
+    @Test void eachGamutSendsItsOwnPrimariesToItsOwnChannels() {
+        // a target primary, as BT.709 RGB, must come out as pure R, G or B of the target: catches a swapped product
+        double[][] to709 = IspProfiles.inverse(IspProfiles.rgbToXyz(IspProfiles.P709, IspProfiles.D65));
+        for (int g = 0; g < IspProfiles.GAMUTS; g++) {
+            double[][] target = IspProfiles.rgbToXyz(IspProfiles.primaries(g), IspProfiles.D65), m = IspProfiles.multiply(IspProfiles.gamut(g), IspProfiles.multiply(to709, target));
+            for (int i = 0; i < 3; i++) for (int j = 0; j < 3; j++) assertEquals(i == j ? 1 : 0, m[i][j], 1e-9, "gamut " + g);
+        }
+    }
+
+    @Test void whiteStaysWhiteBeforeTheRowsAreForcedToSumToOne() {
+        // matrixQ14 makes each row sum to 1 by nudging the diagonal; that nudge must be rounding, never a hidden error
+        for (int g = 0; g < IspProfiles.GAMUTS; g++) {
+            double[][] m = IspProfiles.gamut(g);
+            for (int r = 0; r < 3; r++) assertEquals(1, m[r][0] + m[r][1] + m[r][2], 1e-9, "gamut " + g + " row " + r);
+            for (int sat : new int[] { -32, 0, 32 }) for (int ph : new int[] { -7, 0, 7 }) {
+                IspProfiles.Look l = new IspProfiles.Look(IspProfiles.SLOG3, g, 0, 0, 1, IspProfiles.KNEE_OFF, 0, sat, ph, 0);
+                double[][] t = IspProfiles.matrix(l);
+                for (int r = 0; r < 3; r++) {
+                    int nudge = 0;
+                    for (int c = 0; c < 3; c++) nudge += (int) Math.round(t[r][c] * 16384);
+                    assertTrue(Math.abs(16384 - nudge) <= 2, l + " row " + r + " off by " + (16384 - nudge));
+                }
+            }
+        }
+    }
+
+    @Test void saturationKeepsLumaAndPhaseIsARotation() {
+        for (int sat = -32; sat <= 32; sat += 8) {
+            double[][] s = IspProfiles.saturation(sat);
+            for (int j = 0; j < 3; j++) {
+                double y = 0;
+                for (int i = 0; i < 3; i++) y += IspProfiles.LUMA[i] * s[i][j];
+                assertEquals(IspProfiles.LUMA[j], y, 1e-12, "sat " + sat + ": a colour's luma does not move");
+            }
+        }
+        for (int ph = -7; ph <= 7; ph++) {
+            double[][] p = IspProfiles.phase(ph), back = IspProfiles.multiply(p, IspProfiles.phase(-ph));
+            for (int i = 0; i < 3; i++) for (int j = 0; j < 3; j++) {
+                double dot = 0;
+                for (int k = 0; k < 3; k++) dot += p[i][k] * p[j][k];
+                assertEquals(i == j ? 1 : 0, dot, 1e-12, "phase " + ph + " is orthonormal");
+                assertEquals(i == j ? 1 : 0, back[i][j], 1e-12, "phase " + ph + " then " + -ph + " is nothing");
+            }
+        }
+        double[][] p = IspProfiles.phase(7);
+        double turn = Math.toDegrees(Math.acos((p[0][0] + p[1][1] + p[2][2] - 1) / 2));
+        assertEquals(7 * IspProfiles.PHASE_DEGREES, turn, 1e-9, "the angle a step promises");
+    }
+
     // ------------------------------------------------------------ the adjustments
     @Test void theKneeBendsOnlyAboveItsPoint() {
         int[] base = IspProfiles.gamma(P_ITU709), knee = IspProfiles.gamma(with(P_ITU709, 0, 0, 1, 90, 0, 0, 0, 0));

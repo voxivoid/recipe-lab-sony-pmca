@@ -293,7 +293,10 @@ Evidence and the wider register map are in the a6000-qemu research repo (`docs/A
 
 The order is a Sony Picture Profile's: knee, black gamma, S-curve, black level on the curve; then gamut, phase,
 saturation in the matrix. Every adjustment keeps 0 and 1023 where they are and grey stays grey, so a neutral look is the
-published curve exactly (`IspProfilesTest` holds the reference words). A range with no black gamma or a slope with no
+published curve exactly (`IspProfilesTest` holds the reference words). `IspReferenceTest` checks every curve and gamut
+against colour-science, an independent library, through `test/fixtures/isp-reference.tsv`; `tools/isp-reference.py`
+rewrites that file (it needs `pip install colour-science`), so `tools/test.sh` stays JDK-only. Both prove the tables match
+the specifications, not what the camera does with them. A range with no black gamma or a slope with no
 knee is not part of the look (`Look.normal`): it is neither dirty nor saved.
 
 **How the app drives it.** The profile rows are rows like the others (`Params.R_GAMMA .. R_SCURVE`), with `ROW_ID` `ISP`:
