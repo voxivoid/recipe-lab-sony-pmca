@@ -7,6 +7,10 @@ package com.voxivoid.recipelab;
  * it). RAM only: the camera is stock again after a power cycle, which is why the app applies the stored one again on
  * every start.
  *
+ * The idea of writing a gamma curve and colour matrix into the ISP, and the ARRI LogC3 / AWG3 look, come from
+ * ivica00/bionz-x-research (arri_isp "Arrivederci", a6400-lut-converter; MIT, (c) 2026 ivica00,
+ * https://github.com/ivica00/bionz-x-research). The A6000 values and code are ours.
+ *
  * Everything here is camera-free (tools/test.sh): the 96 gamma words, the matrices, the file the helper reads,
  * the root command line and how the helper's log is read back. No android.* import may appear in this class.
  *

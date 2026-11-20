@@ -12,6 +12,10 @@ Contents: [Hardware](#hardware-a6000-fw-321) · [How it works now](#how-it-works
 [Rules that must not break](#rules-that-must-not-break) · [What was tried and failed](#what-was-tried-and-failed) ·
 [Open issues](#open-issues) · [Debugging](#debugging-from-the-card)
 
+Credit: writing the ISP's gamma table and colour matrix through `/dev/mem`, and the ARRI LogC3 / AWG3 look, follow
+[ivica00/bionz-x-research](https://github.com/ivica00/bionz-x-research) (`arri_isp` and its "Arrivederci" pipeline, `a6400-lut-converter`; MIT, © 2026 ivica00).
+The A6000 addresses and everything below were found on an A6000.
+
 ---
 
 ## Hardware (A6000 FW 3.21)

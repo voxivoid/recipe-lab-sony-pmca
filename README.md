@@ -491,12 +491,21 @@ engineering Sony's PlayMemories camera platform:
 He figured out how these cameras work, documented it openly and licensed it permissively — this project just stands
 on that.
 
+**Thanks to [ivica00](https://github.com/ivica00)** and [bionz-x-research](https://github.com/ivica00/bionz-x-research)
+(MIT, © 2026 ivica00). The picture-profile work (`jni/rlisp/`, `IspProfiles.java`, [docs/PICTURE-PROFILES.md](docs/PICTURE-PROFILES.md))
+follows the approach he published for newer BIONZ X bodies: writing the ISP's gamma table and colour matrix straight
+through `/dev/mem` (the `arri_isp` mod and its "Arrivederci" transform pipeline), with the ARRI LogC3 / ALEXA Wide Gamut pipeline and the 3D-LUT fitting of
+`a6400-lut-converter` as the model. The A6000 register map, addresses, helper code and safety checks here were
+re-derived and tested on an A6000 (see [a6000-qemu](https://github.com/voxivoid/a6000-qemu)), but the idea and the
+method are his.
+
 **Thanks also to [Veres Deni Alex](https://www.veresdenialex.com/).** His Sony film-simulation recipes and the side-by-side
 reference frames on his site were the inspiration and the benchmark for many of the looks here (Kodak, Fuji, Cinestill,
 Ilford, Cinema…). The values in this app are re-derived for what the A6000 can store and are not his recipes.
 
 License: [GPL-3.0](LICENSE), © 2026 André Domingues. Releases up to and including v1.7.0 were published under MIT.
 OpenMemories-Platform: MIT, © 2017 ma1co.
+[bionz-x-research](https://github.com/ivica00/bionz-x-research) (approach and curves for the picture profiles): MIT, © 2026 ivica00.
 [QR Code generator](https://www.nayuki.io/page/qr-code-generator-library) (`src/io/nayuki/qrcodegen`): MIT, © Project Nayuki.
 [ZXing](https://github.com/zxing/zxing) 3.3.3, the QR code reader subset (`src/com/google/zxing`): Apache-2.0, © ZXing authors
 (patched where the camera's Java lacks a call, marked "Recipe Lab:" in the source).
