@@ -128,6 +128,9 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private int ispPolls, ispResends;
     private String ispCmd;                                      // the running helper's command line, sent again when the shell dropped it
     private final Runnable ispApplySoon = new Runnable() { public void run() { ispSync(true); } };
+    // the live-preview parameters last given to this camera object: a step that leaves them as they are (a profile chip)
+    // costs no camera round trip. Null after the camera is opened again or the store is written
+    private Map<String, String> previewSent;
     private final Runnable ispPoll = new Runnable() { public void run() { ispCheck(); } };
     private String ispModel, ispFw;                             // this camera, as IspBodies and the helper's body file know it
     private int probePolls, probeResends;
@@ -413,6 +416,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         Method open = cx.getMethod("open", int.class, Class.forName("com.sony.scalar.hardware.CameraEx$OpenOptions"));
         cameraEx = open.invoke(null, 0, null);
         camera = (Camera) cx.getMethod("getNormalCamera").invoke(cameraEx);
+        previewSent = null;
     }
 
     /** lets go of the camera: its decoder refuses every photo while the app holds it (Playback) */
@@ -567,6 +571,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private void writeAll(boolean confirmed) {
         if (!confirmed && qualityChanges()) { openPrompt(P_QUALITY, 0); return; }
         if (!dirty()) { showToast(Lang.t("status_already_picked"), 2500); return; }
+        previewSent = null;                                      // the store write may move the camera's parameters
         int storedSub = storedSub();
         int n = Params.dirtyRows(cur, edit, storedSub);
         List<Params.Write> ws = Params.writes(cur, edit, storedSub);
@@ -898,7 +903,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     }
 
     // ------------------------------------------------------------ Picture profile: the root helper writes the ISP
-    private static final int ISP_SETTLE_MS = 700, ISP_POLL_MS = 250, ISP_POLLS = 20;
+    private static final int ISP_SETTLE_MS = 1000, ISP_POLL_MS = 250, ISP_POLLS = 20;
 
     /** the folder the helper reads its profile from and writes its log and state into */
     private File ispDir() { return new File(getFilesDir(), "isp"); }
@@ -2002,11 +2007,14 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private void applyPreview() {
         if (camera == null) return;
         try {
-            Camera.Parameters p = camera.getParameters();
             Map<String, String> wanted = Params.preview(edit);
+            if (previewOk && wanted.equals(previewSent)) return;  // only profile rows moved: the camera already has the rest
+            previewSent = null;
+            Camera.Parameters p = camera.getParameters();
             for (Map.Entry<String, String> e : wanted.entrySet()) p.set(e.getKey(), e.getValue());
             camera.setParameters(p);
             previewOk = true;
+            previewSent = wanted;
             Camera.Parameters back = camera.getParameters();     // what the camera kept: a dropped value throws nothing (#104)
             Map<String, String> got = new java.util.HashMap<String, String>();
             for (String k : wanted.keySet()) got.put(k, back.get(k));

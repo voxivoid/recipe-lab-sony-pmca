@@ -105,7 +105,7 @@ done;done
    - The `BootCompleted` that follows sees `appSeen`, logs `app open, skipping`, and starts **no** second loop.
    - A running loop sees `app` within 2 s and exits, which frees the shell.
 2. `pullState()` copies the card's `state.bin` over the ramdisk one (see rule 4 below).
-3. `applyPreview()` → `ispSync(false)` → after `ISP_SETTLE_MS` (700 ms) → `ispApply` → `rlisp apply <ramdisk>`.
+3. `applyPreview()` → `ispSync(false)` → after `ISP_SETTLE_MS` (1 s) → `ispApply` → `rlisp apply <ramdisk>`.
 4. `ispCheck` polls the log every 250 ms. **No log file after 4 polls (1 s)** means the shell dropped the command
    (the loop was still ending), so it **sends the command again**, up to 12 times. Once the log has `RESULT OK`, it
    runs `syncState()`, which copies the ramdisk `state.bin` to the card.
