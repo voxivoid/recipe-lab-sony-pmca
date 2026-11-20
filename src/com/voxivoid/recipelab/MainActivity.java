@@ -887,7 +887,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     }
 
     // ------------------------------------------------------------ Picture profile: the root helper writes the ISP
-    private static final int ISP_SETTLE_MS = 700, ISP_POLL_MS = 250, ISP_POLLS = 20, ISP_RESEND_POLLS = 4, ISP_RESENDS = 12;
+    private static final int ISP_SETTLE_MS = 700, ISP_POLL_MS = 250, ISP_POLLS = 20;
 
     /** the folder the helper reads its profile from and writes its log and state into */
     private File ispDir() { return new File(getFilesDir(), "isp"); }
@@ -978,9 +978,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         try { text = readSmall(new File(ispDir(), "log")); } catch (Throwable t) {}
         int r = IspProfiles.result(text);
         ++ispPolls;
-        // the helper writes its log first thing: none after a second means the shell was busy (the keep-alive loop
-        // ending) and dropped the command, so send it again rather than wait
-        if (text == null && ispPolls >= ISP_RESEND_POLLS && ispResends < ISP_RESENDS) {
+        if (IspProfiles.resend(text, ispPolls, ispResends)) {    // the keep-alive loop was still letting go of the shell
             ispResends++; ispPolls = 0;
             try { NativeShell.exec(ispCmd); } catch (Throwable t) {}
             handler.postDelayed(ispPoll, ISP_POLL_MS); return;
