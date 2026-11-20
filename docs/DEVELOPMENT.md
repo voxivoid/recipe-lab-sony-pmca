@@ -358,8 +358,9 @@ A row of `bodies.h` comes from that body's newest Sony updater, with the a6000-q
 2. `tools/port/port_scan.py <av-cam.bin> <model> <fw>`: finds the gamma leaf by its 12 bytes and the matrix setter by
    the register accessors it calls (`0x1550c..0x1552c`), checks each 32-byte signature is unique, and prints the row.
    It must reproduce the A6000 3.21 row exactly.
-3. The row goes into `bodies.h` with `enabled` 0 and into `IspBodies.ROWS` (`IspBodiesTest` checks both agree). Such a
-   body says "not confirmed yet" and its bug report carries the probe.
+3. The row goes into `bodies.h` and into `IspBodies.ROWS` (`IspBodiesTest` checks both agree). With `enabled` 0 the
+   body says "not confirmed yet" and its bug report carries the probe; the 15 rows from the first port are on, with the
+   A6000's base as a first guess, so owners can try the profile itself.
 4. A probe from that body that says `ROW disabled`, `BASE …`, both setters `original` and `ISP sane` switches the row
    on (`enabled` 1 in both places), with the base it found written into the row.
 

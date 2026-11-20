@@ -181,8 +181,8 @@ persistent.
   fix: read the matrix twice about 200 ms apart and capture only when the two match. Not done yet.
 - **Gamma rewrites after 2 minutes:** none seen so far. If one turns up, lengthen the loop (both the outer and inner
   `for` count toward the 255 chars).
-- Proven only on **A6000 FW 3.21**. Other CXD90014 bodies have rows from their updaters, switched on by an owner's
-  probe; the rest are told the profile does not work there yet.
+- Proven only on **A6000 FW 3.21**. Other CXD90014 bodies have rows from their updaters, switched on for owners to try
+  (their reports, with the probe, confirm each one); the rest are told the profile does not work there yet.
 
 ---
 
