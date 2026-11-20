@@ -179,6 +179,9 @@ persistent.
   style). Captures seconds apart differ a lot: `801 239 -16`, `488 352 184`, `441 439 144`, `375 525 124` (first row).
   700 ms isn't always enough, so a wrong stock gives slightly wrong colours until the next clean capture. A possible
   fix: read the matrix twice about 200 ms apart and capture only when the two match. Not done yet.
+  Those captures all sum to 1024 per row. A worse kind, `1837 -17 -8 / -35 1341 -6 / -4 -2 1950` (rows 1812/1300/1944,
+  seen on Standard with no effect, gamma `127 159 175 255 212 255` at the same moment), made a lower saturation swap
+  orange and blue once built on. `rlisp` now takes a stock only when every row sums to 1024 ± 16.
 - **Gamma rewrites after 2 minutes:** none seen so far. If one turns up, lengthen the loop (both the outer and inner
   `for` count toward the 255 chars).
 - Proven only on **A6000 FW 3.21**. Other CXD90014 bodies have rows from their updaters, switched on for owners to try
