@@ -294,6 +294,8 @@ class IspProfilesTest {
         assertEquals(IspProfiles.R_MISMATCH, IspProfiles.result("MISMATCH 3\nRESULT MISMATCH\n"));
         assertEquals(IspProfiles.R_ERROR, IspProfiles.result("RLISP 1 apply\nRESULT ERR open /dev/mem\n"));
         assertEquals(IspProfiles.R_STATUS, IspProfiles.result("RESULT STATUS on\n"));
+        assertEquals(IspProfiles.R_PROBE, IspProfiles.result("RLISP 2 probe\nBODY NEX-6 1.03\nRESULT PROBE fail\n"));
+        assertEquals(IspProfiles.R_REFUSED, IspProfiles.result("RESULT REFUSE fw 3.21\n"));
     }
 
     private static int le(byte[] b, int o) { return (b[o] & 0xFF) | (b[o + 1] & 0xFF) << 8 | (b[o + 2] & 0xFF) << 16 | b[o + 3] << 24; }

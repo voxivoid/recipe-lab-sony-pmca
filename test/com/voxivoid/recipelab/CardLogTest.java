@@ -172,7 +172,7 @@ class CardLogTest {
         File dir = CardLog.dir(root);
         CardLog.append(dir, CardLog.LOG, "opened\n");
         CardLog.append(dir, CardLog.KEYS, "down 232\n");
-        String r = CardLog.report(dir, "2026-10-15 14:03:27", "model ILCE-6000", "recipe Velvia  ACTIVE", "STYLE=1", "scene-mode=manual-exposure;color-mode=mono");
+        String r = CardLog.report(dir, "2026-10-15 14:03:27", "model ILCE-6000", "recipe Velvia  ACTIVE", "STYLE=1", "scene-mode=manual-exposure;color-mode=mono", null);
         assertTrue(r.startsWith("Recipe Lab report"), r);
         assertTrue(r.contains("model ILCE-6000\nrecipe Velvia  ACTIVE\nSTATE STYLE=1\n"), r);
         String[] lines = r.split("\n");
@@ -184,6 +184,14 @@ class CardLogTest {
         assertTrue(r.contains("===== KEYS =====\ndown 232\n"), r);
         assertTrue(r.contains("===== LOCKS =====\n(none)\n"), r);
         assertTrue(r.contains("===== PARAMS =====\n# 2026-10-15 14:03:27\ncolor-mode=mono\nscene-mode=manual-exposure\n"), r);
+    }
+
+    @Test void theReportCarriesTheProbe() throws IOException {
+        File dir = CardLog.dir(root), probe = new File(new File(root, "RECIPLAB/ISP/PROBE"), "log");
+        assertTrue(CardLog.report(dir, "now", "h", "a", "s", null, null).contains("===== PROBE =====\n(none)\n"));
+        probe.getParentFile().mkdirs();
+        java.nio.file.Files.write(probe.toPath(), "BODY ILCE-6000 3.21\nRESULT PROBE ok\n".getBytes());
+        assertTrue(CardLog.report(dir, "now", "h", "a", "s", null, probe).contains("===== PROBE =====\nBODY ILCE-6000 3.21\nRESULT PROBE ok\n"));
     }
 
     @Test void theReportGoesBesideTheLogs() {

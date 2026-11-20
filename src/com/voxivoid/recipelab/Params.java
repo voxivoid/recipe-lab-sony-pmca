@@ -105,8 +105,6 @@ final class Params {
     static int slot(int row, int pe) { return row == R_SUB ? Recipes.subId(pe) : ROW_ID[row]; }
 
     // ------------------------------------------------------------ the picture profile rows
-    /** whether this body may run a picture profile ({@link IspProfiles#mayRun}); MainActivity sets it once, on start */
-    static boolean profiles = true;
 
     /** whether a row is one of the picture profile's, which the image processor takes rather than the store */
     static boolean ispRow(int row) { return row >= R_GAMMA && row <= R_SCURVE; }
@@ -486,7 +484,7 @@ final class Params {
             case R_PE: return pe;
             case R_SUB: return pe && Recipes.subId(edit[R_PE]) != 0;
             case R_KELVIN: return edit[R_WBMODE] == WB_KELVIN;
-            case R_GAMMA: return profiles || edit[R_GAMMA] != IspProfiles.OFF;   // another body: shown only to turn one off
+            case R_GAMMA: return true;                          // on every body: one that cannot run it says why (IspBodies)
             default: return !ispRow(row) || ispRowMatters(row, edit);
         }
     }

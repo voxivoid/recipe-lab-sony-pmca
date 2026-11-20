@@ -265,8 +265,9 @@ How the profile survives a power cycle (boot event, keep-alive loop, the shell's
 [PICTURE-PROFILES.md](PICTURE-PROFILES.md) before changing `BootReceiver`, `IspProfiles.bootCommand` or the `isp*`
 code in `MainActivity`.
 
-A6000 FW 3.21 only, RAM only. A picture profile is part of a recipe — the GAMMA chip and the nine after it — but its
-look goes to the ISP's SRAM, not to the settings store:
+RAM only, on the bodies and firmware listed in `jni/rlisp/bodies.h` (see [Bodies](#bodies) below; the A6000 on 3.21
+is the one proven). A picture profile is part of a recipe — the GAMMA chip and the nine after it — but its look goes to
+the ISP's SRAM, not to the settings store. On the A6000 3.21:
 
 | what | where | how |
 |---|---|---|
@@ -303,9 +304,10 @@ look of the recipe last stored, which the app keeps in its preferences (`ispLook
 (`writeAll`) makes the staged look the stored one (`storeLook`); leaving the app (`onPause`) puts the stored one back. On
 `onResume` the processor may have been reset by a power cycle, so a stored look is applied again; with none stored the
 helper is not run at all. The built-in Pic Profiles group holds the six published pairings, Standard, auto WB, DRO off.
-On a body whose `model.name` is not `ILCE-6000` (`IspProfiles.mayRun`, read once into `Params.profiles`) the GAMMA chip
-is hidden unless a profile is staged, so it can still be turned off; the Pic Profiles group stays listed, and the helper
-refuses there with a toast. A body that does not report its model keeps the chip, and the helper's firmware check decides.
+The GAMMA chip and the Pic Profiles group show on every body. `IspBodies.status(model, firmware)` decides what runs:
+only a supported body runs the helper's `apply` and gets the boot loop; on any other `ispApply` does not run the helper and
+says why in a toast (`IspBodies.refusal`: update the firmware to X, not confirmed yet, or not supported yet). A body that
+does not report its model is not supported.
 
 **The pieces:**
 
@@ -317,8 +319,13 @@ refuses there with a toast. A body that does not report its model keeps the chip
   - Gamuts: S-Gamut = S-Gamut3, S-Gamut3.Cine, BT.2020 and ALEXA Wide Gamut 3. ITU709 keeps the camera's colour (identity).
 - `jni/rlisp/rlisp.c` is the root helper. It is freestanding (raw syscalls, no libc), built by `build.sh` / `build.cmd` with
   the NDK's gcc and shipped as `lib/armeabi/librlisp.so` so the installer unpacks it executable. It runs `ping | apply |
-  off | status <dir>`.
-  - It checks both setters' bytes first, and anything that is neither stock nor patched means `RESULT REFUSE fw`.
+  reapply | off | status | probe <dir>`.
+  - It reads `<dir>/body` (model and firmware, `IspBodies.bodyFile`) and picks that row of `bodies.h`; none means
+    `RESULT REFUSE body` or `REFUSE fw <wanted>`, a row not yet enabled `REFUSE untested`.
+  - It finds av-cam's load address (the row's, a cached one in `<dir>/base`, or the one page-aligned base in System RAM
+    where both setters match), reads `/dev/mem` only inside `/proc/iomem`'s System RAM, and compares the full 32 bytes
+    at each setter with the row: neither stock nor patched means `REFUSE sig`. Live tables that do not look like a gamma
+    table and a matrix mean `REFUSE isp`. Every refusal but `isp` also drops `<dir>/stop`, which ends the boot loop.
   - `apply` multiplies the gamut by the creative style's own stock matrix, adjusting the diagonal so each row sums to 1024.
   - `apply` then freezes the setters, writes both tables and reads them back.
   - `state.bin` remembers the stock matrix and the one last written, so after *Off* (our values stay until the camera's
@@ -334,7 +341,29 @@ refuses there with a toast. A body that does not report its model keeps the chip
 - A profile recipe cannot be shared as a QR code: share code version 1 has no room for it (`RecipeShare.encode` gives
   none, Share says so). Nor is it in `LINKS.TXT`.
 
+- *Hold MENU → Save a bug report* first runs `librlisp.so probe` in `RECIPLAB/ISP/PROBE/` (read only: never writes a
+  setter or the ISP) and puts its log in `REPORT.TXT` under `PROBE`. A body with no row gets a RAM search for the gamma
+  setter, with the 32 bytes at it and at the matrix setter `0x1cc` after it, which is what a new row needs.
+
 **By hand** (telnet, root): `librlisp.so status <dir>`, then `cat <dir>/log`. A battery pull is the full undo.
+
+### Bodies
+
+Every proven body except the NEX ones is a CXD90014 (fwtool's `devices.yml`), with av-cam built from the same source.
+A row of `bodies.h` comes from that body's newest Sony updater, with the a6000-qemu research repo:
+
+1. `tools/port/fetch_avcam.sh <updater URL>`: downloads the updater, cuts out the firmware `.dat`, unpacks it with
+   fwtool and keeps `av-cam.bin`. Sony Japan's page `support.d-imaging.sony.co.jp/www/cscs/firm/?mdl=<model>` links
+   every updater.
+2. `tools/port/port_scan.py <av-cam.bin> <model> <fw>`: finds the gamma leaf by its 12 bytes and the matrix setter by
+   the register accessors it calls (`0x1550c..0x1552c`), checks each 32-byte signature is unique, and prints the row.
+   It must reproduce the A6000 3.21 row exactly.
+3. The row goes into `bodies.h` with `enabled` 0 and into `IspBodies.ROWS` (`IspBodiesTest` checks both agree). Such a
+   body says "not confirmed yet" and its bug report carries the probe.
+4. A probe from that body that says `ROW disabled`, `BASE …`, both setters `original` and `ISP sane` switches the row
+   on (`enabled` 1 in both places), with the base it found written into the row.
+
+av-cam's load address lives in each camera's `Backup.bin`, not in the updater, which is why the probe finds it.
 
 ## Exit rule
 

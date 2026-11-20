@@ -90,12 +90,6 @@ final class IspProfiles {
         }
     }
 
-    /** the one body the helper knows: the GAMMA chip is hidden on any other (the helper checks the firmware itself) */
-    static final String MODEL = "ILCE-6000";
-
-    /** whether a body may run a profile: the A6000, or a body that does not say what it is */
-    static boolean mayRun(String model) { return model == null || model.trim().isEmpty() || model.trim().equals(MODEL); }
-
     static String curveLabel(int c) { return c == OFF ? Lang.t("value_off") : CURVE_LABEL[c]; }
     static String gamutLabel(int g) { return g == CAMERA ? Lang.t("isp_gamut_camera") : GAMUT_LABEL[g]; }
     static String rangeLabel(int r) { return Lang.t(r == NARROW ? "isp_range_narrow" : r == WIDE ? "isp_range_wide" : "isp_range_middle"); }
@@ -324,7 +318,7 @@ final class IspProfiles {
     /** the platform's shell takes 255 characters at most */
     static final int MAX_COMMAND = 255;
 
-    /** "ping", "apply", "off" or "status": the line the root shell runs; null when it would be too long */
+    /** "ping", "apply", "off", "status" or "probe": the line the root shell runs; null when it would be too long */
     static String command(String helper, String op, String dir) {
         String cmd = ROOT_PREFIX + helper + " " + op + " " + ROOT_PREFIX + dir;
         return cmd.length() <= MAX_COMMAND ? cmd : null;
@@ -353,7 +347,7 @@ final class IspProfiles {
     }
 
     /** what the helper's log says */
-    static final int R_PENDING = 0, R_OK = 1, R_OFF = 2, R_PONG = 3, R_REFUSED = 4, R_MISMATCH = 5, R_ERROR = 6, R_STATUS = 7;
+    static final int R_PENDING = 0, R_OK = 1, R_OFF = 2, R_PONG = 3, R_REFUSED = 4, R_MISMATCH = 5, R_ERROR = 6, R_STATUS = 7, R_PROBE = 8;
 
     /** the outcome in a log; R_PENDING while there is no complete RESULT line yet (the helper still running, or never started) */
     static int result(String log) {
@@ -365,6 +359,7 @@ final class IspProfiles {
         if (line.startsWith("REFUSE")) return R_REFUSED;
         if (line.startsWith("MISMATCH")) return R_MISMATCH;
         if (line.startsWith("STATUS")) return R_STATUS;
+        if (line.startsWith("PROBE")) return R_PROBE;
         return R_ERROR;
     }
 

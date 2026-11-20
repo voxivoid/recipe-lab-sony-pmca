@@ -241,18 +241,10 @@ class ParamsChipsTest {
         assertEquals("-12", fmt(R_CSAT, -12, e));
     }
 
-    @Test void anotherBodyShowsGammaOnlyToTurnAProfileOff() {
+    @Test void gammaIsOnEveryBody() {
         int[] e = factoryRows();
-        try {
-            Params.profiles = false;
-            assertFalse(rowVisible(R_GAMMA, e));
-            assertEquals(R_QUAL, nextChip(R_DRO, +1, e));
-            e[R_GAMMA] = IspProfiles.SLOG3;
-            assertTrue(rowVisible(R_GAMMA, e), "a profile recipe on another body: GAMMA can still go to off");
-        } finally { Params.profiles = true; }
-        assertTrue(IspProfiles.mayRun("ILCE-6000"));
-        assertTrue(IspProfiles.mayRun(null), "a body that does not say: the helper's own check decides");
-        assertFalse(IspProfiles.mayRun("ILCE-5100"));
-        assertFalse(IspProfiles.mayRun("NEX-6"));
+        assertTrue(rowVisible(R_GAMMA, e), "a body that cannot run a profile says why, it does not hide the chip");
+        e[R_GAMMA] = IspProfiles.SLOG3;
+        assertTrue(rowVisible(R_GAMMA, e));
     }
 }
