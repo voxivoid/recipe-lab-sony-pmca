@@ -342,6 +342,9 @@ static long round_q14(long x) { return x >= 0 ? (x + 8192) >> 14 : -((-x + 8192)
  * forcing the rows back to 1024 cuts the diagonal so far that a lower saturation swaps hues (orange <-> blue).
  */
 #define STOCK_SLACK 16
+/* the A6000's Standard creative style matrix: the stock when no clean one can be read (after Off the camera shows only
+ * transients like the one above until its next style event). A guess on other bodies, still better than a transient */
+static const long STD_MATRIX[NM] = { 1292, -180, -88, -44, 1340, -272, -24, -108, 1156 };
 static int stock_ok(const long *s)
 {
     for (int r = 0; r < 3; r++) {
@@ -367,7 +370,7 @@ static void cmd_apply(const struct profile *pp, const int st[2])
         /* The stock matrix is the creative style's own. It is only read clean while both setters are the camera's and
          * the register does not still hold what we wrote last (Off leaves our values until the camera's next event),
          * and only when it looks like a style's (stock_ok): a transient is never built on. A saved stock that fails
-         * (one an older helper took) is dropped. With no good stock at all, the ISP really is not ready. */
+         * (one an older helper took) is dropped. With no good stock at all, Standard's is used. */
         static struct state s;
         int have = read_file(path(g_dir, "state.bin"), &s, sizeof s) == (long)sizeof s && s.magic[0] == 'R' && s.magic[3] == 'T';
         int ours = have;
@@ -382,7 +385,8 @@ static void cmd_apply(const struct profile *pp, const int st[2])
             out(ours ? "STOCK kept\n" : "STOCK kept, live not a style's\n");
         } else {
             print_tables();
-            finish("REFUSE isp", 2);
+            for (int i = 0; i < NM; i++) s.stock[i] = STD_MATRIX[i];
+            out("STOCK standard, live not a style's\n");
         }
         for (int r = 0; r < 3; r++) {
             long sum = 0;

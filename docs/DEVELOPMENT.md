@@ -333,7 +333,8 @@ does not report its model is not supported.
   - `apply` multiplies the gamut by the creative style's own stock matrix, adjusting the diagonal so each row sums to 1024.
     A stock is only taken when its rows sum to 1024 ± 16, as every style's do: the A6000 also shows transient matrices
     (rows 1812/1300/1944) that, built on, make a lower saturation swap hues. Otherwise the saved stock is kept, and with
-    no good one at all `apply` refuses (`REFUSE isp`, both tables in the log).
+    no good one at all (after *Off*, which deletes `state.bin`, the camera shows only transients until its next style
+    event) the A6000's Standard matrix is used, logged as `STOCK standard` with both live tables.
   - `apply` then freezes the setters, writes both tables and reads them back.
   - `state.bin` remembers the stock matrix and the one last written, so after *Off* (our values stay until the camera's
     next event) the stock is not recaptured from our own.
