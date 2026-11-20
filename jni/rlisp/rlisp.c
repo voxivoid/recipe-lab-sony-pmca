@@ -289,23 +289,19 @@ static volatile ul *isp(ul pa)
 static int s16(ul w) { w &= 0xFFFF; return w & 0x8000 ? (int)w - 65536 : (int)w; }
 
 /*
- * Do the live tables look like a gamma table and a colour matrix? Every gamma word is 10-bit (all zero is allowed:
- * before ISP init the table is empty), and each matrix row sums to 1024 +- 512. A page that is not the ISP's fails.
+ * Does the live gamma table look like one? Every word is 10-bit (all zero is allowed: before ISP init the table is
+ * empty); a page that is not the ISP's fails. The matrix is not judged: the A6000 holds rows summing anywhere from
+ * about 690 to 1950 (Q10) in normal use, and is not monotone in its gamma either, so neither says "not the ISP".
+ * The setters' 32-byte signatures are what prove the row is this camera's.
  */
 static int isp_sane(void)
 {
-    volatile ul *g = isp(g_row->gamma_pa), *m = isp(g_row->matrix_pa);
+    volatile ul *g = isp(g_row->gamma_pa);
     for (int i = 0; i < NG; i++) if (g[i] & ~0x3FFUL) return 0;
-    int zero = 1;
-    for (int i = 0; i < NM; i++) if (s16(m[i])) zero = 0;
-    if (zero) return 1;
-    for (int r = 0; r < 3; r++) {
-        long sum = s16(m[r * 3]) + s16(m[r * 3 + 1]) + s16(m[r * 3 + 2]);
-        if (sum < 512 || sum > 1536) return 0;
-    }
     return 1;
 }
 
+static void print_tables(void);
 static const char *state_name(int s) { return s == ST_ORIG ? "original" : s == ST_PATCHED ? "patched" : "UNKNOWN"; }
 /* the row for this camera, its setters found and checked; refuses otherwise. Nothing is written before this passes */
 static void check_body(int st[2], int need_enabled)
@@ -328,7 +324,7 @@ static void check_body(int st[2], int need_enabled)
         out(i ? "SETTER matrix " : "SETTER gamma "); out(state_name(st[i])); out("\n");
     }
     if (st[0] == ST_UNKNOWN || st[1] == ST_UNKNOWN) refuse_for_good("REFUSE sig");
-    if (!isp_sane()) finish("REFUSE isp", 2);              /* not for good: the ISP may still be starting */
+    if (!isp_sane()) { print_tables(); finish("REFUSE isp", 2); }   /* not for good: the ISP may still be starting */
 }
 
 /* ---- the profile the app wrote (IspProfiles.encode) ---- */
