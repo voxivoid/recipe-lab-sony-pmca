@@ -303,7 +303,9 @@ knee is not part of the look (`Look.normal`): it is neither dirty nor saved.
 no store slot, so `Params.writes` never has them, but they are dirty, staged and saved like any row. Their `cur` is the
 look of the recipe last stored, which the app keeps in its preferences (`ispLook`, `Params.lookText`). The staged look
 (`edit`) goes to the image processor like a live preview: `applyPreview` ends with `ispSync`, which runs the helper
-700 ms after the rows stop changing, and only when the look differs from what the processor holds. A successful write
+1 s after the rows stop changing, and only when the look differs from what the processor holds. A step that leaves the
+camera's preview parameters as they were (any profile chip) skips the camera round trip (`previewSent`), so the wheel
+stays quick on those chips. A successful write
 (`writeAll`) makes the staged look the stored one (`storeLook`); leaving the app (`onPause`) puts the stored one back. On
 `onResume` the processor may have been reset by a power cycle, so a stored look is applied again; with none stored the
 helper is not run at all. The built-in Pic Profiles group holds the six published pairings, Standard, auto WB, DRO off.
