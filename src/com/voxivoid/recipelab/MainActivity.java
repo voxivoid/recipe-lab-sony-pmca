@@ -129,6 +129,10 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private String ispCmd;                                      // the running helper's command line, sent again when the shell dropped it
     private final Runnable ispApplySoon = new Runnable() { public void run() { ispSync(true); } };
     private final Runnable ispPoll = new Runnable() { public void run() { ispCheck(); } };
+    private String ispModel, ispFw;                             // this camera, as IspBodies and the helper's body file know it
+    private int probePolls, probeResends;
+    private String probeCmd;
+    private final Runnable probePoll = new Runnable() { public void run() { probeCheck(); } };
     private static final int PAGE_ROWS = 0, PAGE_ABOUT = 1, PAGE_TRANSFER = 2;
     private TransferMode transfer;                              // Transfer to phone, while its page is open (null otherwise)
     private boolean transferSync;                               // the page was opened as Sync recipes: same link, its own words
@@ -192,7 +196,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         settleIdx = DevTools.clampSettle(prefs.getInt("settle", DevTools.SETTLE_DEFAULT));
         langChoice = Lang.parseChoice(prefs.getString("language", null));
         ispStored = Params.lookFrom(prefs.getString("ispLook", null));
-        Params.profiles = IspProfiles.mayRun(KeyProbe.prop("model.name"));
+        ispModel = KeyProbe.prop("model.name"); ispFw = KeyProbe.firmware();
         panel = findViewById(R.id.panel);
         picker = (PickerView) findViewById(R.id.picker);
         chipScroll = (HorizontalScrollView) findViewById(R.id.chipscroll);
@@ -276,8 +280,14 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
      * now and the end of every log — so a user attaches one thing. Replaced on every save.
      */
     private void saveReport() {
+        if (cardRoot() == null) { showToast(Lang.t("report_need_card"), 4000); return; }
+        if (!startProbe()) writeReport();                       // with a probe, writeReport follows its answer
+    }
+
+    private void writeReport() {
         File root = cardRoot();
         if (root == null) { showToast(Lang.t("report_need_card"), 4000); return; }
+        File probe = probeDir();
         String flat = null;
         try { if (camera != null) flat = camera.getParameters().flatten(); } catch (Throwable t) {}
         String head = CardLog.header(KeyProbe.prop("model.name"), KeyProbe.firmware(), KeyProbe.prop("version.platform"), androidVersion(), versionName(),
@@ -288,7 +298,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
                             CardLog.app(Recipes.displayName(library.get(recipe)), !dirty(), edited(), Lang.choiceCode(langChoice)
                                     + (langChoice == Lang.AUTO ? " (" + Lang.CODES[Lang.current()] + ")" : ""),
                                     library.customNames().size(), skipped, favs.size()),
-                            CardLog.state(cur), flat));
+                            CardLog.state(cur), flat, probe == null ? null : new File(probe, "log")));
             showToast(Lang.t("report_saved", CardLog.DIR + "/" + CardLog.REPORT), 8000);   // long enough to read the path
         } catch (Throwable t) { showToast(Lang.t("report_failed", String.valueOf(t.getMessage())), 0); }
     }
@@ -465,6 +475,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         try {                                                    // the stored profile, not one being tried
             System.arraycopy(cur, 0, edit, 0, N);
             handler.removeCallbacks(ispApplySoon); handler.removeCallbacks(ispPoll);
+            if (probeCmd != null) { handler.removeCallbacks(probePoll); probeCmd = null; writeReport(); }   // a report asked for is not lost
             // a loop, not one apply: the camera rewrites gamma at its own times (ISP init, after boot) with the app gone
             if (ispStored != null && BootReceiver.startLoop(this, ispStored)) { ispRunning = false; ispQueued = false; }
             else { ispRunning = false; ispSync(true); }
@@ -928,7 +939,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         IspProfiles.Look want = Params.look(edit);
         if (ispKnown && same(want, ispLive)) return;
         if (!now) { handler.postDelayed(ispApplySoon, ISP_SETTLE_MS); return; }
-        if (ispRunning) { ispQueued = true; return; }
+        if (ispRunning || probeCmd != null) { ispQueued = true; return; }   // the shell runs one command at a time
         ispApply(want);
     }
 
@@ -938,9 +949,15 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         String helper = getApplicationInfo().nativeLibraryDir + "/librlisp.so";
         String cmd = IspProfiles.command(helper, l == null ? "off" : "apply", dir.getPath());
         ispLive = l; ispKnown = true;                            // also when it fails: not tried again until the rows change
+        String[] no = IspBodies.refusal(ispModel, ispFw);
+        if (no != null) {                                        // this body or firmware has no row: the helper is not run
+            if (l != null) showToast(Lang.t(no[0], no[1]), 5000);
+            return;
+        }
         try {
             if (cmd == null) throw new IllegalStateException("command too long");
             if (!dir.isDirectory() && !dir.mkdirs()) throw new IllegalStateException("cannot create " + dir);
+            writeBody(dir);
             if (l != null) {
                 FileOutputStream o = new FileOutputStream(new File(dir, "profile.bin"));
                 try { o.write(IspProfiles.encode(l)); } finally { o.close(); }
@@ -951,6 +968,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
                 File sd = BootReceiver.dir();
                 if (sd != null) {
                     sd.mkdirs();
+                    writeBody(sd);
                     if (l != null) {
                         new File(sd, "stop").delete();
                         FileOutputStream bo = new FileOutputStream(new File(sd, "profile.bin"));
@@ -991,12 +1009,63 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         switch (r) {
             case IspProfiles.R_OK: syncState(); break;
             case IspProfiles.R_OFF: break;
-            case IspProfiles.R_REFUSED: msg = Lang.t("isp_refused"); break;
+            case IspProfiles.R_REFUSED: { String[] no = IspBodies.refusal(IspProfiles.resultLine(text)); msg = Lang.t(no[0], no[1]); break; }
             case IspProfiles.R_MISMATCH: msg = Lang.t("isp_mismatch"); break;
             case IspProfiles.R_PENDING: msg = Lang.t("isp_no_root"); break;
             default: msg = Lang.t("isp_error", String.valueOf(IspProfiles.resultLine(text)));
         }
         if (msg != null) showToast(msg, 5000);
+        if (ispQueued) { ispQueued = false; ispSync(true); }
+    }
+
+    /** the helper's body file in {@code dir}: which model and firmware this is, so it picks its row of bodies.h */
+    private void writeBody(File dir) throws java.io.IOException {
+        FileOutputStream o = new FileOutputStream(new File(dir, "body"));
+        try { o.write(IspBodies.bodyFile(ispModel, ispFw).getBytes("US-ASCII")); } finally { o.close(); }
+    }
+
+    /** where the bug report's probe runs: its own folder, so its log never mixes with the loop's or the app's */
+    private static File probeDir() {
+        File d = BootReceiver.dir();
+        return d == null ? null : new File(d, "PROBE");
+    }
+
+    /** polls (of 250 ms) the probe gets: a body with no row scans its RAM, which takes a while */
+    private static final int PROBE_POLLS = 80;
+
+    /**
+     * Starts the read-only probe the bug report carries (rlisp probe: which row this camera is, where av-cam sits, the
+     * live tables); false when it cannot run now, and the report goes without a fresh one.
+     */
+    private boolean startProbe() {
+        File dir = probeDir();
+        if (dir == null || ispRunning) return false;             // the shell runs one command at a time
+        String cmd = IspProfiles.command(getApplicationInfo().nativeLibraryDir + "/librlisp.so", "probe", dir.getPath());
+        if (cmd == null) return false;
+        try {
+            dir.mkdirs();
+            writeBody(dir);
+            new File(dir, "log").delete();
+            NativeShell.exec(cmd);
+        } catch (Throwable t) { log(CardLog.FAIL, "probe: " + t); return false; }
+        probeCmd = cmd; probePolls = 0; probeResends = 0;
+        showToast(Lang.t("report_probing"), 0);
+        handler.postDelayed(probePoll, ISP_POLL_MS);
+        return true;
+    }
+
+    private void probeCheck() {
+        String text = null;
+        try { text = readSmall(new File(probeDir(), "log")); } catch (Throwable t) {}
+        ++probePolls;
+        if (IspProfiles.resend(text, probePolls, probeResends)) {
+            probeResends++; probePolls = 0;
+            try { NativeShell.exec(probeCmd); } catch (Throwable t) {}
+            handler.postDelayed(probePoll, ISP_POLL_MS); return;
+        }
+        if (IspProfiles.result(text) == IspProfiles.R_PENDING && probePolls < PROBE_POLLS) { handler.postDelayed(probePoll, ISP_POLL_MS); return; }
+        probeCmd = null;
+        writeReport();
         if (ispQueued) { ispQueued = false; ispSync(true); }
     }
 

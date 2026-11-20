@@ -54,6 +54,7 @@ UNITS=(
   src/com/voxivoid/recipelab/NameEntry.java
   src/com/voxivoid/recipelab/DevTools.java
   src/com/voxivoid/recipelab/IspProfiles.java
+  src/com/voxivoid/recipelab/IspBodies.java
   src/com/voxivoid/recipelab/Keys.java
   src/com/voxivoid/recipelab/KeyProbe.java
   src/com/voxivoid/recipelab/Lang.java

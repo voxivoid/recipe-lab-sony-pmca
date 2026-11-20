@@ -25,8 +25,9 @@ Contents: [Hardware](#hardware-a6000-fw-321) · [How it works now](#how-it-works
 
 - Both tables are ISP SRAM. They are **RAM only** and stock again after every power cycle.
 - `rlisp` ([jni/rlisp/rlisp.c](../jni/rlisp/rlisp.c)) patches each setter to `bx lr` (`70 47`), then writes the
-  tables through `/dev/mem`. Patching first means the camera's own writer can't race us. Any other setter bytes give
-  `RESULT REFUSE fw` and nothing is touched.
+  tables through `/dev/mem`. Patching first means the camera's own writer can't race us. The setters' addresses and
+  their 32 bytes come from that body's row of [jni/rlisp/bodies.h](../jni/rlisp/bodies.h); any other bytes give
+  `RESULT REFUSE sig` and nothing is touched. Other bodies: [DEVELOPMENT.md, Bodies](DEVELOPMENT.md#bodies).
 - **ISP init** (confirmed): about 30–60 s after boot, the firmware writes **gamma** straight into SRAM. That path does
   **not** go through the patched setter, so one apply at boot is lost. The **matrix is not rewritten** by ISP init:
   after it, `reapply` finds gamma changed but the matrix still equal to what we wrote.
@@ -65,6 +66,9 @@ Contents: [Hardware](#hardware-a6000-fw-321) · [How it works now](#how-it-works
 SD card  RECIPLAB/ISP/   (persistent; the boot path and the loop use it)
   look.txt     stored profile as text (Params.lookText); deleted when the stored recipe has no profile
   profile.bin  what rlisp reads (IspProfiles.encode)
+  body         model and firmware (IspBodies.bodyFile): which row of bodies.h rlisp uses
+  base         av-cam's load address, when rlisp had to search for it
+  PROBE/       the bug report's read-only probe (body, log)
   state.bin    stock matrix + the matrix last written (rlisp's state)
   log          last rlisp run from the loop
   boot.log     receiver lines (also copied to RECIPLAB/LOGS/LOG.TXT as BOOT)
@@ -78,6 +82,7 @@ Ramdisk  getFilesDir()/isp/   (the app's own runs; lost at power-off)
 ### At power-on (app closed)
 
 1. `BootReceiver.onReceive` reads `look.txt`. If it's missing, nothing happens (the stored recipe has no profile).
+   Nor does anything on a body or firmware `IspBodies` does not support (`BOOT not on this body: …`).
 2. `BootReceiver.startLoop` writes `profile.bin`, deletes `stop`/`app`/`log`, and sends the **keep-alive loop**
    (`IspProfiles.bootCommand`):
 
@@ -174,11 +179,10 @@ persistent.
   style). Captures seconds apart differ a lot: `801 239 -16`, `488 352 184`, `441 439 144`, `375 525 124` (first row).
   700 ms isn't always enough, so a wrong stock gives slightly wrong colours until the next clean capture. A possible
   fix: read the matrix twice about 200 ms apart and capture only when the two match. Not done yet.
-- **`STD_MATRIX` in rlisp.c** (`1292 -180 -88 …`) is unused and doesn't match the camera's live Standard matrix.
-  Delete it or correct it.
 - **Gamma rewrites after 2 minutes:** none seen so far. If one turns up, lengthen the loop (both the outer and inner
   `for` count toward the 255 chars).
-- Proven only on **A6000 FW 3.21**. Other bodies or firmware get `REFUSE fw`.
+- Proven only on **A6000 FW 3.21**. Other CXD90014 bodies have rows from their updaters, switched on by an owner's
+  probe; the rest are told the profile does not work there yet.
 
 ---
 
@@ -195,7 +199,9 @@ powershell.exe -NoProfile -Command "Get-Content E:\RECIPLAB\ISP\boot.log -Tail 2
 | `BOOT sent: logc3/…` | boot loop started |
 | `BOOT app open, skipping` | duplicate event on open, correctly ignored |
 | `BOOT no look.txt` | the stored recipe has no profile, so nothing to do (correct) |
+| `BOOT not on this body: …` | the body or firmware has no enabled row, so no loop (correct) |
 | `INFO isp …: … RESULT OK` | the app's apply worked |
+| `FAIL isp …: … RESULT REFUSE …` | `fw <x>` other firmware, `untested` row not on yet, `sig` setter bytes differ, `isp` tables not ready |
 | `FAIL isp …: no log` | the shell dropped it 12 times in a row, so something holds the shell (rule 1) |
 | ISP `log`: `RESULT MATCH` | loop check, gamma still ours |
 | ISP `log`: `SETTER … patched` twice, then `GAMMA …` | `reapply` caught a rewrite and applied again |

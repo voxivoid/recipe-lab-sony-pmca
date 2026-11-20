@@ -49,6 +49,8 @@ public class BootReceiver extends BroadcastReceiver {
         try {
             String lookText = readSmall(new File(dir, "look.txt"));
             if (lookText == null) { logBoot(dir, "no look.txt"); return; }
+            String model = KeyProbe.prop("model.name"), fw = KeyProbe.firmware();
+            if (!IspBodies.bootAllowed(model, fw)) { logBoot(dir, "not on this body: " + IspBodies.bodyFile(model, fw).trim().replace('\n', ' ')); return; }
             IspProfiles.Look look = Params.lookFrom(lookText.trim());
             if (look == null) { logBoot(dir, "look parse failed: " + lookText.trim()); return; }
             logBoot(dir, startLoop(c, look) ? "sent: " + look : "not sent: " + look);
@@ -57,14 +59,18 @@ public class BootReceiver extends BroadcastReceiver {
         }
     }
 
-    /** writes {@code look} for the helper and starts the keep-alive loop; false when it could not */
+    /** writes {@code look} for the helper and starts the keep-alive loop; false when it could not, or not on this body */
     static boolean startLoop(Context c, IspProfiles.Look look) {
         File dir = dir();
         if (dir == null) return false;
+        String model = KeyProbe.prop("model.name"), fw = KeyProbe.firmware();
+        if (!IspBodies.bootAllowed(model, fw)) return false;
         try {
             String cmd = IspProfiles.bootCommand(c.getApplicationInfo().nativeLibraryDir + "/librlisp.so", dir.getPath());
             if (cmd == null) return false;
             dir.mkdirs();
+            FileOutputStream bo = new FileOutputStream(new File(dir, "body"));
+            try { bo.write(IspBodies.bodyFile(model, fw).getBytes("US-ASCII")); } finally { bo.close(); }
             FileOutputStream o = new FileOutputStream(new File(dir, "profile.bin"));
             try { o.write(IspProfiles.encode(look)); } finally { o.close(); }
             new File(dir, "stop").delete();
