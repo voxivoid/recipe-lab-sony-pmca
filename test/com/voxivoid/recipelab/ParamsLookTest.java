@@ -107,11 +107,11 @@ class ParamsLookTest {
         int[] a = factoryRows(), b = a.clone();
         b[R_PHASE] = 3;
         assertTrue(sameLook(a, b), "no profile: the adjustments are not the look");
-        a[R_GAMMA] = b[R_GAMMA] = IspProfiles.LOGC3;
+        a[R_GAMMA] = b[R_GAMMA] = IspProfiles.SLOG3;
         assertFalse(sameLook(a, b));
         b[R_PHASE] = 0; b[R_KSLOPE] = 2;
         assertTrue(sameLook(a, b), "a slope with no knee");
-        assertTrue(differsFromRecipe(recipe("LogC3"), withPhase(recipe("LogC3"), 1)));
+        assertTrue(differsFromRecipe(recipe("S-Log3"), withPhase(recipe("S-Log3"), 1)));
     }
 
     private static int[] withPhase(Recipes.Recipe r, int phase) {
@@ -130,6 +130,23 @@ class ParamsLookTest {
         assertNull(Params.lookFrom("1,2,3"), "a build with other rows");
         assertNull(Params.lookFrom("2,0,99,0,1,74,0,0,0,0"), "out of range");
         assertNull(Params.lookFrom("2,0,x,0,1,74,0,0,0,0"));
+    }
+
+    @Test void aSavedLookKeepsItsNumbersAfterLogC3Left() {
+        assertEquals(IspProfiles.ITU709, Params.lookFrom("4,0,0,0,1,74,0,0,0,0").curve, "saved ITU709 is not read as HLG");
+        assertEquals(IspProfiles.HLG, Params.lookFrom("5,3,0,0,1,74,0,0,0,0").curve);
+        assertTrue(Params.lookText(new IspProfiles.Look(IspProfiles.ITU709, IspProfiles.CAMERA)).startsWith("4,"));
+        assertTrue(Params.lookText(new IspProfiles.Look(IspProfiles.HLG, IspProfiles.BT2020)).startsWith("5,"));
+        assertNull(Params.lookFrom("3,4,0,0,1,74,0,0,0,0"), "LogC3 is no profile");
+        assertNull(Params.lookFrom("6,0,0,0,1,74,0,0,0,0"), "past the last curve");
+        assertEquals(IspProfiles.CAMERA, Params.lookFrom("2,4,0,0,1,74,0,0,0,0").gamut, "ARRI WG3 falls back to the camera's colour");
+        assertTrue(Params.retiredLook("3,4,0,0,1,74,0,0,0,0"));
+        assertFalse(Params.retiredLook("4,0,0,0,1,74,0,0,0,0"));
+        assertFalse(Params.retiredLook("0"));
+        assertFalse(Params.retiredLook(null));
+        assertEquals(Recipes.ALL.length - 1, Library.restoredIndex(Recipes.ALL.length - 1));
+        assertEquals(0, Library.restoredIndex(Recipes.ALL.length), "the removed last recipe opens on the factory look");
+        assertEquals(0, Library.restoredIndex(-1));
     }
 
     @Test void aCustomRecipeKeepsTheStagedLook() {

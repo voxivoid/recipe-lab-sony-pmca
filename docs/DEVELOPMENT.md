@@ -33,8 +33,8 @@ src/com/voxivoid/recipelab/
   MainActivity.java            UI state, key handling, the camera (CameraEx via reflection), store + sync
   Params.java                  the parameter rows: slot ids, store encodings, preview parameters, chip
                                navigation, HUD strings — pure functions, no Android, covered by test/
-  Recipes.java                 the 83-entry table (the factory look, FACTORY, first in Sony, then the 76 others, then the
-                               six picture profiles in Profiles), brands,
+  Recipes.java                 the 82-entry table (the factory look, FACTORY, first in Sony, then the 76 others, then the
+                               five picture profiles in Profiles), brands,
                                GROUP_START / GROUP_COUNT, list navigation
   Favorites.java               the favorites list: stored by name in the app's preferences, and how the browser
                                walks the All, Favorites and Custom groups, and the wheel's loop — pure functions, no
@@ -154,7 +154,7 @@ The **developer menu** holds the tools that are not part of using the app:
 |---|---|
 | **Settings snapshot** / **Settings diff** | the snapshot / diff tool below; the row's name says which half is next |
 | **Read-only check — 26 slots** | the read-only check below: does this body flag any slot a recipe writes |
-| **Shoot samples — 83 recipes** | the sample run below |
+| **Shoot samples — 82 recipes** | the sample run below |
 | **Settle delay** | a value — the delay the sample run waits after applying a recipe; left / right step through 0.8 / 1.2 / 2.0 / 3.0 / 5.0 s in place (centre steps forward), kept in the app's preferences |
 | **Key logger** | every key event on screen, newest first, and appended to `RECIPLAB/LOGS/KEYS.TXT` on the card (`keys.txt` in `getFilesDir()` without one): scan code, down / up, repeat count, Sony's logic code; the header is the model, the platform and what the probe found. Nothing else happens while it runs; **hold MENU** leaves |
 
@@ -240,7 +240,7 @@ One frame per recipe, in table order — the capture half of issue #17. The run 
    press / release, automated
 4. next recipe, until the table ends
 
-While it runs, a sticky line counts the frames (`Shooting 12 / 83 · Velvia — MENU stops`) and **every key is
+While it runs, a sticky line counts the frames (`Shooting 12 / 82 · Velvia — MENU stops`) and **every key is
 swallowed** so nothing walks the table underneath it; **MENU** stops the run. The run also stops in `onPause` — it
 cannot outlive the camera it shoots with. When it ends, the recipe the user was on is staged again.
 
@@ -248,7 +248,7 @@ The frames are identified by **order**: the camera names the files, and the run 
 `samples.txt` in `getFilesDir()`, one line per frame —
 
 ```
-# recipe-lab samples  ·  83 frames in recipe order  ·  settle 1200 ms  ·  frame|recipe|brand|values
+# recipe-lab samples  ·  82 frames in recipe order  ·  settle 1200 ms  ·  frame|recipe|brand|values
 01|FACTORY (ST)|Sony|Standard  0/0
 02|Sony PT (portrait)|Sony|Portrait  0/0
 ```
@@ -282,8 +282,8 @@ Evidence and the wider register map are in the a6000-qemu research repo (`docs/A
 
 | chip | values | what it does to the tables |
 |---|---|---|
-| GAMMA | *Off*, S-Log2, S-Log3, LogC3, ITU709, HLG | the base curve. *Off* is no profile: the helper's `off`, the other chips hidden |
-| COLOR | Camera (BT.709, no change), S-Gamut3 (= S-Gamut), S-Gamut3.Cine, BT.2020, ARRI WG3 | the gamut matrix `inv(M_target) · M_709` |
+| GAMMA | *Off*, S-Log2, S-Log3, ITU709, HLG | the base curve. *Off* is no profile: the helper's `off`, the other chips hidden |
+| COLOR | Camera (BT.709, no change), S-Gamut3 (= S-Gamut), S-Gamut3.Cine, BT.2020 | the gamut matrix `inv(M_target) · M_709` |
 | BLACK | -15 .. +15 | black level: 3 code values per step at black, fading to none at white |
 | B.GAMMA, B.RANGE | -7 .. +7; Narrow / Middle / Wide (15 / 25 / 40% of the output) | black gamma: `top · (y/top)^e` under the range, `e = 2^(-0.6·level/7)`. B.RANGE shows only with B.GAMMA ≠ 0 |
 | KNEE, SLOPE | *Off*, 75 .. 105%; -5 .. +5 | above the point, `kp + (y - kp) · 0.25 · 2^(slope/5)`, on the curve's unclipped values (BT.709 and HLG go on rising past 1 for it). SLOPE shows only with a knee |
@@ -318,7 +318,7 @@ does not report its model is not supported.
 
 - `IspProfiles` (camera-free, tested) builds the 96 gamma words and the Q14 matrix of a look, and writes them to
   `profile.bin`. The file is `RLPP`, version 1, flags, 96 words and 9 words, all LE32.
-  - Curves follow the published formulas: S-Log2 in legal range (grey 347), S-Log3 and LogC3 EI 800 as code values
+  - Curves follow the published formulas: S-Log2 in legal range (grey 347), S-Log3 as code values
     (grey 420 and 400), and BT.709 clipped at 1 (grey 418).
   - HLG follows BT.2100 with the BT.2408 scale (100% white at 75%, grey 387).
   - Gamuts: S-Gamut = S-Gamut3, S-Gamut3.Cine, BT.2020 and ALEXA Wide Gamut 3. ITU709 keeps the camera's colour (identity).
@@ -440,8 +440,8 @@ plus `family`. A recipe with one is written in format 3 (`RecipeFormatV3`): form
 | `amber-blue`, `green-magenta` | -7 .. +7, amber / green positive | 0 |
 | `exposure` | -5.0 .. +5.0 in thirds, as the chip shows it: `+0.7`, `-1.3`, `0` | 0 |
 | `dro` | `off`, `auto`, `1` .. `5` | auto |
-| `gamma` | format 3 only: `off`, `s-log2`, `s-log3`, `logc3`, `itu709`, `hlg`. `off` is a recipe without a profile, and the keys below are not read | off |
-| `color-mode` | `camera`, `s-gamut3`, `s-gamut3-cine`, `bt2020`, `awg3` | camera |
+| `gamma` | format 3 only: `off`, `s-log2`, `s-log3`, `itu709`, `hlg` (a file from a test build with `logc3` loads with no profile, `awg3` as `camera`). `off` is a recipe without a profile, and the keys below are not read | off |
+| `color-mode` | `camera`, `s-gamut3`, `s-gamut3-cine`, `bt2020` | camera |
 | `black-level` | -15 .. +15 | 0 |
 | `black-gamma`, `black-gamma-range` | -7 .. +7; `narrow`, `middle`, `wide` | 0; middle |
 | `knee`, `knee-slope` | `off` or 75 .. 105 (percent); -5 .. +5 | off; 0 |
@@ -880,7 +880,7 @@ against a SHA-256 pinned in the script (`JUNIT_JAR=<path>` points it at a copy w
 
 | | |
 |---|---|
-| `RecipesTest` | the table itself — 83 entries (the factory look, the 76 film looks and the six picture profiles), group order, every value inside its row's range, kelvin in whole hundreds, sub-parameters that exist for the effect; labels, `summary()`, wrap-around navigation |
+| `RecipesTest` | the table itself — 82 entries (the factory look, the 76 film looks and the five picture profiles), group order, every value inside its row's range, kelvin in whole hundreds, sub-parameters that exist for the effect; labels, `summary()`, wrap-around navigation |
 | `ParamsCodecTest` | how the store encodes each row (DRO bytes, any Picture Profile reading as on, magenta-positive G-M, the quality pair, signed vs unsigned slots) and how it reads back |
 | `ParamsWritesTest` | which bytes ENTER writes for a recipe — golden lists for a few, and every recipe stored over a factory camera, then on top of each other, read back through the same decoder |
 | `ParamsPreviewTest` | the `Camera.Parameters` the live preview sets, recipe by recipe |

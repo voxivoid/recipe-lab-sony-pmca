@@ -121,6 +121,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private int menuSel = 0, settleIdx = DevTools.SETTLE_DEFAULT;   // menu: highlighted row · developer menu: chosen settle delay
     private int langChoice = Lang.AUTO;                         // the Language row: Lang.AUTO or a language
     // the picture profile (IspProfiles): the staged rows' look goes to the image processor through the root helper
+    private boolean ispClear;                                   // a retired profile was saved: the helper must run "off" once
     private IspProfiles.Look ispStored;                         // the look of the recipe last stored: the profile rows' "cur", applied again on every start
     private IspProfiles.Look ispLive;                           // what the image processor holds, as far as the app knows
     private boolean ispKnown, ispRunning, ispQueued;            // ispLive is known · the helper is running · the rows changed meanwhile
@@ -192,13 +193,19 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         super.onCreate(b);
         setContentView(R.layout.main);
         prefs = getPreferences(MODE_PRIVATE);
-        recipe = Math.max(0, Math.min(Recipes.ALL.length - 1, prefs.getInt("recipe", 0)));
+        recipe = Library.restoredIndex(prefs.getInt("recipe", 0));
         favStored = prefs.getString(Favorites.PREF, "");
         favs = Favorites.decode(favStored, library);
         wheelGroup = Favorites.wheelGroup(prefs.getString("wheelGroup", null));
         settleIdx = DevTools.clampSettle(prefs.getInt("settle", DevTools.SETTLE_DEFAULT));
         langChoice = Lang.parseChoice(prefs.getString("language", null));
-        ispStored = Params.lookFrom(prefs.getString("ispLook", null));
+        String savedLook = prefs.getString("ispLook", null);
+        ispStored = Params.lookFrom(savedLook);
+        if (Params.retiredLook(savedLook)) {                     // updated with it on: forget it, and take it out of the ISP on resume
+            ispClear = true;
+            prefs.edit().putString("ispLook", Params.lookText(null)).commit();
+            persistLook(null);
+        }
         ispModel = KeyProbe.prop("model.name"); ispFw = KeyProbe.firmware();
         panel = findViewById(R.id.panel);
         picker = (PickerView) findViewById(R.id.picker);
@@ -391,7 +398,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         resumed = true;
         // the image processor is RAM only: a power cycle since the app last ran has made it stock. Without a stored
         // profile it is stock either way (leaving the app puts the stored one back), so nothing needs running
-        ispKnown = ispStored == null; ispLive = null;
+        ispKnown = ispStored == null && !ispClear; ispLive = null; ispClear = false;
         BootReceiver.appOpened();                                // the keep-alive loop lets go of the root shell
         pullState();
         try {

@@ -7,7 +7,7 @@ package com.voxivoid.recipelab;
  * it). RAM only: the camera is stock again after a power cycle, which is why the app applies the stored one again on
  * every start.
  *
- * The idea of writing a gamma curve and colour matrix into the ISP, and the ARRI LogC3 / AWG3 look, come from
+ * The idea of writing a gamma curve and colour matrix into the ISP comes from
  * ivica00/bionz-x-research (arri_isp "Arrivederci", a6400-lut-converter; MIT, (c) 2026 ivica00,
  * https://github.com/ivica00/bionz-x-research). The A6000 values and code are ours.
  *
@@ -15,7 +15,7 @@ package com.voxivoid.recipelab;
  * the root command line and how the helper's log is read back. No android.* import may appear in this class.
  *
  * Only profiles whose formulas and primaries are published are here (Sony S-Log2, S-Log3, S-Gamut, S-Gamut3,
- * S-Gamut3.Cine; ITU-R BT.709; BT.2100 HLG with BT.2020; ARRI LogC3 EI 800 with ALEXA Wide Gamut 3). Sony's own
+ * S-Gamut3.Cine; ITU-R BT.709; BT.2100 HLG with BT.2020). Sony's own
  * Movie / Still / Cine1-4 / S-Cinetone shapes are not published, so they are not offered.
  */
 final class IspProfiles {
@@ -23,15 +23,27 @@ final class IspProfiles {
 
     // ------------------------------------------------------------ the look: every parameter a profile recipe holds
     /** gamma curves; OFF is no profile at all (the camera's own look) */
-    static final int OFF = 0, SLOG2 = 1, SLOG3 = 2, LOGC3 = 3, ITU709 = 4, HLG = 5, CURVES = 6;
+    static final int OFF = 0, SLOG2 = 1, SLOG3 = 2, ITU709 = 3, HLG = 4, CURVES = 5;
     /** the file's spelling of each curve (frozen) and what the chip shows (canonical names, no language translates them) */
-    static final String[] CURVE_CODES = { "off", "s-log2", "s-log3", "logc3", "itu709", "hlg" };
-    private static final String[] CURVE_LABEL = { null, "S-Log2", "S-Log3", "LogC3", "ITU709", "HLG" };
+    static final String[] CURVE_CODES = { "off", "s-log2", "s-log3", "itu709", "hlg" };
+    private static final String[] CURVE_LABEL = { null, "S-Log2", "S-Log3", "ITU709", "HLG" };
 
     /** colour modes (gamuts): CAMERA keeps the camera's colour (BT.709) */
-    static final int CAMERA = 0, SGAMUT3 = 1, SGAMUT3_CINE = 2, BT2020 = 3, AWG3 = 4, GAMUTS = 5;
-    static final String[] GAMUT_CODES = { "camera", "s-gamut3", "s-gamut3-cine", "bt2020", "awg3" };
-    private static final String[] GAMUT_LABEL = { null, "S-Gamut3", "S-Gamut3.Cine", "BT.2020", "ARRI WG3" };
+    static final int CAMERA = 0, SGAMUT3 = 1, SGAMUT3_CINE = 2, BT2020 = 3, GAMUTS = 4;
+
+    /**
+     * LogC3 and ARRI Wide Gamut 3 were in test builds and are gone. Cards and preferences can still name them: the saved
+     * look keeps its old numbers ({@link #storedCurve}), so a saved ITU709 or HLG stays itself, and a LogC3 reads as no
+     * profile, an ARRI WG3 as the camera's colour.
+     */
+    static final String RETIRED_CURVE = "logc3", RETIRED_GAMUT = "awg3";
+    static final int STORED_RETIRED_CURVE = 3, STORED_RETIRED_GAMUT = 4;
+    /** the number a saved look keeps for a curve */
+    static int storedCurve(int curve) { return curve >= STORED_RETIRED_CURVE ? curve + 1 : curve; }
+    /** the curve of a saved number; the retired one is {@link #OFF} */
+    static int curveFromStored(int n) { return n == STORED_RETIRED_CURVE ? OFF : n > STORED_RETIRED_CURVE ? n - 1 : n; }
+    static final String[] GAMUT_CODES = { "camera", "s-gamut3", "s-gamut3-cine", "bt2020" };
+    private static final String[] GAMUT_LABEL = { null, "S-Gamut3", "S-Gamut3.Cine", "BT.2020" };
 
     /** black gamma ranges: the share of the output it reshapes, as Sony's Narrow / Middle / Wide */
     static final int NARROW = 0, MIDDLE = 1, WIDE = 2;
@@ -133,10 +145,6 @@ final class IspProfiles {
         if (r >= 0.01125) return (420.0 + Math.log10((r + 0.01) / (0.18 + 0.01)) * 261.5) / 1023.0;
         return (r * (171.2102946929 - 95.0) / 0.01125 + 95.0) / 1023.0;
     }
-    /** ARRI LogC3 at EI 800: the 10-bit code value / 1023 */
-    static double logc3(double r) {
-        return r > 0.010591 ? 0.247190 * Math.log10(5.555556 * r + 0.052272) + 0.385537 : 5.367655 * r + 0.092809;
-    }
     /** ITU-R BT.709 OETF; above 1 it goes on rising, for the knee to bend (the table clips at 1023) */
     static double rec709(double r) {
         r = Math.max(0, r);
@@ -155,8 +163,7 @@ final class IspProfiles {
     static double curveCode(int curve, double r) {
         switch (curve) {
             case SLOG2: return 64 + 876 * slog2(r);                  // S-Log2 is specified in legal range
-            case SLOG3: return slog3(r) * 1023;                       // S-Log3 and LogC3 are code values already
-            case LOGC3: return logc3(r) * 1023;
+            case SLOG3: return slog3(r) * 1023;                       // S-Log3 is code values already
             case ITU709: return rec709(r) * 1023;
             case HLG: return hlg(r * HLG_WHITE) * 1023;
             default: throw new IllegalArgumentException("curve " + curve);
@@ -219,14 +226,12 @@ final class IspProfiles {
     static final double[][] SGAMUT3_XY = { { 0.730, 0.280 }, { 0.140, 0.855 }, { 0.100, -0.050 } };   // = S-Gamut primaries
     static final double[][] SGAMUT3_CINE_XY = { { 0.766, 0.275 }, { 0.225, 0.800 }, { 0.089, -0.087 } };
     static final double[][] BT2020_XY = { { 0.708, 0.292 }, { 0.170, 0.797 }, { 0.131, 0.046 } };
-    static final double[][] AWG3_XY = { { 0.6840, 0.3130 }, { 0.2210, 0.8480 }, { 0.0861, -0.1020 } };
 
     static double[][] primaries(int gamut) {
         switch (gamut) {
             case SGAMUT3: return SGAMUT3_XY;                         // S-Gamut has the same primaries
             case SGAMUT3_CINE: return SGAMUT3_CINE_XY;
             case BT2020: return BT2020_XY;
-            case AWG3: return AWG3_XY;
             default: return P709;
         }
     }

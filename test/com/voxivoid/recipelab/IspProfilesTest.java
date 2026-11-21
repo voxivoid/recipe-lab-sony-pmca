@@ -13,7 +13,6 @@ class IspProfilesTest {
 
     static final int[] SLOG2 = { 106, 120, 133, 145, 157, 167, 177, 186, 195, 204, 212, 219, 227, 234, 240, 247, 253, 259, 265, 270, 276, 281, 286, 291, 295, 300, 305, 309, 313, 317, 321, 325, 333, 340, 347, 354, 360, 367, 373, 378, 384, 389, 395, 400, 405, 409, 414, 418, 427, 435, 443, 451, 458, 465, 471, 478, 484, 490, 495, 501, 506, 511, 516, 521, 530, 539, 547, 555, 563, 570, 577, 584, 590, 596, 602, 608, 613, 619, 624, 629, 648, 664, 680, 694, 706, 718, 730, 740, 759, 776, 791, 806, 819, 831, 842, 852 };
     static final int[] SLOG3 = { 127, 159, 186, 206, 224, 238, 252, 264, 274, 284, 293, 301, 309, 316, 323, 330, 336, 342, 347, 352, 357, 362, 367, 371, 376, 380, 384, 387, 391, 395, 398, 402, 408, 414, 420, 426, 431, 436, 441, 445, 450, 454, 458, 462, 466, 470, 473, 477, 483, 490, 496, 501, 507, 512, 517, 522, 526, 530, 535, 539, 543, 546, 550, 554, 560, 567, 573, 579, 584, 589, 594, 599, 604, 608, 612, 616, 620, 624, 628, 631, 645, 657, 667, 677, 686, 695, 702, 710, 723, 735, 746, 756, 765, 773, 781, 788 };
-    static final int[] LOGC3 = { 121, 147, 171, 191, 208, 223, 236, 248, 258, 268, 276, 285, 292, 299, 306, 312, 318, 324, 329, 334, 339, 344, 348, 353, 357, 361, 365, 368, 372, 375, 379, 382, 388, 394, 400, 405, 410, 415, 420, 425, 429, 433, 437, 441, 445, 448, 452, 455, 461, 468, 473, 479, 484, 489, 494, 498, 503, 507, 511, 515, 519, 522, 526, 529, 536, 542, 548, 554, 559, 564, 569, 573, 578, 582, 586, 590, 594, 598, 601, 605, 618, 629, 639, 649, 658, 666, 673, 680, 693, 705, 715, 725, 734, 742, 749, 756 };
     static final int[] ITU709 = { 22, 44, 65, 87, 107, 125, 141, 156, 171, 184, 196, 208, 219, 230, 241, 251, 261, 270, 279, 288, 297, 305, 313, 321, 329, 337, 344, 352, 359, 366, 373, 380, 393, 406, 418, 431, 442, 454, 465, 476, 487, 497, 507, 517, 527, 537, 546, 556, 574, 592, 609, 625, 641, 657, 672, 687, 702, 716, 730, 744, 757, 771, 784, 796, 821, 845, 869, 891, 913, 935, 956, 976, 996, 1016, 1023, 1023, 1023, 1023, 1023, 1023, 1023, 1023, 1023, 1023, 1023, 1023, 1023, 1023, 1023, 1023, 1023, 1023, 1023, 1023, 1023, 1023 };
     static final int[] HLG = { 63, 89, 109, 126, 140, 154, 166, 178, 188, 199, 208, 217, 226, 235, 243, 251, 259, 266, 274, 281, 288, 294, 301, 308, 314, 320, 326, 332, 338, 344, 350, 355, 366, 377, 387, 397, 407, 416, 426, 435, 444, 453, 461, 470, 478, 486, 494, 502, 518, 532, 545, 558, 569, 580, 590, 600, 609, 618, 627, 635, 642, 650, 657, 664, 677, 689, 700, 711, 721, 730, 739, 748, 756, 764, 772, 779, 786, 793, 799, 806, 829, 849, 868, 885, 900, 914, 927, 940, 962, 982, 1000, 1016, 1023, 1023, 1023, 1023 };
 
@@ -27,13 +26,12 @@ class IspProfilesTest {
         for (int i = 1; i < 96; i++) assertTrue(IspProfiles.KNOTS[i] > IspProfiles.KNOTS[i - 1]);
     }
 
-    // the six built-in profiles: a curve and a colour mode, no adjustment
+    // the five built-in profiles: a curve and a colour mode, no adjustment
     static final IspProfiles.Look P_SLOG2 = new IspProfiles.Look(IspProfiles.SLOG2, IspProfiles.SGAMUT3),
             P_SLOG3_CINE = new IspProfiles.Look(IspProfiles.SLOG3, IspProfiles.SGAMUT3_CINE),
             P_SLOG3 = new IspProfiles.Look(IspProfiles.SLOG3, IspProfiles.SGAMUT3),
             P_ITU709 = new IspProfiles.Look(IspProfiles.ITU709, IspProfiles.CAMERA),
-            P_HLG = new IspProfiles.Look(IspProfiles.HLG, IspProfiles.BT2020),
-            P_LOGC3 = new IspProfiles.Look(IspProfiles.LOGC3, IspProfiles.AWG3);
+            P_HLG = new IspProfiles.Look(IspProfiles.HLG, IspProfiles.BT2020);
 
     /** a look with one adjustment set: the curve and gamut of {@code base}, everything else neutral but {@code f} */
     static IspProfiles.Look with(IspProfiles.Look b, int black, int bg, int range, int knee, int slope, int sat, int phase, int con) {
@@ -44,7 +42,6 @@ class IspProfilesTest {
         assertArrayEquals(SLOG2, IspProfiles.gamma(P_SLOG2));
         assertArrayEquals(SLOG3, IspProfiles.gamma(P_SLOG3));
         assertArrayEquals(SLOG3, IspProfiles.gamma(P_SLOG3_CINE), "one curve, two gamuts");
-        assertArrayEquals(LOGC3, IspProfiles.gamma(P_LOGC3));
         assertArrayEquals(ITU709, IspProfiles.gamma(P_ITU709));
         assertArrayEquals(HLG, IspProfiles.gamma(P_HLG));
         assertNull(IspProfiles.gamma(null));
@@ -55,7 +52,6 @@ class IspProfilesTest {
         assertEquals(76, IspProfiles.KNOTS[grey]);
         assertEquals(347, IspProfiles.gamma(P_SLOG2)[grey], "S-Log2: 32% IRE = 347");
         assertEquals(420, IspProfiles.gamma(P_SLOG3)[grey], "S-Log3: code 420");
-        assertEquals(400, IspProfiles.gamma(P_LOGC3)[grey], "LogC3 EI800: code 400");
         assertEquals(418, IspProfiles.gamma(P_ITU709)[grey], "BT.709: 40.9%");
         assertEquals(387, IspProfiles.gamma(P_HLG)[grey], "HLG: ~38% (BT.2408)");
     }
@@ -65,7 +61,6 @@ class IspProfilesTest {
         assertArrayEquals(IspProfiles.matrixQ14(P_SLOG3), IspProfiles.matrixQ14(P_SLOG2), "S-Gamut = S-Gamut3 primaries");
         assertArrayEquals(new int[] { 10579, 4245, 1560, 1434, 12447, 2503, 606, 2118, 13660 }, IspProfiles.matrixQ14(P_SLOG3_CINE));
         assertArrayEquals(new int[] { 10279, 5395, 710, 1132, 15066, 186, 269, 1442, 14673 }, IspProfiles.matrixQ14(P_HLG));
-        assertArrayEquals(new int[] { 10343, 4437, 1604, 603, 12993, 2788, 285, 2438, 13661 }, IspProfiles.matrixQ14(P_LOGC3));
         assertArrayEquals(new int[] { 16384, 0, 0, 0, 16384, 0, 0, 0, 16384 }, IspProfiles.matrixQ14(P_ITU709), "the camera's colour, untouched");
     }
 
@@ -80,7 +75,7 @@ class IspProfilesTest {
             }
         }
         // the two pieces of each log curve meet; BT.709's do not quite (4.5 * 0.018 vs 0.0812), as the spec has it
-        double[][] cuts = { { IspProfiles.SLOG3, 0.01125 }, { IspProfiles.LOGC3, 0.010591 }, { IspProfiles.HLG, 1.0 / 12 / IspProfiles.HLG_WHITE } };
+        double[][] cuts = { { IspProfiles.SLOG3, 0.01125 }, { IspProfiles.HLG, 1.0 / 12 / IspProfiles.HLG_WHITE } };
         for (double[] cut : cuts) {
             int c = (int) cut[0];
             assertEquals(IspProfiles.curveCode(c, cut[1] * (1 - 1e-9)), IspProfiles.curveCode(c, cut[1] * (1 + 1e-9)), 1e-3, IspProfiles.CURVE_CODES[c]);

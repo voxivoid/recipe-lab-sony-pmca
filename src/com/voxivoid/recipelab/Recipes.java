@@ -211,7 +211,6 @@ public class Recipes {
         profile("S-Log3",       IspProfiles.SLOG3,  IspProfiles.SGAMUT3),
         profile("ITU709",       IspProfiles.ITU709, IspProfiles.CAMERA),
         profile("HLG",          IspProfiles.HLG,    IspProfiles.BT2020),
-        profile("LogC3",        IspProfiles.LOGC3,  IspProfiles.AWG3),
     };
 
     /** a built-in picture profile recipe: Standard, auto white balance, DRO off, the curve and colour mode with no adjustment */

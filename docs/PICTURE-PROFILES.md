@@ -12,7 +12,7 @@ Contents: [Hardware](#hardware-a6000-fw-321) · [How it works now](#how-it-works
 [Rules that must not break](#rules-that-must-not-break) · [What was tried and failed](#what-was-tried-and-failed) ·
 [Open issues](#open-issues) · [Debugging](#debugging-from-the-card)
 
-Credit: writing the ISP's gamma table and colour matrix through `/dev/mem`, and the ARRI LogC3 / AWG3 look, follow
+Credit: writing the ISP's gamma table and colour matrix through `/dev/mem` follows
 [ivica00/bionz-x-research](https://github.com/ivica00/bionz-x-research) (`arri_isp` and its "Arrivederci" pipeline, `a6400-lut-converter`; MIT, © 2026 ivica00).
 The A6000 addresses and everything below were found on an A6000.
 
@@ -194,7 +194,7 @@ persistent.
 
 ## Open issues
 
-- **Matrix not settled after a big creative-style change** (for example Kodak Gold SAT=2 → LogC3, which resets the
+- **Matrix not settled after a big creative-style change** (for example Kodak Gold SAT=2 → a log profile, which resets the
   style). Captures seconds apart differ a lot: `801 239 -16`, `488 352 184`, `441 439 144`, `375 525 124` (first row).
   700 ms isn't always enough, so a wrong stock gives slightly wrong colours until the next clean capture. A possible
   fix: read the matrix twice about 200 ms apart and capture only when the two match. Not done yet.
@@ -219,7 +219,8 @@ powershell.exe -NoProfile -Command "Get-Content E:\RECIPLAB\ISP\boot.log -Tail 2
 
 | Line | Meaning |
 |------|---------|
-| `BOOT sent: logc3/…` | boot loop started |
+| `BOOT sent: s-log3/…` | boot loop started |
+| `BOOT retired profile, removed` | `look.txt` named LogC3 (test builds only): deleted, the camera stays stock |
 | `BOOT app open, skipping` | duplicate event on open, correctly ignored |
 | `BOOT no look.txt` | the stored recipe has no profile, so nothing to do (correct) |
 | `BOOT not on this body: …` | the body or firmware has no enabled row, so no loop (correct) |
@@ -229,7 +230,7 @@ powershell.exe -NoProfile -Command "Get-Content E:\RECIPLAB\ISP\boot.log -Tail 2
 | ISP `log`: `RESULT MATCH` | loop check, gamma still ours |
 | ISP `log`: `SETTER … patched` twice, then `GAMMA …` | `reapply` caught a rewrite and applied again |
 
-LogC3 gamma starts `121 147 171 191 208 223`. S-Log2 starts around `106`. Use these to tell which profile a log is
+S-Log2 gamma starts around `106`. Use this to tell which profile a log is
 about.
 
 ### Building and installing
@@ -249,8 +250,8 @@ is signed with a throwaway key, and the camera refuses it as an update.
 
 CI can't check any of this. On a real A6000:
 
-1. Pick LogC3, close the app, **power off**, power on, don't open the app, and wait about 60 s. The live view should
+1. Pick S-Log3, close the app, **power off**, power on, don't open the app, and wait about 60 s. The live view should
    be flat.
 2. Power on and open the app at once. Scrolling should be snappy, and the profile should show in about 1–2 s.
 3. Switch between gamma-on and gamma-off recipes. Each switch should take about 1 s.
-4. Kodak Gold → LogC3 → close → power-cycle. Check the colours.
+4. Kodak Gold → S-Log3 → close → power-cycle. Check the colours.

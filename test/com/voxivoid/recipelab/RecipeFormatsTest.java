@@ -176,7 +176,7 @@ class RecipeFormatsTest {
         IspProfiles.Look[] looks = {
             new IspProfiles.Look(IspProfiles.SLOG2, IspProfiles.SGAMUT3),
             new IspProfiles.Look(IspProfiles.HLG, IspProfiles.BT2020, 15, -7, IspProfiles.NARROW, 105, 5, -32, 7, -7),
-            new IspProfiles.Look(IspProfiles.LOGC3, IspProfiles.AWG3, -15, 7, IspProfiles.MIDDLE, 75, -5, 32, -7, 7),
+            new IspProfiles.Look(IspProfiles.SLOG3, IspProfiles.SGAMUT3_CINE, -15, 7, IspProfiles.MIDDLE, 75, -5, 32, -7, 7),
             new IspProfiles.Look(IspProfiles.ITU709, IspProfiles.CAMERA, 0, 0, IspProfiles.MIDDLE, IspProfiles.KNEE_OFF, 0, -32, 0, 0),
         };
         for (IspProfiles.Look l : looks) {
@@ -193,6 +193,16 @@ class RecipeFormatsTest {
         assertNull(RecipeFormats.parse(base + "gamma: off\nblack-level: +3\n", "x.YML").recipe.look, "the adjustments need a curve");
         IspProfiles.Look l = RecipeFormats.parse(base + "gamma: hlg\n", "x.YML").recipe.look;
         assertEquals(new IspProfiles.Look(IspProfiles.HLG, IspProfiles.CAMERA), l, "a key left out is the neutral value");
+    }
+
+    @Test void aRecipeFileOnTheRetiredProfileStaysWithALookTheAppHas() {
+        String base = "format: 3\nfamily: sony-creative-style\nname: A\n";
+        CustomRecipes.Parsed p = RecipeFormats.parse(base + "gamma: logc3\ncolor-mode: awg3\nknee: 95\n", "x.YML");
+        assertNull(p.error);
+        assertNull(p.recipe.look, "LogC3 is gone: the recipe, with no profile");
+        p = RecipeFormats.parse(base + "gamma: s-log3\ncolor-mode: awg3\n", "x.YML");
+        assertNull(p.error);
+        assertEquals(new IspProfiles.Look(IspProfiles.SLOG3, IspProfiles.CAMERA), p.recipe.look, "ARRI WG3 is gone: the camera's colour");
     }
 
     @Test void formatThreeSkipsAProfileValueOutOfRange() {

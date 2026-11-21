@@ -140,12 +140,13 @@ final class Params {
         if (l == null) return "0";
         int[] rows = new int[N];
         putLook(l, rows);
+        rows[R_GAMMA] = IspProfiles.storedCurve(l.curve);
         StringBuilder s = new StringBuilder();
         for (int i = R_GAMMA; i <= R_SCURVE; i++) { if (i > R_GAMMA) s.append(','); s.append(rows[i]); }
         return s.toString();
     }
 
-    /** the look {@link #lookText} wrote; null for "0", and for anything that is not a valid look */
+    /** the look {@link #lookText} wrote; null for "0", for a retired curve, and for anything that is not a valid look */
     static IspProfiles.Look lookFrom(String s) {
         if (s == null) return null;
         String[] parts = s.split(",");
@@ -153,8 +154,17 @@ final class Params {
         int[] rows = new int[N];
         try { for (int i = 0; i < parts.length; i++) rows[R_GAMMA + i] = Integer.parseInt(parts[i].trim()); }
         catch (NumberFormatException e) { return null; }
+        rows[R_GAMMA] = IspProfiles.curveFromStored(rows[R_GAMMA]);
+        if (rows[R_GAMUT] == IspProfiles.STORED_RETIRED_GAMUT) rows[R_GAMUT] = IspProfiles.CAMERA;
         IspProfiles.Look l = look(rows);
         return l != null && l.problem() == null ? l : null;
+    }
+
+    /** whether a saved look is on the retired curve: the image processor may still hold it, until a power cycle */
+    static boolean retiredLook(String s) {
+        if (s == null) return false;
+        String[] parts = s.split(",");
+        return parts.length == R_SCURVE - R_GAMMA + 1 && parts[0].trim().equals(String.valueOf(IspProfiles.STORED_RETIRED_CURVE));
     }
 
     /** slots whose byte is an unsigned index; every other slot holds a signed offset */
