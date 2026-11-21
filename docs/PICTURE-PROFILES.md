@@ -13,7 +13,7 @@ Contents: [Hardware](#hardware-a6000-fw-321) · [How it works now](#how-it-works
 [Open issues](#open-issues) · [Debugging](#debugging-from-the-card)
 
 Credit: writing the ISP's gamma table and colour matrix through `/dev/mem` follows
-[ivica00/bionz-x-research](https://github.com/ivica00/bionz-x-research) (`arri_isp` and its "Arrivederci" pipeline, `a6400-lut-converter`; MIT, © 2026 ivica00).
+[ivica00/bionz-x-research](https://github.com/ivica00/bionz-x-research) (`mods/arri_isp`; MIT, © 2026 ivica00).
 The A6000 addresses and everything below were found on an A6000.
 
 ---
