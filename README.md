@@ -65,7 +65,8 @@ Recipe Lab is a small app that runs on the camera itself — on Sony cameras tha
 as the A6000, A6300, A6500 and A7 II (see [Compatibility](#compatibility)). It comes with 76 colour recipes that
 recreate the looks of other cameras — Fuji film simulations, Ricoh GR image controls, Leica, Hasselblad, Canon and
 Nikon colour, Sony's newer Creative Looks — and of classic film stocks from Kodak, Fuji, Cinestill, Agfa and Ilford.
-You can also make your own, and share them.
+You can also make your own, and share them. On an A6000 with firmware 3.21 it adds
+[picture profiles](#picture-profiles): S-Log2, S-Log3, HLG and more, with the adjustments of Sony's Picture Profile menu.
 
 **Recipe Lab has a phone app too.** [**Recipe Lab Studio**](https://recipelab.io/studio) develops your RAWs on iPhone,
 iPad and Android with these same looks, plus the film grain and mist a camera cannot do. The camera sends it photos
@@ -78,6 +79,8 @@ mode**, photo and video, with the app closed. Turn it off and on, it is still th
 > **Honest note.** The A6000 has no Picture Profile menu and cannot store tone curves. Every recipe is built only from
 > what this camera *can* keep: Creative Style, saturation, contrast, sharpness, white balance, exposure bias, Picture
 > Effect and one hidden colour setting Sony never exposed. So these are approximations of a look, not copies of another brand's colour science.
+> The [picture profiles](#picture-profiles) are the exception: they write the tone curve into the camera's memory, and
+> the app puts them back by itself after each power-on.
 
 ## The recipes
 
@@ -263,6 +266,8 @@ Open **Recipe Lab** from the Application List. The live view shows the look. The
 **Change a value**
 
 - Go **down** to the chips. **centre** a chip. **up / down** changes it. **centre** again to finish.
+- The chips come in groups: quality, the look, white balance, exposure, then the picture profile. The **LOOK** chip picks
+  a Creative Style or a Picture Effect, and only that one's chips show.
 - It is only a preview until you choose.
 - Buttons appear under the chips: **Apply**, **Save as new**, **Discard** — and **Save** on your own recipes.
 - See [Custom recipes](#custom-recipes).
@@ -288,6 +293,34 @@ Open **Recipe Lab** from the Application List. The live view shows the look. The
 - **Sync recipes** opens the same Wi-Fi link for custom recipes: [Recipe Lab Studio](https://recipelab.io/studio) copies the ones the phone lacks
   and sends the ones the card lacks. Leave the page with MENU and they are under Custom.
 - Languages: *Auto*, English, 简体中文, 繁體中文, 日本語, 한국어, Tiếng Việt.
+
+## Picture profiles
+
+**Tried on the A6000 (firmware 3.21).** Also switched on, but not yet tried, for the A5000, A5100, A6300, A6500, A7,
+A7R, A7S, A7 II, A7R II, A7S II, RX100 III, RX100 IV, RX100 V and HX60 / HX60V, each on Sony's latest firmware; on an
+older one the app names the firmware to install, and other cameras say the profile does not work there yet. The **Pic Profiles** group holds five picture profiles: *S-Log2* (S-Gamut), *S-Log3 Cine*
+(S-Gamut3.Cine), *S-Log3* (S-Gamut3), *ITU709* and *HLG* (BT.2020).
+They are recipes like the others: pick one, edit it, save it as your own.
+
+Any recipe can carry a profile: the **GAMMA** chip, last in the row, turns one on, and the chips after it shape it the way
+a Sony Picture Profile menu does:
+
+| chip | what it changes |
+|---|---|
+| **GAMMA** | the tone curve: *off*, S-Log2, S-Log3, ITU709 or HLG |
+| **COLOR** | the colour mode (gamut): *Camera* keeps the camera's colour; S-Gamut3, S-Gamut3.Cine, BT.2020 |
+| **BLACK** | black level, -15 .. +15 |
+| **B.GAMMA**, **B.RANGE** | black gamma: lifts (+) or sinks (−) the shadows, over a narrow, middle or wide range |
+| **KNEE**, **SLOPE** | a highlight roll-off from 75 to 105%, and how steep it is |
+| **C.SAT** | colour saturation, -32 (black and white) .. +32 |
+| **PHASE** | colour phase: turns every hue a little, -7 .. +7 |
+| **S-CURVE** | contrast around middle grey, -7 .. +7 |
+
+The profile covers live view, photos and video, and shows as you change the chips. It lives in the camera's memory
+only, so the app puts it back by itself at every power-on, without being opened: for up to a minute after switching
+on, live view can show the normal look before the profile returns. It shapes the JPEG and video, never the RAW. DRO and the style's own contrast reshape the
+picture too, so the built-in profiles turn DRO off. A recipe with a profile cannot be shared as a QR code yet, and a
+Recipe Lab Studio or app version from before profiles skips its file rather than read half of it.
 
 ## Custom recipes
 
@@ -373,6 +406,11 @@ other way stops it too.
 Only camera settings you could set by hand: Creative Style and its saturation, contrast and sharpness sliders, white
 balance and its fine-tune, exposure compensation, DRO, Picture Effect. No firmware is touched, nothing is unlocked.
 
+The one exception is a recipe with a [picture profile](#picture-profiles). It writes the image processor's tone curve
+and colour matrix in memory, and it stops the camera's own code from overwriting them (two instructions, changed in
+memory only). Nothing goes to flash: switch the camera off, or pick a recipe without a profile, and it is stock again.
+It checks the camera's code first and refuses on anything that is not an A6000 on firmware 3.21.
+
 **Picture Effect recipes** (marked **JPEG only**) behave like the menu item does: the camera ignores Creative Style while one
 is on, and it only works with **Quality = JPEG** — set to RAW or RAW+JPEG, the camera drops the effect silently.
 
@@ -453,12 +491,21 @@ engineering Sony's PlayMemories camera platform:
 He figured out how these cameras work, documented it openly and licensed it permissively — this project just stands
 on that.
 
+**Thanks to [ivica00](https://github.com/ivica00)** and [bionz-x-research](https://github.com/ivica00/bionz-x-research)
+(MIT, © 2026 ivica00). The picture-profile work (`jni/rlisp/`, `IspProfiles.java`, [docs/PICTURE-PROFILES.md](docs/PICTURE-PROFILES.md))
+follows the approach published there for newer BIONZ X bodies (`mods/arri_isp`): a RAM-only, freestanding helper that
+writes the ISP's gamma table and colour matrix straight through `/dev/mem`. The curves and gamuts come from their
+published specifications. The A6000 register map, addresses, helper code and safety checks here were re-derived and
+tested on an A6000 (see [a6000-qemu](https://github.com/voxivoid/a6000-qemu)), but the idea and the method come from
+that work.
+
 **Thanks also to [Veres Deni Alex](https://www.veresdenialex.com/).** His Sony film-simulation recipes and the side-by-side
 reference frames on his site were the inspiration and the benchmark for many of the looks here (Kodak, Fuji, Cinestill,
 Ilford, Cinema…). The values in this app are re-derived for what the A6000 can store and are not his recipes.
 
 License: [GPL-3.0](LICENSE), © 2026 André Domingues. Releases up to and including v1.7.0 were published under MIT.
 OpenMemories-Platform: MIT, © 2017 ma1co.
+[bionz-x-research](https://github.com/ivica00/bionz-x-research) (approach for the picture profiles): MIT, © 2026 ivica00.
 [QR Code generator](https://www.nayuki.io/page/qr-code-generator-library) (`src/io/nayuki/qrcodegen`): MIT, © Project Nayuki.
 [ZXing](https://github.com/zxing/zxing) 3.3.3, the QR code reader subset (`src/com/google/zxing`): Apache-2.0, © ZXing authors
 (patched where the camera's Java lacks a call, marked "Recipe Lab:" in the source).

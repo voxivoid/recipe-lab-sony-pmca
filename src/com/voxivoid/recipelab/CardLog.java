@@ -139,10 +139,13 @@ final class CardLog {
         return sb.toString();
     }
 
-    /** what the store holds for every recipe row, by the rows' English names: {@code STYLE=1 SAT=0 …} */
+    /** what the store holds for every recipe row (LOOK aside), by the rows' English names: {@code STYLE=1 SAT=0 …} */
     static String state(int[] rows) {
         StringBuilder sb = new StringBuilder();
-        for (int i = 1; i < rows.length && i < Params.ROW_NAME.length; i++) sb.append(i > 1 ? " " : "").append(Params.ROW_NAME[i]).append('=').append(rows[i]);
+        for (int i = 1; i < rows.length && i < Params.ROW_NAME.length; i++) {
+            if (i == Params.R_LOOK) continue;   // no setting of its own: EFFECT says it
+            sb.append(sb.length() > 0 ? " " : "").append(Params.ROW_NAME[i]).append('=').append(rows[i]);
+        }
         return sb.toString();
     }
 
@@ -203,7 +206,7 @@ final class CardLog {
      * (its header, what the store holds, every parameter), then the end of the log and of each developer tool's file.
      * Cheap: it only runs when the user asks for it, and reads at most about 100 KB.
      */
-    static String report(File logs, String now, String header, String app, String state, String flat) {
+    static String report(File logs, String now, String header, String app, String state, String flat, File probe) {
         StringBuilder sb = new StringBuilder("Recipe Lab report: attach this file to your GitHub issue.\n")
                 .append("saved ").append(now).append('\n').append(header).append('\n').append(app).append('\n')
                 .append("STATE ").append(state).append('\n');
@@ -212,6 +215,7 @@ final class CardLog {
         section(sb, "DIFF", tail(null, new File(logs, DIFF), REPORT_TOOL));
         section(sb, "KEYS", tail(null, new File(logs, KEYS), REPORT_TOOL));
         section(sb, "PARAMS", flat != null ? paramsFile(now, flat) : tail(null, new File(logs, PARAMS), REPORT_LOG));
+        section(sb, "PROBE", tail(null, probe, REPORT_TOOL));   // the picture-profile helper's read-only look at this camera
         return sb.toString();
     }
 

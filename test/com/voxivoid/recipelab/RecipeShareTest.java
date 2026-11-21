@@ -85,6 +85,7 @@ class RecipeShareTest {
             Recipes.Recipe r = CustomRecipes.renamed(b, name);
             if (CustomRecipes.problem(r) != null) continue;
             String link = RecipeShare.encode(r);
+            if (b.hasProfile()) { assertNull(link, b.name + ": version 1 has no picture profile, so no link rather than another look"); continue; }
             assertNotNull(link, b.name);
             assertSameRecipe(r, RecipeShare.decode(link), b.name);
         }

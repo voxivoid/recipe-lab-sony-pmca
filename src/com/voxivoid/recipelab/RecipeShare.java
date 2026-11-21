@@ -40,10 +40,10 @@ public final class RecipeShare {
 
     private static final String B64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
 
-    /** The link for {@code r}; null when its name or a value is one a recipe cannot hold. */
+    /** The link for {@code r}; null when its name or a value is one a recipe cannot hold, or it has a picture profile. */
     public static String encode(Recipes.Recipe r) {
         String name = r.name == null ? "" : r.name.trim();
-        if (CustomRecipes.problem(r) != null || !nameOk(name)) return null;
+        if (CustomRecipes.problem(r) != null || !nameOk(name) || r.hasProfile()) return null;   // version 1 has no picture profile
         int style = styleCode(r.style);
         if (style < 0) return null;
         byte[] b = new byte[HEAD + name.length()];
