@@ -443,6 +443,5 @@ final class TextVi {
         { "recipe_s_log3", "S-Log3" },
         { "recipe_itu709", "ITU709" },
         { "recipe_hlg", "HLG" },
-        { "recipe_logc3", "LogC3" },
     };
 }

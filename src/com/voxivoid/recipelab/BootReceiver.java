@@ -49,6 +49,7 @@ public class BootReceiver extends BroadcastReceiver {
         try {
             String lookText = readSmall(new File(dir, "look.txt"));
             if (lookText == null) { logBoot(dir, "no look.txt"); return; }
+            if (Params.retiredLook(lookText.trim())) { new File(dir, "look.txt").delete(); logBoot(dir, "retired profile, removed"); return; }
             String model = KeyProbe.prop("model.name"), fw = KeyProbe.firmware();
             if (!IspBodies.bootAllowed(model, fw)) { logBoot(dir, "not on this body: " + IspBodies.bodyFile(model, fw).trim().replace('\n', ' ')); return; }
             IspProfiles.Look look = Params.lookFrom(lookText.trim());

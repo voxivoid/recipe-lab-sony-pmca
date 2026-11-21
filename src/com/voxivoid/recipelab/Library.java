@@ -24,6 +24,9 @@ final class Library {
         CustomRecipes.sort(custom);
     }
 
+    /** the table recipe a saved index names; one past the table's end (its recipe was removed) is the factory look */
+    static int restoredIndex(int saved) { return saved >= 0 && saved < BASE ? saved : 0; }
+
     int customCount() { return custom.size(); }
 
     /** whether an index is a recipe at all */

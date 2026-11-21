@@ -124,7 +124,7 @@ No. The camera's custom-key list is fixed in firmware and apps cannot add themse
 
 ## Can I get S-Log, V-Log or a flat profile?
 
-On an A6000 with firmware 3.21, yes: the **Profiles** group has S-Log2, S-Log3, LogC3, HLG and ITU709, and the GAMMA
+On an A6000 with firmware 3.21, yes: the **Profiles** group has S-Log2, S-Log3, HLG and ITU709, and the GAMMA
 chip adds a profile to any recipe, with black level, black gamma, knee, colour saturation, colour phase and an S-curve
 to shape it ([Picture profiles](../README.md#picture-profiles)). The A6000 has no Picture Profile menu and cannot store a
 gamma curve, so the app writes the curve into the camera's memory: it lasts until the camera is switched off, and the

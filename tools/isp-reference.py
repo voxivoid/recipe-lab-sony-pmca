@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Write test/fixtures/isp-reference.tsv: the picture-profile curves and gamut matrices, from colour-science.
 
-IspProfiles (src/.../IspProfiles.java) implements the published S-Log2, S-Log3, ARRI LogC3 (EI 800), BT.709 and
-BT.2100 HLG curves and the BT.709 -> S-Gamut3 / S-Gamut3.Cine / BT.2020 / ALEXA Wide Gamut 3 matrices by hand.
+IspProfiles (src/.../IspProfiles.java) implements the published S-Log2, S-Log3, BT.709 and
+BT.2100 HLG curves and the BT.709 -> S-Gamut3 / S-Gamut3.Cine / BT.2020 matrices by hand.
 IspReferenceTest checks them against this file, which comes from an independent library (colour-science), so a
 wrong constant or formula fails there and not only on a camera. It says nothing about what the camera does with
 the tables: that still needs a real body.
@@ -21,7 +21,7 @@ warnings.filterwarnings("ignore")                      # colour warns about opti
 try:
     import colour
     import numpy as np
-    from colour.models import (log_encoding_ARRILogC3, log_encoding_SLog2, log_encoding_SLog3, oetf_BT709,
+    from colour.models import (log_encoding_SLog2, log_encoding_SLog3, oetf_BT709,
                                oetf_BT2100_HLG, oetf_inverse_BT2100_HLG)
 except ImportError as exc:
     raise SystemExit("colour-science is required: python3 -m pip install colour-science") from exc
@@ -41,7 +41,6 @@ HLG_WHITE = float(oetf_inverse_BT2100_HLG(0.75))
 CURVES = {                                                       # IspProfiles.CURVE_CODES -> 10-bit code value
     "s-log2": lambda r: log_encoding_SLog2(r) * 1023,             # in_reflection, legal range: Sony's definition
     "s-log3": lambda r: log_encoding_SLog3(r) * 1023,
-    "logc3": lambda r: log_encoding_ARRILogC3(r, EI=800) * 1023,
     "itu709": lambda r: oetf_BT709(r) * 1023,
     "hlg": lambda r: oetf_BT2100_HLG(r * HLG_WHITE) * 1023,
 }
@@ -51,7 +50,6 @@ GAMUTS = {                                                       # IspProfiles.G
     "s-gamut3": "S-Gamut3",
     "s-gamut3-cine": "S-Gamut3.Cine",
     "bt2020": "ITU-R BT.2020",
-    "awg3": "ARRI Wide Gamut 3",
 }
 
 
@@ -61,7 +59,7 @@ def reflectances():
     r = {0.0}
     r.update(0.18 * k / GREY_KNOT for k in KNOTS)
     r.update(float(x) for x in np.geomspace(1e-4, top, 160))
-    for cut in (0.01125, 0.010591, 0.018):                        # S-Log3, LogC3 and BT.709's linear segments
+    for cut in (0.01125, 0.018):                                  # S-Log3 and BT.709's linear segments
         r.update((cut * 0.999, cut, cut * 1.001))
     return sorted(r)
 

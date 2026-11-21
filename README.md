@@ -298,8 +298,8 @@ Open **Recipe Lab** from the Application List. The live view shows the look. The
 
 **Tried on the A6000 (firmware 3.21).** Also switched on, but not yet tried, for the A5000, A5100, A6300, A6500, A7,
 A7R, A7S, A7 II, A7R II, A7S II, RX100 III, RX100 IV, RX100 V and HX60 / HX60V, each on Sony's latest firmware; on an
-older one the app names the firmware to install, and other cameras say the profile does not work there yet. The **Pic Profiles** group holds six picture profiles: *S-Log2* (S-Gamut), *S-Log3 Cine*
-(S-Gamut3.Cine), *S-Log3* (S-Gamut3), *ITU709*, *HLG* (BT.2020) and *LogC3* (ARRI LogC3 EI 800, ALEXA Wide Gamut 3).
+older one the app names the firmware to install, and other cameras say the profile does not work there yet. The **Pic Profiles** group holds five picture profiles: *S-Log2* (S-Gamut), *S-Log3 Cine*
+(S-Gamut3.Cine), *S-Log3* (S-Gamut3), *ITU709* and *HLG* (BT.2020).
 They are recipes like the others: pick one, edit it, save it as your own.
 
 Any recipe can carry a profile: the **GAMMA** chip, last in the row, turns one on, and the chips after it shape it the way
@@ -307,8 +307,8 @@ a Sony Picture Profile menu does:
 
 | chip | what it changes |
 |---|---|
-| **GAMMA** | the tone curve: *off*, S-Log2, S-Log3, LogC3, ITU709 or HLG |
-| **COLOR** | the colour mode (gamut): *Camera* keeps the camera's colour; S-Gamut3, S-Gamut3.Cine, BT.2020, ARRI WG3 |
+| **GAMMA** | the tone curve: *off*, S-Log2, S-Log3, ITU709 or HLG |
+| **COLOR** | the colour mode (gamut): *Camera* keeps the camera's colour; S-Gamut3, S-Gamut3.Cine, BT.2020 |
 | **BLACK** | black level, -15 .. +15 |
 | **B.GAMMA**, **B.RANGE** | black gamma: lifts (+) or sinks (−) the shadows, over a narrow, middle or wide range |
 | **KNEE**, **SLOPE** | a highlight roll-off from 75 to 105%, and how steep it is |

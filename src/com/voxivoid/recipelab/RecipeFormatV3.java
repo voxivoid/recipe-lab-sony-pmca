@@ -11,7 +11,8 @@ import static com.voxivoid.recipelab.CustomRecipes.integer;
  * ({@link RecipeFormats#write}), so apps and Recipe Lab Studio versions that do not know profiles keep reading it. A
  * format 3 file is skipped by them as made by a newer version, rather than read without its profile — a different look.
  *
- * A format 3 file without {@code gamma}, or with {@code gamma: off}, is a recipe without a profile.
+ * A format 3 file without {@code gamma}, or with {@code gamma: off}, is a recipe without a profile. So is one on the
+ * retired LogC3; a retired ARRI WG3 colour mode reads as the camera's colour. The recipe stays, on a look the app has.
  *
  * Once released, this class does not change. No android.* import may appear here (tools/test.sh).
  */
@@ -45,11 +46,12 @@ final class RecipeFormatV3 implements RecipeFormat {
         CustomRecipes.Parsed p = V2.read(kv, fileName);
         if (p.recipe == null) return p;
         String v = kv.get("gamma");
-        if (v == null || v.equals("off")) return p;
+        if (v == null || v.equals("off") || v.equals(IspProfiles.RETIRED_CURVE)) return p;
         int curve = IspProfiles.indexOf(IspProfiles.CURVE_CODES, v);
         if (curve < 1) return fail(bad("gamma", v));
         int gamut = IspProfiles.CAMERA;
-        if ((v = kv.get("color-mode")) != null && (gamut = IspProfiles.indexOf(IspProfiles.GAMUT_CODES, v)) < 0) return fail(bad("color-mode", v));
+        if ((v = kv.get("color-mode")) != null && !v.equals(IspProfiles.RETIRED_GAMUT)
+                && (gamut = IspProfiles.indexOf(IspProfiles.GAMUT_CODES, v)) < 0) return fail(bad("color-mode", v));
         int range = IspProfiles.MIDDLE;
         if ((v = kv.get("black-gamma-range")) != null && (range = IspProfiles.indexOf(IspProfiles.RANGE_CODES, v)) < 0) return fail(bad("black-gamma-range", v));
         int knee = IspProfiles.KNEE_OFF;
