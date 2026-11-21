@@ -29,6 +29,23 @@ semantic-release decides the version, writes `AndroidManifest.xml` via `tools/bu
 moves `release-notes/next.md` to `vX.Y.Z.md`, builds the APK, tags, publishes the release and commits the manifest bump back to `main`.
 Finally the rolling `dev` prerelease is rebuilt so its tag follows the new tip.
 
+## Test build of a branch
+
+To hand testers a signed APK from an unmerged branch (no GitHub login needed, unlike an Actions artifact):
+
+```bash
+gh workflow run branch-build.yml --ref <branch>
+```
+
+`branch-build` runs the unit tests, builds, and publishes a **prerelease** tagged
+`branch-<slug>-<hash>` (hash of the exact branch name, so similar names never share a tag). Re-running the same
+branch replaces its prerelease; different branches get different tags and run in parallel. Deleting the branch
+deletes the prerelease (that cleanup runs from the workflow file on `main`). It never touches the rolling `dev`
+prerelease and creates no `v*` tag, so versions and releases are unaffected. It refuses `main` and tags.
+
+Two branches at the same commit count get the same `versionCode`; Android treats a same-code install as a
+reinstall, so flip between them freely, but it will not show as an "upgrade".
+
 ## Release notes
 
 A release's body starts with notes written for camera owners, with the generated commit list folded below them

@@ -1,0 +1,124 @@
+name: branch-build
+
+# A signed test build of any work branch, on a public prerelease, so testers can download the
+# APK without a GitHub login (an Actions artifact needs one). Run it from the branch:
+#
+#   gh workflow run branch-build.yml --ref feat/picture-profiles
+#
+# It never touches `main`'s `dev` prerelease (dev-build owns that) and never creates a `v*`
+# tag, so semantic-release and tools/version.sh (which count from the last `v*` tag) ignore it.
+on:
+  workflow_dispatch:
+  # The branch is gone, so is its prerelease. A `delete` run reads the workflow file from the
+  # default branch, which is why this file has to be on `main` before that cleanup works.
+  delete:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    # One release per branch: a second run of the same branch waits for (and then replaces) the
+    # first. Different branches get different tags, so they run in parallel without colliding.
+    concurrency:
+      group: branch-build-${{ github.ref_name }}
+      cancel-in-progress: false
+    steps:
+      - name: Refuse main and tags
+        run: |
+          [ "$GITHUB_REF_TYPE" = branch ] || { echo "run this on a branch, not a tag" >&2; exit 1; }
+          [ "$GITHUB_REF_NAME" != main ] || { echo "main is built by dev-build; run this on a work branch" >&2; exit 1; }
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: true
+          fetch-depth: 0
+          fetch-tags: true
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Run the unit tests
+        run: ./tools/test.sh
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+
+      # The tag is the collision guard: a readable slug of the branch plus a hash of its exact
+      # name, so `feat/a-b` and `feat/a_b` (same slug) still get different releases.
+      - name: Name the prerelease
+        id: name
+        run: |
+          SLUG="$(printf '%s' "$GITHUB_REF_NAME" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]\+/-/g; s/^-//; s/-$//' | cut -c1-40)"
+          HASH="$(printf '%s' "$GITHUB_REF_NAME" | sha1sum | cut -c1-6)"
+          echo "tag=branch-$SLUG-$HASH" >> "$GITHUB_OUTPUT"
+          echo "slug=$SLUG" >> "$GITHUB_OUTPUT"
+      - name: Work out the version being developed towards
+        id: next
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: echo "version=$(./tools/next-version.sh)" >> "$GITHUB_OUTPUT"
+      - name: Install the SDK packages
+        run: |
+          SDKMANAGER="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+          [ -x "$SDKMANAGER" ] || SDKMANAGER="$(command -v sdkmanager)"
+          [ -x "$SDKMANAGER" ] || { echo "no sdkmanager under $ANDROID_SDK_ROOT" >&2; exit 1; }
+          yes | "$SDKMANAGER" --licenses >/dev/null 2>&1 || true
+          "$SDKMANAGER" "build-tools;30.0.3" "platforms;android-28" "ndk;16.1.4479499"
+      - name: Build
+        env:
+          ANDROID_KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          DEV_BASE_VERSION: ${{ steps.next.outputs.version }}
+        run: |
+          export ANDROID_SDK="$ANDROID_SDK_ROOT"
+          export ANDROID_NDK="$ANDROID_SDK_ROOT/ndk/16.1.4479499"
+          ./build.sh
+      - name: Working tree must be clean
+        run: git diff --exit-code
+
+      - name: Publish the branch prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DEV_BASE_VERSION: ${{ steps.next.outputs.version }}
+          TAG: ${{ steps.name.outputs.tag }}
+          SLUG: ${{ steps.name.outputs.slug }}
+        run: |
+          . tools/version.sh
+          SHA="$(git rev-parse HEAD)"
+          # sha in the file name: two builds of one branch never look alike once downloaded.
+          APK="RecipeLab-$VERSION_NAME-$SLUG-${SHA::7}.apk"
+          cp RecipeLab.apk "$APK"
+          sha256sum "$APK" > "$APK.sha256"
+          {
+            printf 'Test build of branch `%s` @ `%s`.\n\n' "$GITHUB_REF_NAME" "${SHA::7}"
+            printf 'Not a release, and not on `main`. Version `%s`.\n' "$VERSION_NAME"
+            printf 'The same link keeps the newest build of this branch; it is deleted with the branch.\n'
+          } > notes.md
+          gh release delete "$TAG" --yes --cleanup-tag || true
+          gh release create "$TAG" \
+            --prerelease \
+            --target "$SHA" \
+            --title "Test build: $GITHUB_REF_NAME ($VERSION_NAME)" \
+            --notes-file notes.md \
+            "$APK" "$APK.sha256"
+          echo "### Test build published" >> "$GITHUB_STEP_SUMMARY"
+          echo "https://github.com/$GITHUB_REPOSITORY/releases/tag/$TAG" >> "$GITHUB_STEP_SUMMARY"
+
+  cleanup:
+    if: github.event_name == 'delete' && github.event.ref_type == 'branch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete the branch's prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ github.event.ref }}
+        run: |
+          SLUG="$(printf '%s' "$BRANCH" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]\+/-/g; s/^-//; s/-$//' | cut -c1-40)"
+          HASH="$(printf '%s' "$BRANCH" | sha1sum | cut -c1-6)"
+          gh release delete "branch-$SLUG-$HASH" --repo "$GITHUB_REPOSITORY" --yes --cleanup-tag || true
