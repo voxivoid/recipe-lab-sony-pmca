@@ -129,6 +129,8 @@ final class TextZhHant {
         { "custom_save_failed", "無法儲存到記憶卡：%1$s" },
         { "custom_delete_failed", "無法刪除 %1$s：%2$s" },
         { "custom_need_card", "沒有記憶卡——請插入記憶卡以儲存自訂配方" },
+        { "card_no_files", "此相機無法在這張記憶卡上建立檔案。配方保存在相機中" },
+        { "camera_recipes_full", "相機最多保存 %1$s 個配方，請先刪除一個" },
         { "links_file_header", "Recipe Lab：此卡上每個自訂配方的連結。在裝有 Recipe Lab Studio 的手機上開啟即可加入配方，也可以傳給別人。配方變更時相機會重寫此檔案。" },
         { "custom_capture_failed", "無法將相機目前設定儲存為配方：%1$s" },
         { "action_options_hold", "選項（長按）" },

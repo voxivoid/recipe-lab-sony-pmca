@@ -32,6 +32,7 @@ UNITS=(
   src/com/voxivoid/recipelab/Favorites.java
   src/com/voxivoid/recipelab/CustomRecipes.java
   src/com/voxivoid/recipelab/CardLog.java
+  src/com/voxivoid/recipelab/CardGuard.java
   src/com/voxivoid/recipelab/ExifDates.java
   src/com/voxivoid/recipelab/Dcf.java
   src/com/voxivoid/recipelab/TextFit.java

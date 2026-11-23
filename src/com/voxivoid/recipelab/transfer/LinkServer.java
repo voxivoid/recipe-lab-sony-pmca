@@ -298,6 +298,7 @@ public final class LinkServer {
             File target = root.resolve(folder + "/" + leaf), tmp = root.resolve(folder + "/" + TMP);
             replaced = target.exists();
             try {
+                com.voxivoid.recipelab.CardGuard.ensure(tmp);
                 FileOutputStream f = new FileOutputStream(tmp);
                 try {
                     f.write(body);

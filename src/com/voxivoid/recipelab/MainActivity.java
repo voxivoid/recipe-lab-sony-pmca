@@ -178,6 +178,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     protected void onCreate(Bundle b) {
         super.onCreate(b);
         setContentView(R.layout.main);
+        CardGuard.open(cardRoot());                              // before anything can write to the card (issue #130)
         prefs = getPreferences(MODE_PRIVATE);
         recipe = Math.max(0, Math.min(Recipes.ALL.length - 1, prefs.getInt("recipe", 0)));
         favStored = prefs.getString(Favorites.PREF, "");
@@ -243,6 +244,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private String heldParams;                                   // PARAMS.TXT, waiting with the lines
     private int heldParamsHash;
     private List<CustomRecipes.Entry> heldLinks;                 // the recipes whose links file waits for the card
+    private boolean cardBlockShown;                              // said once per run of the app
     private int cardOpening;                                     // an answer for an opening already left is ignored
 
     /** one line of LOG.TXT; a log that cannot be written must never take the app down with it */
@@ -408,6 +410,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     @Override
     protected void onResume() {
         super.onResume();
+        CardGuard.open(cardRoot());                              // the card may have been swapped
+        if (CardGuard.blocked() && !cardBlockShown) { cardBlockShown = true; showToast(Lang.t("card_no_files"), 6000); }
         askCardOpen();                                           // nothing written to the card before its answer (issue #130)
         load();
         reloadCustoms();                                         // the card may have been edited over USB, or swapped
@@ -1594,6 +1598,13 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         } catch (Throwable t) { return null; }
     }
 
+    /** a recipe the camera keeps was renamed or deleted: its card copy goes too, or the next load would bring it back */
+    private void forgetOnCard(String file) {
+        if (!CardGuard.blocked()) return;
+        File card = findCardDir();
+        if (card != null) new File(card, file).delete();
+    }
+
     /** the model a saved file says it was made on */
     private static String madeOn() { return KeyProbe.prop("model.name"); }
 
@@ -1602,6 +1613,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
      * is gone the first listed recipe takes its place. The favorites are decoded again for the new indexes.
      */
     private void writeLinks(List<CustomRecipes.Entry> entries) {
+        if (CardGuard.blocked()) return;                         // the recipes are in the camera, not in this folder
         try { if (CustomRecipes.writeLinks(cardDir, entries)) log(CardLog.QR, "links: " + CustomRecipes.path(CustomRecipes.LINKS) + " for " + entries.size() + " recipes"); }
         catch (Throwable t) { log(CardLog.FAIL, "links: " + t); }
     }
@@ -1609,6 +1621,11 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private void reloadCustoms() {
         String keep = library.isCustom(recipe) ? library.get(recipe).name : null;
         cardDir = findCardDir();
+        if (cardDir != null && CardGuard.blocked()) {            // this card takes no new file: the camera keeps the recipes
+            File kept = new File(getFilesDir(), CustomRecipes.DIR);
+            CustomRecipes.adopt(cardDir, kept);
+            cardDir = kept;
+        }
         CustomRecipes.Loaded l = CustomRecipes.load(cardDir);
         library.set(l.entries);
         // each recipe's share link where a computer or a phone can copy it: the camera has no clipboard
@@ -1690,7 +1707,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         reloadCustoms();
         follow(name);
         stageRecipe(); applyPreview();
-        showToast(Lang.t("custom_created", name, CustomRecipes.path(e.file)), 5000);
+        showToast(CardGuard.blocked() ? Lang.t("custom_saved", name) : Lang.t("custom_created", name, CustomRecipes.path(e.file)), 5000);
         return true;
     }
 
@@ -1708,8 +1725,10 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private void renameCustom(String name) {
         CustomRecipes.Entry e = library.entry(recipe);
         if (name.equals(e.recipe.name)) return;
-        try { CustomRecipes.save(cardDir, CustomRecipes.renamed(e.recipe, name), madeOn(), e.file); }
+        CustomRecipes.Entry renamed;
+        try { renamed = CustomRecipes.save(cardDir, CustomRecipes.renamed(e.recipe, name), madeOn(), e.file); }
         catch (Throwable t) { log(CardLog.FAIL, "save " + name + ": " + t); showToast(Lang.t("custom_save_failed", String.valueOf(t.getMessage())), 0); return; }
+        if (!renamed.file.equalsIgnoreCase(e.file)) forgetOnCard(e.file);
         favStored = Favorites.renameCustom(favStored, e.recipe.name, name);
         prefs.edit().putString(Favorites.PREF, favStored).commit();
         if (e.recipe.name.equalsIgnoreCase(prefs.getString("customRecipe", ""))) prefs.edit().putString("customRecipe", name).commit();
@@ -1730,6 +1749,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         int k = recipe - Library.BASE, favPos = favs.indexOf(recipe);
         try { CustomRecipes.delete(cardDir, e.file); }
         catch (Throwable t) { log(CardLog.FAIL, "delete " + e.recipe.name + ": " + t); showToast(Lang.t("custom_delete_failed", e.recipe.name, String.valueOf(t.getMessage())), 0); return; }
+        forgetOnCard(e.file);
         favStored = Favorites.forgetCustom(favStored, e.recipe.name);
         prefs.edit().putString(Favorites.PREF, favStored).commit();
         reloadCustoms();                                         // the recipe is gone: the first one stands in
