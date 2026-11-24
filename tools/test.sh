@@ -103,8 +103,9 @@ find test -name '*.java' | sort > out/test/sources.txt
 "$JAVA/javac" -encoding UTF-8 --release 8 -Xlint:-options -cp "out/test/classes:$JUNIT_JAR" -d out/test/test-classes "@out/test/sources.txt"
 
 echo "[3/3] junit"
+# bash 3.2 (macOS) treats an empty "${FILTER[@]}" as unbound under set -u; the + form expands to nothing instead.
 FILTER=()
 [ -n "${1:-}" ] && FILTER=(--include-classname ".*$1.*")
 "$JAVA/java" -jar "$JUNIT_JAR" execute \
   --class-path "out/test/classes:out/test/test-classes" --scan-class-path \
-  --reports-dir out/test/reports --details=tree --disable-banner --fail-if-no-tests "${FILTER[@]}"
+  --reports-dir out/test/reports --details=tree --disable-banner --fail-if-no-tests ${FILTER[@]+"${FILTER[@]}"}
