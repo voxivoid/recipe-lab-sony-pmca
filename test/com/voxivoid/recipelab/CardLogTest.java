@@ -174,6 +174,11 @@ class CardLogTest {
         String r = CardLog.report(dir, "2026-10-15 14:03:27", "model ILCE-6000", "recipe Velvia  ACTIVE", "STYLE=1", "scene-mode=manual-exposure;color-mode=mono");
         assertTrue(r.startsWith("Recipe Lab report"), r);
         assertTrue(r.contains("model ILCE-6000\nrecipe Velvia  ACTIVE\nSTATE STYLE=1\n"), r);
+        String[] lines = r.split("\n");
+        assertEquals("saved 2026-10-15 14:03:27", lines[1]);
+        assertEquals("model ILCE-6000", lines[2]);
+        assertEquals("recipe Velvia  ACTIVE", lines[3]);
+        assertEquals("STATE STYLE=1", lines[4]);
         assertTrue(r.contains("===== LOG =====\nopened\n"), r);
         assertTrue(r.contains("===== KEYS =====\ndown 232\n"), r);
         assertTrue(r.contains("===== LOCKS =====\n(none)\n"), r);
