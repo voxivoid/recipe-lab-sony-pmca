@@ -308,9 +308,31 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
                             CardLog.app(Recipes.displayName(library.get(recipe)), !dirty(), edited(), Lang.choiceCode(langChoice)
                                     + (langChoice == Lang.AUTO ? " (" + Lang.CODES[Lang.current()] + ")" : ""),
                                     library.customNames().size(), skipped, favs.size()),
-                            CardLog.state(cur), flat, probe == null ? null : new File(probe, "log")));
+                            CardLog.state(cur), flat, probe == null ? null : new File(probe, "log"), ispReport(root),
+                            new File(ispDir(), "log"), BootReceiver.dir() == null ? null : new File(BootReceiver.dir(), "log"),
+                            BootReceiver.dir() == null ? null : new File(BootReceiver.dir(), "boot.log")));
             showToast(Lang.t("report_saved", CardLog.DIR + "/" + CardLog.REPORT), 8000);   // long enough to read the path
         } catch (Throwable t) { showToast(Lang.t("report_failed", String.valueOf(t.getMessage())), 0); }
+    }
+
+    /**
+     * The report's ISP lines: free space where the app and the helper write (app data is a ramdisk; a full one fails
+     * every profile with "No space left on device") and the files the app keeps there, biggest first
+     */
+    private String ispReport(File card) {
+        StringBuilder sb = new StringBuilder();
+        File app = getFilesDir().getParentFile();
+        String[][] where = { { "app", getFilesDir().getPath() }, { "data", Environment.getDataDirectory().getPath() },
+                             { "card", card.getPath() } };
+        for (String[] w : where) {
+            try {
+                android.os.StatFs s = new android.os.StatFs(w[1]);
+                long block = s.getBlockSize();
+                sb.append(CardLog.storage(w[0], block * s.getAvailableBlocks(), block * s.getBlockCount())).append('\n');
+            } catch (Throwable t) { sb.append(w[0]).append(" storage unreadable: ").append(t).append('\n'); }
+        }
+        try { sb.append("app files ").append(CardLog.biggest(app, 8)).append('\n'); } catch (Throwable t) {}
+        return sb.toString();
     }
 
     /** a preview line, once per change: the same failure on every key press would bury the rest */
@@ -1042,8 +1064,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         return d == null ? null : new File(d, "PROBE");
     }
 
-    /** polls (of 250 ms) the probe gets: a body with no row scans its RAM, which takes a while */
-    private static final int PROBE_POLLS = 80;
+    /** polls (of 250 ms) the probe gets: a body with no usable row scans all its RAM, which takes a while (60 s) */
+    private static final int PROBE_POLLS = 240;
 
     /**
      * Starts the read-only probe the bug report carries (rlisp probe: which row this camera is, where av-cam sits, the

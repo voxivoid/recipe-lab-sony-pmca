@@ -233,6 +233,47 @@ powershell.exe -NoProfile -Command "Get-Content E:\RECIPLAB\ISP\boot.log -Tail 2
 S-Log2 gamma starts around `106`. Use this to tell which profile a log is
 about.
 
+### Reading a probe: one report per body
+
+An owner's `RECIPLAB/REPORT.TXT` is meant to settle a body without a second round. Ask for that one file only. It holds
+`===== PROBE =====` (from `rlisp probe`, run by *Save a bug report*) and `===== ISP =====`, which has free space on
+the app ramdisk, `/data` and the card, the biggest files the app keeps, and the ends of the ramdisk `isp/log`, the card
+`ISP/log` and `ISP/boot.log`.
+
+**PROBE, top to bottom:**
+
+| Line | Meaning |
+|------|---------|
+| `RAM a-b c-d …` | System RAM from `/proc/iomem`, adjacent ranges merged (the A6000 shows `80000000-97ffffff 9c000000-bfffffff`) |
+| `RAM incomplete dropped N [iomem cut]` | some RAM was not scanned. Raise `MAXRAM` or the iomem buffer in `rlisp.c` first, since every result below is incomplete without it |
+| `ROW none` / `ROW fw-differs want X` | no row for this body or firmware. A full scan follows |
+| `ROW enabled\|disabled`, `ROW off G M guess B` | the row in use: its image offsets and its base guess |
+| `BASE B row\|cache\|scan` | av-cam found at `B`. `SETTER …` and the tables follow, and the row works. Enable it if it is still off |
+| `BASE 00000000 none\|ambiguous` | the row's 32 bytes are at no page-aligned base. A full scan follows |
+| `LEAF P matrix+1cc yes\|no [row yes\|no base B [unaligned]]` | a gamma leaf at `P`, with `sig gamma` / `sig matrix` bytes under it |
+| `ROWSIG gamma\|matrix P base B [unaligned] [patched]` | the row's own bytes found at `P`, so the base they imply is `B` |
+| `SCAN N chunks M refused` | 64 KB chunks read. Refused ones are RAM the kernel keeps from `/dev/mem` |
+
+**What to do with a scan:**
+
+1. **`ROWSIG` gamma and matrix agree on one aligned `B`**: the row is right, but `find_base` could not see it. Check `RAM
+   incomplete` and `refused`. You can set the row's `base` to `B`.
+2. **They agree on an unaligned `B`**: av-cam is not page-aligned on this body. Set `base` to `B`, and `base_fits` takes
+   it as is.
+3. **They imply different bases, or only one is found**: one offset is wrong. Fix `off[]` from the `P`s (`off = P - B`).
+4. **No `ROWSIG`, but a `LEAF … row no`**: this camera's code differs from the updater. Build the row from the `LEAF`
+   lines: `sig[0]` = `sig gamma`, `sig[1]` = `sig matrix` when `matrix+1cc yes`. Otherwise run `port_scan.py` on the
+   matching av-cam to find the matrix setter.
+5. **No `LEAF` at all**: if `refused` is high, av-cam sits in RAM `/dev/mem` will not give. Otherwise it is not a
+   CXD90014 av-cam that the gamma leaf fits, so leave the body without a row.
+
+**ISP section:** `app 0 KB free` (or `No space left on device` in LOG) means the ramdisk is full and no profile can be
+staged. That is the owner's camera state, not a row problem. `app files` shows whether the app's own files filled it.
+
+Why the scan exists: on the ILCE-5100 3.10, every apply answered `REFUSE sig`, and the old probe printed `BASE 00000000
+none` and nothing more. Its `/proc/iomem` lists RAM in 8 MB pieces, and the old `MAXRAM` of 8 kept only
+`80000000-937fffff`. That cap is the suspected cause (now fixed), but it is not confirmed until an A5100 report comes back.
+
 ### Building and installing
 
 ```bash

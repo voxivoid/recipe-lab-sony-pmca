@@ -207,6 +207,17 @@ final class CardLog {
      * Cheap: it only runs when the user asks for it, and reads at most about 100 KB.
      */
     static String report(File logs, String now, String header, String app, String state, String flat, File probe) {
+        return report(logs, now, header, app, state, flat, probe, null);
+    }
+
+    /**
+     * The report with its ISP section too: {@code isp} is what the app could see of the picture-profile side (free space
+     * where it writes, the biggest files it keeps, see {@link #storage} and {@link #biggest}), then the end of each
+     * helper log in {@code ispLogs} under its path. All of it goes in the one file, so a camera whose profile does not
+     * apply is settled from its owner's first report, with no second round asking for ISP/log or boot.log.
+     */
+    static String report(File logs, String now, String header, String app, String state, String flat, File probe,
+                         String isp, File... ispLogs) {
         StringBuilder sb = new StringBuilder("Recipe Lab report: attach this file to your GitHub issue.\n")
                 .append("saved ").append(now).append('\n').append(header).append('\n').append(app).append('\n')
                 .append("STATE ").append(state).append('\n');
@@ -216,7 +227,44 @@ final class CardLog {
         section(sb, "KEYS", tail(null, new File(logs, KEYS), REPORT_TOOL));
         section(sb, "PARAMS", flat != null ? paramsFile(now, flat) : tail(null, new File(logs, PARAMS), REPORT_LOG));
         section(sb, "PROBE", tail(null, probe, REPORT_TOOL));   // the picture-profile helper's read-only look at this camera
+        StringBuilder i = new StringBuilder(isp == null ? "" : isp);
+        for (File f : ispLogs) {
+            String t = tail(null, f, REPORT_TOOL);
+            if (t.length() == 0) continue;
+            i.append("--- ").append(f.getPath()).append('\n').append(t);
+            if (!t.endsWith("\n")) i.append('\n');
+        }
+        section(sb, "ISP", i.toString());
         return sb.toString();
+    }
+
+    /** one storage line of the report: "{@code name} 12 KB free of 2048 KB" (a full ramdisk stops every profile write) */
+    static String storage(String name, long free, long total) {
+        return name + " " + (free / 1024) + " KB free of " + (total / 1024) + " KB";
+    }
+
+    /** the {@code n} biggest files under {@code dir}, biggest first, as "path 12 KB" relative to dir; "" when none */
+    static String biggest(File dir, int n) {
+        List<Object[]> all = new java.util.ArrayList<Object[]>();
+        collect(dir, "", all, 0);
+        java.util.Collections.sort(all, new java.util.Comparator<Object[]>() {
+            public int compare(Object[] a, Object[] b) { return ((Long) b[1]).compareTo((Long) a[1]); }   // Long.compare is API 19
+        });
+        StringBuilder sb = new StringBuilder();
+        for (int k = 0; k < all.size() && k < n; k++) {
+            if (k > 0) sb.append("  ·  ");
+            sb.append(all.get(k)[0]).append(' ').append(((Long) all.get(k)[1] + 1023) / 1024).append(" KB");
+        }
+        return sb.toString();
+    }
+
+    private static void collect(File dir, String prefix, List<Object[]> out, int depth) {
+        File[] fs = dir == null || depth > 4 ? null : dir.listFiles();
+        if (fs == null) return;
+        for (File f : fs) {
+            if (f.isDirectory()) collect(f, prefix + f.getName() + "/", out, depth + 1);
+            else out.add(new Object[] { prefix + f.getName(), f.length() });
+        }
     }
 
     private static void section(StringBuilder sb, String name, String body) {

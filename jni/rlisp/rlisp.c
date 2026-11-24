@@ -166,16 +166,26 @@ static const struct body *find_row(const struct body **same_model)
 }
 
 /* ---- System RAM ranges from /proc/iomem: /dev/mem is only read inside them ---- */
-#define MAXRAM 8
-static ul g_ram[MAXRAM][2]; static int g_nram;
+/* Adjacent ranges are merged: the A6000 lists three, the A5100 the same RAM in 8 MB pieces. A cap of 8 unmerged ranges
+ * once hid everything past 0x937fffff from the base scan there, so av-cam was never found ("REFUSE sig"). What is left
+ * out anyway is counted (g_ram_dropped, g_iomem_full) and printed by probe. */
+#define MAXRAM 32
+static ul g_ram[MAXRAM][2]; static int g_nram, g_ram_dropped, g_iomem_full;
 static ul parse_hex(const char **s) { ul v = 0; for (;;) { char c = **s; int d = c >= '0' && c <= '9' ? c - '0' : c >= 'a' && c <= 'f' ? c - 'a' + 10 : -1; if (d < 0) return v; v = v * 16 + d; (*s)++; } }
+static void add_ram(ul lo, ul hi)
+{
+    if (g_nram && g_ram[g_nram - 1][1] + 1 == lo) { g_ram[g_nram - 1][1] = hi; return; }
+    if (g_nram == MAXRAM) { g_ram_dropped++; return; }
+    g_ram[g_nram][0] = lo; g_ram[g_nram][1] = hi; g_nram++;
+}
 static void read_ram(void)
 {
-    static char b[4096];
+    static char b[16384];
     long n = read_file("/proc/iomem", b, sizeof b - 1);
     if (n <= 0) fail("read /proc/iomem");
+    g_iomem_full = n == (long)sizeof b - 1;
     b[n] = 0;
-    for (const char *s = b; *s && g_nram < MAXRAM;) {
+    for (const char *s = b; *s;) {
         const char *line = s;
         while (*s && *s != '\n') s++;
         if (*s) s++;
@@ -184,7 +194,7 @@ static void read_ram(void)
         if (*p != '-') continue;
         p++; ul hi = parse_hex(&p);
         const char *q = p; while (q < s && *q != ':') q++;
-        if (q + 12 <= s && bytes_eq((const u8 *)q, (const u8 *)": System RAM", 12)) { g_ram[g_nram][0] = lo; g_ram[g_nram][1] = hi; g_nram++; }
+        if (q + 12 <= s && bytes_eq((const u8 *)q, (const u8 *)": System RAM", 12)) add_ram(lo, hi);
     }
     if (!g_nram) fail("no System RAM in /proc/iomem");
 }
@@ -458,29 +468,55 @@ static void cmd_status(void)
     finish(st[0] == ST_PATCHED || st[1] == ST_PATCHED ? "STATUS on" : "STATUS off", 0);
 }
 
-/* a body with no row: where the gamma leaf sits in RAM, and whether the matrix setter follows it as on most av-cams
- * scanned. Read only; the two 32-byte runs it prints are what a new row of bodies.h needs */
-static void probe_search(void)
+/*
+ * One read-only pass over all System RAM, run by probe whenever a camera has no usable row (none for this body, or
+ * the row's setters not found). It prints everything a row of bodies.h needs, so one bug report settles a body:
+ *   LEAF <pa> ...      each gamma leaf (up to 4), the 32 bytes there and at +0x1cc (the matrix setter on most av-cams);
+ *                      with a row, also "row yes|no" (the bytes are the row's) and the base that leaf implies
+ *   ROWSIG <which> <pa> base <pa>   the row's own 32 bytes wherever they sit (2-byte steps, up to 4 each): a match at
+ *                      an unaligned base or at offsets other than the row's means the row's offsets are wrong
+ *   SCAN <n> chunks <m> refused     64 KB chunks read; refused ones are RAM the kernel keeps from /dev/mem
+ * docs/PICTURE-PROFILES.md ("Reading a probe") says what each outcome means.
+ */
+static void probe_scan(const struct body *r)
 {
-    static u8 buf[0x10000 + 16];
-    int hits = 0;
-    for (int k = 0; k < g_nram && hits < 4; k++) {
-        for (ul pa = g_ram[k][0]; pa + sizeof buf - 1 <= g_ram[k][1] && hits < 4; pa += 0x10000) {
-            if (!mem_try(pa, buf, sizeof buf)) continue;
-            for (ul i = 0; i < 0x10000 && hits < 4; i += 2) {
-                if (!bytes_eq(buf + i, LEAF, sizeof LEAF)) continue;
-                ul at = pa + i; u8 g[SIG], m[SIG];
-                hits++;
-                out("LEAF "); outx(at, 8);
-                if (!in_ram(at + MSET_AFTER_LEAF, SIG)) { out(" matrix out of RAM\n"); continue; }
-                if (!mem_try(at, g, SIG) || !mem_try(at + MSET_AFTER_LEAF, m, SIG)) { out(" unreadable\n"); continue; }
-                out(bytes_eq(m, MSET, sizeof MSET) ? " matrix+1cc yes\n" : " matrix+1cc no\n");
-                out("  sig gamma  "); outhex(g, SIG); out("\n");
-                out("  sig matrix "); outhex(m, SIG); out("\n");
+    static u8 buf[0x10000 + SIG];
+    static const char *const which[2] = { "gamma", "matrix" };
+    int leaves = 0, rows[2] = { 0, 0 }; ul chunks = 0, refused = 0;
+    for (int k = 0; k < g_nram; k++) {
+        for (ul pa = g_ram[k][0]; pa + 0x10000 - 1 <= g_ram[k][1]; pa += 0x10000) {
+            ul n = pa + sizeof buf - 1 <= g_ram[k][1] ? sizeof buf : 0x10000;   /* the overlap catches a run across chunks */
+            chunks++;
+            if (!mem_try(pa, buf, n)) { refused++; continue; }
+            for (ul i = 0; i < 0x10000 && i + SIG <= n; i += 2) {
+                const u8 *b = buf + i; ul at = pa + i;
+                if (leaves < 4 && b[0] == LEAF[0] && b[1] == LEAF[1] && bytes_eq(b, LEAF, sizeof LEAF)) {
+                    u8 m[SIG]; int mok = mem_try(at + MSET_AFTER_LEAF, m, SIG);
+                    leaves++;
+                    out("LEAF "); outx(at, 8);
+                    out(!mok ? " matrix+1cc unreadable" : bytes_eq(m, MSET, sizeof MSET) ? " matrix+1cc yes" : " matrix+1cc no");
+                    if (r) {
+                        out(sig_state(b, r->sig[0]) != ST_UNKNOWN ? " row yes base " : " row no base ");
+                        outx(at - r->off[0], 8); if ((at - r->off[0]) & (PAGE - 1)) out(" unaligned");
+                    }
+                    out("\n  sig gamma  "); outhex(b, SIG); out("\n");
+                    if (mok) { out("  sig matrix "); outhex(m, SIG); out("\n"); }
+                }
+                if (!r) continue;
+                for (int s = 0; s < 2; s++) {
+                    const u8 *g = r->sig[s];
+                    if (rows[s] >= 4 || b[2] != g[2] || b[3] != g[3] || sig_state(b, g) == ST_UNKNOWN) continue;
+                    rows[s]++;
+                    out("ROWSIG "); out(which[s]); out(" "); outx(at, 8); out(" base "); outx(at - r->off[s], 8);
+                    if ((at - r->off[s]) & (PAGE - 1)) out(" unaligned");
+                    out(sig_state(b, g) == ST_PATCHED ? " patched\n" : "\n");
+                }
             }
         }
     }
-    out("LEAVES "); outd(hits); out("\n");
+    out("LEAVES "); outd(leaves); out("\n");
+    if (r) { out("ROWSIGS gamma "); outd(rows[0]); out(" matrix "); outd(rows[1]); out("\n"); }
+    out("SCAN "); outd(chunks); out(" chunks "); outd(refused); out(" refused\n");
 }
 
 /* read only: never writes the setters or the ISP, never drops stop */
@@ -492,15 +528,18 @@ static void cmd_probe(void)
     out("BODY "); out(g_model[0] ? g_model : "?"); out(" "); out(g_fw[0] ? g_fw : "?"); out("\n");
     read_ram();
     out("RAM"); for (int i = 0; i < g_nram; i++) { out(" "); outx(g_ram[i][0], 8); out("-"); outx(g_ram[i][1], 8); } out("\n");
+    if (g_ram_dropped || g_iomem_full) { out("RAM incomplete dropped "); outd(g_ram_dropped); out(g_iomem_full ? " iomem cut\n" : "\n"); }
     g_row = find_row(&same);
     if (!g_row) {
         out(same ? "ROW fw-differs want " : "ROW none\n"); if (same) { out(same->fw); out("\n"); }
-        probe_search();
+        probe_scan(0);
         finish("PROBE fail", 0);
     }
     out(g_row->enabled ? "ROW enabled\n" : "ROW disabled\n");
+    out("ROW off "); outx(g_row->off[0], 6); out(" "); outx(g_row->off[1], 6); out(" guess "); outx(g_row->base, 8); out("\n");
     ul base = find_base(g_row);
     out("BASE "); outx(base, 8); out(" "); out(g_base_how); out("\n");
+    if (!base) { probe_scan(g_row); finish("PROBE fail", 0); }
     if (base) {
         int st[2];
         for (int i = 0; i < 2; i++) {
