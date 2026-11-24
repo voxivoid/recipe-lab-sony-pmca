@@ -296,7 +296,7 @@ Open **Recipe Lab** from the Application List. The live view shows the look. The
 
 ## Picture profiles
 
-**Tried on the A6000 (firmware 3.21).** Also switched on, but not yet tried, for the A5000, A5100, A6300, A6500, A7,
+**Tried on the A6000 (firmware 3.21) and the A5000 (firmware 1.10).** Also switched on, but not yet tried, for the A5100, A6300, A6500, A7,
 A7R, A7S, A7 II, A7R II, A7S II, RX100 III, RX100 IV, RX100 V and HX60 / HX60V, each on Sony's latest firmware; on an
 older one the app names the firmware to install, and other cameras say the profile does not work there yet. The **Pic Profiles** group holds five picture profiles: *S-Log2* (S-Gamut), *S-Log3 Cine*
 (S-Gamut3.Cine), *S-Log3* (S-Gamut3), *ITU709* and *HLG* (BT.2020).
