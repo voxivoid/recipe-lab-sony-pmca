@@ -932,7 +932,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     }
 
     // ------------------------------------------------------------ Picture profile: the root helper writes the ISP
-    private static final int ISP_SETTLE_MS = 1000, ISP_POLL_MS = 250, ISP_POLLS = 20;
+    private static final int ISP_SETTLE_MS = 1000, ISP_POLL_MS = 250;
 
     /** the folder the helper reads its profile from and writes its log and state into */
     private File ispDir() { return new File(getFilesDir(), "isp"); }
@@ -1035,7 +1035,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             try { NativeShell.exec(ispCmd); } catch (Throwable t) {}
             handler.postDelayed(ispPoll, ISP_POLL_MS); return;
         }
-        if (r == IspProfiles.R_PENDING && ispPolls < ISP_POLLS) { handler.postDelayed(ispPoll, ISP_POLL_MS); return; }
+        if (IspProfiles.keepWaiting(text, ispPolls)) { handler.postDelayed(ispPoll, ISP_POLL_MS); return; }
         ispRunning = false;
         log(r == IspProfiles.R_OK || r == IspProfiles.R_OFF ? CardLog.INFO : CardLog.FAIL,
                 "isp " + (ispRunningLook == null ? "off" : ispRunningLook.toString()) + ": " + (text == null ? "no log" : text.trim().replace('\n', ' ')));

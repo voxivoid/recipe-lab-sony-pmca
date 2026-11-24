@@ -359,6 +359,19 @@ final class IspProfiles {
         return log == null && polls >= RESEND_POLLS && resends < RESENDS;
     }
 
+    /**
+     * Polls (of 250 ms) the app waits for the helper's answer: {@link #WAIT_POLLS} while there is no log, {@link
+     * #RUNNING_POLLS} once the helper has written one. A row whose base is not where it expects makes the helper search
+     * all of RAM, which takes far longer than an apply (the A5100's 1 GB), and an answer that comes late is not "no
+     * answer from the shell".
+     */
+    static final int WAIT_POLLS = 20, RUNNING_POLLS = 240;
+
+    /** whether to look at the helper's log again: no complete result yet, and not waited out */
+    static boolean keepWaiting(String log, int polls) {
+        return result(log) == R_PENDING && polls < (log == null ? WAIT_POLLS : RUNNING_POLLS);
+    }
+
     /** what the helper's log says */
     static final int R_PENDING = 0, R_OK = 1, R_OFF = 2, R_PONG = 3, R_REFUSED = 4, R_MISMATCH = 5, R_ERROR = 6, R_STATUS = 7, R_PROBE = 8;
 

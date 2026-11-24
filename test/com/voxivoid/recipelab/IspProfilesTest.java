@@ -342,6 +342,18 @@ class IspProfilesTest {
                 "resends outlast the loop's longest sleep plus a reapply");
     }
 
+    @Test void aHelperThatHasStartedGetsTimeToSearch() {
+        assertTrue(IspProfiles.keepWaiting(null, IspProfiles.WAIT_POLLS - 1));
+        assertFalse(IspProfiles.keepWaiting(null, IspProfiles.WAIT_POLLS), "no log at all: no answer from the shell");
+        assertTrue(IspProfiles.keepWaiting("RLISP 2 apply\n", IspProfiles.WAIT_POLLS),
+                "a log without a result: the helper is still searching RAM, not silent");
+        assertTrue(IspProfiles.keepWaiting("", IspProfiles.RUNNING_POLLS - 1));
+        assertFalse(IspProfiles.keepWaiting("RLISP 2 apply\n", IspProfiles.RUNNING_POLLS), "but not for ever");
+        assertFalse(IspProfiles.keepWaiting("RLISP 2 apply\nRESULT REFUSE sig\n", 0), "an answer ends the wait at once");
+        assertFalse(IspProfiles.keepWaiting("RLISP 2 apply\nRESULT OK\n", 0));
+        assertTrue(IspProfiles.RUNNING_POLLS * 250 >= 60000, "a minute: the A5100's whole-RAM search took longer than 5 s");
+    }
+
     private static int count(String s, String part) {
         int n = 0;
         for (int i = s.indexOf(part); i >= 0; i = s.indexOf(part, i + 1)) n++;
