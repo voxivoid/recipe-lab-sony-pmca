@@ -195,7 +195,6 @@ final class TextZhHans {
         { "isp_mismatch", "配置文件未能保持——请重试" },
         { "isp_no_root", "相机系统 Shell 无响应" },
         { "isp_error", "图片配置文件应用失败：%1$s" },
-        { "isp_gamut_camera", "相机" },
         { "isp_range_narrow", "窄" },
         { "isp_range_middle", "中" },
         { "isp_range_wide", "宽" },

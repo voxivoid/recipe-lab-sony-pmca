@@ -192,7 +192,6 @@ final class TextKo {
         { "isp_mismatch", "프로필이 유지되지 않았습니다 — 다시 시도하세요" },
         { "isp_no_root", "카메라 시스템 셸이 응답하지 않습니다" },
         { "isp_error", "픽처 프로필 적용 실패: %1$s" },
-        { "isp_gamut_camera", "카메라" },
         { "isp_range_narrow", "좁게" },
         { "isp_range_middle", "중간" },
         { "isp_range_wide", "넓게" },

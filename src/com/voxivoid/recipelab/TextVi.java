@@ -192,7 +192,6 @@ final class TextVi {
         { "isp_mismatch", "Profile không giữ được — hãy thử lại" },
         { "isp_no_root", "Shell hệ thống của máy không phản hồi" },
         { "isp_error", "Không áp dụng được Picture Profile: %1$s" },
-        { "isp_gamut_camera", "Máy ảnh" },
         { "isp_range_narrow", "Hẹp" },
         { "isp_range_middle", "Vừa" },
         { "isp_range_wide", "Rộng" },

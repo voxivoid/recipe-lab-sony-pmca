@@ -308,7 +308,7 @@ a Sony Picture Profile menu does:
 | chip | what it changes |
 |---|---|
 | **GAMMA** | the tone curve: *off*, S-Log2, S-Log3, ITU709 or HLG |
-| **COLOR** | the colour mode (gamut): *Camera* keeps the camera's colour; S-Gamut3, S-Gamut3.Cine, BT.2020 |
+| **COLOR** | the colour mode (gamut): *ITU709 Matrix* keeps the camera's own BT.709 colour; S-Gamut3, S-Gamut3.Cine, BT.2020 |
 | **BLACK** | black level, -15 .. +15 |
 | **B.GAMMA**, **B.RANGE** | black gamma: lifts (+) or sinks (−) the shadows, over a narrow, middle or wide range |
 | **KNEE**, **SLOPE** | a highlight roll-off from 75 to 105%, and how steep it is |

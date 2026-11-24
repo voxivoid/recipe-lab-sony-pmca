@@ -28,7 +28,7 @@ final class IspProfiles {
     static final String[] CURVE_CODES = { "off", "s-log2", "s-log3", "itu709", "hlg" };
     private static final String[] CURVE_LABEL = { null, "S-Log2", "S-Log3", "ITU709", "HLG" };
 
-    /** colour modes (gamuts): CAMERA keeps the camera's colour (BT.709) */
+    /** colour modes (gamuts): CAMERA keeps the camera's colour (BT.709), Sony's "ITU709 Matrix" */
     static final int CAMERA = 0, SGAMUT3 = 1, SGAMUT3_CINE = 2, BT2020 = 3, GAMUTS = 4;
 
     /**
@@ -43,7 +43,7 @@ final class IspProfiles {
     /** the curve of a saved number; the retired one is {@link #OFF} */
     static int curveFromStored(int n) { return n == STORED_RETIRED_CURVE ? OFF : n > STORED_RETIRED_CURVE ? n - 1 : n; }
     static final String[] GAMUT_CODES = { "camera", "s-gamut3", "s-gamut3-cine", "bt2020" };
-    private static final String[] GAMUT_LABEL = { null, "S-Gamut3", "S-Gamut3.Cine", "BT.2020" };
+    private static final String[] GAMUT_LABEL = { "ITU709 Matrix", "S-Gamut3", "S-Gamut3.Cine", "BT.2020" };
 
     /** black gamma ranges: the share of the output it reshapes, as Sony's Narrow / Middle / Wide */
     static final int NARROW = 0, MIDDLE = 1, WIDE = 2;
@@ -107,7 +107,7 @@ final class IspProfiles {
     }
 
     static String curveLabel(int c) { return c == OFF ? Lang.t("value_off") : CURVE_LABEL[c]; }
-    static String gamutLabel(int g) { return g == CAMERA ? Lang.t("isp_gamut_camera") : GAMUT_LABEL[g]; }
+    static String gamutLabel(int g) { return GAMUT_LABEL[g]; }
     static String rangeLabel(int r) { return Lang.t(r == NARROW ? "isp_range_narrow" : r == WIDE ? "isp_range_wide" : "isp_range_middle"); }
     static String kneeLabel(int k) { return k == KNEE_OFF ? Lang.t("value_off") : k + "%"; }
 

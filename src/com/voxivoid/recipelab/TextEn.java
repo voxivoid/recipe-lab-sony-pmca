@@ -217,7 +217,6 @@ final class TextEn {
         { "isp_mismatch", "The profile did not hold — try again" },
         { "isp_no_root", "No answer from the camera's system shell" },
         { "isp_error", "Picture profile failed: %1$s" },
-        { "isp_gamut_camera", "Camera" },
         { "isp_range_narrow", "Narrow" },
         { "isp_range_middle", "Middle" },
         { "isp_range_wide", "Wide" },

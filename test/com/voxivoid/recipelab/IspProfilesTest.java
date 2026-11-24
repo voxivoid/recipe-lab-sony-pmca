@@ -248,7 +248,7 @@ class IspProfilesTest {
 
     @Test void labels() {
         assertEquals("S-Log3 / S-Gamut3.Cine", P_SLOG3_CINE.name());
-        assertEquals("ITU709 / Camera", P_ITU709.name());
+        assertEquals("ITU709 / ITU709 Matrix", P_ITU709.name());
         assertEquals(Lang.t("value_off"), IspProfiles.curveLabel(IspProfiles.OFF));
         assertEquals(Lang.t("value_off"), IspProfiles.kneeLabel(IspProfiles.KNEE_OFF));
         assertEquals("95%", IspProfiles.kneeLabel(95));

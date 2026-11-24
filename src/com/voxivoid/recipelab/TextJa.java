@@ -192,7 +192,6 @@ final class TextJa {
         { "isp_mismatch", "プロファイルが保持されませんでした——もう一度お試しください" },
         { "isp_no_root", "カメラのシステムシェルから応答がありません" },
         { "isp_error", "ピクチャープロファイルの適用に失敗しました：%1$s" },
-        { "isp_gamut_camera", "カメラ" },
         { "isp_range_narrow", "ナロー" },
         { "isp_range_middle", "ミドル" },
         { "isp_range_wide", "ワイド" },

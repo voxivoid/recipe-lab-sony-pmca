@@ -195,7 +195,6 @@ final class TextZhHant {
         { "isp_mismatch", "設定檔未能保持——請重試" },
         { "isp_no_root", "相機系統 Shell 無回應" },
         { "isp_error", "圖片設定檔套用失敗：%1$s" },
-        { "isp_gamut_camera", "相機" },
         { "isp_range_narrow", "窄" },
         { "isp_range_middle", "中" },
         { "isp_range_wide", "寬" },

@@ -227,7 +227,7 @@ class ParamsChipsTest {
         assertEquals("HLG", fmt(R_GAMMA, e[R_GAMMA], e));
         assertEquals(Lang.t("value_off"), fmt(R_GAMMA, IspProfiles.OFF, e));
         assertEquals("S-Gamut3.Cine", fmt(R_GAMUT, IspProfiles.SGAMUT3_CINE, e));
-        assertEquals("Camera", fmt(R_GAMUT, IspProfiles.CAMERA, e));
+        assertEquals("ITU709 Matrix", fmt(R_GAMUT, IspProfiles.CAMERA, e));
         assertEquals("Narrow", fmt(R_BRANGE, IspProfiles.NARROW, e));
         assertEquals(Lang.t("value_off"), fmt(R_KNEE, IspProfiles.KNEE_OFF, e));
         step(e, R_KNEE, +1, Q_FINE);
