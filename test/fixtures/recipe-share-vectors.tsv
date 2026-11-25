@@ -17,6 +17,8 @@ profile	AgAAAwMDAAcHDwAAAAICDwcBAAUgBwdTLUxvZzMgQ2luZQ	S-Log3 Cine	standard	0	0	
 profile	AgABBgAFOA4AHgUAAAQDHg4CaQpADg5ITEcgTWF4	HLG Max	vivid	3	-3	2	5600K	7	-7	15	5	off	-	hlg	bt2020	15	7	wide	105	5	32	7	7
 profile	AgAFAAYAGQAOAAYBAgEBAAAASwAAAABMb2cyIE1pbiAodG95KQ	Log2 Min (toy)	mono	-3	3	-3	2500K	-7	7	-15	auto	toy-camera	warm	s-log2	s-gamut3	-15	-7	narrow	75	-5	-32	-7	-7
 profile	AgAKBQEEAQYJCwIAAAMAEgcBAAUYCQRhYmNkZWZnaGlqa2xtbm9wcXJzdHV2d3g	abcdefghijklmnopqrstuvwx	night	2	-2	1	keep	-1	2	-4	2	off	-	itu709	camera	3	0	middle	off	0	-8	2	-3
+profile	AgAAAwMDAAcHDwAAAAsCDwcBAAUgBwdJVFU3MDkgODAw	ITU709 800	standard	0	0	0	auto	0	0	0	off	off	-	itu709-800	s-gamut3-cine	0	0	middle	off	0	0	0	0
+profile	AgABBgAFOA4AHgUAAAoDHg4CaQpADg5DaW5lNCBNYXg	Cine4 Max	vivid	3	-3	2	5600K	7	-7	15	5	off	-	cine4	bt2020	15	7	wide	105	5	32	7	7
 invalid	AQAAAwMDAAcHDwYAAA	no name
 invalid	AgAAAwMDAAcHDwYAAE9r	version 2 laid out as version 1
 invalid	AAAAAwMDAAcHDwYAAE9r	version 0
