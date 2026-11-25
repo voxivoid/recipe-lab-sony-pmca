@@ -21,40 +21,72 @@ final class RecipeCardLayout {
     /** what a story shows clear of the app's own bars, top and bottom */
     static final float STORY_SAFE_TOP = 250, STORY_SAFE_BOTTOM = 1920 - 250;
 
+    /** the settings every card lists, and the picture profile's a card of a recipe with one lists after them */
+    static final int SETTINGS = 8, PROFILE_SETTINGS = 8;
+
     final int shape, width, height;
     final float headerTop, nameTop, rowHeight, scanTop;
+    /** a setting's value: how far under its label, and how big — smaller where the rows or the columns are */
+    final float valueTop, valueSize;
     /** one per setting, in {@link #cells} order: its label at the top, its value under it */
     final float[][] cells;
     /** the QR code with its quiet zone */
     final float[] qr;
 
-    private RecipeCardLayout(int shape, float headerTop, float nameTop, float[][] cells, float rowHeight, float[] qr, float scanTop) {
+    private RecipeCardLayout(int shape, float headerTop, float nameTop, float[][] cells, float rowHeight, float valueSize, float[] qr, float scanTop) {
         this.shape = shape; width = WIDTH[shape]; height = HEIGHT[shape];
         this.headerTop = headerTop; this.nameTop = nameTop; this.cells = cells; this.rowHeight = rowHeight; this.qr = qr; this.scanTop = scanTop;
+        valueTop = rowHeight > 90 ? 36 : 32;
+        this.valueSize = valueSize;
     }
+
+    /** the card of a recipe without a picture profile */
+    static RecipeCardLayout of(int shape) { return of(shape, false); }
 
     /**
      * Portrait and story: settings in two columns under the name, the code centred below. Square, with no room for
      * both under each other: settings in one column on the left, the code on the right.
+     *
+     * A recipe with a picture profile lists its 8 profile settings too, in the same space: portrait and story in three
+     * columns of shorter rows, the profile from a row of its own; square in two columns, the profile the right one, beside
+     * a code a little smaller.
      */
-    static RecipeCardLayout of(int shape) {
+    static RecipeCardLayout of(int shape, boolean profile) {
         switch (shape) {
             case SQUARE: {
-                float[][] c = new float[8][];
-                for (int i = 0; i < 8; i++) c[i] = rect(MARGIN, 312 + i * 84f, 476, 84);
-                return new RecipeCardLayout(SQUARE, 72, 200, c, 84, rect(1080 - MARGIN - 420, 340, 420, 420), 340 + 420 + 40);
+                if (profile) {
+                    float[][] c = new float[SETTINGS + PROFILE_SETTINGS][];
+                    for (int i = 0; i < c.length; i++) c[i] = rect(MARGIN + (i / SETTINGS) * 256f, 312 + (i % SETTINGS) * 84f, 256, 84);
+                    return new RecipeCardLayout(SQUARE, 72, 200, c, 84, 30, rect(1080 - MARGIN - 400, 340, 400, 400), 340 + 400 + 40);
+                }
+                float[][] c = new float[SETTINGS][];
+                for (int i = 0; i < SETTINGS; i++) c[i] = rect(MARGIN, 312 + i * 84f, 476, 84);
+                return new RecipeCardLayout(SQUARE, 72, 200, c, 84, 32, rect(1080 - MARGIN - 420, 340, 420, 420), 340 + 420 + 40);
             }
             case STORY:
-                return new RecipeCardLayout(STORY, 270, 420, twoColumns(570, 105), 105, rect((1080 - 520) / 2f, 1050, 520, 520), 1050 + 520 + 44);
+                return new RecipeCardLayout(STORY, 270, 420, profile ? threeColumns(556, 76) : twoColumns(570, 105), profile ? 76 : 105,
+                        profile ? 32 : 36, rect((1080 - 520) / 2f, 1050, 520, 520), 1050 + 520 + 44);
             default:
-                return new RecipeCardLayout(PORTRAIT, 84, 224, twoColumns(372, 100), 100, rect((1080 - 440) / 2f, 800, 440, 440), 1280);
+                return new RecipeCardLayout(PORTRAIT, 84, 224, profile ? threeColumns(316, 76) : twoColumns(372, 100), profile ? 76 : 100,
+                        profile ? 32 : 36, rect((1080 - 440) / 2f, 800, 440, 440), 1280);
         }
     }
 
     private static float[][] twoColumns(float top, float row) {
         float column = (1080 - 2 * MARGIN) / 2;
-        float[][] c = new float[8][];
-        for (int i = 0; i < 8; i++) c[i] = rect(MARGIN + (i % 2) * column, top + (i / 2) * row, column, row);
+        float[][] c = new float[SETTINGS][];
+        for (int i = 0; i < SETTINGS; i++) c[i] = rect(MARGIN + (i % 2) * column, top + (i / 2) * row, column, row);
+        return c;
+    }
+
+    /** the settings three to a row, the profile's from the row after theirs (the 9th place stays empty) */
+    private static float[][] threeColumns(float top, float row) {
+        float column = (1080 - 2 * MARGIN) / 3;
+        float[][] c = new float[SETTINGS + PROFILE_SETTINGS][];
+        for (int i = 0; i < c.length; i++) {
+            int at = i < SETTINGS ? i : i + 1;
+            c[i] = rect(MARGIN + (at % 3) * column, top + (at / 3) * row, column, row);
+        }
         return c;
     }
 
@@ -73,7 +105,10 @@ final class RecipeCardLayout {
     static int next(int shape, int dir) { return ((shape + dir) % SHAPES + SHAPES) % SHAPES; }
 
     // ------------------------------------------------------------ what the card says
-    /** the settings a card lists, label and value, in the display language — as Recipe Lab Studio's card lists them */
+    /**
+     * The settings a card lists, label and value, in the display language — as Recipe Lab Studio's card lists them: 8,
+     * and for a recipe with a picture profile the profile's 8 after them.
+     */
     static String[][] cells(Recipes.Recipe r) {
         String effect = r.pe == 0 ? Lang.t("value_off") : Recipes.peLabel(r.pe);
         String sub = r.pe == 0 ? null : Recipes.subLabel(r.pe, r.sub);
@@ -81,7 +116,7 @@ final class RecipeCardLayout {
         String wb = r.wbMode == Params.WB_AUTO ? Lang.t("value_auto") : r.wbMode == Params.WB_KELVIN ? r.kelvin + "K" : Lang.t("card_keep");
         if (r.ab != 0) wb += " " + (r.ab > 0 ? "A" + r.ab : "B" + (-r.ab));
         if (r.gm != 0) wb += " " + (r.gm > 0 ? "G" + r.gm : "M" + (-r.gm));
-        return new String[][] {
+        String[][] base = {
             { Lang.t("card_style"), Recipes.styleLabel(r.style) },
             { Lang.t("card_effect"), effect },
             { Lang.t("card_saturation"), signed(r.sat) },
@@ -91,6 +126,22 @@ final class RecipeCardLayout {
             { Lang.t("card_white_balance"), wb },
             { Lang.t("card_exposure"), Recipes.evLabel(r.ev) + " EV" },
         };
+        if (!r.hasProfile()) return base;
+        IspProfiles.Look p = r.look.normal();
+        String[][] all = new String[SETTINGS + PROFILE_SETTINGS][];
+        System.arraycopy(base, 0, all, 0, SETTINGS);
+        String[][] profile = {
+            { Lang.t("card_gamma"), IspProfiles.curveLabel(p.curve) },
+            { Lang.t("card_color_mode"), IspProfiles.gamutLabel(p.gamut) },
+            { Lang.t("card_black_level"), signed(p.black) },
+            { Lang.t("card_black_gamma"), p.blackGamma == 0 ? "0" : signed(p.blackGamma) + " · " + IspProfiles.rangeLabel(p.range) },
+            { Lang.t("card_knee"), p.knee == IspProfiles.KNEE_OFF ? Lang.t("value_off") : p.knee + "%" + (p.slope == 0 ? "" : " · " + signed(p.slope)) },
+            { Lang.t("card_color_saturation"), signed(p.sat) },
+            { Lang.t("card_color_phase"), signed(p.phase) },
+            { Lang.t("card_s_curve"), signed(p.contrast) },
+        };
+        System.arraycopy(profile, 0, all, SETTINGS, PROFILE_SETTINGS);
+        return all;
     }
 
     /** the line under the code: "Scan to add · recipelab.io" */

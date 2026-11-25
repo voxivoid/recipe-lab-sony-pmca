@@ -40,8 +40,10 @@ class RecipeCardLayoutTest {
     }
 
     @Test void everythingIsInsideNothingOnAnythingElseAndTheCodeIsBig() {
-        for (int s = 0; s < RecipeCardLayout.SHAPES; s++) {
-            RecipeCardLayout l = RecipeCardLayout.of(s);
+        for (int k = 0; k < RecipeCardLayout.SHAPES * 2; k++) {
+            int s = k % RecipeCardLayout.SHAPES;
+            boolean profile = k >= RecipeCardLayout.SHAPES;
+            RecipeCardLayout l = RecipeCardLayout.of(s, profile);
             List<float[]> blocks = new ArrayList<float[]>();
             List<String> names = new ArrayList<String>();
             blocks.add(RecipeCardLayout.rect(RecipeCardLayout.MARGIN, l.headerTop, 400, 80)); names.add("header");
@@ -50,16 +52,21 @@ class RecipeCardLayoutTest {
             blocks.add(l.tile()); names.add("code");
             float[] t = l.tile();
             blocks.add(new float[] { t[0], l.scanTop, t[2], l.scanTop + 36 }); names.add("scan");
-            assertEquals(8, l.cells.length, "one per setting");
+            assertEquals(profile ? 16 : 8, l.cells.length, "one per setting");
+            String card = RecipeCardLayout.LABEL[s] + (profile ? " profile" : "");
             for (int i = 0; i < blocks.size(); i++) {
                 float[] b = blocks.get(i);
-                String why = RecipeCardLayout.LABEL[s] + " " + names.get(i);
+                String why = card + " " + names.get(i);
                 assertTrue(b[0] >= RecipeCardLayout.MARGIN - 12 && b[2] <= l.width - RecipeCardLayout.MARGIN + 12, why + " keeps the margin");
                 assertTrue(b[1] >= 0 && b[3] <= l.height, why + " inside");
                 if (s == RecipeCardLayout.STORY)
                     assertTrue(b[1] >= RecipeCardLayout.STORY_SAFE_TOP && b[3] <= RecipeCardLayout.STORY_SAFE_BOTTOM, why + " clear of the story bars");
                 for (int j = i + 1; j < blocks.size(); j++)
-                    assertFalse(overlap(b, blocks.get(j)), RecipeCardLayout.LABEL[s] + " " + names.get(i) + " and " + names.get(j));
+                    assertFalse(overlap(b, blocks.get(j)), card + " " + names.get(i) + " and " + names.get(j));
+            }
+            for (float[] c : l.cells) {
+                assertTrue(l.valueTop + l.valueSize * 1.3f <= c[3] - c[1] + 0.01f, card + ": a value's line stays in its row");
+                assertTrue(c[2] - c[0] - 24 >= 210, card + ": room for S-Gamut3.Cine");
             }
             assertTrue(l.headerTop < l.nameTop);
             assertEquals(l.qr[2] - l.qr[0], l.qr[3] - l.qr[1], 0.01, "square code");
@@ -81,6 +88,59 @@ class RecipeCardLayoutTest {
         RecipeCardLayout s = RecipeCardLayout.of(RecipeCardLayout.STORY);
         assertArrayEquals(new float[] { 280, 1050, 800, 1570 }, s.qr, 0.01f);
         assertEquals(1614, s.scanTop, 0.01);
+        assertEquals(36, p.valueSize, 0.01); assertEquals(36, p.valueTop, 0.01);
+        assertEquals(32, q.valueSize, 0.01); assertEquals(32, q.valueTop, 0.01);
+    }
+
+    @Test void theSameProfileNumbersAsStudio() {
+        RecipeCardLayout p = RecipeCardLayout.of(RecipeCardLayout.PORTRAIT, true);
+        assertArrayEquals(new float[] { 320, 800, 760, 1240 }, p.qr, 0.01f, "the code as without a profile");
+        assertEquals(1280, p.scanTop, 0.01);
+        assertArrayEquals(new float[] { 72, 316, 384, 392 }, p.cells[0], 0.01f);
+        assertArrayEquals(new float[] { 696, 316, 1008, 392 }, p.cells[2], 0.01f);
+        assertArrayEquals(new float[] { 384, 468, 696, 544 }, p.cells[7], 0.01f, "exposure, the third row's middle");
+        assertArrayEquals(new float[] { 72, 544, 384, 620 }, p.cells[8], 0.01f, "the profile from a row of its own");
+        assertArrayEquals(new float[] { 384, 696, 696, 772 }, p.cells[15], 0.01f);
+        assertEquals(32, p.valueSize, 0.01); assertEquals(32, p.valueTop, 0.01);
+        RecipeCardLayout q = RecipeCardLayout.of(RecipeCardLayout.SQUARE, true);
+        assertArrayEquals(new float[] { 608, 340, 1008, 740 }, q.qr, 0.01f);
+        assertEquals(780, q.scanTop, 0.01);
+        assertArrayEquals(new float[] { 72, 312, 328, 396 }, q.cells[0], 0.01f);
+        assertArrayEquals(new float[] { 328, 312, 584, 396 }, q.cells[8], 0.01f, "the profile the right column");
+        assertArrayEquals(new float[] { 328, 900, 584, 984 }, q.cells[15], 0.01f);
+        assertEquals(30, q.valueSize, 0.01); assertEquals(32, q.valueTop, 0.01);
+        RecipeCardLayout s = RecipeCardLayout.of(RecipeCardLayout.STORY, true);
+        assertArrayEquals(new float[] { 280, 1050, 800, 1570 }, s.qr, 0.01f);
+        assertArrayEquals(new float[] { 72, 556, 384, 632 }, s.cells[0], 0.01f);
+        assertArrayEquals(new float[] { 384, 936, 696, 1012 }, s.cells[15], 0.01f);
+        assertEquals(32, s.valueSize, 0.01);
+    }
+
+    @Test void aProfileRecipesCardListsItsProfileAfterTheSettings() {
+        Recipes.Recipe plain = new Recipes.Recipe(Recipes.CUSTOM, "A", Recipes.STD, 0, 0, 0, Params.WB_AUTO, 0, 0, 0, 0, 0, 0, 0);
+        assertEquals(8, RecipeCardLayout.cells(plain).length, "no profile: the 8 settings");
+        Recipes.Recipe r = new Recipes.Recipe(Recipes.CUSTOM, "Log", Recipes.STD, 0, 0, 0, Params.WB_AUTO, 0, 0, 0, 0, 0, Recipes.DRO_OFF, 0,
+                new IspProfiles.Look(IspProfiles.SLOG3, IspProfiles.SGAMUT3_CINE, -3, 5, IspProfiles.WIDE, 95, -2, 12, -1, 4));
+        String[][] c = RecipeCardLayout.cells(r);
+        String[][] want = {
+            { "Gamma", "S-Log3" }, { "Colour mode", "S-Gamut3.Cine" }, { "Black level", "-3" }, { "Black gamma", "+5 · Wide" },
+            { "Knee", "95% · -2" }, { "Colour saturation", "+12" }, { "Colour phase", "-1" }, { "S-curve", "+4" },
+        };
+        assertEquals(16, c.length);
+        assertEquals("Creative Style", c[0][0]);
+        assertEquals("Exposure", c[7][0]);
+        for (int i = 0; i < want.length; i++) assertArrayEquals(want[i], c[8 + i], "profile cell " + i);
+        Recipes.Recipe neutral = new Recipes.Recipe(Recipes.CUSTOM, "N", Recipes.STD, 0, 0, 0, Params.WB_AUTO, 0, 0, 0, 0, 0, Recipes.DRO_OFF, 0,
+                new IspProfiles.Look(IspProfiles.HLG, IspProfiles.CAMERA, 0, 0, IspProfiles.NARROW, IspProfiles.KNEE_OFF, 3, 0, 0, 0));
+        String[][] n = RecipeCardLayout.cells(neutral);
+        assertEquals("ITU709 Matrix", n[9][1]);
+        assertEquals("0", n[11][1], "no black gamma: no range");
+        assertEquals("off", n[12][1], "no knee: no slope");
+        Recipes.Recipe flat = new Recipes.Recipe(Recipes.CUSTOM, "K", Recipes.STD, 0, 0, 0, Params.WB_AUTO, 0, 0, 0, 0, 0, Recipes.DRO_OFF, 0,
+                new IspProfiles.Look(IspProfiles.ITU709, IspProfiles.BT2020, 0, 0, IspProfiles.MIDDLE, 105, 0, 0, 0, 0));
+        assertEquals("105%", RecipeCardLayout.cells(flat)[12][1], "a knee with no slope");
+        for (Recipes.Recipe b : Recipes.ALL)
+            assertEquals(b.hasProfile() ? 16 : 8, RecipeCardLayout.cells(b).length, b.name);
     }
 
     @Test void theCardListsEverySettingAsStudiosDoes() {
