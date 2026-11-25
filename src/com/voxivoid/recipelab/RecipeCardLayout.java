@@ -23,71 +23,108 @@ final class RecipeCardLayout {
 
     /** the settings every card lists, and the picture profile's a card of a recipe with one lists after them */
     static final int SETTINGS = 8, PROFILE_SETTINGS = 8;
+    /**
+     * The groups the settings are in, Recipe Lab Studio's Settings groups (the camera app's): Look (style, effect,
+     * saturation, contrast, sharpness), White balance, Exposure (exposure, DRO), Picture Profile. Each one's first
+     * setting in {@link #cells} order; the last group ends where the cells do.
+     */
+    static final int LOOK = 0, WHITE_BALANCE = 1, EXPOSURE = 2, PICTURE_PROFILE = 3;
+    static final int[] GROUP_START = { 0, 5, 6, 8 };
 
     final int shape, width, height;
     final float headerTop, nameTop, rowHeight, scanTop;
-    /** a setting's value: how far under its label, and how big — smaller where the rows or the columns are */
-    final float valueTop, valueSize;
+    /** a setting's label and value sizes, and how far under the label the value goes: smaller where the rows are */
+    final float labelSize, valueTop, valueSize;
     /** one per setting, in {@link #cells} order: its label at the top, its value under it */
     final float[][] cells;
+    /** one per group, its title's band: the title sits {@link #TITLE_TOP} down it, nearer its settings than the ones above */
+    final float[][] groups;
+    static final float TITLE_TOP = 10, TITLE_SIZE = 22;
     /** the QR code with its quiet zone */
     final float[] qr;
 
-    private RecipeCardLayout(int shape, float headerTop, float nameTop, float[][] cells, float rowHeight, float valueSize, float[] qr, float scanTop) {
+    private RecipeCardLayout(int shape, float headerTop, float nameTop, Grid g, float[] qr, float scanTop) {
         this.shape = shape; width = WIDTH[shape]; height = HEIGHT[shape];
-        this.headerTop = headerTop; this.nameTop = nameTop; this.cells = cells; this.rowHeight = rowHeight; this.qr = qr; this.scanTop = scanTop;
-        valueTop = rowHeight > 90 ? 36 : 32;
-        this.valueSize = valueSize;
+        this.headerTop = headerTop; this.nameTop = nameTop; this.qr = qr; this.scanTop = scanTop;
+        cells = g.cells; groups = g.groups; rowHeight = g.row; labelSize = g.label; valueTop = g.valueTop; valueSize = g.value;
     }
 
     /** the card of a recipe without a picture profile */
     static RecipeCardLayout of(int shape) { return of(shape, false); }
 
     /**
-     * Portrait and story: settings in two columns under the name, the code centred below. Square, with no room for
-     * both under each other: settings in one column on the left, the code on the right.
+     * Portrait and story: the settings under the name in their groups, the code centred below — Style and Effect two to
+     * a row, the rest three, White balance and Exposure side by side. Square, with no room for both under each other:
+     * the settings in one column on the left, the code on the right.
      *
-     * A recipe with a picture profile lists its 8 profile settings too, in the same space: portrait and story in three
-     * columns of shorter rows, the profile from a row of its own; square in two columns, the profile the right one, beside
-     * a code a little smaller.
+     * A recipe with a picture profile lists its 8 profile settings too, in the same space: portrait and story as a
+     * fourth group, in shorter rows under a name moved up and over a code a little smaller; square in a second column
+     * beside a code a little smaller.
      */
     static RecipeCardLayout of(int shape, boolean profile) {
         switch (shape) {
-            case SQUARE: {
-                if (profile) {
-                    float[][] c = new float[SETTINGS + PROFILE_SETTINGS][];
-                    for (int i = 0; i < c.length; i++) c[i] = rect(MARGIN + (i / SETTINGS) * 256f, 312 + (i % SETTINGS) * 84f, 256, 84);
-                    return new RecipeCardLayout(SQUARE, 72, 200, c, 84, 30, rect(1080 - MARGIN - 400, 340, 400, 400), 340 + 400 + 40);
-                }
-                float[][] c = new float[SETTINGS][];
-                for (int i = 0; i < SETTINGS; i++) c[i] = rect(MARGIN, 312 + i * 84f, 476, 84);
-                return new RecipeCardLayout(SQUARE, 72, 200, c, 84, 32, rect(1080 - MARGIN - 420, 340, 420, 420), 340 + 420 + 40);
-            }
+            case SQUARE:
+                return profile
+                        ? new RecipeCardLayout(SQUARE, 72, 200, column(312, 256, true, new Grid(40, 72, 26, 30, 30)), rect(1080 - MARGIN - 400, 340, 400, 400), 340 + 400 + 40)
+                        : new RecipeCardLayout(SQUARE, 72, 200, column(312, 476, false, new Grid(40, 72, 26, 30, 32)), rect(1080 - MARGIN - 420, 340, 420, 420), 340 + 420 + 40);
             case STORY:
-                return new RecipeCardLayout(STORY, 270, 420, profile ? threeColumns(556, 76) : twoColumns(570, 105), profile ? 76 : 105,
-                        profile ? 32 : 36, rect((1080 - 520) / 2f, 1050, 520, 520), 1050 + 520 + 44);
+                return profile
+                        ? new RecipeCardLayout(STORY, 270, 400, wide(492, true, new Grid(40, 76, 26, 32, 32)), rect((1080 - 480) / 2f, 1080, 480, 480), 1080 + 480 + 44)
+                        : new RecipeCardLayout(STORY, 270, 420, wide(570, false, new Grid(40, 105, 26, 36, 36)), rect((1080 - 520) / 2f, 1050, 520, 520), 1050 + 520 + 44);
             default:
-                return new RecipeCardLayout(PORTRAIT, 84, 224, profile ? threeColumns(316, 76) : twoColumns(372, 100), profile ? 76 : 100,
-                        profile ? 32 : 36, rect((1080 - 440) / 2f, 800, 440, 440), 1280);
+                return profile
+                        ? new RecipeCardLayout(PORTRAIT, 84, 208, wide(300, true, new Grid(40, 68, 24, 28, 30)), rect((1080 - 400) / 2f, 840, 400, 400), 1280)
+                        : new RecipeCardLayout(PORTRAIT, 84, 224, wide(372, false, new Grid(40, 100, 26, 36, 36)), rect((1080 - 440) / 2f, 800, 440, 440), 1280);
         }
     }
 
-    private static float[][] twoColumns(float top, float row) {
-        float column = (1080 - 2 * MARGIN) / 2;
-        float[][] c = new float[SETTINGS][];
-        for (int i = 0; i < SETTINGS; i++) c[i] = rect(MARGIN + (i % 2) * column, top + (i / 2) * row, column, row);
-        return c;
+    /** the cells and group titles being laid out, with their sizes: a title's line, a row, a label, a value's offset and size */
+    private static final class Grid {
+        final float title, row, label, valueTop, value;
+        float[][] cells, groups;
+        Grid(float title, float row, float label, float valueTop, float value) {
+            this.title = title; this.row = row; this.label = label; this.valueTop = valueTop; this.value = value;
+        }
+        void start(boolean profile) {
+            cells = new float[profile ? SETTINGS + PROFILE_SETTINGS : SETTINGS][];
+            groups = new float[profile ? 4 : 3][];
+        }
     }
 
-    /** the settings three to a row, the profile's from the row after theirs (the 9th place stays empty) */
-    private static float[][] threeColumns(float top, float row) {
-        float column = (1080 - 2 * MARGIN) / 3;
-        float[][] c = new float[SETTINGS + PROFILE_SETTINGS][];
-        for (int i = 0; i < c.length; i++) {
-            int at = i < SETTINGS ? i : i + 1;
-            c[i] = rect(MARGIN + (at % 3) * column, top + (at / 3) * row, column, row);
+    /** portrait and story: across the card, from {@code top} */
+    private static Grid wide(float top, boolean profile, Grid g) {
+        g.start(profile);
+        float full = 1080 - 2 * MARGIN, half = full / 2, third = full / 3, y = top;
+        g.groups[LOOK] = rect(MARGIN, y, full, g.title); y += g.title;
+        for (int i = 0; i < 2; i++) g.cells[i] = rect(MARGIN + i * half, y, half, g.row);          // style, effect: long names
+        y += g.row;
+        for (int i = 2; i < 5; i++) g.cells[i] = rect(MARGIN + (i - 2) * third, y, third, g.row);  // saturation, contrast, sharpness
+        y += g.row;
+        g.groups[WHITE_BALANCE] = rect(MARGIN, y, third, g.title);
+        g.groups[EXPOSURE] = rect(MARGIN + third, y, 2 * third, g.title);
+        y += g.title;
+        for (int i = 5; i < 8; i++) g.cells[i] = rect(MARGIN + (i - 5) * third, y, third, g.row);  // white balance; exposure, DRO
+        y += g.row;
+        if (profile) {
+            g.groups[PICTURE_PROFILE] = rect(MARGIN, y, full, g.title); y += g.title;
+            for (int k = 0; k < PROFILE_SETTINGS; k++) g.cells[SETTINGS + k] = rect(MARGIN + (k % 3) * third, y + (k / 3) * g.row, third, g.row);
         }
-        return c;
+        return g;
+    }
+
+    /** square: one column {@code w} wide from {@code top}, each group's title over its settings; the profile in a second */
+    private static Grid column(float top, float w, boolean profile, Grid g) {
+        g.start(profile);
+        float y = top;
+        for (int grp = LOOK; grp <= EXPOSURE; grp++) {
+            g.groups[grp] = rect(MARGIN, y, w, g.title); y += g.title;
+            for (int i = GROUP_START[grp]; i < GROUP_START[grp + 1]; i++) { g.cells[i] = rect(MARGIN, y, w, g.row); y += g.row; }
+        }
+        if (profile) {
+            g.groups[PICTURE_PROFILE] = rect(MARGIN + w, top, w, g.title);
+            for (int k = 0; k < PROFILE_SETTINGS; k++) g.cells[SETTINGS + k] = rect(MARGIN + w, top + g.title + k * g.row, w, g.row);
+        }
+        return g;
     }
 
     static float[] rect(float left, float top, float w, float h) { return new float[] { left, top, left + w, top + h }; }
@@ -107,7 +144,7 @@ final class RecipeCardLayout {
     // ------------------------------------------------------------ what the card says
     /**
      * The settings a card lists, label and value, in the display language — as Recipe Lab Studio's card lists them: 8,
-     * and for a recipe with a picture profile the profile's 8 after them.
+     * and for a recipe with a picture profile the profile's 8 after them; in their groups' order ({@link #GROUP_START}).
      */
     static String[][] cells(Recipes.Recipe r) {
         String effect = r.pe == 0 ? Lang.t("value_off") : Recipes.peLabel(r.pe);
@@ -122,9 +159,9 @@ final class RecipeCardLayout {
             { Lang.t("card_saturation"), signed(r.sat) },
             { Lang.t("card_contrast"), signed(r.con) },
             { Lang.t("card_sharpness"), signed(r.sharp) },
-            { Lang.t("card_dro"), Recipes.droLabel(r.dro) },
             { Lang.t("card_white_balance"), wb },
             { Lang.t("card_exposure"), Recipes.evLabel(r.ev) + " EV" },
+            { Lang.t("card_dro"), Recipes.droLabel(r.dro) },
         };
         if (!r.hasProfile()) return base;
         IspProfiles.Look p = r.look.normal();
@@ -144,7 +181,14 @@ final class RecipeCardLayout {
         return all;
     }
 
-    /** the line under the code: "Scan to add · recipelab.io" */
+    /** the groups' titles, in the display language, as Studio's Settings names them; {@code count} of them */
+    static String[] groupTitles(int count) {
+        String[] all = { Lang.t("card_look"), Lang.t("card_white_balance"), Lang.t("card_exposure"), Lang.t("card_picture_profile") };
+        String[] t = new String[count];
+        System.arraycopy(all, 0, t, 0, count);
+        return t;
+    }
+
     /**
      * Whether Studio's card fonts (tools/card-fonts.py: ASCII, Latin-1, Latin Extended-A, Vietnamese and a few
      * punctuation marks) hold every character of {@code s}; a line that is not is drawn in the language's own font.
@@ -169,6 +213,7 @@ final class RecipeCardLayout {
         return ascent + descent <= 0 ? top : top + ascent * lineHeight / (ascent + descent);
     }
 
+    /** the line under the code: "Scan to add · recipelab.io" */
     static String scanLine() { return Lang.t("card_scan") + " · recipelab.io"; }
 
     private static String signed(int v) { return v > 0 ? "+" + v : String.valueOf(v); }

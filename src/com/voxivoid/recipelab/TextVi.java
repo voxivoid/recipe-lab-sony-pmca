@@ -90,6 +90,8 @@ final class TextVi {
         { "card_color_saturation", "Độ bão hòa màu" },
         { "card_color_phase", "Pha màu" },
         { "card_s_curve", "Đường cong S" },
+        { "card_look", "Diện mạo" },
+        { "card_picture_profile", "Picture Profile" },
         { "share_shape", "Khung" },
         { "share_save", "Lưu ảnh" },
         { "share_show_qr", "Hiện mã QR" },

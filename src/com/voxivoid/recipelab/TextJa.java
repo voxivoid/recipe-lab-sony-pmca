@@ -90,6 +90,8 @@ final class TextJa {
         { "card_color_saturation", "色の濃さ" },
         { "card_color_phase", "色相" },
         { "card_s_curve", "S カーブ" },
+        { "card_look", "ルック" },
+        { "card_picture_profile", "ピクチャープロファイル" },
         { "share_shape", "形" },
         { "share_save", "画像を保存" },
         { "share_show_qr", "QRコードを表示" },

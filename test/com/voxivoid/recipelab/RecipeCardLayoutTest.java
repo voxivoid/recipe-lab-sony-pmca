@@ -49,10 +49,12 @@ class RecipeCardLayoutTest {
             blocks.add(RecipeCardLayout.rect(RecipeCardLayout.MARGIN, l.headerTop, 400, 80)); names.add("header");
             blocks.add(l.nameRect()); names.add("name");
             for (int i = 0; i < l.cells.length; i++) { blocks.add(l.cells[i]); names.add("cell " + i); }
+            for (int i = 0; i < l.groups.length; i++) { blocks.add(l.groups[i]); names.add("group " + i); }
             blocks.add(l.tile()); names.add("code");
             float[] t = l.tile();
             blocks.add(new float[] { t[0], l.scanTop, t[2], l.scanTop + 36 }); names.add("scan");
             assertEquals(profile ? 16 : 8, l.cells.length, "one per setting");
+            assertEquals(profile ? 4 : 3, l.groups.length, "one title per group");
             String card = RecipeCardLayout.LABEL[s] + (profile ? " profile" : "");
             for (int i = 0; i < blocks.size(); i++) {
                 float[] b = blocks.get(i);
@@ -64,8 +66,16 @@ class RecipeCardLayoutTest {
                 for (int j = i + 1; j < blocks.size(); j++)
                     assertFalse(overlap(b, blocks.get(j)), card + " " + names.get(i) + " and " + names.get(j));
             }
+            for (int g = 0; g < l.groups.length; g++) {
+                float[] title = l.groups[g];
+                assertTrue(RecipeCardLayout.TITLE_TOP + RecipeCardLayout.TITLE_SIZE * 1.3f <= title[3] - title[1], card + ": a group title's line fits");
+                int first = RecipeCardLayout.GROUP_START[g];
+                assertEquals(title[0], l.cells[first][0], 0.01, card + ": group " + g + " starts under its title");
+                assertTrue(l.cells[first][1] >= title[3] - 0.01f, card + ": group " + g + " under its title");
+            }
             for (float[] c : l.cells) {
                 assertTrue(l.valueTop + l.valueSize * 1.3f <= c[3] - c[1] + 0.01f, card + ": a value's line stays in its row");
+                assertTrue(l.labelSize * 1.3f <= l.valueTop + 4, card + ": a label clear of its value");
                 assertTrue(c[2] - c[0] - 24 >= 210, card + ": room for S-Gamut3.Cine");
             }
             assertTrue(l.headerTop < l.nameTop);
@@ -80,40 +90,59 @@ class RecipeCardLayoutTest {
         RecipeCardLayout p = RecipeCardLayout.of(RecipeCardLayout.PORTRAIT);
         assertArrayEquals(new float[] { 320, 800, 760, 1240 }, p.qr, 0.01f);
         assertEquals(84, p.headerTop, 0.01); assertEquals(224, p.nameTop, 0.01); assertEquals(1280, p.scanTop, 0.01);
-        assertArrayEquals(new float[] { 72, 372, 540, 472 }, p.cells[0], 0.01f);
-        assertArrayEquals(new float[] { 540, 372, 1008, 472 }, p.cells[1], 0.01f);
+        assertArrayEquals(new float[] { 72, 372, 1008, 412 }, p.groups[0], 0.01f, "Look");
+        assertArrayEquals(new float[] { 72, 412, 540, 512 }, p.cells[0], 0.01f, "style, half the width");
+        assertArrayEquals(new float[] { 540, 412, 1008, 512 }, p.cells[1], 0.01f, "effect");
+        assertArrayEquals(new float[] { 72, 512, 384, 612 }, p.cells[2], 0.01f, "saturation, a third");
+        assertArrayEquals(new float[] { 696, 512, 1008, 612 }, p.cells[4], 0.01f);
+        assertArrayEquals(new float[] { 72, 612, 384, 652 }, p.groups[1], 0.01f, "White balance");
+        assertArrayEquals(new float[] { 384, 612, 1008, 652 }, p.groups[2], 0.01f, "Exposure, beside it");
+        assertArrayEquals(new float[] { 72, 652, 384, 752 }, p.cells[5], 0.01f);
+        assertArrayEquals(new float[] { 696, 652, 1008, 752 }, p.cells[7], 0.01f, "DRO");
+        assertArrayEquals(new float[] { 26, 36, 36 }, new float[] { p.labelSize, p.valueTop, p.valueSize }, 0.01f);
         RecipeCardLayout q = RecipeCardLayout.of(RecipeCardLayout.SQUARE);
         assertArrayEquals(new float[] { 588, 340, 1008, 760 }, q.qr, 0.01f);
-        assertArrayEquals(new float[] { 72, 312 + 7 * 84, 548, 312 + 8 * 84 }, q.cells[7], 0.01f);
+        assertArrayEquals(new float[] { 72, 312, 548, 352 }, q.groups[0], 0.01f);
+        assertArrayEquals(new float[] { 72, 352, 548, 424 }, q.cells[0], 0.01f);
+        assertArrayEquals(new float[] { 72, 712, 548, 752 }, q.groups[1], 0.01f);
+        assertArrayEquals(new float[] { 72, 824, 548, 864 }, q.groups[2], 0.01f);
+        assertArrayEquals(new float[] { 72, 936, 548, 1008 }, q.cells[7], 0.01f);
+        assertArrayEquals(new float[] { 26, 30, 32 }, new float[] { q.labelSize, q.valueTop, q.valueSize }, 0.01f);
         RecipeCardLayout s = RecipeCardLayout.of(RecipeCardLayout.STORY);
         assertArrayEquals(new float[] { 280, 1050, 800, 1570 }, s.qr, 0.01f);
         assertEquals(1614, s.scanTop, 0.01);
-        assertEquals(36, p.valueSize, 0.01); assertEquals(36, p.valueTop, 0.01);
-        assertEquals(32, q.valueSize, 0.01); assertEquals(32, q.valueTop, 0.01);
+        assertArrayEquals(new float[] { 72, 570, 1008, 610 }, s.groups[0], 0.01f);
+        assertArrayEquals(new float[] { 696, 860, 1008, 965 }, s.cells[7], 0.01f);
+        assertEquals(10, RecipeCardLayout.TITLE_TOP, 0.01); assertEquals(22, RecipeCardLayout.TITLE_SIZE, 0.01);
     }
 
     @Test void theSameProfileNumbersAsStudio() {
         RecipeCardLayout p = RecipeCardLayout.of(RecipeCardLayout.PORTRAIT, true);
-        assertArrayEquals(new float[] { 320, 800, 760, 1240 }, p.qr, 0.01f, "the code as without a profile");
+        assertArrayEquals(new float[] { 340, 840, 740, 1240 }, p.qr, 0.01f, "a little smaller");
+        assertEquals(208, p.nameTop, 0.01, "the name a little higher");
         assertEquals(1280, p.scanTop, 0.01);
-        assertArrayEquals(new float[] { 72, 316, 384, 392 }, p.cells[0], 0.01f);
-        assertArrayEquals(new float[] { 696, 316, 1008, 392 }, p.cells[2], 0.01f);
-        assertArrayEquals(new float[] { 384, 468, 696, 544 }, p.cells[7], 0.01f, "exposure, the third row's middle");
-        assertArrayEquals(new float[] { 72, 544, 384, 620 }, p.cells[8], 0.01f, "the profile from a row of its own");
-        assertArrayEquals(new float[] { 384, 696, 696, 772 }, p.cells[15], 0.01f);
-        assertEquals(32, p.valueSize, 0.01); assertEquals(32, p.valueTop, 0.01);
+        assertArrayEquals(new float[] { 72, 300, 1008, 340 }, p.groups[0], 0.01f);
+        assertArrayEquals(new float[] { 72, 340, 540, 408 }, p.cells[0], 0.01f);
+        assertArrayEquals(new float[] { 72, 476, 384, 516 }, p.groups[1], 0.01f);
+        assertArrayEquals(new float[] { 696, 516, 1008, 584 }, p.cells[7], 0.01f);
+        assertArrayEquals(new float[] { 72, 584, 1008, 624 }, p.groups[3], 0.01f, "Picture Profile");
+        assertArrayEquals(new float[] { 72, 624, 384, 692 }, p.cells[8], 0.01f);
+        assertArrayEquals(new float[] { 384, 760, 696, 828 }, p.cells[15], 0.01f);
+        assertArrayEquals(new float[] { 24, 28, 30 }, new float[] { p.labelSize, p.valueTop, p.valueSize }, 0.01f);
         RecipeCardLayout q = RecipeCardLayout.of(RecipeCardLayout.SQUARE, true);
         assertArrayEquals(new float[] { 608, 340, 1008, 740 }, q.qr, 0.01f);
         assertEquals(780, q.scanTop, 0.01);
-        assertArrayEquals(new float[] { 72, 312, 328, 396 }, q.cells[0], 0.01f);
-        assertArrayEquals(new float[] { 328, 312, 584, 396 }, q.cells[8], 0.01f, "the profile the right column");
-        assertArrayEquals(new float[] { 328, 900, 584, 984 }, q.cells[15], 0.01f);
-        assertEquals(30, q.valueSize, 0.01); assertEquals(32, q.valueTop, 0.01);
+        assertArrayEquals(new float[] { 72, 936, 328, 1008 }, q.cells[7], 0.01f);
+        assertArrayEquals(new float[] { 328, 312, 584, 352 }, q.groups[3], 0.01f, "the profile the right column");
+        assertArrayEquals(new float[] { 328, 352, 584, 424 }, q.cells[8], 0.01f);
+        assertArrayEquals(new float[] { 328, 856, 584, 928 }, q.cells[15], 0.01f);
+        assertArrayEquals(new float[] { 26, 30, 30 }, new float[] { q.labelSize, q.valueTop, q.valueSize }, 0.01f);
         RecipeCardLayout s = RecipeCardLayout.of(RecipeCardLayout.STORY, true);
-        assertArrayEquals(new float[] { 280, 1050, 800, 1570 }, s.qr, 0.01f);
-        assertArrayEquals(new float[] { 72, 556, 384, 632 }, s.cells[0], 0.01f);
-        assertArrayEquals(new float[] { 384, 936, 696, 1012 }, s.cells[15], 0.01f);
-        assertEquals(32, s.valueSize, 0.01);
+        assertArrayEquals(new float[] { 300, 1080, 780, 1560 }, s.qr, 0.01f);
+        assertEquals(400, s.nameTop, 0.01);
+        assertEquals(1604, s.scanTop, 0.01);
+        assertArrayEquals(new float[] { 72, 800, 1008, 840 }, s.groups[3], 0.01f);
+        assertArrayEquals(new float[] { 384, 992, 696, 1068 }, s.cells[15], 0.01f);
     }
 
     @Test void aProfileRecipesCardListsItsProfileAfterTheSettings() {
@@ -128,7 +157,7 @@ class RecipeCardLayoutTest {
         };
         assertEquals(16, c.length);
         assertEquals("Creative Style", c[0][0]);
-        assertEquals("Exposure", c[7][0]);
+        assertEquals("DRO", c[7][0], "the last of Exposure");
         for (int i = 0; i < want.length; i++) assertArrayEquals(want[i], c[8 + i], "profile cell " + i);
         Recipes.Recipe neutral = new Recipes.Recipe(Recipes.CUSTOM, "N", Recipes.STD, 0, 0, 0, Params.WB_AUTO, 0, 0, 0, 0, 0, Recipes.DRO_OFF, 0,
                 new IspProfiles.Look(IspProfiles.HLG, IspProfiles.CAMERA, 0, 0, IspProfiles.NARROW, IspProfiles.KNEE_OFF, 3, 0, 0, 0));
@@ -148,19 +177,21 @@ class RecipeCardLayoutTest {
         String[][] c = RecipeCardLayout.cells(r);
         String[][] want = {
             { "Creative Style", "Autumn" }, { "Picture Effect", "Toy · warm" }, { "Saturation", "+2" }, { "Contrast", "-1" },
-            { "Sharpness", "0" }, { "DRO", "off" }, { "White balance", "5600K A3 M2" }, { "Exposure", "-1.3 EV" },
+            { "Sharpness", "0" }, { "White balance", "5600K A3 M2" }, { "Exposure", "-1.3 EV" }, { "DRO", "off" },
         };
         for (int i = 0; i < want.length; i++) assertArrayEquals(want[i], c[i], "cell " + i);
         Recipes.Recipe auto = new Recipes.Recipe(Recipes.CUSTOM, "A", Recipes.STD, 0, 0, 0, Params.WB_AUTO, 0, -7, 7, 0, 0, Recipes.DRO_AUTO, 0);
         String[][] a = RecipeCardLayout.cells(auto);
         assertEquals("off", a[1][1], "no effect");
-        assertEquals("auto B7 G7", a[6][1]);
-        assertEquals("0 EV", a[7][1]);
-        assertEquals("auto", a[5][1]);
+        assertEquals("auto B7 G7", a[5][1]);
+        assertEquals("0 EV", a[6][1]);
+        assertEquals("auto", a[7][1]);
         Recipes.Recipe keep = new Recipes.Recipe(Recipes.CUSTOM, "K", Recipes.STD, 0, 0, 0, 0, 0, 0, 0, 0, 3, 2, 0);
-        assertEquals("As set", RecipeCardLayout.cells(keep)[6][1]);
-        assertEquals("+1.0 EV", RecipeCardLayout.cells(keep)[7][1]);
-        assertTrue(RecipeCardLayout.cells(keep)[5][1].contains("2"), "a DRO level");
+        assertEquals("As set", RecipeCardLayout.cells(keep)[5][1]);
+        assertEquals("+1.0 EV", RecipeCardLayout.cells(keep)[6][1]);
+        assertTrue(RecipeCardLayout.cells(keep)[7][1].contains("2"), "a DRO level");
+        assertArrayEquals(new String[] { "Look", "White balance", "Exposure" }, RecipeCardLayout.groupTitles(3));
+        assertEquals("Picture Profile", RecipeCardLayout.groupTitles(4)[3]);
         assertEquals("Scan to add · recipelab.io", RecipeCardLayout.scanLine());
     }
 

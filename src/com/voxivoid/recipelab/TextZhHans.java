@@ -89,6 +89,8 @@ final class TextZhHans {
         { "card_color_saturation", "色彩饱和度" },
         { "card_color_phase", "色彩相位" },
         { "card_s_curve", "S 曲线" },
+        { "card_look", "类型" },
+        { "card_picture_profile", "图片配置文件" },
         { "share_shape", "形状" },
         { "share_save", "保存图片" },
         { "share_show_qr", "显示二维码" },

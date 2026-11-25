@@ -106,6 +106,8 @@ final class TextEn {
         { "card_color_saturation", "Colour saturation" },
         { "card_color_phase", "Colour phase" },
         { "card_s_curve", "S-curve" },
+        { "card_look", "Look" },
+        { "card_picture_profile", "Picture Profile" },
         { "share_shape", "Shape" },
         { "share_save", "Save image" },
         { "share_show_qr", "Show QR code" },

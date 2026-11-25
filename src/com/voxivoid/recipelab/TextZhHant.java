@@ -89,6 +89,8 @@ final class TextZhHant {
         { "card_color_saturation", "色彩飽和度" },
         { "card_color_phase", "色彩相位" },
         { "card_s_curve", "S 曲線" },
+        { "card_look", "類型" },
+        { "card_picture_profile", "圖片設定檔" },
         { "share_shape", "形狀" },
         { "share_save", "儲存圖片" },
         { "share_show_qr", "顯示 QR 碼" },

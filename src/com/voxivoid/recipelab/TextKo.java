@@ -90,6 +90,8 @@ final class TextKo {
         { "card_color_saturation", "색 농도" },
         { "card_color_phase", "색상" },
         { "card_s_curve", "S 커브" },
+        { "card_look", "룩" },
+        { "card_picture_profile", "픽처 프로필" },
         { "share_shape", "형태" },
         { "share_save", "이미지 저장" },
         { "share_show_qr", "QR 코드 보기" },
