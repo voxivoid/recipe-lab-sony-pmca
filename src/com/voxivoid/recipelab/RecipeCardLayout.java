@@ -162,11 +162,11 @@ final class RecipeCardLayout {
         boolean effect = r.pe != 0;
         String look = Recipes.styleLabel(r.style);
         if (effect) {
-            look = Recipes.peLabel(r.pe);
-            String sub = Recipes.subLabel(r.pe, r.sub);
+            look = effectName(r.pe);
+            String sub = optionName(r.pe, r.sub);
             if (sub != null) look += " · " + sub;
         }
-        String wb = r.wbMode == Params.WB_AUTO ? Lang.t("value_auto") : r.wbMode == Params.WB_KELVIN ? r.kelvin + "K" : Lang.t("card_keep");
+        String wb = r.wbMode == Params.WB_AUTO ? Lang.t("card_auto") : r.wbMode == Params.WB_KELVIN ? r.kelvin + "K" : Lang.t("card_keep");
         if (r.ab != 0) wb += " " + (r.ab > 0 ? "A" + r.ab : "B" + (-r.ab));
         if (r.gm != 0) wb += " " + (r.gm > 0 ? "G" + r.gm : "M" + (-r.gm));
         java.util.ArrayList<String[]> c = new java.util.ArrayList<String[]>();
@@ -178,19 +178,39 @@ final class RecipeCardLayout {
         }
         c.add(new String[] { Lang.t("card_white_balance"), wb });
         c.add(new String[] { Lang.t("card_exposure"), Recipes.evLabel(r.ev) + " EV" });
-        if (!effect) c.add(new String[] { Lang.t("card_dro"), Recipes.droLabel(r.dro) });
+        if (!effect) c.add(new String[] { Lang.t("card_dro"), r.dro == Recipes.DRO_AUTO ? Lang.t("card_auto") : r.dro == Recipes.DRO_OFF ? Lang.t("card_off") : Lang.t("card_level", r.dro) });
         if (r.hasProfile()) {
             IspProfiles.Look p = r.look.normal();
             c.add(new String[] { Lang.t("card_gamma"), IspProfiles.curveLabel(p.curve) });
             c.add(new String[] { Lang.t("card_color_mode"), IspProfiles.gamutLabel(p.gamut) });
             c.add(new String[] { Lang.t("card_black_level"), signed(p.black) });
             c.add(new String[] { Lang.t("card_black_gamma"), p.blackGamma == 0 ? "0" : signed(p.blackGamma) + " · " + IspProfiles.rangeLabel(p.range) });
-            c.add(new String[] { Lang.t("card_knee"), p.knee == IspProfiles.KNEE_OFF ? Lang.t("value_off") : p.knee + "%" + (p.slope == 0 ? "" : " · " + signed(p.slope)) });
+            c.add(new String[] { Lang.t("card_knee"), p.knee == IspProfiles.KNEE_OFF ? Lang.t("card_off") : p.knee + "%" + (p.slope == 0 ? "" : " · " + signed(p.slope)) });
             c.add(new String[] { Lang.t("card_color_saturation"), signed(p.sat) });
             c.add(new String[] { Lang.t("card_color_phase"), signed(p.phase) });
             c.add(new String[] { Lang.t("card_s_curve"), signed(p.contrast) });
         }
         return c.toArray(new String[c.size()][]);
+    }
+
+    /** each effect's name in full, as Studio names it (the chips use Recipes.PE_LABEL's short ones); index = stored byte */
+    static final String[] EFFECT_NAME = { "Off", "Toy camera", "Pop colour", "Posterization", "Retro", "Soft high-key", "Part colour",
+            "HC mono", "Soft focus", "HDR art", "Rich-tone mono", "Miniature", "Illustration", "Watercolour" };
+
+    /** an effect option's English name, as Studio's card prints it, by its file code */
+    static String optionEnglish(String code) {
+        if (code.equals("posterization-color")) return "Colour";
+        if (code.equals("posterization-bw")) return "B&W";
+        return Character.toUpperCase(code.charAt(0)) + code.substring(1);
+    }
+
+    /** the effect's name on a card, in the display language */
+    static String effectName(int pe) { return Lang.label("effect_" + Lang.slug(Recipes.PE_KEYS[pe]), EFFECT_NAME[pe]); }
+
+    /** the effect option's name on a card, in the display language; null for an effect without options */
+    static String optionName(int pe, int sub) {
+        String[] v = Recipes.subValues(pe);
+        return v == null ? null : Lang.label("sub_" + Lang.slug(v[sub]), optionEnglish(v[sub]));
     }
 
     /** the groups' titles, in the display language, as Studio's Settings names them; {@code count} of them */

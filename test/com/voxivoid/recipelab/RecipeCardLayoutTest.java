@@ -144,25 +144,25 @@ class RecipeCardLayoutTest {
         String[][] c = RecipeCardLayout.cells(r);
         String[][] want = {
             { "Creative Style", "Autumn" }, { "Saturation", "+2" }, { "Contrast", "-1" }, { "Sharpness", "0" },
-            { "White balance", "5600K A3 M2" }, { "Exposure", "-1.3 EV" }, { "DRO", "off" },
+            { "White balance", "5600K A3 M2" }, { "Exposure", "-1.3 EV" }, { "DRO", "Off" },
         };
         assertEquals(want.length, c.length, "a style: its settings, no effect");
         for (int i = 0; i < want.length; i++) assertArrayEquals(want[i], c[i], "cell " + i);
         Recipes.Recipe fx = new Recipes.Recipe(Recipes.CUSTOM, "Effect", Recipes.STD, 2, -1, 0, Params.WB_AUTO, 0, 0, 0, 1, 0, 3, 2);
         String[][] e = RecipeCardLayout.cells(fx);
         assertEquals(3, e.length, "an effect: no style settings, no DRO");
-        assertArrayEquals(new String[] { "Picture Effect", "Toy · warm" }, e[0]);
+        assertArrayEquals(new String[] { "Picture Effect", "Toy camera · Warm" }, e[0]);
         assertEquals("White balance", e[1][0]);
         assertEquals("Exposure", e[2][0]);
         Recipes.Recipe auto = new Recipes.Recipe(Recipes.CUSTOM, "A", Recipes.STD, 0, 0, 0, Params.WB_AUTO, 0, -7, 7, 0, 0, Recipes.DRO_AUTO, 0);
         String[][] a = RecipeCardLayout.cells(auto);
-        assertEquals("auto B7 G7", a[4][1]);
+        assertEquals("Auto B7 G7", a[4][1]);
         assertEquals("0 EV", a[5][1]);
-        assertEquals("auto", a[6][1]);
+        assertEquals("Auto", a[6][1]);
         Recipes.Recipe keep = new Recipes.Recipe(Recipes.CUSTOM, "K", Recipes.STD, 0, 0, 0, 0, 0, 0, 0, 0, 3, 2, 0);
         assertEquals("As set", RecipeCardLayout.cells(keep)[4][1]);
         assertEquals("+1.0 EV", RecipeCardLayout.cells(keep)[5][1]);
-        assertTrue(RecipeCardLayout.cells(keep)[6][1].contains("2"), "a DRO level");
+        assertEquals("Level 2", RecipeCardLayout.cells(keep)[6][1], "a DRO level, in words as Studio has it");
         assertArrayEquals(new String[] { "Look", "White balance", "Exposure" }, RecipeCardLayout.groupTitles(3));
         assertEquals("Picture Profile", RecipeCardLayout.groupTitles(4)[3]);
         assertEquals("Scan to add · recipelab.io", RecipeCardLayout.scanLine());
@@ -184,7 +184,7 @@ class RecipeCardLayoutTest {
         String[][] n = RecipeCardLayout.cells(neutral);
         assertEquals("ITU709 Matrix", n[8][1]);
         assertEquals("0", n[10][1], "no black gamma: no range");
-        assertEquals("off", n[11][1], "no knee: no slope");
+        assertEquals("Off", n[11][1], "no knee: no slope");
         Recipes.Recipe flat = new Recipes.Recipe(Recipes.CUSTOM, "K", Recipes.STD, 0, 0, 0, Params.WB_AUTO, 0, 0, 0, 0, 0, Recipes.DRO_OFF, 0,
                 new IspProfiles.Look(IspProfiles.ITU709, IspProfiles.BT2020, 0, 0, IspProfiles.MIDDLE, 105, 0, 0, 0, 0));
         assertEquals("105%", RecipeCardLayout.cells(flat)[11][1], "a knee with no slope");
