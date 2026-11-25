@@ -33,8 +33,8 @@ src/com/voxivoid/recipelab/
   MainActivity.java            UI state, key handling, the camera (CameraEx via reflection), store + sync
   Params.java                  the parameter rows: slot ids, store encodings, preview parameters, chip
                                navigation, HUD strings — pure functions, no Android, covered by test/
-  Recipes.java                 the 82-entry table (the factory look, FACTORY, first in Sony, then the 76 others, then the
-                               five picture profiles in Profiles), brands,
+  Recipes.java                 the 89-entry table (the factory look, FACTORY, first in Sony, then the 76 others, then the
+                               twelve picture profiles in Profiles), brands,
                                GROUP_START / GROUP_COUNT, list navigation
   Favorites.java               the favorites list: stored by name in the app's preferences, and how the browser
                                walks the All, Favorites and Custom groups, and the wheel's loop — pure functions, no
@@ -154,7 +154,7 @@ The **developer menu** holds the tools that are not part of using the app:
 |---|---|
 | **Settings snapshot** / **Settings diff** | the snapshot / diff tool below; the row's name says which half is next |
 | **Read-only check — 26 slots** | the read-only check below: does this body flag any slot a recipe writes |
-| **Shoot samples — 82 recipes** | the sample run below |
+| **Shoot samples — 89 recipes** | the sample run below |
 | **Settle delay** | a value — the delay the sample run waits after applying a recipe; left / right step through 0.8 / 1.2 / 2.0 / 3.0 / 5.0 s in place (centre steps forward), kept in the app's preferences |
 | **Key logger** | every key event on screen, newest first, and appended to `RECIPLAB/LOGS/KEYS.TXT` on the card (`keys.txt` in `getFilesDir()` without one): scan code, down / up, repeat count, Sony's logic code; the header is the model, the platform and what the probe found. Nothing else happens while it runs; **hold MENU** leaves |
 
@@ -904,7 +904,7 @@ against a SHA-256 pinned in the script (`JUNIT_JAR=<path>` points it at a copy w
 
 | | |
 |---|---|
-| `RecipesTest` | the table itself — 82 entries (the factory look, the 76 film looks and the five picture profiles), group order, every value inside its row's range, kelvin in whole hundreds, sub-parameters that exist for the effect; labels, `summary()`, wrap-around navigation |
+| `RecipesTest` | the table itself — 89 entries (the factory look, the 76 film looks and the twelve picture profiles), group order, every value inside its row's range, kelvin in whole hundreds, sub-parameters that exist for the effect; labels, `summary()`, wrap-around navigation |
 | `ParamsCodecTest` | how the store encodes each row (DRO bytes, any Picture Profile reading as on, magenta-positive G-M, the quality pair, signed vs unsigned slots) and how it reads back |
 | `ParamsWritesTest` | which bytes ENTER writes for a recipe — golden lists for a few, and every recipe stored over a factory camera, then on top of each other, read back through the same decoder |
 | `ParamsPreviewTest` | the `Camera.Parameters` the live preview sets, recipe by recipe |

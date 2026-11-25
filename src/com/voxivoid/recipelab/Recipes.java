@@ -211,6 +211,15 @@ public class Recipes {
         profile("S-Log3",       IspProfiles.SLOG3,  IspProfiles.SGAMUT3),
         profile("ITU709",       IspProfiles.ITU709, IspProfiles.CAMERA),
         profile("HLG",          IspProfiles.HLG,    IspProfiles.BT2020),
+        // Sony's own curves, read from the A6500's firmware (IspProfiles); the A6000 has no Movie/Still/Cinema colour
+        // modes, so they take the camera's matrix
+        profile("Movie",        IspProfiles.MOVIE,  IspProfiles.CAMERA),
+        profile("Still",        IspProfiles.STILL,  IspProfiles.CAMERA),
+        profile("Cine1",        IspProfiles.CINE1,  IspProfiles.CAMERA),
+        profile("Cine2",        IspProfiles.CINE2,  IspProfiles.CAMERA),
+        profile("Cine3",        IspProfiles.CINE3,  IspProfiles.CAMERA),
+        profile("Cine4",        IspProfiles.CINE4,  IspProfiles.CAMERA),
+        profile("ITU709(800%)", IspProfiles.ITU709_800, IspProfiles.CAMERA),
     };
 
     /** a built-in picture profile recipe: Standard, auto white balance, DRO off, the curve and colour mode with no adjustment */

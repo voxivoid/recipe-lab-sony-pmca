@@ -451,5 +451,12 @@ final class TextKo {
         { "recipe_s_log3", "S-Log3" },
         { "recipe_itu709", "ITU709" },
         { "recipe_hlg", "HLG" },
+        { "recipe_movie", "Movie" },
+        { "recipe_still", "Still" },
+        { "recipe_cine1", "Cine1" },
+        { "recipe_cine2", "Cine2" },
+        { "recipe_cine3", "Cine3" },
+        { "recipe_cine4", "Cine4" },
+        { "recipe_itu709_800", "ITU709(800%)" },
     };
 }

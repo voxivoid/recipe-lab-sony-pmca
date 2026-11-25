@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test;
 class RecipesTest {
 
     @Test void hasTheDocumentedNumberOfRecipes() {
-        assertEquals(82, Recipes.ALL.length,
+        assertEquals(89, Recipes.ALL.length,
                 "README.md, CLAUDE.md, docs/DEVELOPMENT.md and docs/FAQ.md quote the recipe count -- update them together with this number");
     }
 
@@ -231,9 +231,9 @@ class RecipesTest {
     }
 
     @Test void thePanelCountsTheWholeList() {
-        assertEquals("1 / 82", Recipes.position(Recipes.FACTORY));
-        assertEquals("2 / 82", Recipes.position(1));
-        assertEquals("82 / 82", Recipes.position(Recipes.ALL.length - 1));
+        assertEquals("1 / 89", Recipes.position(Recipes.FACTORY));
+        assertEquals("2 / 89", Recipes.position(1));
+        assertEquals("89 / 89", Recipes.position(Recipes.ALL.length - 1));
     }
 
     @Test void nextGroupStartLandsOnTheFirstRecipeOfTheNeighbouringBrand() {
