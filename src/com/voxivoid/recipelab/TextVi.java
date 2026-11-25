@@ -95,7 +95,6 @@ final class TextVi {
         { "menu_read_qr_detail", "Thêm công thức từ mã QR trên điện thoại hoặc máy ảnh khác" },
         { "qr_share_hint", "Quét bằng camera điện thoại để thêm vào Recipe Lab Studio, hoặc bằng Đọc mã QR công thức trên máy ảnh khác" },
         { "qr_share_failed", "Không chia sẻ được %1$s: %2$s" },
-        { "qr_share_profile", "Chưa thể chia sẻ công thức có Picture Profile bằng mã QR" },
         { "qr_scan_title", "Đọc mã QR công thức" },
         { "qr_scan_live", "Hướng máy ảnh vào mã. Nhấn nửa chừng để lấy nét." },
         { "qr_scan_shutter", "Hướng máy ảnh vào mã và nhấn nút chụp." },

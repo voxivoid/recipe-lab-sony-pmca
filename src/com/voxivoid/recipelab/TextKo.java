@@ -95,7 +95,6 @@ final class TextKo {
         { "menu_read_qr_detail", "휴대폰이나 다른 카메라의 QR 코드로 레시피 추가" },
         { "qr_share_hint", "휴대폰 카메라로 스캔하면 Recipe Lab Studio에 추가됩니다. 다른 카메라에서는 레시피 QR 코드 읽기를 사용하세요" },
         { "qr_share_failed", "%1$s은(는) 공유할 수 없습니다: %2$s" },
-        { "qr_share_profile", "픽처 프로필이 있는 레시피는 아직 QR 코드로 공유할 수 없습니다" },
         { "qr_scan_title", "레시피 QR 코드 읽기" },
         { "qr_scan_live", "카메라를 코드에 맞추세요. 반셔터로 초점을 맞춥니다." },
         { "qr_scan_shutter", "카메라를 코드에 맞추고 셔터를 누르세요." },

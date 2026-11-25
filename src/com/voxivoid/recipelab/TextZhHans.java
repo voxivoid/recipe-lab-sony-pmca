@@ -94,7 +94,6 @@ final class TextZhHans {
         { "menu_read_qr_detail", "从手机或其他相机上的二维码添加配方" },
         { "qr_share_hint", "用手机相机扫描即可添加到 Recipe Lab Studio；在其他相机上请使用“读取配方二维码”" },
         { "qr_share_failed", "无法分享 %1$s：%2$s" },
-        { "qr_share_profile", "带图片配置文件的配方暂不能以二维码分享" },
         { "qr_scan_title", "读取配方二维码" },
         { "qr_scan_live", "将相机对准二维码。半按快门对焦。" },
         { "qr_scan_shutter", "将相机对准二维码并按下快门。" },

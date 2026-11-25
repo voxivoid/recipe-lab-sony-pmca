@@ -111,7 +111,6 @@ final class TextEn {
         { "menu_read_qr_detail", "Adds a recipe from a QR code on a phone or another camera" },
         { "qr_share_hint", "Scan with a phone camera to add it in Recipe Lab Studio, or with Read Recipe QR Code on another camera" },
         { "qr_share_failed", "%1$s cannot be shared: %2$s" },
-        { "qr_share_profile", "Recipes with a picture profile cannot be shared as a QR code yet" },
         { "qr_scan_title", "Read Recipe QR Code" },
         { "qr_scan_live", "Point the camera at the code. Half-press to focus." },
         { "qr_scan_shutter", "Point the camera at the code and press the shutter." },

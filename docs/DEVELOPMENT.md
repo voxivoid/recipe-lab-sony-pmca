@@ -511,11 +511,12 @@ recipe picked, then power-cycled, is still the camera's look.
 A custom recipe as a link, `https://recipelab.io/r#<code>`, for QR codes (`RecipeShare`). Recipe Lab Studio and
 recipelab.io read and write the same codes; `test/fixtures/recipe-share-vectors.tsv` is the same file in all three
 repos, and each one's tests run it. The `#` part never reaches a server. The code is base64url without padding (no
-`=`, and stray bits after the last byte refuse it) of:
+`=`, and stray bits after the last byte refuse it) of the bytes below. The link is the same for every version: byte 0
+says how to read the rest, so a link once shared keeps working.
 
 | byte | value |
 |---|---|
-| 0 | version, 1 |
+| 0 | version: 1 for a recipe without a picture profile, 2 for one with |
 | 1 | camera family: `0` `sony-creative-style`. Another family's link is refused (*made for other cameras*); its values after this byte are its own |
 | 2 | style, index in `RecipeShare.STYLES` — the runtime names in the order of the file's `style` comment, not the stored enum |
 | 3, 4, 5 | saturation, contrast, sharpness, plus 3 |
@@ -525,10 +526,31 @@ repos, and each one's tests run it. The `#` part never reaches a server. The cod
 | 10 | DRO: 0 off, 1 .. 5, 6 auto |
 | 11 | effect, index in `Recipes.PE_KEYS` |
 | 12 | effect option, index in `Recipes.subValues`; 0 for an effect without options |
-| 13 .. | the name, ASCII, 1 .. 24 characters a name may hold |
+| 13 .. | version 1: the name, ASCII, 1 .. 24 characters a name may hold |
 
-The tables are frozen: a new style or effect goes at the end. The longest code fits a version 5 QR code (37 × 37) at
-error correction M.
+Version 2 is version 1 with the picture profile between byte 12 and the name, as `IspProfiles.Look.normal` keeps it
+(a black gamma range with no black gamma reads as middle, a knee slope with no knee as 0):
+
+| byte | value |
+|---|---|
+| 13 | gamma, index in `IspProfiles.CURVE_CODES`: 1 .. 4 (0, no profile, is refused: that recipe is a version 1 link) |
+| 14 | colour mode, index in `IspProfiles.GAMUT_CODES` |
+| 15 | black level, plus 15 |
+| 16 | black gamma, plus 7 |
+| 17 | black gamma range, index in `IspProfiles.RANGE_CODES` |
+| 18 | knee: 0 off, else the point in percent, 75 .. 105 |
+| 19 | knee slope, plus 5 |
+| 20 | colour saturation, plus 32 |
+| 21 | colour phase, plus 7 |
+| 22 | s-curve, plus 7 |
+| 23 .. | the name, as version 1's |
+
+A recipe without a profile is always written as version 1, so apps from before version 2 (camera up to v1.13.1, and
+Studio and recipelab.io before it) keep reading it; they refuse a version 2 link rather than read it without its
+profile, another look under the same name.
+
+The tables are frozen: a new style, effect, gamma or colour mode goes at the end. The longest version 1 code fits a
+version 5 QR code (37 × 37) at error correction M, the longest version 2 code a version 6 (41 × 41).
 
 ### On the camera
 

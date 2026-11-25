@@ -3,10 +3,11 @@ package com.voxivoid.recipelab;
 /**
  * A custom recipe as a link, for QR codes: {@code https://recipelab.io/r#<code>}. Recipe Lab Studio reads and writes
  * the same links (its {@code RecipeShare}): a phone's camera opens Studio with it, and Read Recipe QR Code here adds it.
- * The code is base64url, without padding, of these bytes (version 1; docs/DEVELOPMENT.md "Recipe share code"):
+ * The code is base64url, without padding, of these bytes (docs/DEVELOPMENT.md "Recipe share code"). The link is the
+ * same for every version: byte 0 says how to read the rest.
  *
  * <pre>
- *  0      1, the version
+ *  0      the version: 1 for a recipe without a picture profile, 2 for one with
  *  1      camera family: 0 {@link RecipeFormatV2#FAMILY}, the only one this app reads; another is refused
  *  2      style, index in {@link #STYLES} (runtime names, not the stored enum)
  *  3 4 5  saturation, contrast, sharpness, plus 3
@@ -16,23 +17,43 @@ package com.voxivoid.recipelab;
  *  10     DRO: 0 off, 1..5, 6 auto
  *  11     effect, index in {@link Recipes#PE_KEYS}
  *  12     effect option, index in {@link Recipes#subValues}; 0 for an effect without one
- *  13..   the name, ASCII, as {@link CustomRecipes#nameChar} allows, 1..24 characters
+ *  13..   version 1: the name, ASCII, as {@link CustomRecipes#nameChar} allows, 1..24 characters
  * </pre>
  *
- * Bytes 2..12 are this family's; a later family has its own after byte 1.
+ * Version 2 is version 1 with the picture profile ({@link IspProfiles.Look}, as {@link IspProfiles.Look#normal} keeps it) between
+ * the effect option and the name:
  *
- * The tables are frozen: a new style or effect goes at the end. test/fixtures/recipe-share-vectors.tsv is the same
- * file in both apps.
+ * <pre>
+ *  13     gamma, index in {@link IspProfiles#CURVE_CODES}: 1..4 (0, no profile, is a version 1 link)
+ *  14     colour mode, index in {@link IspProfiles#GAMUT_CODES}
+ *  15     black level, plus 15
+ *  16     black gamma, plus 7
+ *  17     black gamma range, index in {@link IspProfiles#RANGE_CODES}
+ *  18     knee: 0 off, else the point in percent, 75..105
+ *  19     knee slope, plus 5
+ *  20     colour saturation, plus 32
+ *  21     colour phase, plus 7
+ *  22     s-curve, plus 7
+ *  23..   the name, as version 1's
+ * </pre>
+ *
+ * A recipe without a profile is always written as version 1, so apps that predate version 2 read it; they refuse a
+ * version 2 link rather than read it without its profile. Bytes 2..12 are this family's; a later family has its own
+ * after byte 1.
+ *
+ * The tables are frozen: a new style, effect, gamma or colour mode goes at the end. test/fixtures/recipe-share-vectors.tsv
+ * is the same file in all three repos (the apps and recipelab.io).
  */
 public final class RecipeShare {
     private RecipeShare() {}
 
-    public static final int VERSION = 1;
+    /** the version of a recipe without a picture profile, and of one with */
+    public static final int VERSION = 1, VERSION_PROFILE = 2;
     public static final String PREFIX = "https://recipelab.io/r#";
     private static final String WWW_PREFIX = "https://www.recipelab.io/r#";
     /** this family's code in byte 1 */
     static final int FAMILY_CODE = 0;
-    private static final int HEAD = 13;
+    private static final int HEAD = 13, PROFILE_HEAD = 23;
 
     /** Style codes, by runtime name: frozen. */
     static final String[] STYLES = { "standard", "vivid", "neutral", "portrait", "landscape", "mono", "clear", "deep",
@@ -40,14 +61,17 @@ public final class RecipeShare {
 
     private static final String B64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
 
-    /** The link for {@code r}; null when its name or a value is one a recipe cannot hold, or it has a picture profile. */
+    /** The link for {@code r}: version 2 with a picture profile, else version 1; null when its name or a value is one a recipe cannot hold. */
     public static String encode(Recipes.Recipe r) {
         String name = r.name == null ? "" : r.name.trim();
-        if (CustomRecipes.problem(r) != null || !nameOk(name) || r.hasProfile()) return null;   // version 1 has no picture profile
+        if (CustomRecipes.problem(r) != null || !nameOk(name)) return null;
         int style = styleCode(r.style);
         if (style < 0) return null;
-        byte[] b = new byte[HEAD + name.length()];
-        b[0] = VERSION;
+        IspProfiles.Look l = r.hasProfile() ? r.look.normal() : null;
+        if (l != null && l.curve == IspProfiles.OFF) l = null;
+        int head = l == null ? HEAD : PROFILE_HEAD;
+        byte[] b = new byte[head + name.length()];
+        b[0] = (byte) (l == null ? VERSION : VERSION_PROFILE);
         b[1] = FAMILY_CODE;
         b[2] = (byte) style;
         b[3] = (byte) (r.sat + 3);
@@ -60,7 +84,19 @@ public final class RecipeShare {
         b[10] = (byte) r.dro;
         b[11] = (byte) r.pe;
         b[12] = (byte) (Recipes.subValues(r.pe) == null ? 0 : r.sub);
-        for (int i = 0; i < name.length(); i++) b[HEAD + i] = (byte) name.charAt(i);
+        if (l != null) {
+            b[13] = (byte) l.curve;
+            b[14] = (byte) l.gamut;
+            b[15] = (byte) (l.black + IspProfiles.BLACK_MAX);
+            b[16] = (byte) (l.blackGamma + IspProfiles.BGAMMA_MAX);
+            b[17] = (byte) l.range;
+            b[18] = (byte) (l.knee == IspProfiles.KNEE_OFF ? 0 : l.knee);
+            b[19] = (byte) (l.slope + IspProfiles.SLOPE_MAX);
+            b[20] = (byte) (l.sat + IspProfiles.SAT_MAX);
+            b[21] = (byte) (l.phase + IspProfiles.PHASE_MAX);
+            b[22] = (byte) (l.contrast + IspProfiles.CONTRAST_MAX);
+        }
+        for (int i = 0; i < name.length(); i++) b[head + i] = (byte) name.charAt(i);
         return PREFIX + base64Url(b);
     }
 
@@ -77,17 +113,20 @@ public final class RecipeShare {
         return null;
     }
 
-    /** The recipe a bare code carries (after the #); null when it cannot be read. */
+    /** The recipe a bare code carries (after the #), of either version; null when it cannot be read. */
     static Recipes.Recipe decodeCode(String code) {
         int[] b = unBase64Url(code);
-        if (b == null || b.length < 2 || b[0] != VERSION) return null;
-        if (b[1] != FAMILY_CODE || b.length <= HEAD) return null;   // made for other cameras
+        if (b == null || b.length < 2 || (b[0] != VERSION && b[0] != VERSION_PROFILE)) return null;
+        int head = b[0] == VERSION ? HEAD : PROFILE_HEAD;
+        if (b[1] != FAMILY_CODE || b.length <= head) return null;   // made for other cameras
         if (b[2] >= STYLES.length || b[11] >= Recipes.PE_KEYS.length) return null;
         int pe = b[11];
         String[] sv = Recipes.subValues(pe);
         if (sv == null ? b[12] != 0 : b[12] >= sv.length) return null;
         StringBuilder name = new StringBuilder();
-        for (int i = HEAD; i < b.length; i++) {
+        IspProfiles.Look look = null;
+        if (head == PROFILE_HEAD && (look = look(b)) == null) return null;
+        for (int i = head; i < b.length; i++) {
             if (b[i] > 0x7f) return null;
             name.append((char) b[i]);
         }
@@ -98,8 +137,21 @@ public final class RecipeShare {
         else if (b[6] == 1) wbMode = 0;
         else { wbMode = Params.WB_KELVIN; kelvin = b[6] * 100; }
         Recipes.Recipe r = new Recipes.Recipe(Recipes.CUSTOM, n, styleEnum(STYLES[b[2]]), b[3] - 3, b[4] - 3, b[5] - 3,
-                wbMode, kelvin, b[7] - 7, b[8] - 7, pe, b[9] - 15, b[10], b[12]);
+                wbMode, kelvin, b[7] - 7, b[8] - 7, pe, b[9] - 15, b[10], b[12], look);
         return CustomRecipes.problem(r) == null ? r : null;
+    }
+
+    /** version 2's picture profile, bytes 13..22; null when a byte is out of its range */
+    private static IspProfiles.Look look(int[] b) {
+        int knee = b[18] == 0 ? IspProfiles.KNEE_OFF : b[18];
+        if (b[13] < 1 || b[13] >= IspProfiles.CURVES || b[14] >= IspProfiles.GAMUTS || b[17] >= IspProfiles.RANGE_CODES.length
+                || b[15] > 2 * IspProfiles.BLACK_MAX || b[16] > 2 * IspProfiles.BGAMMA_MAX
+                || (b[18] != 0 && (b[18] < IspProfiles.KNEE_MIN || b[18] > IspProfiles.KNEE_MAX))
+                || b[19] > 2 * IspProfiles.SLOPE_MAX || b[20] > 2 * IspProfiles.SAT_MAX
+                || b[21] > 2 * IspProfiles.PHASE_MAX || b[22] > 2 * IspProfiles.CONTRAST_MAX) return null;
+        return new IspProfiles.Look(b[13], b[14], b[15] - IspProfiles.BLACK_MAX, b[16] - IspProfiles.BGAMMA_MAX, b[17], knee,
+                b[19] - IspProfiles.SLOPE_MAX, b[20] - IspProfiles.SAT_MAX, b[21] - IspProfiles.PHASE_MAX,
+                b[22] - IspProfiles.CONTRAST_MAX).normal();
     }
 
     /** A name the link can carry: trimmed, 1..24 characters a name may hold. */

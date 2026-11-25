@@ -94,7 +94,6 @@ final class TextZhHant {
         { "menu_read_qr_detail", "從手機或其他相機上的 QR 碼加入配方" },
         { "qr_share_hint", "用手機相機掃描即可加入 Recipe Lab Studio；在其他相機上請使用「讀取配方 QR 碼」" },
         { "qr_share_failed", "無法分享 %1$s：%2$s" },
-        { "qr_share_profile", "帶圖片設定檔的配方暫不能以 QR 碼分享" },
         { "qr_scan_title", "讀取配方 QR 碼" },
         { "qr_scan_live", "將相機對準 QR 碼。半按快門對焦。" },
         { "qr_scan_shutter", "將相機對準 QR 碼並按下快門。" },

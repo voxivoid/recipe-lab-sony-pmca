@@ -95,7 +95,6 @@ final class TextJa {
         { "menu_read_qr_detail", "スマートフォンや他のカメラのQRコードからレシピを追加" },
         { "qr_share_hint", "スマートフォンのカメラで読み取ると Recipe Lab Studio に追加できます。他のカメラでは「レシピQRコードを読む」を使います" },
         { "qr_share_failed", "%1$s は共有できません：%2$s" },
-        { "qr_share_profile", "ピクチャープロファイル付きのレシピはまだQRコードで共有できません" },
         { "qr_scan_title", "レシピQRコードを読む" },
         { "qr_scan_live", "カメラをコードに向けてください。半押しでピントを合わせます。" },
         { "qr_scan_shutter", "カメラをコードに向けてシャッターを押してください。" },

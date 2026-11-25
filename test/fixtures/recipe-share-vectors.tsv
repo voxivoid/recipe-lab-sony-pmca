@@ -1,5 +1,8 @@
-# Recipe share code test vectors (version 1: version, family, the family values, name). Same file in Recipe Lab (camera), Recipe Lab Studio and recipelab.io.
-# valid: code, name, style, saturation, contrast, sharpness, white-balance, amber-blue, green-magenta, exposure-thirds, dro, effect, effect-option (- for none)
+# Recipe share code test vectors. Same file in Recipe Lab (camera), Recipe Lab Studio and recipelab.io.
+# Version 1: version, family, the family values, name. Version 2: the same, then the picture profile, then the name;
+# only a recipe with a picture profile is written in it, so a recipe without one keeps its version 1 code.
+# valid (version 1): code, name, style, saturation, contrast, sharpness, white-balance, amber-blue, green-magenta, exposure-thirds, dro, effect, effect-option (- for none)
+# profile (version 2): valid's columns, then gamma, color-mode, black-level, black-gamma, black-gamma-range, knee, knee-slope, color-saturation, color-phase, s-curve
 # invalid: code, why. Tab separated.
 valid	AQAAAgUDAAoIDgYAAENsYXNzaWMgQ2hyb21l	Classic Chrome	standard	-1	2	0	auto	3	1	-1	auto	off	-
 valid	AQAAAwMDAAcHDwYAAEE	A	standard	0	0	0	auto	0	0	0	auto	off	-
@@ -10,8 +13,12 @@ valid	AQAIAwMDOAcHDwMFAUhpZ2ggS2V5IFBpbms	High Key Pink	light	0	0	0	5600K	0	0	0	
 valid	AQAFAwMDAAcHDwYGA1BhcnQgWWVsbG93	Part Yellow	mono	0	0	0	auto	0	0	0	auto	part-color	yellow
 valid	AQACAwMDAAcHDwYBAFRveSBOb3JtYWw	Toy Normal	neutral	0	0	0	auto	0	0	0	auto	toy-camera	normal
 valid	AQAKBQEEIAYJCwIJAGFiY2RlZmdoaWprbG1ub3BxcnN0dXZ3eA	abcdefghijklmnopqrstuvwx	night	2	-2	1	3200K	-1	2	-4	2	hdr-art	-
+profile	AgAAAwMDAAcHDwAAAAICDwcBAAUgBwdTLUxvZzMgQ2luZQ	S-Log3 Cine	standard	0	0	0	auto	0	0	0	off	off	-	s-log3	s-gamut3-cine	0	0	middle	off	0	0	0	0
+profile	AgABBgAFOA4AHgUAAAQDHg4CaQpADg5ITEcgTWF4	HLG Max	vivid	3	-3	2	5600K	7	-7	15	5	off	-	hlg	bt2020	15	7	wide	105	5	32	7	7
+profile	AgAFAAYAGQAOAAYBAgEBAAAASwAAAABMb2cyIE1pbiAodG95KQ	Log2 Min (toy)	mono	-3	3	-3	2500K	-7	7	-15	auto	toy-camera	warm	s-log2	s-gamut3	-15	-7	narrow	75	-5	-32	-7	-7
+profile	AgAKBQEEAQYJCwIAAAMAEgcBAAUYCQRhYmNkZWZnaGlqa2xtbm9wcXJzdHV2d3g	abcdefghijklmnopqrstuvwx	night	2	-2	1	keep	-1	2	-4	2	off	-	itu709	camera	3	0	middle	off	0	-8	2	-3
 invalid	AQAAAwMDAAcHDwYAAA	no name
-invalid	AgAAAwMDAAcHDwYAAE9r	version 2
+invalid	AgAAAwMDAAcHDwYAAE9r	version 2 laid out as version 1
 invalid	AAAAAwMDAAcHDwYAAE9r	version 0
 invalid	AQEAAwMDAAcHDwYAAE9r	family 1, unknown
 invalid	Af8AAwMDAAcHDwYAAE9r	family 255, unknown
@@ -39,3 +46,17 @@ invalid	AQAAAwMDAAcHDwYAAE9r=	padding
 invalid	AQAAAwMDAAcHDwYAAE9+	standard base64 char
 invalid	A	one char
 invalid	AQAAAwMDAAcHDwYAAEF	non-zero bits after the last byte
+invalid	AgAAAwMDAAcHDwAAAAACDwcBAAUgBwdTLUxvZzMgQ2luZQ	version 2 without a picture profile
+invalid	AgAAAwMDAAcHDwAAAAUCDwcBAAUgBwdTLUxvZzMgQ2luZQ	gamma past table
+invalid	AgAAAwMDAAcHDwAAAAIEDwcBAAUgBwdTLUxvZzMgQ2luZQ	color mode past table
+invalid	AgAAAwMDAAcHDwAAAAICHwcBAAUgBwdTLUxvZzMgQ2luZQ	black level +16
+invalid	AgAAAwMDAAcHDwAAAAICDw8BAAUgBwdTLUxvZzMgQ2luZQ	black gamma +8
+invalid	AgAAAwMDAAcHDwAAAAICDwcDAAUgBwdTLUxvZzMgQ2luZQ	black gamma range past table
+invalid	AgAAAwMDAAcHDwAAAAICDwcBSgUgBwdTLUxvZzMgQ2luZQ	knee 74
+invalid	AgAAAwMDAAcHDwAAAAICDwcBagUgBwdTLUxvZzMgQ2luZQ	knee 106
+invalid	AgAAAwMDAAcHDwAAAAICDwcBAAsgBwdTLUxvZzMgQ2luZQ	knee slope +6
+invalid	AgAAAwMDAAcHDwAAAAICDwcBAAVBBwdTLUxvZzMgQ2luZQ	color saturation +33
+invalid	AgAAAwMDAAcHDwAAAAICDwcBAAUgDwdTLUxvZzMgQ2luZQ	color phase +8
+invalid	AgAAAwMDAAcHDwAAAAICDwcBAAUgBw9TLUxvZzMgQ2luZQ	s-curve +8
+invalid	AgAAAwMDAAcHDwAAAAICDwcBAAUgBwc	version 2, no name
+invalid	AwAAAwMDAAcHDwYAAE9r	version 3

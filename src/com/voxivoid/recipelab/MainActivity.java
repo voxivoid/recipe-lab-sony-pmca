@@ -1312,7 +1312,6 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private void openShare() {
         Recipes.Recipe r = library.get(recipe);
         String link = RecipeShare.encode(r);
-        if (link == null && r.hasProfile()) { showToast(Lang.t("qr_share_profile"), 0); return; }
         if (link == null) { showToast(Lang.t("qr_share_failed", r.name, String.valueOf(CustomRecipes.problem(r))), 0); return; }
         QrCode code = QrCode.encodeText(link, QrCode.Ecc.MEDIUM);
         boolean[] m = new boolean[code.size * code.size];
