@@ -74,11 +74,11 @@ final class RecipeCardLayout {
                         : new RecipeCardLayout(SQUARE, 72, 200, column(312, 476, effect, false, new Grid(40, 72, 26, 30, 32)), rect(1080 - MARGIN - 420, 340, 420, 420), 340 + 420 + 40);
             case STORY:
                 return profile
-                        ? new RecipeCardLayout(STORY, 270, 400, wide(492, effect, true, new Grid(40, 76, 26, 32, 32)), rect((1080 - 480) / 2f, 1080, 480, 480), 1080 + 480 + 44)
+                        ? new RecipeCardLayout(STORY, 270, 380, wide(468, effect, true, new Grid(40, 76, 26, 32, 32)), rect((1080 - 480) / 2f, 1092, 480, 480), 1092 + 480 + 44)
                         : new RecipeCardLayout(STORY, 270, 420, wide(570, effect, false, new Grid(40, 105, 26, 36, 36)), rect((1080 - 520) / 2f, 1050, 520, 520), 1050 + 520 + 44);
             default:
                 return profile
-                        ? new RecipeCardLayout(PORTRAIT, 84, 208, wide(300, effect, true, new Grid(40, 68, 24, 28, 30)), rect((1080 - 400) / 2f, 840, 400, 400), 1280)
+                        ? new RecipeCardLayout(PORTRAIT, 72, 184, wide(276, effect, true, new Grid(40, 68, 24, 28, 30)), rect((1080 - 384) / 2f, 856, 384, 384), 1280)
                         : new RecipeCardLayout(PORTRAIT, 84, 224, wide(372, effect, false, new Grid(40, 100, 26, 36, 36)), rect((1080 - 440) / 2f, 800, 440, 440), 1280);
         }
     }
