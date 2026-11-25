@@ -503,7 +503,7 @@ final class Params {
     static boolean isChoice(int row) { return row == R_LOOK || row == R_STYLE || row == R_PE || row == R_SUB || row == R_QUAL || row == R_DRO || row == R_WBMODE || row == R_GAMMA || row == R_GAMUT || row == R_BRANGE; }
 
     /**
-     * One step on the focused chip: choices wrap, numbers clamp, WB toggles auto/kelvin, LOOK toggles style/effect,
+     * One step on the focused chip: choices wrap, numbers clamp, GAMMA brings its colour mode, WB toggles auto/kelvin, LOOK toggles style/effect,
      * EFFECT cycles the effects (never off), SUB cycles the staged effect's values. Changing the effect resets SUB and re-derives quality from {@code recipeQuality} (the current
      * recipe's quality from the Factory base), forcing JPEG when an effect is on. Returns true when the user changed
      * quality directly, which redefines the Factory base.
@@ -521,6 +521,7 @@ final class Params {
         if (row == R_STYLE) { int n = ROW_MAX[row] - ROW_MIN[row] + 1; do { edit[row] = ROW_MIN[row] + ((edit[row] - ROW_MIN[row] + n + dir) % n); } while (!Recipes.styleKnown(edit[row])); return false; }   // unidentified enum values are skipped
         if (isChoice(row)) { int n = ROW_MAX[row] - ROW_MIN[row] + 1; edit[row] = ROW_MIN[row] + ((edit[row] - ROW_MIN[row] + n + dir) % n); }   // choices wrap around
         else edit[row] = clamp(edit[row] + dir, ROW_MIN[row], ROW_MAX[row]);                                                                  // numbers clamp
+        if (row == R_GAMMA) edit[R_GAMUT] = IspProfiles.defaultGamut(edit[R_GAMMA]);
         if (row == R_QUAL && edit[R_QUAL] == Q_RAW) edit[R_QUAL] = dir > 0 ? Q_RAWJPG : Q_STD;   // RAW alone is not offered
         return row == R_QUAL;
     }

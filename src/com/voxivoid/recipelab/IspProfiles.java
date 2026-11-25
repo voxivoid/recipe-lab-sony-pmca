@@ -35,6 +35,19 @@ final class IspProfiles {
     static final int CAMERA = 0, SGAMUT3 = 1, SGAMUT3_CINE = 2, BT2020 = 3, GAMUTS = 4;
 
     /**
+     * The colour mode a curve is published with, as the built-in Pic Profiles pair them: what changing GAMMA sets. Any
+     * other can be picked afterwards.
+     */
+    static int defaultGamut(int curve) {
+        switch (curve) {
+            case SLOG2: return SGAMUT3;
+            case SLOG3: return SGAMUT3_CINE;
+            case HLG: return BT2020;
+            default: return CAMERA;
+        }
+    }
+
+    /**
      * LogC3 and ARRI Wide Gamut 3 were in test builds and are gone. Cards and preferences can still name them: the saved
      * look keeps its old numbers ({@link #storedCurve}), so a saved ITU709 or HLG stays itself, and a LogC3 reads as no
      * profile, an ARRI WG3 as the camera's colour.

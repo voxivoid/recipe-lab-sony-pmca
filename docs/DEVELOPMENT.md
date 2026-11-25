@@ -282,7 +282,7 @@ Evidence and the wider register map are in the a6000-qemu research repo (`docs/A
 
 | chip | values | what it does to the tables |
 |---|---|---|
-| GAMMA | *Off*, S-Log2, S-Log3, ITU709, HLG, Movie, Still, Cine1-4, ITU709(800%) | the base curve: a published formula, or from Movie on a table from the A6500 firmware (`tools/sony-gamma.py`), sampled with its 18% grey on knot 76 like the formulas. *Off* is no profile: the helper's `off`, the other chips hidden |
+| GAMMA | *Off*, S-Log2, S-Log3, ITU709, HLG, Movie, Still, Cine1-4, ITU709(800%) | the base curve: a published formula, or from Movie on a table from the A6500 firmware (`tools/sony-gamma.py`), sampled with its 18% grey on knot 76 like the formulas. *Off* is no profile: the helper's `off`, the other chips hidden. A step on the chip sets COLOR to the curve's own (`IspProfiles.defaultGamut`; Studio does the same) |
 | COLOR | Camera (BT.709, no change), S-Gamut3 (= S-Gamut), S-Gamut3.Cine, BT.2020 | the gamut matrix `inv(M_target) · M_709` |
 | BLACK | -15 .. +15 | black level: 3 code values per step at black, fading to none at white |
 | B.GAMMA, B.RANGE | -7 .. +7; Narrow / Middle / Wide (15 / 25 / 40% of the output) | black gamma: `top · (y/top)^e` under the range, `e = 2^(-0.6·level/7)`. B.RANGE shows only with B.GAMMA ≠ 0 |

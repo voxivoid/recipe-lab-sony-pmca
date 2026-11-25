@@ -243,6 +243,31 @@ class ParamsChipsTest {
         assertEquals("-12", fmt(R_CSAT, -12, e));
     }
 
+    @Test void changingGammaSetsItsColourMode() {
+        int[] want = new int[IspProfiles.CURVES];                       // CAMERA, but for the three below
+        want[IspProfiles.SLOG2] = IspProfiles.SGAMUT3;
+        want[IspProfiles.SLOG3] = IspProfiles.SGAMUT3_CINE;
+        want[IspProfiles.HLG] = IspProfiles.BT2020;
+        int[] e = factoryRows();
+        for (int dir : new int[] { +1, -1 }) {
+            for (int i = 0; i < IspProfiles.CURVES; i++) {
+                e[R_GAMUT] = IspProfiles.GAMUTS - 1;                    // picked by hand: the next curve replaces it
+                step(e, R_GAMMA, dir, Q_FINE);
+                assertEquals(want[e[R_GAMMA]], e[R_GAMUT], IspProfiles.CURVE_CODES[e[R_GAMMA]]);
+            }
+        }
+    }
+
+    @Test void theColourModeCanStillBeChanged() {
+        int[] e = factoryRows();
+        e[R_GAMMA] = IspProfiles.SLOG2; e[R_GAMUT] = IspProfiles.SGAMUT3;
+        step(e, R_GAMUT, +1, Q_FINE);
+        assertEquals(IspProfiles.SGAMUT3_CINE, e[R_GAMUT]);
+        step(e, R_CSAT, +1, Q_FINE);
+        assertEquals(IspProfiles.SGAMUT3_CINE, e[R_GAMUT], "only GAMMA sets it");
+        assertEquals(IspProfiles.SLOG2, e[R_GAMMA]);
+    }
+
     @Test void gammaIsOnEveryBody() {
         int[] e = factoryRows();
         assertTrue(rowVisible(R_GAMMA, e), "a body that cannot run a profile says why, it does not hide the chip");
