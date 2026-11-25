@@ -98,8 +98,11 @@ class QrScanTest {
 
     @Test void whatACodeHolds() {
         assertEquals(QrScan.RECIPE, QrScan.kind(LINK));
-        assertEquals(QrScan.UNREADABLE, QrScan.kind(RecipeShare.PREFIX + "AQEAAwMDAAcHDwYAAEE"), "a family this build does not know");
-        assertEquals(QrScan.UNREADABLE, QrScan.kind(RecipeShare.PREFIX + "Ag"), "a newer version");
+        assertEquals(QrScan.NEWER, QrScan.kind(RecipeShare.PREFIX + "AQEAAwMDAAcHDwYAAEE"), "a family this build does not know: update the app");
+        assertEquals(QrScan.NEWER, QrScan.kind(RecipeShare.PREFIX + "AwAAAwMDAAcHDwYAAE9r"), "a version this build does not know: update the app");
+        assertEquals(QrScan.UNREADABLE, QrScan.kind(RecipeShare.PREFIX + "Ag"), "a code cut short is damaged, not newer");
+        assertEquals(QrScan.UNREADABLE, QrScan.kind(RecipeShare.PREFIX + "AAAAAwMDAAcHDwYAAE9r"), "version 0 never existed");
+        assertEquals(QrScan.UNREADABLE, QrScan.kind(RecipeShare.PREFIX + "AQAAAwMDAAcHDwYAAEF"), "damaged is not newer");
         assertEquals(QrScan.NOT_RECIPE, QrScan.kind("WIFI:S:DIRECT-xx;T:WPA;P:secret;;"));
         assertEquals(QrScan.NOT_RECIPE, QrScan.kind("https://recipelab.io/studio"));
         assertEquals(QrScan.NOT_RECIPE, QrScan.kind(null));

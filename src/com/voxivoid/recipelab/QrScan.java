@@ -26,7 +26,7 @@ final class QrScan {
     private QrScan() {}
 
     /** what a code held: a recipe ({@link #recipe}), a recipe link this build cannot read, or not a recipe at all */
-    static final int RECIPE = 0, UNREADABLE = 1, NOT_RECIPE = 2;
+    static final int RECIPE = 0, UNREADABLE = 1, NOT_RECIPE = 2, NEWER = 3;
 
     private static final Map<DecodeHintType, Object> HINTS = new EnumMap<DecodeHintType, Object>(DecodeHintType.class);
     static {
@@ -83,10 +83,11 @@ final class QrScan {
         }
     }
 
-    /** what {@code text} is, of {@link #RECIPE}, {@link #UNREADABLE}, {@link #NOT_RECIPE} */
+    /** what {@code text} is, of {@link #RECIPE}, {@link #NEWER} (a recipe link from a newer app), {@link #UNREADABLE}, {@link #NOT_RECIPE} */
     static int kind(String text) {
         if (!RecipeShare.isLink(text)) return NOT_RECIPE;
-        return RecipeShare.decode(text) != null ? RECIPE : UNREADABLE;
+        if (RecipeShare.decode(text) != null) return RECIPE;
+        return RecipeShare.needsNewerApp(text) ? NEWER : UNREADABLE;
     }
 
     /**

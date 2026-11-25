@@ -514,6 +514,16 @@ repos, and each one's tests run it. The `#` part never reaches a server. The cod
 `=`, and stray bits after the last byte refuse it) of the bytes below. The link is the same for every version: byte 0
 says how to read the rest, so a link once shared keeps working.
 
+**Assume every table grows.** A newer app will write recipes this one cannot hold. Telling that apart from a damaged
+code is the rule, in all three repos (`RecipeShare.needsNewerApp`, Studio's the same, `recipeCodeNeedsNewerApp` on
+the site): a version above the highest known, or a camera family not known, is *newer* — say "update the app", never
+"invalid" — and anything else wrong (out of range, truncated) is *invalid*. The recipe file's `format: N` above the
+highest known is likewise refused as *made by a newer Recipe Lab: update the app*. So a change that adds a value to a
+table (a style, effect, option, gamma, colour mode) is a new link version and, for files, a new format, plus a new
+protocol number so Studio knows the camera reads it; an old reader then says *update* instead of misreading. Writers use
+the oldest version that holds the recipe. `RecipeShareTest` pins each table's size and fails when one grows: that
+failure is the reminder. Add the new `newer` rows to the vectors file when you bump the version. Never reorder a table.
+
 | byte | value |
 |---|---|
 | 0 | version: 1 for a recipe without a picture profile, 2 for one with |

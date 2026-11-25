@@ -37,12 +37,18 @@ package com.voxivoid.recipelab;
  *  23..   the name, as version 1's
  * </pre>
  *
- * A recipe without a profile is always written as version 1, so apps that predate version 2 read it; they refuse a
- * version 2 link rather than read it without its profile. Bytes 2..12 are this family's; a later family has its own
- * after byte 1.
+ * A recipe is written in the oldest version that can hold it: without a profile, version 1, so apps that predate version
+ * 2 read it; they refuse a version 2 link rather than read it without its profile. Bytes 2..12 are this family's; a later
+ * family has its own after byte 1.
  *
- * The tables are frozen: a new style, effect, gamma or colour mode goes at the end. test/fixtures/recipe-share-vectors.tsv
- * is the same file in all three repos (the apps and recipelab.io).
+ * <h3>New versions</h3>
+ * Assume this format grows. A version holds a fixed vocabulary (the tables below, the ranges); the tables are frozen, so a
+ * new style, effect, gamma or colour mode goes at the end <b>and</b> a recipe that uses one is written in a new version,
+ * never in one an older app already reads, which would find a value it does not know. The version byte is how an app that
+ * predates a link knows to say so: a version or a family it does not know is {@link #needsNewerApp}, and the person is told
+ * to update the app — never "invalid". Anything else wrong with a link (a value out of its range, a broken name, a
+ * truncated code) is invalid. IspProfilesTest and RecipeShareTest pin each version's vocabulary and fail when one grows.
+ * test/fixtures/recipe-share-vectors.tsv is the same file in all three repos (the apps and recipelab.io).
  */
 public final class RecipeShare {
     private RecipeShare() {}
@@ -111,6 +117,25 @@ public final class RecipeShare {
         if (link.startsWith(PREFIX)) return decodeCode(link.substring(PREFIX.length()));
         if (link.startsWith(WWW_PREFIX)) return decodeCode(link.substring(WWW_PREFIX.length()));
         return null;
+    }
+
+    /**
+     * Whether {@code link} is a recipe link this build cannot read because it was written by a newer app: a version this
+     * build does not know, or a camera family it does not. False for a link it reads and for one that is merely damaged.
+     */
+    public static boolean needsNewerApp(String link) {
+        if (link == null) return false;
+        if (link.startsWith(PREFIX)) return codeNeedsNewerApp(link.substring(PREFIX.length()));
+        if (link.startsWith(WWW_PREFIX)) return codeNeedsNewerApp(link.substring(WWW_PREFIX.length()));
+        return false;
+    }
+
+    /** {@link #needsNewerApp} for a bare code (after the #) */
+    static boolean codeNeedsNewerApp(String code) {
+        int[] b = unBase64Url(code);
+        if (b == null || b.length < 2) return false;
+        if (b[0] == VERSION || b[0] == VERSION_PROFILE) return b[1] != FAMILY_CODE;
+        return b[0] > VERSION_PROFILE;
     }
 
     /** The recipe a bare code carries (after the #), of either version; null when it cannot be read. */

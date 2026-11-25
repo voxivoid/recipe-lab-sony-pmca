@@ -114,7 +114,40 @@ class RecipeShareTest {
         for (String[] v : vectors("invalid")) {
             assertNull(RecipeShare.decode(RecipeShare.PREFIX + v[1]), v[2]);
             assertTrue(RecipeShare.isLink(RecipeShare.PREFIX + v[1]), "still a recipe link: " + v[2]);
+            assertFalse(RecipeShare.needsNewerApp(RecipeShare.PREFIX + v[1]), "damaged is not newer: " + v[2]);
         }
+    }
+
+    @Test void aLinkFromANewerAppIsRefusedAsNewerNotInvalid() throws IOException {
+        assertTrue(vectors("newer").size() >= 5);
+        for (String[] v : vectors("newer")) {
+            for (String prefix : new String[] { RecipeShare.PREFIX, "https://www.recipelab.io/r#" }) {
+                assertNull(RecipeShare.decode(prefix + v[1]), v[2]);
+                assertTrue(RecipeShare.needsNewerApp(prefix + v[1]), "tell the person to update: " + v[2]);
+                assertEquals(QrScan.NEWER, QrScan.kind(prefix + v[1]), v[2]);
+            }
+        }
+        for (String kind : new String[] { "valid", "profile" })
+            for (String[] v : vectors(kind)) assertFalse(RecipeShare.needsNewerApp(RecipeShare.PREFIX + v[1]), "a link read here is not newer: " + v[2]);
+        assertFalse(RecipeShare.needsNewerApp("https://recipelab.io/studio"));
+        assertFalse(RecipeShare.needsNewerApp(null));
+    }
+
+    /**
+     * What link version 1 and 2 hold, pinned. A table that grows hands an app that already reads the version a value it
+     * does not know: a recipe that uses the new value must be written in a NEW version (RecipeShare, "New versions"),
+     * with the old versions' vocabulary left as it is. Update these numbers only with that.
+     */
+    @Test void eachLinkVersionHoldsTheVocabularyItWasReleasedWith() {
+        assertEquals(13, RecipeShare.STYLES.length, "styles");
+        assertEquals(14, Recipes.PE_KEYS.length, "effects");
+        assertEquals(5, Recipes.subValues(1).length, "toy camera options");
+        assertEquals(4, Recipes.subValues(6).length, "part colour options");
+        assertEquals(3, Recipes.subValues(5).length, "soft high-key options");
+        assertEquals(2, Recipes.subValues(3).length, "posterization options");
+        assertEquals(12, IspProfiles.CURVES, "gammas, with 0 for none");
+        assertEquals(4, IspProfiles.GAMUTS, "colour modes");
+        assertEquals(3, IspProfiles.RANGE_CODES.length, "black gamma ranges");
     }
 
     @Test void everyBuiltInRoundTripsUnderAUserName() {

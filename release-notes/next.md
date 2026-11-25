@@ -3,6 +3,7 @@ New
 - The GAMMA chip also has Sony's own Movie, Still, Cine1, Cine2, Cine3, Cine4 and ITU709(800%) curves, taken from the A6500's firmware, and the Pic Profiles group has a ready-made recipe for each. Each puts middle grey where the other curves do, so exposure does not change when you switch between them.
 - Recipes with a picture profile can be shared: Share and LINKS.TXT now give them a recipelab.io link too, and recipe files on the card (RECIPES/*.YML) can carry a profile. Links to recipes without one are the same as before.
 - The recipe card (Share) is the same picture Recipe Lab Studio makes, word for word: the settings in groups (Look, White balance, Exposure, Picture Profile), only the ones the recipe uses, and the picture profile's settings when it has one.
+- A QR code or recipe file made by a newer Recipe Lab now says to update the app, instead of calling it unreadable.
 
 Changed
 - The chips are grouped, with a line between the groups. A new LOOK chip switches between a Creative Style and a Picture Effect; the effect chip no longer has an "off" of its own.

@@ -1760,6 +1760,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
                 if (fromPhoto) renderScan(Lang.t("qr_scan_shutter"));
                 return;
             }
+            case QrScan.NEWER: showToast(Lang.t("qr_newer"), 6000); closeQr(); return;
             case QrScan.UNREADABLE: showToast(Lang.t("qr_unreadable"), 6000); closeQr(); return;
         }
         Recipes.Recipe r = RecipeShare.decode(text);

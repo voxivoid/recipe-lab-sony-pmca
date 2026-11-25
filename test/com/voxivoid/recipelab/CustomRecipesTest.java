@@ -99,7 +99,7 @@ class CustomRecipesTest {
     @Test void aFileWithoutAFormatIsFormatOne() { assertEquals("Old", parse("name: Old\nstyle: mono").name); }
 
     @Test void aNewerFormatIsSkippedNotHalfRead() {
-        assertEquals("made by a newer Recipe Lab (format 4)", error("format: 4\nname: Future\nstyle: mono"));
+        assertEquals("made by a newer Recipe Lab (format 4): update the app", error("format: 4\nname: Future\nstyle: mono"));
     }
 
     @Test void aFormatThatIsNotANumberIsRefused() {
@@ -326,7 +326,7 @@ class CustomRecipesTest {
         CustomRecipes.Loaded l = CustomRecipes.load(dir);
         assertEquals(1, l.entries.size());
         assertEquals("Good", l.entries.get(0).recipe.name);
-        assertEquals(Arrays.asList("bad.YML: saturation: 9 is not allowed", "future.YML: made by a newer Recipe Lab (format 7)",
+        assertEquals(Arrays.asList("bad.YML: saturation: 9 is not allowed", "future.YML: made by a newer Recipe Lab (format 7): update the app",
                 "huge.YML: too large to be a recipe"), l.skipped);
         assertEquals("Skipped 3 files — first bad.YML: saturation: 9 is not allowed", CustomRecipes.skippedMessage(l.skipped));
         assertEquals("Skipped bad.YML: x", CustomRecipes.skippedMessage(Arrays.asList("bad.YML: x")));
