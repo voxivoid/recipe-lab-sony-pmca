@@ -1329,7 +1329,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         cardPainter.setTypeface(UiFont.of(this, Lang.current()));
         cardPainter.useStudioFonts(getAssets());
         String[] rows = { Lang.t("share_shape"), Lang.t("share_save"), Lang.t("share_show_qr") };
-        qr.card(cardPainter, RecipeCardLayout.of(cardShape, shareRecipe.hasProfile()), shareRecipe, shareModules, shareSize, rows,
+        qr.card(cardPainter, RecipeCardLayout.of(cardShape, shareRecipe), shareRecipe, shareModules, shareSize, rows,
                 RecipeCardLayout.LABEL[cardShape], shareRow, Keys.hints(Keys.H_SHARE, caps));
     }
 
@@ -1352,7 +1352,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
      */
     private void saveCard() {
         final Recipes.Recipe r = shareRecipe;
-        final RecipeCardLayout l = RecipeCardLayout.of(cardShape, r.hasProfile());
+        final RecipeCardLayout l = RecipeCardLayout.of(cardShape, r);
         final boolean[] modules = shareModules;
         final int size = shareSize;
         final File dcim = new File(cardRoot(), "DCIM");
