@@ -128,8 +128,8 @@ On an A6000 with firmware 3.21, yes: the **Profiles** group has S-Log2, S-Log3, 
 chip adds a profile to any recipe, with black level, black gamma, knee, colour saturation, colour phase and an S-curve
 to shape it ([Picture profiles](../README.md#picture-profiles)). The A6000 has no Picture Profile menu and cannot store a
 gamma curve, so the app writes the curve into the camera's memory: it lasts until the camera is switched off, and the
-app puts it back each time it opens. V-Log and Sony's own Cine and S-Cinetone curves are not there: their formulas are not
-published.
+app puts it back each time it opens. GAMMA also has Sony's own Movie, Still, Cine1–4 and ITU709(800%) curves, taken
+from the A6500's firmware. V-Log and S-Cinetone are not there.
 
 On every other body, no. The flattest thing available is a low-contrast Creative Style recipe, which is not the same
 thing.

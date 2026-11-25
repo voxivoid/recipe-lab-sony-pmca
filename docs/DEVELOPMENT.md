@@ -282,7 +282,7 @@ Evidence and the wider register map are in the a6000-qemu research repo (`docs/A
 
 | chip | values | what it does to the tables |
 |---|---|---|
-| GAMMA | *Off*, S-Log2, S-Log3, ITU709, HLG | the base curve. *Off* is no profile: the helper's `off`, the other chips hidden |
+| GAMMA | *Off*, S-Log2, S-Log3, ITU709, HLG, Movie, Still, Cine1-4, ITU709(800%) | the base curve: a published formula, or from Movie on a table from the A6500 firmware (`tools/sony-gamma.py`), sampled with its 18% grey on knot 76 like the formulas. *Off* is no profile: the helper's `off`, the other chips hidden |
 | COLOR | Camera (BT.709, no change), S-Gamut3 (= S-Gamut), S-Gamut3.Cine, BT.2020 | the gamut matrix `inv(M_target) · M_709` |
 | BLACK | -15 .. +15 | black level: 3 code values per step at black, fading to none at white |
 | B.GAMMA, B.RANGE | -7 .. +7; Narrow / Middle / Wide (15 / 25 / 40% of the output) | black gamma: `top · (y/top)^e` under the range, `e = 2^(-0.6·level/7)`. B.RANGE shows only with B.GAMMA ≠ 0 |
@@ -440,7 +440,7 @@ plus `family`. A recipe with one is written in format 3 (`RecipeFormatV3`): form
 | `amber-blue`, `green-magenta` | -7 .. +7, amber / green positive | 0 |
 | `exposure` | -5.0 .. +5.0 in thirds, as the chip shows it: `+0.7`, `-1.3`, `0` | 0 |
 | `dro` | `off`, `auto`, `1` .. `5` | auto |
-| `gamma` | format 3 only: `off`, `s-log2`, `s-log3`, `itu709`, `hlg` (a file from a test build with `logc3` loads with no profile, `awg3` as `camera`). `off` is a recipe without a profile, and the keys below are not read | off |
+| `gamma` | format 3 only: `off`, `s-log2`, `s-log3`, `itu709`, `hlg`, `movie`, `still`, `cine1`..`cine4`, `itu709-800` (a file from a test build with `logc3` loads with no profile, `awg3` as `camera`). `off` is a recipe without a profile, and the keys below are not read | off |
 | `color-mode` | `camera`, `s-gamut3`, `s-gamut3-cine`, `bt2020` | camera |
 | `black-level` | -15 .. +15 | 0 |
 | `black-gamma`, `black-gamma-range` | -7 .. +7; `narrow`, `middle`, `wide` | 0; middle |

@@ -64,13 +64,58 @@ class IspProfilesTest {
         assertArrayEquals(new int[] { 16384, 0, 0, 0, 16384, 0, 0, 0, 16384 }, IspProfiles.matrixQ14(P_ITU709), "the camera's colour, untouched");
     }
 
+    // ------------------------------------------------------------ Sony's firmware curves
+    @Test void aSonyCurveWithNoAdjustmentIsItsTable() {
+        for (int c = IspProfiles.MOVIE; c < IspProfiles.CURVES; c++) {
+            assertTrue(IspProfiles.isTable(c));
+            int[] g = IspProfiles.gamma(new IspProfiles.Look(c, IspProfiles.CAMERA));
+            for (int i = 0; i < 96; i++)
+                assertEquals(IspProfiles.curveCode(c, 0.18 * IspProfiles.KNOTS[i] / IspProfiles.GREY_KNOT), g[i], 1e-9, IspProfiles.CURVE_CODES[c] + " knot " + i);
+        }
+        for (int c = IspProfiles.SLOG2; c <= IspProfiles.HLG; c++) assertFalse(IspProfiles.isTable(c));
+    }
+
+    @Test void sonyCurvesPutGreyWhereTheirShapesSay() {
+        int grey = 34;                                             // knot 76 = 18% grey
+        // Cine1-3 are Sony's HG4609G33, HG4600G30 and HG3259G40: grey at 33%, 30% and 40% of video (353, 327, 414)
+        assertEquals(357, IspProfiles.gamma(new IspProfiles.Look(IspProfiles.CINE1, IspProfiles.CAMERA))[grey]);
+        assertEquals(327, IspProfiles.gamma(new IspProfiles.Look(IspProfiles.CINE2, IspProfiles.CAMERA))[grey]);
+        assertEquals(423, IspProfiles.gamma(new IspProfiles.Look(IspProfiles.CINE3, IspProfiles.CAMERA))[grey]);
+        // Movie and ITU709(800%) are BT.709 below their shoulders: grey within a few codes of ITU709's 418
+        assertEquals(417, IspProfiles.gamma(new IspProfiles.Look(IspProfiles.MOVIE, IspProfiles.CAMERA))[grey]);
+        assertEquals(426, IspProfiles.gamma(new IspProfiles.Look(IspProfiles.ITU709_800, IspProfiles.CAMERA))[grey]);
+        // their tops: Cine1 109% of Cine2's 100%; Movie the full range
+        assertEquals(957, IspProfiles.curveCode(IspProfiles.CINE1, 10), 1e-9);
+        assertEquals(878, IspProfiles.curveCode(IspProfiles.CINE2, 10), 1e-9);
+        assertEquals(1023, IspProfiles.curveCode(IspProfiles.MOVIE, 10), 1e-9);
+    }
+
+    @Test void aTableIsLinearBetweenItsKnotsAndFlatOutside() {
+        int[] t = new int[96];
+        for (int i = 0; i < 96; i++) t[i] = 10 * i;
+        double perKnot = 0.18 / IspProfiles.GREY_KNOT;
+        assertEquals(0, IspProfiles.tableCode(t, 0), 1e-9);
+        assertEquals(0, IspProfiles.tableCode(t, 2 * perKnot), 1e-9, "the first knot");
+        assertEquals(340, IspProfiles.tableCode(t, 76 * perKnot), 1e-9, "a knot is its value");
+        assertEquals(345, IspProfiles.tableCode(t, 78 * perKnot), 1e-9, "half way from knot 76 to 80");
+        assertEquals(950, IspProfiles.tableCode(t, 5000 * perKnot), 1e-9, "past 2047");
+    }
+
+    @Test void sonyCurvesKeepTheirNumbersAfterTheRetiredOne() {
+        assertEquals(6, IspProfiles.storedCurve(IspProfiles.MOVIE));
+        assertEquals(12, IspProfiles.storedCurve(IspProfiles.ITU709_800));
+        for (int c = 0; c < IspProfiles.CURVES; c++) assertEquals(c, IspProfiles.curveFromStored(IspProfiles.storedCurve(c)));
+    }
+
     // ------------------------------------------------------------ properties any correct curve or gamut has
     @Test void everyCurveRisesAndIsContinuousAtItsBreakpoint() {
         for (int c = 1; c < IspProfiles.CURVES; c++) {
             double prev = IspProfiles.curveCode(c, 0);
             for (int i = 1; i <= 4000; i++) {
                 double r = 5.0 * i / 4000, code = IspProfiles.curveCode(c, r);
-                assertTrue(code > prev, IspProfiles.CURVE_CODES[c] + " at " + r);
+                // a formula rises everywhere; a table may hold flat where the firmware's does, and past its last knot
+                if (IspProfiles.isTable(c)) assertTrue(code >= prev, IspProfiles.CURVE_CODES[c] + " at " + r);
+                else assertTrue(code > prev, IspProfiles.CURVE_CODES[c] + " at " + r);
                 prev = code;
             }
         }
@@ -256,7 +301,9 @@ class IspProfilesTest {
         assertEquals(IspProfiles.CURVES, IspProfiles.CURVE_CODES.length);
         assertEquals(IspProfiles.GAMUTS, IspProfiles.GAMUT_CODES.length);
         assertEquals(2, IspProfiles.indexOf(IspProfiles.CURVE_CODES, "s-log3"));
-        assertEquals(-1, IspProfiles.indexOf(IspProfiles.CURVE_CODES, "cine4"));
+        assertEquals(10, IspProfiles.indexOf(IspProfiles.CURVE_CODES, "cine4"));
+        assertEquals(-1, IspProfiles.indexOf(IspProfiles.CURVE_CODES, "s-cinetone"));
+        assertEquals("ITU709(800%) / ITU709 Matrix", new IspProfiles.Look(IspProfiles.ITU709_800, IspProfiles.CAMERA).name());
     }
 
     @Test void theFileIsWhatTheHelperReads() {

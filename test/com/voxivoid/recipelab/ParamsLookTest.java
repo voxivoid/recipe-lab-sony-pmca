@@ -138,7 +138,8 @@ class ParamsLookTest {
         assertTrue(Params.lookText(new IspProfiles.Look(IspProfiles.ITU709, IspProfiles.CAMERA)).startsWith("4,"));
         assertTrue(Params.lookText(new IspProfiles.Look(IspProfiles.HLG, IspProfiles.BT2020)).startsWith("5,"));
         assertNull(Params.lookFrom("3,4,0,0,1,74,0,0,0,0"), "LogC3 is no profile");
-        assertNull(Params.lookFrom("6,0,0,0,1,74,0,0,0,0"), "past the last curve");
+        assertEquals(IspProfiles.MOVIE, Params.lookFrom("6,0,0,0,1,74,0,0,0,0").curve);
+        assertNull(Params.lookFrom("13,0,0,0,1,74,0,0,0,0"), "past the last curve");
         assertEquals(IspProfiles.CAMERA, Params.lookFrom("2,4,0,0,1,74,0,0,0,0").gamut, "ARRI WG3 falls back to the camera's colour");
         assertTrue(Params.retiredLook("3,4,0,0,1,74,0,0,0,0"));
         assertFalse(Params.retiredLook("4,0,0,0,1,74,0,0,0,0"));

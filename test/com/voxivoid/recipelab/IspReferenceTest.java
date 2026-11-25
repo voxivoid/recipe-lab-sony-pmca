@@ -41,7 +41,9 @@ class IspReferenceTest {
             assertEquals(want, got, CODE_TOLERANCE, f[1] + " at reflectance " + r);
             seen[curve]++;
         }
-        for (int c = 1; c < IspProfiles.CURVES; c++) assertTrue(seen[c] > 200, IspProfiles.CURVE_CODES[c] + ": " + seen[c] + " rows");
+        // Sony's tables have no formula for colour-science to compute; IspProfilesTest checks them against the firmware's
+        for (int c = 1; c < IspProfiles.CURVES; c++)
+            assertEquals(!IspProfiles.isTable(c), seen[c] > 200, IspProfiles.CURVE_CODES[c] + ": " + seen[c] + " rows");
     }
 
     @Test void theHlgWhiteIsBt2408s() {

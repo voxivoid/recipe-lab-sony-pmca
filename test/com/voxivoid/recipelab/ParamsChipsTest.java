@@ -223,8 +223,10 @@ class ParamsChipsTest {
         step(e, R_GAMMA, +1, Q_FINE);
         assertEquals(IspProfiles.SLOG2, e[R_GAMMA]);
         step(e, R_GAMMA, -1, Q_FINE); step(e, R_GAMMA, -1, Q_FINE);
-        assertEquals(IspProfiles.HLG, e[R_GAMMA], "a choice: wraps through Off");
-        assertEquals("HLG", fmt(R_GAMMA, e[R_GAMMA], e));
+        assertEquals(IspProfiles.ITU709_800, e[R_GAMMA], "a choice: wraps through Off");
+        assertEquals("ITU709(800%)", fmt(R_GAMMA, e[R_GAMMA], e));
+        assertEquals("HLG", fmt(R_GAMMA, IspProfiles.HLG, e));
+        assertEquals("Cine4", fmt(R_GAMMA, IspProfiles.CINE4, e));
         assertEquals(Lang.t("value_off"), fmt(R_GAMMA, IspProfiles.OFF, e));
         assertEquals("S-Gamut3.Cine", fmt(R_GAMUT, IspProfiles.SGAMUT3_CINE, e));
         assertEquals("ITU709 Matrix", fmt(R_GAMUT, IspProfiles.CAMERA, e));

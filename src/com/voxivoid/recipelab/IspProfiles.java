@@ -14,19 +14,22 @@ package com.voxivoid.recipelab;
  * Everything here is camera-free (tools/test.sh): the 96 gamma words, the matrices, the file the helper reads,
  * the root command line and how the helper's log is read back. No android.* import may appear in this class.
  *
- * Only profiles whose formulas and primaries are published are here (Sony S-Log2, S-Log3, S-Gamut, S-Gamut3,
- * S-Gamut3.Cine; ITU-R BT.709; BT.2100 HLG with BT.2020). Sony's own
- * Movie / Still / Cine1-4 / S-Cinetone shapes are not published, so they are not offered.
+ * Curves with a published formula are computed from it (Sony S-Log2, S-Log3; ITU-R BT.709; BT.2100 HLG), as are the
+ * gamuts (S-Gamut, S-Gamut3, S-Gamut3.Cine, BT.2020). Sony's Movie, Still, Cine1-4 and ITU709(800%) have no published
+ * formula: they are tables read from the A6500's firmware (tools/sony-gamma.py says where and how they are named).
  */
 final class IspProfiles {
     private IspProfiles() {}
 
     // ------------------------------------------------------------ the look: every parameter a profile recipe holds
-    /** gamma curves; OFF is no profile at all (the camera's own look) */
-    static final int OFF = 0, SLOG2 = 1, SLOG3 = 2, ITU709 = 3, HLG = 4, CURVES = 5;
+    /** gamma curves; OFF is no profile at all (the camera's own look). From MOVIE on, a curve is a firmware table. */
+    static final int OFF = 0, SLOG2 = 1, SLOG3 = 2, ITU709 = 3, HLG = 4,
+            MOVIE = 5, STILL = 6, CINE1 = 7, CINE2 = 8, CINE3 = 9, CINE4 = 10, ITU709_800 = 11, CURVES = 12;
     /** the file's spelling of each curve (frozen) and what the chip shows (canonical names, no language translates them) */
-    static final String[] CURVE_CODES = { "off", "s-log2", "s-log3", "itu709", "hlg" };
-    private static final String[] CURVE_LABEL = { null, "S-Log2", "S-Log3", "ITU709", "HLG" };
+    static final String[] CURVE_CODES = { "off", "s-log2", "s-log3", "itu709", "hlg",
+            "movie", "still", "cine1", "cine2", "cine3", "cine4", "itu709-800" };
+    private static final String[] CURVE_LABEL = { null, "S-Log2", "S-Log3", "ITU709", "HLG",
+            "Movie", "Still", "Cine1", "Cine2", "Cine3", "Cine4", "ITU709(800%)" };
 
     /** colour modes (gamuts): CAMERA keeps the camera's colour (BT.709), Sony's "ITU709 Matrix" */
     static final int CAMERA = 0, SGAMUT3 = 1, SGAMUT3_CINE = 2, BT2020 = 3, GAMUTS = 4;
@@ -159,14 +162,70 @@ final class IspProfiles {
     /** HLG scene light of a reflectance: BT.2408 puts 100% diffuse white at 75% HLG, so r = 1 maps to E = 0.26496 */
     static final double HLG_WHITE = 0.26496;
 
-    /** the base curve's output, 10-bit code value and not clipped, for a scene reflectance */
+    /**
+     * Sony's own curves, 10-bit code values at the 96 knots: the A6500 v1.06 firmware's 2048-entry video tables,
+     * resampled so the input each puts 18% grey on lands on {@link #GREY_KNOT}, like every curve here. Written by
+     * tools/sony-gamma.py from the firmware; do not edit by hand.
+     */
+    private static final int[] MOVIE_TABLE = {                         // firmware slot 22
+        32, 55, 80, 102, 120, 137, 152, 166, 180, 192, 204, 216, 227, 237, 247, 257, 266, 275, 283, 292, 300, 308, 316, 324,
+        332, 339, 347, 354, 360, 367, 374, 380, 393, 405, 417, 429, 441, 452, 462, 473, 484, 494, 503, 513, 523, 532, 541, 550,
+        567, 584, 601, 617, 633, 648, 663, 677, 691, 705, 718, 732, 745, 757, 770, 783, 805, 826, 842, 856, 869, 882, 892, 902,
+        910, 918, 925, 931, 936, 941, 945, 948, 960, 971, 979, 987, 993, 999, 1005, 1010, 1023, 1023, 1023, 1023, 1023, 1023, 1023, 1023 };
+    private static final int[] STILL_TABLE = {                         // firmware slot 0
+        17, 30, 45, 60, 75, 89, 104, 119, 133, 146, 159, 172, 185, 195, 206, 219, 231, 241, 251, 261, 270, 280, 289, 299,
+        311, 321, 331, 340, 349, 359, 368, 379, 395, 411, 429, 446, 460, 473, 484, 496, 508, 520, 530, 541, 551, 561, 571, 581,
+        600, 619, 637, 653, 669, 683, 697, 709, 722, 734, 745, 756, 765, 775, 783, 791, 806, 820, 833, 846, 858, 870, 881, 891,
+        899, 906, 913, 920, 926, 932, 938, 943, 960, 971, 979, 987, 993, 999, 1005, 1010, 1023, 1023, 1023, 1023, 1023, 1023, 1023, 1023 };
+    private static final int[] CINE1_TABLE = {                         // firmware slot 24
+        44, 74, 97, 112, 124, 136, 146, 156, 165, 175, 184, 192, 200, 208, 216, 223, 230, 237, 244, 251, 258, 264, 271, 278,
+        284, 290, 296, 302, 308, 314, 319, 325, 336, 346, 357, 367, 377, 387, 396, 406, 415, 423, 432, 441, 449, 457, 465, 472,
+        487, 501, 515, 529, 542, 554, 566, 578, 589, 599, 609, 620, 629, 639, 648, 656, 673, 688, 703, 716, 729, 741, 753, 763,
+        773, 783, 792, 801, 809, 817, 824, 831, 855, 876, 892, 906, 918, 929, 937, 945, 957, 957, 957, 957, 957, 957, 957, 957 };
+    private static final int[] CINE2_TABLE = {                         // firmware slot 25
+        41, 68, 89, 103, 114, 125, 134, 143, 152, 160, 168, 176, 184, 191, 198, 205, 211, 218, 224, 230, 236, 243, 248, 255,
+        260, 266, 271, 277, 282, 288, 293, 298, 308, 318, 327, 337, 346, 355, 363, 372, 380, 389, 396, 404, 412, 419, 426, 433,
+        447, 460, 473, 486, 497, 509, 519, 530, 540, 550, 559, 569, 577, 586, 594, 602, 617, 632, 645, 657, 669, 680, 691, 700,
+        710, 719, 727, 735, 742, 749, 756, 762, 785, 803, 819, 832, 843, 852, 860, 867, 878, 878, 878, 878, 878, 878, 878, 878 };
+    private static final int[] CINE3_TABLE = {                         // firmware slot 26
+        39, 63, 83, 101, 117, 132, 145, 158, 171, 183, 195, 205, 216, 226, 237, 247, 256, 266, 275, 284, 292, 301, 310, 318,
+        327, 335, 343, 351, 358, 366, 373, 381, 395, 410, 423, 438, 451, 464, 477, 490, 502, 514, 525, 535, 544, 553, 561, 569,
+        584, 597, 609, 621, 631, 641, 650, 658, 666, 674, 681, 688, 695, 701, 707, 713, 724, 734, 744, 752, 761, 769, 776, 783,
+        790, 797, 803, 809, 815, 820, 826, 831, 850, 866, 881, 895, 907, 919, 929, 939, 957, 958, 958, 958, 958, 958, 958, 958 };
+    private static final int[] CINE4_TABLE = {                         // firmware slot 27
+        41, 73, 101, 125, 146, 165, 182, 198, 213, 227, 240, 254, 266, 277, 289, 300, 310, 320, 330, 340, 348, 358, 367, 376,
+        384, 392, 401, 409, 416, 424, 431, 439, 453, 467, 480, 494, 507, 519, 531, 543, 555, 566, 575, 585, 593, 601, 609, 616,
+        629, 641, 651, 662, 671, 680, 688, 695, 702, 709, 715, 722, 728, 733, 738, 744, 753, 762, 771, 778, 786, 793, 799, 806,
+        812, 817, 823, 828, 833, 838, 842, 847, 863, 878, 891, 903, 914, 924, 933, 941, 957, 958, 958, 958, 958, 958, 958, 958 };
+    private static final int[] ITU709_800_TABLE = {                         // firmware slot 29
+        46, 71, 92, 111, 128, 144, 158, 172, 185, 197, 209, 220, 231, 242, 252, 261, 270, 280, 288, 297, 306, 314, 322, 330,
+        337, 345, 353, 360, 367, 373, 380, 387, 400, 413, 426, 437, 449, 460, 472, 483, 494, 504, 514, 524, 534, 543, 552, 560,
+        577, 592, 606, 619, 632, 644, 655, 665, 676, 685, 694, 702, 710, 717, 725, 732, 744, 756, 766, 775, 784, 792, 800, 806,
+        813, 818, 824, 829, 834, 838, 842, 846, 859, 870, 878, 886, 891, 896, 900, 904, 910, 914, 917, 920, 922, 924, 925, 927 };
+    private static final int[][] TABLES = { MOVIE_TABLE, STILL_TABLE, CINE1_TABLE, CINE2_TABLE, CINE3_TABLE, CINE4_TABLE, ITU709_800_TABLE };
+
+    /** whether a curve is one of Sony's tables rather than a published formula */
+    static boolean isTable(int curve) { return curve >= MOVIE && curve < CURVES; }
+
+    /** a table curve between its knots: linear, as the ISP interpolates; held flat before the first knot and after the last */
+    static double tableCode(int[] t, double r) {
+        double x = r * GREY_KNOT / 0.18;
+        if (x <= KNOTS[0]) return t[0];
+        for (int i = 1; i < 96; i++)
+            if (x <= KNOTS[i]) return t[i - 1] + (t[i] - t[i - 1]) * (x - KNOTS[i - 1]) / (KNOTS[i] - KNOTS[i - 1]);
+        return t[95];
+    }
+
+    /** the base curve's output, 10-bit code value (a formula's not clipped), for a scene reflectance */
     static double curveCode(int curve, double r) {
         switch (curve) {
             case SLOG2: return 64 + 876 * slog2(r);                  // S-Log2 is specified in legal range
             case SLOG3: return slog3(r) * 1023;                       // S-Log3 is code values already
             case ITU709: return rec709(r) * 1023;
             case HLG: return hlg(r * HLG_WHITE) * 1023;
-            default: throw new IllegalArgumentException("curve " + curve);
+            default:
+                if (isTable(curve)) return tableCode(TABLES[curve - MOVIE], r);
+                throw new IllegalArgumentException("curve " + curve);
         }
     }
 

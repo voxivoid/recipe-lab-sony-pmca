@@ -47,7 +47,7 @@ invalid	AQAAAwMDAAcHDwYAAE9+	standard base64 char
 invalid	A	one char
 invalid	AQAAAwMDAAcHDwYAAEF	non-zero bits after the last byte
 invalid	AgAAAwMDAAcHDwAAAAACDwcBAAUgBwdTLUxvZzMgQ2luZQ	version 2 without a picture profile
-invalid	AgAAAwMDAAcHDwAAAAUCDwcBAAUgBwdTLUxvZzMgQ2luZQ	gamma past table
+invalid	AgAAAwMDAAcHDwAAAAwCDwcBAAUgBwdTLUxvZzMgQ2luZQ	gamma past table
 invalid	AgAAAwMDAAcHDwAAAAIEDwcBAAUgBwdTLUxvZzMgQ2luZQ	color mode past table
 invalid	AgAAAwMDAAcHDwAAAAICHwcBAAUgBwdTLUxvZzMgQ2luZQ	black level +16
 invalid	AgAAAwMDAAcHDwAAAAICDw8BAAUgBwdTLUxvZzMgQ2luZQ	black gamma +8

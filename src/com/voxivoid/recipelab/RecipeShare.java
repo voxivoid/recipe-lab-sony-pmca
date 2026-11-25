@@ -24,7 +24,7 @@ package com.voxivoid.recipelab;
  * the effect option and the name:
  *
  * <pre>
- *  13     gamma, index in {@link IspProfiles#CURVE_CODES}: 1..4 (0, no profile, is a version 1 link)
+ *  13     gamma, index in {@link IspProfiles#CURVE_CODES}: 1..CURVES-1 (0, no profile, is a version 1 link)
  *  14     colour mode, index in {@link IspProfiles#GAMUT_CODES}
  *  15     black level, plus 15
  *  16     black gamma, plus 7

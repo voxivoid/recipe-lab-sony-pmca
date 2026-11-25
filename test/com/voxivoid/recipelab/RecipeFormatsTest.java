@@ -217,7 +217,7 @@ class RecipeFormatsTest {
 
     @Test void formatThreeSkipsAProfileValueOutOfRange() {
         String base = "format: 3\nfamily: sony-creative-style\nname: A\ngamma: s-log3\n";
-        assertEquals("gamma: cine4 is not allowed", RecipeFormats.parse("format: 3\nfamily: sony-creative-style\nname: A\ngamma: cine4\n", "x.YML").error);
+        assertEquals("gamma: s-cinetone is not allowed", RecipeFormats.parse("format: 3\nfamily: sony-creative-style\nname: A\ngamma: s-cinetone\n", "x.YML").error);
         assertEquals("color-mode: v-gamut is not allowed", RecipeFormats.parse(base + "color-mode: v-gamut\n", "x.YML").error);
         assertEquals("black-level: +16 is not allowed", RecipeFormats.parse(base + "black-level: +16\n", "x.YML").error);
         assertEquals("black-gamma-range: huge is not allowed", RecipeFormats.parse(base + "black-gamma-range: huge\n", "x.YML").error);
