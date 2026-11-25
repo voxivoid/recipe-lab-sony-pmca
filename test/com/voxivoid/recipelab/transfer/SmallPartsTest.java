@@ -21,7 +21,7 @@ class SmallPartsTest {
     }
 
     @Test void infoDocument() {
-        assertEquals("{\"app\":\"recipe-lab\",\"protocol\":5,\"model\":\"ILCE-6000\",\"name\":\"Sony \\u03b16000\"}",
+        assertEquals("{\"app\":\"recipe-lab\",\"protocol\":6,\"model\":\"ILCE-6000\",\"name\":\"Sony \\u03b16000\"}",
             Protocol.infoJson("ILCE-6000", Protocol.friendlyName("ILCE-6000")));
     }
 

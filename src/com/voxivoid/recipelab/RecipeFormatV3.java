@@ -1,5 +1,6 @@
 package com.voxivoid.recipelab;
 
+import java.util.Locale;
 import java.util.Map;
 
 import static com.voxivoid.recipelab.CustomRecipes.bad;
@@ -45,17 +46,17 @@ final class RecipeFormatV3 implements RecipeFormat {
     public CustomRecipes.Parsed read(Map<String, String> kv, String fileName) {
         CustomRecipes.Parsed p = V2.read(kv, fileName);
         if (p.recipe == null) return p;
-        String v = kv.get("gamma");
+        String v = low(kv, "gamma");
         if (v == null || v.equals("off") || v.equals(IspProfiles.RETIRED_CURVE)) return p;
         int curve = IspProfiles.indexOf(IspProfiles.CURVE_CODES, v);
         if (curve < 1) return fail(bad("gamma", v));
         int gamut = IspProfiles.CAMERA;
-        if ((v = kv.get("color-mode")) != null && !v.equals(IspProfiles.RETIRED_GAMUT)
+        if ((v = low(kv, "color-mode")) != null && !v.equals(IspProfiles.RETIRED_GAMUT)
                 && (gamut = IspProfiles.indexOf(IspProfiles.GAMUT_CODES, v)) < 0) return fail(bad("color-mode", v));
         int range = IspProfiles.MIDDLE;
-        if ((v = kv.get("black-gamma-range")) != null && (range = IspProfiles.indexOf(IspProfiles.RANGE_CODES, v)) < 0) return fail(bad("black-gamma-range", v));
+        if ((v = low(kv, "black-gamma-range")) != null && (range = IspProfiles.indexOf(IspProfiles.RANGE_CODES, v)) < 0) return fail(bad("black-gamma-range", v));
         int knee = IspProfiles.KNEE_OFF;
-        if ((v = kv.get("knee")) != null && !v.equals("off")) {
+        if ((v = low(kv, "knee")) != null && !v.equals("off")) {
             Integer n = integer(v);
             if (n == null || n < IspProfiles.KNEE_MIN || n > IspProfiles.KNEE_MAX) return fail(bad("knee", v));
             knee = n;
@@ -72,6 +73,12 @@ final class RecipeFormatV3 implements RecipeFormat {
         IspProfiles.Look look = new IspProfiles.Look(curve, gamut, n[0], n[1], range, knee, n[2], n[3], n[4], n[5]).normal();
         Recipes.Recipe r = p.recipe;
         return CustomRecipes.Parsed.ok(new Recipes.Recipe(r.group, r.name, r.style, r.sat, r.con, r.sharp, r.wbMode, r.kelvin, r.ab, r.gm, r.pe, r.ev, r.dro, r.sub, look));
+    }
+
+    /** a named value in lower case, as format 1's names are read ignoring case (and Studio reads these) */
+    private static String low(Map<String, String> kv, String key) {
+        String v = kv.get(key);
+        return v == null ? null : v.toLowerCase(Locale.US);
     }
 
     private static CustomRecipes.Parsed fail(String why) { return CustomRecipes.Parsed.fail(why); }

@@ -195,6 +195,16 @@ class RecipeFormatsTest {
         assertEquals(new IspProfiles.Look(IspProfiles.HLG, IspProfiles.CAMERA), l, "a key left out is the neutral value");
     }
 
+    @Test void formatThreeReadsProfileNamesIgnoringCase() {
+        String base = "format: 3\nfamily: sony-creative-style\nname: A\n";
+        CustomRecipes.Parsed p = RecipeFormats.parse(base + "gamma: S-Log3\ncolor-mode: S-Gamut3-Cine\nblack-gamma-range: WIDE\nknee: OFF\n", "x.YML");
+        assertNull(p.error, "as Studio reads them, and format 1 reads a style");
+        assertEquals(new IspProfiles.Look(IspProfiles.SLOG3, IspProfiles.SGAMUT3_CINE, 0, 0, IspProfiles.WIDE, IspProfiles.KNEE_OFF, 0, 0, 0, 0), p.recipe.look);
+        assertNull(RecipeFormats.parse(base + "gamma: OFF\n", "x.YML").recipe.look);
+        assertNull(RecipeFormats.parse(base + "gamma: LogC3\n", "x.YML").recipe.look);
+        assertEquals(IspProfiles.CAMERA, RecipeFormats.parse(base + "gamma: hlg\ncolor-mode: AWG3\n", "x.YML").recipe.look.gamut);
+    }
+
     @Test void aRecipeFileOnTheRetiredProfileStaysWithALookTheAppHas() {
         String base = "format: 3\nfamily: sony-creative-style\nname: A\n";
         CustomRecipes.Parsed p = RecipeFormats.parse(base + "gamma: logc3\ncolor-mode: awg3\nknee: 95\n", "x.YML");

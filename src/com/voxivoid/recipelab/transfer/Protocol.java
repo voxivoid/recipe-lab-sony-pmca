@@ -1,18 +1,20 @@
 package com.voxivoid.recipelab.transfer;
 
 /**
- * Protocol 5 constants and the JSON document that identify the camera. The phone app (Recipe Lab Studio)
+ * Protocol 6 constants and the JSON document that identify the camera. The phone app (Recipe Lab Studio)
  * requires exactly this app name and version; change them only together with it.
  *
  * <p>Protocol 2 over Photo Studio Link's protocol 1: the app is "recipe-lab", JPEGs are listed and previewed beside
  * the ARWs, and {@code GET /api/recipes} lists the custom recipe files. Protocol 3 over 2: {@code PUT} writes a custom
  * recipe file, so the phone can send recipes as well as fetch them; everything protocol 2 had is unchanged.
  * Protocol 4 over 3: {@code DELETE} removes a custom recipe file. Protocol 5 over 4: the camera reads recipe files of
- * format 2 ({@code RecipeFormatV2}), which is what the phone sends; nothing on the wire changed.
+ * format 2 ({@code RecipeFormatV2}), which is what the phone sends; nothing on the wire changed. Protocol 6 over 5: the
+ * camera reads format 3 ({@code RecipeFormatV3}), a recipe with a picture profile, which the phone sends only from 6 on;
+ * nothing on the wire changed.
  */
 public final class Protocol {
     public static final String APP = "recipe-lab";
-    public static final int VERSION = 5;
+    public static final int VERSION = 6;
     public static final int HTTP_PORT = 8080;
     /** The camera's own address when it runs the hotspot (Sony's Direct mode). */
     public static final String HOTSPOT_IP = "192.168.122.1";

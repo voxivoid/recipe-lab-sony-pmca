@@ -92,7 +92,7 @@ src/com/voxivoid/recipelab/
                                the live view on the Full panel only (DevTools.sponsorLine, Ko-fi); the About page lists Ko-fi and GitHub Sponsors
   HintBar.java                 legend view under the panel (uses Legend)
   NativeBackup.java            JNI: read / write / attr / sync
-  transfer/                    Transfer to phone (see Transfer to phone): the camera hotspot and the protocol 5 HTTP
+  transfer/                    Transfer to phone (see Transfer to phone): the camera hotspot and the protocol 6 HTTP
                                server for Recipe Lab Studio — no Android in it but Hotspot, HotspotP2p and TransferMode, covered by test/
 jni/jni.cpp                    Backup_read / Backup_write / Backup_sync_all via OpenMemories-Platform
 jni/platform/                  git submodule: ma1co/OpenMemories-Platform
@@ -469,7 +469,7 @@ app writes with the newest (`RecipeFormats.current()`). The YAML envelope every 
   protocol 5 is how Studio knows a camera reads them.
 - Format 3 exists for the picture profile: an older app, or a Studio that predates it, would read a profile recipe's
   Creative Style keys and drop the rest — another look under the same name. They skip a format 3 file instead, and a
-  recipe without a profile stays format 2 so they keep reading it.
+  recipe without a profile stays format 2 so they keep reading it. Protocol 6 is how Studio knows a camera reads them.
 
 **Untrusted input.** A file may come from anyone. Every value is checked against what the store takes
 (`CustomRecipes.problem`, the same ranges as the chips); one bad value skips the file with the reason, nothing is
@@ -572,8 +572,10 @@ recipes is the phone's job. There is no other mode: the camera never joins anoth
 It began as *Photo Studio Link*, a separate PMCA app speaking protocol 1; moving it into Recipe Lab made it protocol
 2, which adds the JPEGs and the recipe files. Protocol 3 adds one request, `PUT` of a custom recipe file, and
 changes nothing else; protocol 4 adds `DELETE` of one; protocol 5 changes nothing on the wire but says the camera reads
-format 2 recipe files. The phone app takes photos from any of them, sends recipes from 5 on (it writes format 2, which
-3 and 4 take but skip) and deletes them from 4 on.
+format 2 recipe files; protocol 6 likewise says it reads format 3 (a picture profile). The phone app takes photos from
+any of them, sends recipes from 5 on (it writes format 2, which 3 and 4 take but skip), a recipe with a picture profile
+from 6 on, and deletes them from 4 on. A phone app that predates a protocol refuses the camera (*Update both*), so
+Studio ships the new number first.
 
 **Hold MENU → Sync recipes** is the same hotspot and the same server under its own title, with the phone's other way
 in on the page (Import → Sync recipes): there the phone lists `RECIPES`, fetches the files it lacks and sends the ones
@@ -614,14 +616,14 @@ answer in 30 s (`TransferState.START_TIMEOUT_MS`) say so on the red line. There 
 
 The model in `/api/info` is `model.name` (`KeyProbe`) — `Build.MODEL` is `ScalarA` on every body.
 
-### Protocol 5
+### Protocol 6
 
 HTTP/1.1 on TCP port **8080**, all interfaces, one response per connection (`Connection: close`), files streamed
 in 32 KB chunks and never held whole. Paths are relative to the card root, with `/` separators.
 
 | request | response |
 |---|---|
-| `GET /api/info` | `{"app":"recipe-lab","protocol":5,"model":"ILCE-6000","name":"Sony α6000"}` — non-ASCII `\u` escaped, so `"Sony \u03b16000"` on the wire |
+| `GET /api/info` | `{"app":"recipe-lab","protocol":6,"model":"ILCE-6000","name":"Sony α6000"}` — non-ASCII `\u` escaped, so `"Sony \u03b16000"` on the wire |
 | `GET /api/files` | `{"files":[{"path":"DCIM/100MSDCF/DSC01542.ARW","size":25624576,"modified":1507981649000,"type":"arw"}, …]}`: every `.ARW`, `.JPG` and `.JPEG` (any case) outside `PRIVATE/`, `AVF_INFO/`, `RECIPES/` and dot-folders, newest first (equal times by path, descending), `modified` in epoch ms, `type` `arw` or `jpg` |
 | `GET /api/preview?path=<rel>&size=small\|large` | `image/jpeg` with `X-Orientation: 1–8`; `size` defaults to `large`. **ARW:** the JPEG embedded in it (about 1616×1080 large, 160×120 small; falls back to the other if one is missing). **JPEG:** `small` is its Exif thumbnail (IFD1, 160×120 on the A6000) — 404 when it has none; `large` is the file itself. The orientation is IFD0's 0x0112, 1 when absent |
 | `GET /api/recipes` | `{"files":[{"path":"RECIPES/GOLDENHO.YML","size":214,"modified":1507981649000}, …]}`: every `*.YML` (any case) directly in the `RECIPES` folder (any case) at the card root, by path; `{"files":[]}` when there is none. The path is the card's own spelling, ready for `/files/` |
@@ -898,7 +900,7 @@ against a SHA-256 pinned in the script (`JUNIT_JAR=<path>` points it at a copy w
 | `LibraryTest` | one index over the table and the custom recipes: the wheel walks into them and wraps, the panel counts them in the total |
 | `NameEntryTest` | the name editor: the placeholder the first character replaces, capitals, delete, the length limit, walking the grid with the four-way and the wheel |
 | `TransferStateTest` | Transfer to phone's page state: the hotspot starting, up with its network and password (quotes off), failing and why, the start timeout |
-| `LinkServerTest` | the protocol 5 server on an ephemeral port against a temporary card, over real sockets: DELETE of a recipe file (removed, refused, missing), PUT of a recipe file (new, replaced, refused, too large, a folder that links out), `/api/info`, the ARW and JPEG listing, ARW and JPEG previews (the Exif thumbnail, the file itself, none), `/api/recipes` in any case, ranges, HEAD, 405, path traversal and symlinks that lead out, concurrent downloads, the counters |
+| `LinkServerTest` | the protocol 6 server on an ephemeral port against a temporary card, over real sockets: DELETE of a recipe file (removed, refused, missing), PUT of a recipe file (new, replaced, refused, too large, a folder that links out), `/api/info`, the ARW and JPEG listing, ARW and JPEG previews (the Exif thumbnail, the file itself, none), `/api/recipes` in any case, ranges, HEAD, 405, path traversal and symlinks that lead out, concurrent downloads, the counters |
 | `FileIndexTest`, `ArwPreviewTest` | the photo listing (ARW and JPEG, `type`, newest first, `PRIVATE` / `AVF_INFO` / `RECIPES` / dot-folders skipped) and the recipe listing; the TIFF walk on synthetic ARWs and on JPEGs with an Exif thumbnail (both byte orders, kept inside the segment). `RECIPELAB_TEST_ARW=/path/to/A6000.ARW` adds checks against a real file |
 | `HttpRequestTest`, `ByteRangeTest`, `StorageRootTest`, `SmallPartsTest` | request parsing, `Range`, the path rules, JSON escaping, the info document, the rate meter |
 | `RecipeShareTest`, `QrScanTest` | the share code against the shared vectors, every field's range, refused codes; a generated code read back from a live view frame, a photo, small and off centre, light on dark; what a code holds; which pictures a press added and which to read; the photo's read size |
