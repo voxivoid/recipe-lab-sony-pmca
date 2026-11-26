@@ -33,8 +33,8 @@ class DevToolsTest {
     }
 
     @Test void theSampleRowNamesTheWholeTable() {
-        assertEquals("Shoot samples — 77 recipes", DevTools.rowLabel(DevTools.ROW_SAMPLES, false, 0));
-        assertEquals(77, Recipes.ALL.length, "the label counts the table, so the table is what it must count");
+        assertEquals("Shoot samples — 89 recipes", DevTools.rowLabel(DevTools.ROW_SAMPLES, false, 0));
+        assertEquals(89, Recipes.ALL.length, "the label counts the table, so the table is what it must count");
     }
 
     @Test void oneTurnOfTheMenuVisitsEveryRowItDefines() {

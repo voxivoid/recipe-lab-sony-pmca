@@ -17,6 +17,8 @@ package com.voxivoid.recipelab;
 public class Recipes {
     public static class Recipe {
         public final int group; public final String name; public final int style, sat, con, sharp, wbMode, kelvin, ab, gm, pe, ev, dro, sub;
+        /** the picture profile the recipe applies on top ({@link IspProfiles}); null for a recipe without one */
+        public final IspProfiles.Look look;
         Recipe(int group, String name, int style, int sat, int con, int sharp, int wbMode, int kelvin, int ab, int gm) {
             this(group, name, style, sat, con, sharp, wbMode, kelvin, ab, gm, 0, 0, DRO_AUTO);
         }
@@ -24,16 +26,22 @@ public class Recipes {
             this(group, name, style, sat, con, sharp, wbMode, kelvin, ab, gm, pe, ev, dro, 0);
         }
         Recipe(int group, String name, int style, int sat, int con, int sharp, int wbMode, int kelvin, int ab, int gm, int pe, int ev, int dro, int sub) {
-            this.sub = sub;
+            this(group, name, style, sat, con, sharp, wbMode, kelvin, ab, gm, pe, ev, dro, sub, null);
+        }
+        Recipe(int group, String name, int style, int sat, int con, int sharp, int wbMode, int kelvin, int ab, int gm, int pe, int ev, int dro, int sub, IspProfiles.Look look) {
+            this.sub = sub; this.look = look;
             this.group = group; this.name = name; this.style = style; this.sat = sat; this.con = con; this.sharp = sharp;
             this.wbMode = wbMode; this.kelvin = kelvin; this.ab = ab; this.gm = gm; this.pe = pe; this.ev = ev; this.dro = dro;
         }
         public boolean isEffect() { return pe != 0; }
+        /** a recipe with a picture profile: it writes the image processor's curve and matrix as well as the settings store */
+        public boolean hasProfile() { return look != null; }
         /** a recipe the user made, kept on the memory card ({@link CustomRecipes}), rather than one of the table below */
         public boolean isCustom() { return group == CUSTOM; }
         /** one-line summary for lists, in the display language: "Neutral  -4/-1  A1" */
         public String summary() {
             StringBuilder s = new StringBuilder();
+            if (look != null) s.append(IspProfiles.curveLabel(look.curve)).append("  ");
             if (pe != 0) { s.append(peLabel(pe)); String sl = subLabel(pe, sub); if (sl != null) s.append(' ').append(sl); } else s.append(styleLabel(style)).append("  ").append(sat > 0 ? "+" : "").append(sat).append('/').append(con > 0 ? "+" : "").append(con);
             if (ev != 0) s.append("  ").append(evLabel(ev));
             if (dro != DRO_AUTO) s.append("  DRO ").append(droLabel(dro));
@@ -102,10 +110,10 @@ public class Recipes {
     }
 
     // ---- groups (brands) — recipes below MUST be listed in group order
-    public static final String[] GROUPS = { "Sony", "Fuji Sim", "Fuji Film", "Kodak", "Cine", "Ricoh GR", "Leica", "Hasselblad", "Canon / Nikon", "Pana / Olympus", "Other Stocks", "Ilford" };
+    public static final String[] GROUPS = { "Sony", "Fuji Sim", "Fuji Film", "Kodak", "Cine", "Ricoh GR", "Leica", "Hasselblad", "Canon / Nikon", "Pana / Olympus", "Other Stocks", "Ilford", "Pic Profiles" };
     /** the group of a custom recipe: not a brand, so never an index into GROUPS */
     public static final int CUSTOM = -2;
-    private static final int SONY = 0, FSIM = 1, FFILM = 2, KODAK = 3, CINE = 4, RICOH = 5, LEICA = 6, HASSEL = 7, CANIK = 8, PANOLY = 9, OTHER = 10, ILFORD = 11;
+    private static final int SONY = 0, FSIM = 1, FFILM = 2, KODAK = 3, CINE = 4, RICOH = 5, LEICA = 6, HASSEL = 7, CANIK = 8, PANOLY = 9, OTHER = 10, ILFORD = 11, PROFILES = 12;
 
     public static final Recipe[] ALL = {
         // ---- Sony (Creative Looks from newer bodies — same pipeline, best fidelity)
@@ -197,7 +205,27 @@ public class Recipes {
         new Recipe(ILFORD,"Ilford Delta 100",                    MONO,     0,  1,  1, AUTO, 0,     0,  0),
         new Recipe(ILFORD,"Ilford Delta 3200",                   MONO,     0,  3, -2, AUTO, 0,     0,  0,  0,  2, 6),
         new Recipe(ILFORD,"Ilford Pan F 50",                     MONO,     0,  2,  2, AUTO, 0,     0,  0),
+        // ---- Pic Profiles: picture profiles (A6000 firmware 3.21): the published curves and gamuts, DRO off so nothing reshapes the curve
+        profile("S-Log2",       IspProfiles.SLOG2,  IspProfiles.SGAMUT3),
+        profile("S-Log3 Cine",  IspProfiles.SLOG3,  IspProfiles.SGAMUT3_CINE),
+        profile("S-Log3",       IspProfiles.SLOG3,  IspProfiles.SGAMUT3),
+        profile("ITU709",       IspProfiles.ITU709, IspProfiles.CAMERA),
+        profile("HLG",          IspProfiles.HLG,    IspProfiles.BT2020),
+        // Sony's own curves, read from the A6500's firmware (IspProfiles); the A6000 has no Movie/Still/Cinema colour
+        // modes, so they take the camera's matrix
+        profile("Movie",        IspProfiles.MOVIE,  IspProfiles.CAMERA),
+        profile("Still",        IspProfiles.STILL,  IspProfiles.CAMERA),
+        profile("Cine1",        IspProfiles.CINE1,  IspProfiles.CAMERA),
+        profile("Cine2",        IspProfiles.CINE2,  IspProfiles.CAMERA),
+        profile("Cine3",        IspProfiles.CINE3,  IspProfiles.CAMERA),
+        profile("Cine4",        IspProfiles.CINE4,  IspProfiles.CAMERA),
+        profile("ITU709(800%)", IspProfiles.ITU709_800, IspProfiles.CAMERA),
     };
+
+    /** a built-in picture profile recipe: Standard, auto white balance, DRO off, the curve and colour mode with no adjustment */
+    private static Recipe profile(String name, int curve, int gamut) {
+        return new Recipe(PROFILES, name, STD, 0, 0, 0, AUTO, 0, 0, 0, 0, 0, DRO_OFF, 0, new IspProfiles.Look(curve, gamut));
+    }
 
     /**
      * The camera's factory look: the first recipe of the Sony group, a recipe like the others — users looked for it and

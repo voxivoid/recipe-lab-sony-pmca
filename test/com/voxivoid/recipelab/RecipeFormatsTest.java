@@ -10,15 +10,15 @@ import org.junit.jupiter.api.Test;
  * every writer readable by its own reader — so a version added later leaves every file written before it loading.
  */
 class RecipeFormatsTest {
-    /** a version this build does not have yet: reads only a name, under a key formats 1 and 2 do not know */
-    private static final RecipeFormat FAKE_V3 = new RecipeFormat() {
-        public int version() { return 3; }
+    /** a version this build does not have yet: reads only a name, under a key formats 1 to 3 do not know */
+    private static final RecipeFormat FAKE_V4 = new RecipeFormat() {
+        public int version() { return 4; }
         public CustomRecipes.Parsed read(Map<String, String> keys, String fileName) {
             return CustomRecipes.Parsed.ok(CustomRecipes.renamed(Recipes.ALL[Recipes.FACTORY], keys.get("title")));
         }
-        public String write(Recipes.Recipe r, String madeOn) { return "format: 3\ntitle: " + r.name + "\n"; }
+        public String write(Recipes.Recipe r, String madeOn) { return "format: 4\ntitle: " + r.name + "\n"; }
     };
-    private static final RecipeFormat[] WITH_V3 = { new RecipeFormatV1(), new RecipeFormatV2(), FAKE_V3 };
+    private static final RecipeFormat[] WITH_V4 = { new RecipeFormatV1(), new RecipeFormatV2(), new RecipeFormatV3(), FAKE_V4 };
 
     @Test void versionsAreNumberedOneUpInOrderAndTheLastIsWritten() {
         for (int i = 0; i < RecipeFormats.ALL.length; i++) assertEquals(i + 1, RecipeFormats.ALL[i].version(), "version " + (i + 1));
@@ -38,21 +38,21 @@ class RecipeFormatsTest {
     }
 
     @Test void eachFileIsReadByTheVersionItNames() {
-        CustomRecipes.Parsed v3 = RecipeFormats.parse("format: 3\ntitle: From The Future\n", "x.YML", WITH_V3);
-        assertEquals("From The Future", v3.recipe.name, "read by the version 3 reader");
-        CustomRecipes.Parsed v1 = RecipeFormats.parse(new RecipeFormatV1().write(CustomRecipes.renamed(Recipes.ALL[3], "Old File"), null), "x.YML", WITH_V3);
+        CustomRecipes.Parsed v4 = RecipeFormats.parse("format: 4\ntitle: From The Future\n", "x.YML", WITH_V4);
+        assertEquals("From The Future", v4.recipe.name, "read by the version 4 reader");
+        CustomRecipes.Parsed v1 = RecipeFormats.parse(new RecipeFormatV1().write(CustomRecipes.renamed(Recipes.ALL[3], "Old File"), null), "x.YML", WITH_V4);
         assertNull(v1.error);
         assertEquals("Old File", v1.recipe.name, "a version 1 file still reads with the version 1 reader once later versions exist");
         assertEquals(Recipes.ALL[3].style, v1.recipe.style);
     }
 
     @Test void aFileWithoutAFormatLineIsVersionOne() {
-        assertEquals("Plain", RecipeFormats.parse("name: Plain\n", "x.YML", WITH_V3).recipe.name);
+        assertEquals("Plain", RecipeFormats.parse("name: Plain\n", "x.YML", WITH_V4).recipe.name);
     }
 
     @Test void aVersionThisBuildDoesNotKnowIsSkippedWhole() {
-        assertEquals("made by a newer Recipe Lab (format 3)", RecipeFormats.parse("format: 3\ntitle: x\n", "x.YML").error);
-        assertEquals("made by a newer Recipe Lab (format 4)", RecipeFormats.parse("format: 4\n", "x.YML", WITH_V3).error);
+        assertEquals("made by a newer Recipe Lab (format 4): update the app", RecipeFormats.parse("format: 4\ntitle: x\n", "x.YML").error);
+        assertEquals("made by a newer Recipe Lab (format 5): update the app", RecipeFormats.parse("format: 5\n", "x.YML", WITH_V4).error);
         assertEquals("format: 0 is not allowed", RecipeFormats.parse("format: 0\n", "x.YML").error);
         assertEquals("format: two is not allowed", RecipeFormats.parse("format: two\n", "x.YML").error);
     }
@@ -153,5 +153,78 @@ class RecipeFormatsTest {
                 RecipeFormats.parse("format: 2\nfamily: Sony-Creative-Style\nname: A\n", "x.YML").error, "spelled exactly");
         assertNull(RecipeFormats.parse("format: 1\nfamily: canon-picture-style\nname: A\n", "x.YML").error,
                 "format 1 knows no family key: ignored, as any key it does not know");
+    }
+
+    // ------------------------------------------------------------ format 3: the picture profile
+    private static Recipes.Recipe profiled(IspProfiles.Look l) {
+        Recipes.Recipe b = Recipes.ALL[3];
+        return new Recipes.Recipe(Recipes.CUSTOM, "Log Look", b.style, b.sat, b.con, b.sharp, b.wbMode, b.kelvin, b.ab, b.gm, b.pe, b.ev, b.dro, b.sub, l);
+    }
+
+    @Test void formatThreeIsFormatTwoWithTheProfileAtTheEnd() {
+        Recipes.Recipe r = profiled(new IspProfiles.Look(IspProfiles.SLOG3, IspProfiles.SGAMUT3_CINE, -2, 3, IspProfiles.WIDE, 95, -1, 8, -2, 4));
+        String v3 = new RecipeFormatV3().write(r, "ILCE-6000"), v2 = new RecipeFormatV2().write(r, "ILCE-6000");
+        assertTrue(v3.startsWith(v2.replace("\nformat: 2\n", "\nformat: 3\n")), v3);
+        String tail = v3.substring(v2.length());
+        assertTrue(tail.startsWith("gamma: s-log3"), tail);
+        for (String line : new String[] { "color-mode: s-gamut3-cine", "black-level: -2", "black-gamma: +3", "black-gamma-range: wide",
+                "knee: 95", "knee-slope: -1", "color-saturation: +8", "color-phase: -2", "s-curve: +4" })
+            assertTrue(tail.contains("\n" + line + " "), line + " in\n" + tail);
+    }
+
+    @Test void formatThreeReadsBackEveryProfileValue() {
+        IspProfiles.Look[] looks = {
+            new IspProfiles.Look(IspProfiles.SLOG2, IspProfiles.SGAMUT3),
+            new IspProfiles.Look(IspProfiles.HLG, IspProfiles.BT2020, 15, -7, IspProfiles.NARROW, 105, 5, -32, 7, -7),
+            new IspProfiles.Look(IspProfiles.SLOG3, IspProfiles.SGAMUT3_CINE, -15, 7, IspProfiles.MIDDLE, 75, -5, 32, -7, 7),
+            new IspProfiles.Look(IspProfiles.ITU709, IspProfiles.CAMERA, 0, 0, IspProfiles.MIDDLE, IspProfiles.KNEE_OFF, 0, -32, 0, 0),
+        };
+        for (IspProfiles.Look l : looks) {
+            CustomRecipes.Parsed p = RecipeFormats.parse(RecipeFormats.write(profiled(l), null), "x.YML");
+            assertNull(p.error, l.toString());
+            assertEquals(l, p.recipe.look, l.toString());
+            assertEquals(Recipes.ALL[3].style, p.recipe.style);
+        }
+    }
+
+    @Test void formatThreeWithoutAGammaIsARecipeWithoutAProfile() {
+        String base = "format: 3\nfamily: sony-creative-style\nname: A\n";
+        assertNull(RecipeFormats.parse(base, "x.YML").recipe.look);
+        assertNull(RecipeFormats.parse(base + "gamma: off\nblack-level: +3\n", "x.YML").recipe.look, "the adjustments need a curve");
+        IspProfiles.Look l = RecipeFormats.parse(base + "gamma: hlg\n", "x.YML").recipe.look;
+        assertEquals(new IspProfiles.Look(IspProfiles.HLG, IspProfiles.CAMERA), l, "a key left out is the neutral value");
+    }
+
+    @Test void formatThreeReadsProfileNamesIgnoringCase() {
+        String base = "format: 3\nfamily: sony-creative-style\nname: A\n";
+        CustomRecipes.Parsed p = RecipeFormats.parse(base + "gamma: S-Log3\ncolor-mode: S-Gamut3-Cine\nblack-gamma-range: WIDE\nknee: OFF\n", "x.YML");
+        assertNull(p.error, "as Studio reads them, and format 1 reads a style");
+        assertEquals(new IspProfiles.Look(IspProfiles.SLOG3, IspProfiles.SGAMUT3_CINE, 0, 0, IspProfiles.WIDE, IspProfiles.KNEE_OFF, 0, 0, 0, 0), p.recipe.look);
+        assertNull(RecipeFormats.parse(base + "gamma: OFF\n", "x.YML").recipe.look);
+        assertNull(RecipeFormats.parse(base + "gamma: LogC3\n", "x.YML").recipe.look);
+        assertEquals(IspProfiles.CAMERA, RecipeFormats.parse(base + "gamma: hlg\ncolor-mode: AWG3\n", "x.YML").recipe.look.gamut);
+    }
+
+    @Test void aRecipeFileOnTheRetiredProfileStaysWithALookTheAppHas() {
+        String base = "format: 3\nfamily: sony-creative-style\nname: A\n";
+        CustomRecipes.Parsed p = RecipeFormats.parse(base + "gamma: logc3\ncolor-mode: awg3\nknee: 95\n", "x.YML");
+        assertNull(p.error);
+        assertNull(p.recipe.look, "LogC3 is gone: the recipe, with no profile");
+        p = RecipeFormats.parse(base + "gamma: s-log3\ncolor-mode: awg3\n", "x.YML");
+        assertNull(p.error);
+        assertEquals(new IspProfiles.Look(IspProfiles.SLOG3, IspProfiles.CAMERA), p.recipe.look, "ARRI WG3 is gone: the camera's colour");
+    }
+
+    @Test void formatThreeSkipsAProfileValueOutOfRange() {
+        String base = "format: 3\nfamily: sony-creative-style\nname: A\ngamma: s-log3\n";
+        assertEquals("gamma: s-cinetone is not allowed", RecipeFormats.parse("format: 3\nfamily: sony-creative-style\nname: A\ngamma: s-cinetone\n", "x.YML").error);
+        assertEquals("color-mode: v-gamut is not allowed", RecipeFormats.parse(base + "color-mode: v-gamut\n", "x.YML").error);
+        assertEquals("black-level: +16 is not allowed", RecipeFormats.parse(base + "black-level: +16\n", "x.YML").error);
+        assertEquals("black-gamma-range: huge is not allowed", RecipeFormats.parse(base + "black-gamma-range: huge\n", "x.YML").error);
+        assertEquals("knee: 110 is not allowed", RecipeFormats.parse(base + "knee: 110\n", "x.YML").error);
+        assertEquals("knee: 74 is not allowed", RecipeFormats.parse(base + "knee: 74\n", "x.YML").error, "off is spelled off");
+        assertEquals("color-saturation: 40 is not allowed", RecipeFormats.parse(base + "color-saturation: 40\n", "x.YML").error);
+        assertEquals("s-curve: 1.5 is not allowed", RecipeFormats.parse(base + "s-curve: 1.5\n", "x.YML").error);
+        assertEquals("family: missing", RecipeFormats.parse("format: 3\nname: A\ngamma: s-log3\n", "x.YML").error);
     }
 }

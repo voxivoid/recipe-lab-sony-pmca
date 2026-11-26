@@ -89,7 +89,8 @@ class CardLogTest {
         String st = CardLog.state(rows);
         assertTrue(st.startsWith("STYLE=3 SAT=-1 CON=0"), st);
         assertFalse(st.contains("RECIPE"), st);
-        assertEquals(Params.ROW_NAME.length - 1, st.split(" ").length);
+        assertEquals(Params.ROW_NAME.length - 2, st.split(" ").length);
+        assertFalse(st.contains("LOOK"), st);
     }
 
     @Test void rollsOnlyAFileThatHasSomethingInIt() {
@@ -171,7 +172,7 @@ class CardLogTest {
         File dir = CardLog.dir(root);
         CardLog.append(dir, CardLog.LOG, "opened\n");
         CardLog.append(dir, CardLog.KEYS, "down 232\n");
-        String r = CardLog.report(dir, "2026-10-15 14:03:27", "model ILCE-6000", "recipe Velvia  ACTIVE", "STYLE=1", "scene-mode=manual-exposure;color-mode=mono");
+        String r = CardLog.report(dir, "2026-10-15 14:03:27", "model ILCE-6000", "recipe Velvia  ACTIVE", "STYLE=1", "scene-mode=manual-exposure;color-mode=mono", null);
         assertTrue(r.startsWith("Recipe Lab report"), r);
         assertTrue(r.contains("model ILCE-6000\nrecipe Velvia  ACTIVE\nSTATE STYLE=1\n"), r);
         String[] lines = r.split("\n");
@@ -183,6 +184,41 @@ class CardLogTest {
         assertTrue(r.contains("===== KEYS =====\ndown 232\n"), r);
         assertTrue(r.contains("===== LOCKS =====\n(none)\n"), r);
         assertTrue(r.contains("===== PARAMS =====\n# 2026-10-15 14:03:27\ncolor-mode=mono\nscene-mode=manual-exposure\n"), r);
+    }
+
+    @Test void theReportCarriesTheProbe() throws IOException {
+        File dir = CardLog.dir(root), probe = new File(new File(root, "RECIPLAB/ISP/PROBE"), "log");
+        assertTrue(CardLog.report(dir, "now", "h", "a", "s", null, null).contains("===== PROBE =====\n(none)\n"));
+        probe.getParentFile().mkdirs();
+        java.nio.file.Files.write(probe.toPath(), "BODY ILCE-6000 3.21\nRESULT PROBE ok\n".getBytes());
+        assertTrue(CardLog.report(dir, "now", "h", "a", "s", null, probe).contains("===== PROBE =====\nBODY ILCE-6000 3.21\nRESULT PROBE ok\n"));
+    }
+
+    @Test void theReportCarriesTheIspSideSoOneReportIsEnough() throws IOException {
+        File dir = CardLog.dir(root), isp = new File(root, "RECIPLAB/ISP"), boot = new File(isp, "boot.log"),
+             log = new File(isp, "log"), missing = new File(root, "data/isp/log");
+        assertTrue(CardLog.report(dir, "now", "h", "a", "s", null, null).contains("===== ISP =====\n(none)\n"));
+        isp.mkdirs();
+        java.nio.file.Files.write(boot.toPath(), "sent: s-log3\n".getBytes());
+        java.nio.file.Files.write(log.toPath(), "RLISP 2 apply\nRESULT REFUSE sig".getBytes());
+        String r = CardLog.report(dir, "now", "h", "a", "s", null, null, "app 0 KB free of 2048 KB\n", boot, missing, log);
+        assertTrue(r.contains("===== ISP =====\napp 0 KB free of 2048 KB\n--- " + boot.getPath() + "\nsent: s-log3\n--- "
+                + log.getPath() + "\nRLISP 2 apply\nRESULT REFUSE sig\n"), r);
+        assertFalse(r.contains(missing.getPath()), "a log that is not there takes no room");
+    }
+
+    @Test void storageSaysWhatIsLeft() {
+        assertEquals("app 12 KB free of 2048 KB", CardLog.storage("app", 12 * 1024 + 5, 2048 * 1024));
+    }
+
+    @Test void biggestListsTheFilesThatFillTheRamdisk() throws IOException {
+        File d = new File(root, "data");
+        new File(d, "isp").mkdirs();
+        java.nio.file.Files.write(new File(d, "snapshot.bin").toPath(), new byte[15000]);
+        java.nio.file.Files.write(new File(d, "isp/log").toPath(), new byte[10]);
+        java.nio.file.Files.write(new File(d, "isp/state.bin").toPath(), new byte[2000]);
+        assertEquals("snapshot.bin 15 KB  ·  isp/state.bin 2 KB", CardLog.biggest(d, 2));
+        assertEquals("", CardLog.biggest(new File(root, "nowhere"), 5));
     }
 
     @Test void theReportGoesBesideTheLogs() {

@@ -46,9 +46,20 @@ class RecipeShareTest {
                 Integer.parseInt(v[10]), dro, sub);
     }
 
+    /** a version 2 vector's recipe: the version 1 columns, then the picture profile in its file spellings */
+    private static Recipes.Recipe profiled(String[] v) {
+        Recipes.Recipe r = recipe(v);
+        int knee = v[19].equals("off") ? IspProfiles.KNEE_OFF : Integer.parseInt(v[19]);
+        IspProfiles.Look l = new IspProfiles.Look(indexOf(IspProfiles.CURVE_CODES, v[14]), indexOf(IspProfiles.GAMUT_CODES, v[15]),
+                Integer.parseInt(v[16]), Integer.parseInt(v[17]), indexOf(IspProfiles.RANGE_CODES, v[18]), knee,
+                Integer.parseInt(v[20]), Integer.parseInt(v[21]), Integer.parseInt(v[22]), Integer.parseInt(v[23]));
+        return new Recipes.Recipe(r.group, r.name, r.style, r.sat, r.con, r.sharp, r.wbMode, r.kelvin, r.ab, r.gm, r.pe, r.ev, r.dro, r.sub, l);
+    }
+
     private static void assertSameRecipe(Recipes.Recipe want, Recipes.Recipe got, String why) {
         assertNotNull(got, why);
         assertEquals(want.name, got.name, why);
+        assertEquals(want.look, got.look, why);
         assertEquals(Recipes.CUSTOM, got.group, why);
         int[] w = { want.style, want.sat, want.con, want.sharp, want.wbMode, want.kelvin, want.ab, want.gm, want.pe, want.ev, want.dro, want.sub };
         int[] g = { got.style, got.sat, got.con, got.sharp, got.wbMode, got.kelvin, got.ab, got.gm, got.pe, got.ev, got.dro, got.sub };
@@ -58,6 +69,33 @@ class RecipeShareTest {
     @Test void theVectorsFileHasBothKinds() throws IOException {
         assertTrue(vectors("valid").size() >= 9);
         assertTrue(vectors("invalid").size() >= 25);
+        assertTrue(vectors("profile").size() >= 4);
+    }
+
+    @Test void everyProfileVectorEncodesToItsCodeAndBack() throws IOException {
+        for (String[] v : vectors("profile")) {
+            Recipes.Recipe r = profiled(v);
+            assertEquals(RecipeShare.PREFIX + v[1], RecipeShare.encode(r), v[2]);
+            assertSameRecipe(r, RecipeShare.decode(RecipeShare.PREFIX + v[1]), v[2]);
+            assertSameRecipe(r, RecipeShare.decode("https://www.recipelab.io/r#" + v[1]), "www " + v[2]);
+        }
+    }
+
+    @Test void onlyARecipeWithAProfileIsWrittenAsVersionTwo() throws IOException {
+        for (String[] v : vectors("valid")) assertEquals('A', v[1].charAt(0), "version 1: " + v[2]);    // byte 0 = 1
+        for (String[] v : vectors("profile")) assertTrue(v[1].startsWith("Ag"), "version 2: " + v[2]);
+        Recipes.Recipe plain = RecipeShare.decode(RecipeShare.PREFIX + "AQAAAwMDAAcHDwYAAEE");
+        assertNull(plain.look);
+        assertTrue(RecipeShare.encode(plain).startsWith(RecipeShare.PREFIX + "AQ"));
+    }
+
+    @Test void aVersionTwoLinkReadsAProfileValueThatDoesNothingAsItsDefault() {
+        // S-Log3 Cine with black gamma range wide (no black gamma) and knee slope +2 (no knee): the same look
+        Recipes.Recipe r = RecipeShare.decode(RecipeShare.PREFIX + "AgAAAwMDAAcHDwAAAAICDwcCAAcgBwdTLUxvZzMgQ2luZQ");
+        assertNotNull(r);
+        assertEquals(new IspProfiles.Look(IspProfiles.SLOG3, IspProfiles.SGAMUT3_CINE), r.look);
+        assertEquals(IspProfiles.MIDDLE, r.look.range);
+        assertEquals(0, r.look.slope);
     }
 
     @Test void everyValidVectorEncodesToItsCode() throws IOException {
@@ -76,7 +114,40 @@ class RecipeShareTest {
         for (String[] v : vectors("invalid")) {
             assertNull(RecipeShare.decode(RecipeShare.PREFIX + v[1]), v[2]);
             assertTrue(RecipeShare.isLink(RecipeShare.PREFIX + v[1]), "still a recipe link: " + v[2]);
+            assertFalse(RecipeShare.needsNewerApp(RecipeShare.PREFIX + v[1]), "damaged is not newer: " + v[2]);
         }
+    }
+
+    @Test void aLinkFromANewerAppIsRefusedAsNewerNotInvalid() throws IOException {
+        assertTrue(vectors("newer").size() >= 5);
+        for (String[] v : vectors("newer")) {
+            for (String prefix : new String[] { RecipeShare.PREFIX, "https://www.recipelab.io/r#" }) {
+                assertNull(RecipeShare.decode(prefix + v[1]), v[2]);
+                assertTrue(RecipeShare.needsNewerApp(prefix + v[1]), "tell the person to update: " + v[2]);
+                assertEquals(QrScan.NEWER, QrScan.kind(prefix + v[1]), v[2]);
+            }
+        }
+        for (String kind : new String[] { "valid", "profile" })
+            for (String[] v : vectors(kind)) assertFalse(RecipeShare.needsNewerApp(RecipeShare.PREFIX + v[1]), "a link read here is not newer: " + v[2]);
+        assertFalse(RecipeShare.needsNewerApp("https://recipelab.io/studio"));
+        assertFalse(RecipeShare.needsNewerApp(null));
+    }
+
+    /**
+     * What link version 1 and 2 hold, pinned. A table that grows hands an app that already reads the version a value it
+     * does not know: a recipe that uses the new value must be written in a NEW version (RecipeShare, "New versions"),
+     * with the old versions' vocabulary left as it is. Update these numbers only with that.
+     */
+    @Test void eachLinkVersionHoldsTheVocabularyItWasReleasedWith() {
+        assertEquals(13, RecipeShare.STYLES.length, "styles");
+        assertEquals(14, Recipes.PE_KEYS.length, "effects");
+        assertEquals(5, Recipes.subValues(1).length, "toy camera options");
+        assertEquals(4, Recipes.subValues(6).length, "part colour options");
+        assertEquals(3, Recipes.subValues(5).length, "soft high-key options");
+        assertEquals(2, Recipes.subValues(3).length, "posterization options");
+        assertEquals(12, IspProfiles.CURVES, "gammas, with 0 for none");
+        assertEquals(4, IspProfiles.GAMUTS, "colour modes");
+        assertEquals(3, IspProfiles.RANGE_CODES.length, "black gamma ranges");
     }
 
     @Test void everyBuiltInRoundTripsUnderAUserName() {
@@ -86,6 +157,7 @@ class RecipeShareTest {
             if (CustomRecipes.problem(r) != null) continue;
             String link = RecipeShare.encode(r);
             assertNotNull(link, b.name);
+            assertEquals(b.hasProfile() ? "Ag" : "AQ", link.substring(RecipeShare.PREFIX.length(), RecipeShare.PREFIX.length() + 2), b.name);
             assertSameRecipe(r, RecipeShare.decode(link), b.name);
         }
     }
@@ -130,8 +202,11 @@ class RecipeShareTest {
 
     @Test void theLongestLinkIsASmallQrCode() {
         Recipes.Recipe r = new Recipes.Recipe(Recipes.CUSTOM, "xxxxxxxxxxxxxxxxxxxxxxxx", 1, 0, 0, 0, Params.WB_KELVIN, 9900, 0, 0, 1, 0, 6, 4);
+        assertTrue(QrCode.encodeText(RecipeShare.encode(r), QrCode.Ecc.MEDIUM).size <= 37, "version 1: a version 5 code");
+        r = new Recipes.Recipe(Recipes.CUSTOM, "xxxxxxxxxxxxxxxxxxxxxxxx", 1, 0, 0, 0, Params.WB_KELVIN, 9900, 0, 0, 1, 0, 6, 4,
+                new IspProfiles.Look(IspProfiles.HLG, IspProfiles.BT2020, 15, 7, IspProfiles.WIDE, 105, 5, 32, 7, 7));
         QrCode qr = QrCode.encodeText(RecipeShare.encode(r), QrCode.Ecc.MEDIUM);
-        assertTrue(qr.size <= 37, "modules " + qr.size);
+        assertTrue(qr.size <= 41, "version 2: a version 6 code, modules " + qr.size);
         // finder pattern in the top left corner
         for (int i = 0; i < 7; i++) { assertTrue(qr.getModule(i, 0)); assertTrue(qr.getModule(0, i)); }
         assertFalse(qr.getModule(1, 1));

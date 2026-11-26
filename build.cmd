@@ -20,6 +20,10 @@ call "%ANDROID_NDK%\ndk-build.cmd" NDK_PROJECT_PATH="%~dp0." APP_BUILD_SCRIPT="%
 rmdir /s /q out\gen out\classes out\dex out\apklib 2>nul
 mkdir out\gen out\classes out\dex out\apklib\lib\armeabi
 copy /Y out\libs\armeabi\librecipelab.so out\apklib\lib\armeabi\ >nul
+REM The picture-profile root helper: a freestanding static executable (no libc, no linker), shipped as a "lib" so the
+REM installer unpacks it executable. It runs as root outside Android's root, where bionic is not at hand.
+echo       rlisp (picture-profile root helper)
+"%ANDROID_NDK%\toolchains\arm-linux-androideabi-4.9\prebuilt\windows-x86_64\bin\arm-linux-androideabi-gcc.exe" -std=gnu11 -march=armv7-a -marm -O2 -Wall -Werror -nostdlib -static -ffreestanding -fno-builtin -fno-pic -fno-stack-protector -Wl,-Ttext-segment=0x10000 -Wl,-e,_start -s -o out\apklib\lib\armeabi\librlisp.so jni\rlisp\rlisp.c || exit /b 1
 
 echo [1/7] aapt R.java
 "%BT%\aapt.exe" package -f -m -J out\gen -M AndroidManifest.xml -S res -A assets -I "%AJ%" || exit /b 1
@@ -37,7 +41,7 @@ pushd out\dex
 "%BT%\aapt.exe" add ..\unaligned.apk classes.dex || exit /b 1
 popd
 pushd out\apklib
-"%BT%\aapt.exe" add ..\unaligned.apk lib/armeabi/librecipelab.so || exit /b 1
+"%BT%\aapt.exe" add ..\unaligned.apk lib/armeabi/librecipelab.so lib/armeabi/librlisp.so || exit /b 1
 popd
 echo [5/7] zipalign
 "%BT%\zipalign.exe" -f 4 out\unaligned.apk out\aligned.apk || exit /b 1

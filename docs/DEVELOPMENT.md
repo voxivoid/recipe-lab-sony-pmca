@@ -33,7 +33,8 @@ src/com/voxivoid/recipelab/
   MainActivity.java            UI state, key handling, the camera (CameraEx via reflection), store + sync
   Params.java                  the parameter rows: slot ids, store encodings, preview parameters, chip
                                navigation, HUD strings — pure functions, no Android, covered by test/
-  Recipes.java                 the 77-entry table (the factory look, FACTORY, first in Sony, then the 76 others), brands,
+  Recipes.java                 the 89-entry table (the factory look, FACTORY, first in Sony, then the 76 others, then the
+                               twelve picture profiles in Pic Profiles), brands,
                                GROUP_START / GROUP_COUNT, list navigation
   Favorites.java               the favorites list: stored by name in the app's preferences, and how the browser
                                walks the All, Favorites and Custom groups, and the wheel's loop — pure functions, no
@@ -91,7 +92,7 @@ src/com/voxivoid/recipelab/
                                the live view on the Full panel only (DevTools.sponsorLine, Ko-fi); the About page lists Ko-fi and GitHub Sponsors
   HintBar.java                 legend view under the panel (uses Legend)
   NativeBackup.java            JNI: read / write / attr / sync
-  transfer/                    Transfer to phone (see Transfer to phone): the camera hotspot and the protocol 5 HTTP
+  transfer/                    Transfer to phone (see Transfer to phone): the camera hotspot and the protocol 6 HTTP
                                server for Recipe Lab Studio — no Android in it but Hotspot, HotspotP2p and TransferMode, covered by test/
 jni/jni.cpp                    Backup_read / Backup_write / Backup_sync_all via OpenMemories-Platform
 jni/platform/                  git submodule: ma1co/OpenMemories-Platform
@@ -153,7 +154,7 @@ The **developer menu** holds the tools that are not part of using the app:
 |---|---|
 | **Settings snapshot** / **Settings diff** | the snapshot / diff tool below; the row's name says which half is next |
 | **Read-only check — 26 slots** | the read-only check below: does this body flag any slot a recipe writes |
-| **Shoot samples — 77 recipes** | the sample run below |
+| **Shoot samples — 89 recipes** | the sample run below |
 | **Settle delay** | a value — the delay the sample run waits after applying a recipe; left / right step through 0.8 / 1.2 / 2.0 / 3.0 / 5.0 s in place (centre steps forward), kept in the app's preferences |
 | **Key logger** | every key event on screen, newest first, and appended to `RECIPLAB/LOGS/KEYS.TXT` on the card (`keys.txt` in `getFilesDir()` without one): scan code, down / up, repeat count, Sony's logic code; the header is the model, the platform and what the probe found. Nothing else happens while it runs; **hold MENU** leaves |
 
@@ -239,7 +240,7 @@ One frame per recipe, in table order — the capture half of issue #17. The run 
    press / release, automated
 4. next recipe, until the table ends
 
-While it runs, a sticky line counts the frames (`Shooting 12 / 77 · Velvia — MENU stops`) and **every key is
+While it runs, a sticky line counts the frames (`Shooting 12 / 82 · Velvia — MENU stops`) and **every key is
 swallowed** so nothing walks the table underneath it; **MENU** stops the run. The run also stops in `onPause` — it
 cannot outlive the camera it shoots with. When it ends, the recipe the user was on is staged again.
 
@@ -247,7 +248,7 @@ The frames are identified by **order**: the camera names the files, and the run 
 `samples.txt` in `getFilesDir()`, one line per frame —
 
 ```
-# recipe-lab samples  ·  77 frames in recipe order  ·  settle 1200 ms  ·  frame|recipe|brand|values
+# recipe-lab samples  ·  82 frames in recipe order  ·  settle 1200 ms  ·  frame|recipe|brand|values
 01|FACTORY (ST)|Sony|Standard  0/0
 02|Sony PT (portrait)|Sony|Portrait  0/0
 ```
@@ -257,6 +258,123 @@ a frame still carries the previous recipe's look. Shoot a run, then store two or
 and shoot them again — if the frames differ, raise the delay in the menu and shoot again. Same for
 `DevTools.SHUTTER_MS` and the `startPreview` between frames: both are what a capture needs on *this* body, and
 neither a build nor `tools/test.sh` can say anything about them.
+
+## Picture profiles
+
+How the profile survives a power cycle (boot event, keep-alive loop, the shell's limits, what failed): read
+[PICTURE-PROFILES.md](PICTURE-PROFILES.md) before changing `BootReceiver`, `IspProfiles.bootCommand` or the `isp*`
+code in `MainActivity`.
+
+RAM only, on the bodies and firmware listed in `jni/rlisp/bodies.h` (see [Bodies](#bodies) below; the README's
+Picture profiles section says which have been tried). A picture profile is part of a recipe — the GAMMA chip and the nine after it — but its look goes to
+the ISP's SRAM, not to the settings store. On the A6000 3.21:
+
+| what | where | how |
+|---|---|---|
+| gamma | PA `0xF3215300`, 96 × u32 | 10-bit output per knot. Knots are linear 11-bit input: 2..64 step 2, 68..128/4, 136..256/8, 272..512/16, 576..1024/64, 1152..1920/128, 2047 (`IspProfiles.KNOTS`). 18% grey sits at knot 76 |
+| colour matrix | PA `0xF321550C`, 9 × u32 | s16 Q10 in the low half, row-major, applied after white balance |
+| gamma setter | PA `0x83b67414` (av-cam VA `0x43b67414`), `00 f5 a8 30` | patched to `70 47 a8 30` (`bx lr`), so the camera stops rewriting the table |
+| matrix setter | PA `0x83b675e0`, `70 b5 0c 46` | patched to `70 47 0c 46` |
+
+Evidence and the wider register map are in the a6000-qemu research repo (`docs/A6000_ISP_REGISTER_MAP.md`).
+
+**The look** (`IspProfiles.Look`, one chip each, all visible only while GAMMA is not *Off*):
+
+| chip | values | what it does to the tables |
+|---|---|---|
+| GAMMA | *Off*, S-Log2, S-Log3, ITU709, HLG, Movie, Still, Cine1-4, ITU709(800%) | the base curve: a published formula, or from Movie on a table from the A6500 firmware (`tools/sony-gamma.py`), sampled with its 18% grey on knot 76 like the formulas. *Off* is no profile: the helper's `off`, the other chips hidden. A step on the chip sets COLOR to the curve's own (`IspProfiles.defaultGamut`; Studio does the same) |
+| COLOR | Camera (BT.709, no change), S-Gamut3 (= S-Gamut), S-Gamut3.Cine, BT.2020 | the gamut matrix `inv(M_target) · M_709` |
+| BLACK | -15 .. +15 | black level: 3 code values per step at black, fading to none at white |
+| B.GAMMA, B.RANGE | -7 .. +7; Narrow / Middle / Wide (15 / 25 / 40% of the output) | black gamma: `top · (y/top)^e` under the range, `e = 2^(-0.6·level/7)`. B.RANGE shows only with B.GAMMA ≠ 0 |
+| KNEE, SLOPE | *Off*, 75 .. 105%; -5 .. +5 | above the point, `kp + (y - kp) · 0.25 · 2^(slope/5)`, on the curve's unclipped values (BT.709 and HLG go on rising past 1 for it). SLOPE shows only with a knee |
+| C.SAT | -32 .. +32 | `(1 - s)·luma + s·I`, `s = 1 + sat/32`, the colour mode's own luminance weights (its Y row): -32 is black and white, and no colour gets brighter or darker |
+| PHASE | -7 .. +7 | a rotation of every hue about the grey axis, 3° a step |
+| S-CURVE | -7 .. +7 | contrast about middle grey: a power curve each side of it with slope `2^(0.6·c/7)` at grey |
+
+The order is a Sony Picture Profile's: knee, black gamma, S-curve, black level on the curve; then gamut, phase,
+saturation in the matrix. Every adjustment keeps 0 and 1023 where they are and grey stays grey, so a neutral look is the
+published curve exactly (`IspProfilesTest` holds the reference words). `IspReferenceTest` checks every curve and gamut
+against colour-science, an independent library, through `test/fixtures/isp-reference.tsv`; `tools/isp-reference.py`
+rewrites that file (it needs `pip install colour-science`), so `tools/test.sh` stays JDK-only. Both prove the tables match
+the specifications, not what the camera does with them. A range with no black gamma or a slope with no
+knee is not part of the look (`Look.normal`): it is neither dirty nor saved.
+
+**How the app drives it.** The profile rows are rows like the others (`Params.R_GAMMA .. R_SCURVE`), with `ROW_ID` `ISP`:
+no store slot, so `Params.writes` never has them, but they are dirty, staged and saved like any row. Their `cur` is the
+look of the recipe last stored, which the app keeps in its preferences (`ispLook`, `Params.lookText`). The staged look
+(`edit`) goes to the image processor like a live preview: `applyPreview` ends with `ispSync`, which runs the helper
+1 s after the rows stop changing, and only when the look differs from what the processor holds. A step that leaves the
+camera's preview parameters as they were (any profile chip) skips the camera round trip (`previewSent`), so the wheel
+stays quick on those chips. A successful write
+(`writeAll`) makes the staged look the stored one (`storeLook`); leaving the app (`onPause`) puts the stored one back. On
+`onResume` the processor may have been reset by a power cycle, so a stored look is applied again; with none stored the
+helper is not run at all. The built-in Pic Profiles group holds the twelve built-in profiles, Standard, auto WB, DRO off.
+The GAMMA chip and the Pic Profiles group show on every body. `IspBodies.status(model, firmware)` decides what runs:
+only a supported body runs the helper's `apply` and gets the boot loop; on any other `ispApply` does not run the helper and
+says why in a toast (`IspBodies.refusal`: update the firmware to X, not confirmed yet, or not supported yet). A body that
+does not report its model is not supported.
+
+**The pieces:**
+
+- `IspProfiles` (camera-free, tested) builds the 96 gamma words and the Q14 matrix of a look, and writes them to
+  `profile.bin`. The file is `RLPP`, version 1, flags, 96 words and 9 words, all LE32.
+  - Curves follow the published formulas: S-Log2 in legal range (grey 347), S-Log3 as code values
+    (grey 420 and 400), and BT.709 clipped at 1 (grey 418).
+  - HLG follows BT.2100 with the BT.2408 scale (100% white at 75%, grey 387).
+  - Gamuts: S-Gamut = S-Gamut3, S-Gamut3.Cine, BT.2020 and ALEXA Wide Gamut 3. ITU709 keeps the camera's colour (identity).
+- `jni/rlisp/rlisp.c` is the root helper. It is freestanding (raw syscalls, no libc), built by `build.sh` / `build.cmd` with
+  the NDK's gcc and shipped as `lib/armeabi/librlisp.so` so the installer unpacks it executable. It runs `ping | apply |
+  reapply | off | status | probe <dir>`.
+  - It reads `<dir>/body` (model and firmware, `IspBodies.bodyFile`) and picks that row of `bodies.h`; none means
+    `RESULT REFUSE body` or `REFUSE fw <wanted>`, a row not yet enabled `REFUSE untested`.
+  - It finds av-cam's load address (the row's, a cached one in `<dir>/base`, or the one page-aligned base in System RAM
+    where both setters match), reads `/dev/mem` only inside `/proc/iomem`'s System RAM, and compares the full 32 bytes
+    at each setter with the row: neither stock nor patched means `REFUSE sig`. The live tables never stop a write: the A6000
+    shows a gamma word of 1732 before ISP init and matrix rows far from 1024 in normal use
+    ([PICTURE-PROFILES.md, rule 8](PICTURE-PROFILES.md#rules-that-must-not-break)). Every refusal drops `<dir>/stop`,
+    which ends the boot loop.
+  - `apply` multiplies the gamut by the creative style's own stock matrix, adjusting the diagonal so each row sums to 1024.
+    A stock is only taken when its rows sum to 1024 ± 16, as every style's do: the A6000 also shows transient matrices
+    (rows 1812/1300/1944) that, built on, make a lower saturation swap hues. Otherwise the saved stock is kept, and with
+    no good one at all (after *Off*, which deletes `state.bin`, the camera shows only transients until its next style
+    event) the A6000's Standard matrix is used, logged as `STOCK standard` with both live tables.
+  - `apply` then freezes the setters, writes both tables and reads them back.
+  - `state.bin` remembers the stock matrix and the one last written, so after *Off* (our values stay until the camera's
+    next event) the stock is not recaptured from our own.
+  - It ends its `log` with one `RESULT …` line.
+- `NativeShell.exec` is `shell_exec_async` from the platform. It is OSAL message `0x940005` to the boot-in queue,
+  the same route OpenMemories-Tweak uses to start telnetd, and it runs the line as root. It is async, prints nothing,
+  and takes 255 characters at most. That shell lives outside Android's root, so `/x` in the app is `/android/x` there
+  (`IspProfiles.command`).
+- `MainActivity.ispApply` writes the file, deletes the old log, runs the helper and polls the log every 250 ms for 5 s
+  (`IspProfiles.result`). It runs one at a time, and a change made meanwhile runs next. Only a problem is said (a toast);
+  every run goes to `LOG.TXT` with the look and the helper's log.
+- A profile recipe is shared as a version 2 share code (QR, link and `LINKS.TXT`); one without a profile stays version 1.
+
+- *Hold MENU → Save a bug report* first runs `librlisp.so probe` in `RECIPLAB/ISP/PROBE/` (read only: never writes a
+  setter or the ISP) and puts its log in `REPORT.TXT` under `PROBE`. A body with no row gets a RAM search for the gamma
+  setter, with the 32 bytes at it and at the matrix setter `0x1cc` after it, which is what a new row needs.
+
+**By hand** (telnet, root): `librlisp.so status <dir>`, then `cat <dir>/log`. A battery pull is the full undo.
+
+### Bodies
+
+Every proven body except the NEX ones is a CXD90014 (fwtool's `devices.yml`), with av-cam built from the same source.
+A row of `bodies.h` comes from that body's newest Sony updater, with the a6000-qemu research repo:
+
+1. `tools/port/fetch_avcam.sh <updater URL>`: downloads the updater, cuts out the firmware `.dat`, unpacks it with
+   fwtool and keeps `av-cam.bin`. Sony Japan's page `support.d-imaging.sony.co.jp/www/cscs/firm/?mdl=<model>` links
+   every updater.
+2. `tools/port/port_scan.py <av-cam.bin> <model> <fw>`: finds the gamma leaf by its 12 bytes and the matrix setter by
+   the register accessors it calls (`0x1550c..0x1552c`), checks each 32-byte signature is unique, and prints the row.
+   It must reproduce the A6000 3.21 row exactly.
+3. The row goes into `bodies.h` and into `IspBodies.ROWS` (`IspBodiesTest` checks both agree). With `enabled` 0 the
+   body says "not confirmed yet" and its bug report carries the probe; the 15 rows from the first port are on, with the
+   A6000's base as a first guess, so owners can try the profile itself.
+4. A probe from that body that says `ROW disabled`, `BASE …`, and both setters `original` switches the row
+   on (`enabled` 1 in both places), with the base it found written into the row.
+
+av-cam's load address lives in each camera's `Backup.bin`, not in the updater, which is why the probe finds it.
 
 ## Exit rule
 
@@ -303,12 +421,13 @@ left empty, loops through all of them.
 ignored), English always, `.YML`. Anything else YAML allows (lists, nesting) and any line that is not `key: value` (an
 old `key = value` file included) skips the file with its line number. The name is always written quoted, so other YAML
 tools read it as text; note that strict YAML 1.1 tools read `dro: off` as false — the app reads every value as text.
-Format 2 (`RecipeFormatV2`) is what the app writes: format 1's keys (below) plus `family`. Format 1 (`RecipeFormatV1`)
-files, written by v1.11.1 and earlier, are still read.
+Format 2 (`RecipeFormatV2`) is what the app writes for a recipe without a picture profile: format 1's keys (below)
+plus `family`. A recipe with one is written in format 3 (`RecipeFormatV3`): format 2's keys plus the profile's
+(`RecipeFormats.writerFor`). Format 1 (`RecipeFormatV1`) files, written by v1.11.1 and earlier, are still read.
 
 | key | values | missing → |
 |---|---|---|
-| `format` | the reader to use; this build writes `2` and reads `1` and `2` | 1 |
+| `format` | the reader to use; this build writes `2`, or `3` for a recipe with a picture profile, and reads `1` to `3` | 1 |
 | `family` | format 2 only, required: the cameras the values are for. `sony-creative-style` — every body Recipe Lab runs on (Creative Style, Picture Effect, DRO, white balance fine tune). Another family's file (a Canon's, from a later Recipe Lab Studio) is skipped, *made for other cameras* — never read as Sony's | format 2: the file is skipped |
 | `name` | 1–24 of `A–Z a–z 0–9` and ` -.'()&+` — what the name editor can type and every bundled font can draw | the file name |
 | `made-on` | the model it was saved on (`model.name`), informational — setting ids differ across bodies | — |
@@ -320,6 +439,13 @@ files, written by v1.11.1 and earlier, are still read.
 | `amber-blue`, `green-magenta` | -7 .. +7, amber / green positive | 0 |
 | `exposure` | -5.0 .. +5.0 in thirds, as the chip shows it: `+0.7`, `-1.3`, `0` | 0 |
 | `dro` | `off`, `auto`, `1` .. `5` | auto |
+| `gamma` | format 3 only: `off`, `s-log2`, `s-log3`, `itu709`, `hlg`, `movie`, `still`, `cine1`..`cine4`, `itu709-800` (a file from a test build with `logc3` loads with no profile, `awg3` as `camera`). `off` is a recipe without a profile, and the keys below are not read | off |
+| `color-mode` | `camera`, `s-gamut3`, `s-gamut3-cine`, `bt2020` | camera |
+| `black-level` | -15 .. +15 | 0 |
+| `black-gamma`, `black-gamma-range` | -7 .. +7; `narrow`, `middle`, `wide` | 0; middle |
+| `knee`, `knee-slope` | `off` or 75 .. 105 (percent); -5 .. +5 | off; 0 |
+| `color-saturation` | -32 .. +32 | 0 |
+| `color-phase`, `s-curve` | -7 .. +7 | 0 |
 
 Quality is not part of a recipe: it follows the Factory base like every other recipe.
 
@@ -340,6 +466,9 @@ app writes with the newest (`RecipeFormats.current()`). The YAML envelope every 
   family line in a format 1 file would let a Canon recipe be read as Sony's on v1.11.1. Those apps skip a format 2
   file instead. The cost: a card from a newer camera, or recipes Studio sends, are not read by v1.11.1 or earlier —
   protocol 5 is how Studio knows a camera reads them.
+- Format 3 exists for the picture profile: an older app, or a Studio that predates it, would read a profile recipe's
+  Creative Style keys and drop the rest — another look under the same name. They skip a format 3 file instead, and a
+  recipe without a profile stays format 2 so they keep reading it. Protocol 6 is how Studio knows a camera reads them.
 
 **Untrusted input.** A file may come from anyone. Every value is checked against what the store takes
 (`CustomRecipes.problem`, the same ranges as the chips); one bad value skips the file with the reason, nothing is
@@ -381,11 +510,22 @@ recipe picked, then power-cycled, is still the camera's look.
 A custom recipe as a link, `https://recipelab.io/r#<code>`, for QR codes (`RecipeShare`). Recipe Lab Studio and
 recipelab.io read and write the same codes; `test/fixtures/recipe-share-vectors.tsv` is the same file in all three
 repos, and each one's tests run it. The `#` part never reaches a server. The code is base64url without padding (no
-`=`, and stray bits after the last byte refuse it) of:
+`=`, and stray bits after the last byte refuse it) of the bytes below. The link is the same for every version: byte 0
+says how to read the rest, so a link once shared keeps working.
+
+**Assume every table grows.** A newer app will write recipes this one cannot hold. Telling that apart from a damaged
+code is the rule, in all three repos (`RecipeShare.needsNewerApp`, Studio's the same, `recipeCodeNeedsNewerApp` on
+the site): a version above the highest known, or a camera family not known, is *newer* — say "update the app", never
+"invalid" — and anything else wrong (out of range, truncated) is *invalid*. The recipe file's `format: N` above the
+highest known is likewise refused as *made by a newer Recipe Lab: update the app*. So a change that adds a value to a
+table (a style, effect, option, gamma, colour mode) is a new link version and, for files, a new format, plus a new
+protocol number so Studio knows the camera reads it; an old reader then says *update* instead of misreading. Writers use
+the oldest version that holds the recipe. `RecipeShareTest` pins each table's size and fails when one grows: that
+failure is the reminder. Add the new `newer` rows to the vectors file when you bump the version. Never reorder a table.
 
 | byte | value |
 |---|---|
-| 0 | version, 1 |
+| 0 | version: 1 for a recipe without a picture profile, 2 for one with |
 | 1 | camera family: `0` `sony-creative-style`. Another family's link is refused (*made for other cameras*); its values after this byte are its own |
 | 2 | style, index in `RecipeShare.STYLES` — the runtime names in the order of the file's `style` comment, not the stored enum |
 | 3, 4, 5 | saturation, contrast, sharpness, plus 3 |
@@ -395,10 +535,31 @@ repos, and each one's tests run it. The `#` part never reaches a server. The cod
 | 10 | DRO: 0 off, 1 .. 5, 6 auto |
 | 11 | effect, index in `Recipes.PE_KEYS` |
 | 12 | effect option, index in `Recipes.subValues`; 0 for an effect without options |
-| 13 .. | the name, ASCII, 1 .. 24 characters a name may hold |
+| 13 .. | version 1: the name, ASCII, 1 .. 24 characters a name may hold |
 
-The tables are frozen: a new style or effect goes at the end. The longest code fits a version 5 QR code (37 × 37) at
-error correction M.
+Version 2 is version 1 with the picture profile between byte 12 and the name, as `IspProfiles.Look.normal` keeps it
+(a black gamma range with no black gamma reads as middle, a knee slope with no knee as 0):
+
+| byte | value |
+|---|---|
+| 13 | gamma, index in `IspProfiles.CURVE_CODES`: 1 .. 4 (0, no profile, is refused: that recipe is a version 1 link) |
+| 14 | colour mode, index in `IspProfiles.GAMUT_CODES` |
+| 15 | black level, plus 15 |
+| 16 | black gamma, plus 7 |
+| 17 | black gamma range, index in `IspProfiles.RANGE_CODES` |
+| 18 | knee: 0 off, else the point in percent, 75 .. 105 |
+| 19 | knee slope, plus 5 |
+| 20 | colour saturation, plus 32 |
+| 21 | colour phase, plus 7 |
+| 22 | s-curve, plus 7 |
+| 23 .. | the name, as version 1's |
+
+A recipe without a profile is always written as version 1, so apps from before version 2 (camera up to v1.13.1, and
+Studio and recipelab.io before it) keep reading it; they refuse a version 2 link rather than read it without its
+profile, another look under the same name.
+
+The tables are frozen: a new style, effect, gamma or colour mode goes at the end. The longest version 1 code fits a
+version 5 QR code (37 × 37) at error correction M, the longest version 2 code a version 6 (41 × 41).
 
 ### On the camera
 
@@ -442,8 +603,10 @@ recipes is the phone's job. There is no other mode: the camera never joins anoth
 It began as *Photo Studio Link*, a separate PMCA app speaking protocol 1; moving it into Recipe Lab made it protocol
 2, which adds the JPEGs and the recipe files. Protocol 3 adds one request, `PUT` of a custom recipe file, and
 changes nothing else; protocol 4 adds `DELETE` of one; protocol 5 changes nothing on the wire but says the camera reads
-format 2 recipe files. The phone app takes photos from any of them, sends recipes from 5 on (it writes format 2, which
-3 and 4 take but skip) and deletes them from 4 on.
+format 2 recipe files; protocol 6 likewise says it reads format 3 (a picture profile). The phone app takes photos from
+any of them, sends recipes from 5 on (it writes format 2, which 3 and 4 take but skip), a recipe with a picture profile
+from 6 on, and deletes them from 4 on. A phone app that predates a protocol refuses the camera (*Update both*), so
+Studio ships the new number first.
 
 **Hold MENU → Sync recipes** is the same hotspot and the same server under its own title, with the phone's other way
 in on the page (Import → Sync recipes): there the phone lists `RECIPES`, fetches the files it lacks and sends the ones
@@ -484,14 +647,14 @@ answer in 30 s (`TransferState.START_TIMEOUT_MS`) say so on the red line. There 
 
 The model in `/api/info` is `model.name` (`KeyProbe`) — `Build.MODEL` is `ScalarA` on every body.
 
-### Protocol 5
+### Protocol 6
 
 HTTP/1.1 on TCP port **8080**, all interfaces, one response per connection (`Connection: close`), files streamed
 in 32 KB chunks and never held whole. Paths are relative to the card root, with `/` separators.
 
 | request | response |
 |---|---|
-| `GET /api/info` | `{"app":"recipe-lab","protocol":5,"model":"ILCE-6000","name":"Sony α6000"}` — non-ASCII `\u` escaped, so `"Sony \u03b16000"` on the wire |
+| `GET /api/info` | `{"app":"recipe-lab","protocol":6,"model":"ILCE-6000","name":"Sony α6000"}` — non-ASCII `\u` escaped, so `"Sony \u03b16000"` on the wire |
 | `GET /api/files` | `{"files":[{"path":"DCIM/100MSDCF/DSC01542.ARW","size":25624576,"modified":1507981649000,"type":"arw"}, …]}`: every `.ARW`, `.JPG` and `.JPEG` (any case) outside `PRIVATE/`, `AVF_INFO/`, `RECIPES/` and dot-folders, newest first (equal times by path, descending), `modified` in epoch ms, `type` `arw` or `jpg` |
 | `GET /api/preview?path=<rel>&size=small\|large` | `image/jpeg` with `X-Orientation: 1–8`; `size` defaults to `large`. **ARW:** the JPEG embedded in it (about 1616×1080 large, 160×120 small; falls back to the other if one is missing). **JPEG:** `small` is its Exif thumbnail (IFD1, 160×120 on the A6000) — 404 when it has none; `large` is the file itself. The orientation is IFD0's 0x0112, 1 when absent |
 | `GET /api/recipes` | `{"files":[{"path":"RECIPES/GOLDENHO.YML","size":214,"modified":1507981649000}, …]}`: every `*.YML` (any case) directly in the `RECIPES` folder (any case) at the card root, by path; `{"files":[]}` when there is none. The path is the card's own spelling, ready for `/files/` |
@@ -750,7 +913,7 @@ against a SHA-256 pinned in the script (`JUNIT_JAR=<path>` points it at a copy w
 
 | | |
 |---|---|
-| `RecipesTest` | the table itself — 77 entries (76 listed + the factory look, which navigation skips), group order, every value inside its row's range, kelvin in whole hundreds, sub-parameters that exist for the effect; labels, `summary()`, wrap-around navigation |
+| `RecipesTest` | the table itself — 89 entries (the factory look, the 76 film looks and the twelve picture profiles), group order, every value inside its row's range, kelvin in whole hundreds, sub-parameters that exist for the effect; labels, `summary()`, wrap-around navigation |
 | `ParamsCodecTest` | how the store encodes each row (DRO bytes, any Picture Profile reading as on, magenta-positive G-M, the quality pair, signed vs unsigned slots) and how it reads back |
 | `ParamsWritesTest` | which bytes ENTER writes for a recipe — golden lists for a few, and every recipe stored over a factory camera, then on top of each other, read back through the same decoder |
 | `ParamsPreviewTest` | the `Camera.Parameters` the live preview sets, recipe by recipe |
@@ -768,7 +931,7 @@ against a SHA-256 pinned in the script (`JUNIT_JAR=<path>` points it at a copy w
 | `LibraryTest` | one index over the table and the custom recipes: the wheel walks into them and wraps, the panel counts them in the total |
 | `NameEntryTest` | the name editor: the placeholder the first character replaces, capitals, delete, the length limit, walking the grid with the four-way and the wheel |
 | `TransferStateTest` | Transfer to phone's page state: the hotspot starting, up with its network and password (quotes off), failing and why, the start timeout |
-| `LinkServerTest` | the protocol 5 server on an ephemeral port against a temporary card, over real sockets: DELETE of a recipe file (removed, refused, missing), PUT of a recipe file (new, replaced, refused, too large, a folder that links out), `/api/info`, the ARW and JPEG listing, ARW and JPEG previews (the Exif thumbnail, the file itself, none), `/api/recipes` in any case, ranges, HEAD, 405, path traversal and symlinks that lead out, concurrent downloads, the counters |
+| `LinkServerTest` | the protocol 6 server on an ephemeral port against a temporary card, over real sockets: DELETE of a recipe file (removed, refused, missing), PUT of a recipe file (new, replaced, refused, too large, a folder that links out), `/api/info`, the ARW and JPEG listing, ARW and JPEG previews (the Exif thumbnail, the file itself, none), `/api/recipes` in any case, ranges, HEAD, 405, path traversal and symlinks that lead out, concurrent downloads, the counters |
 | `FileIndexTest`, `ArwPreviewTest` | the photo listing (ARW and JPEG, `type`, newest first, `PRIVATE` / `AVF_INFO` / `RECIPES` / dot-folders skipped) and the recipe listing; the TIFF walk on synthetic ARWs and on JPEGs with an Exif thumbnail (both byte orders, kept inside the segment). `RECIPELAB_TEST_ARW=/path/to/A6000.ARW` adds checks against a real file |
 | `HttpRequestTest`, `ByteRangeTest`, `StorageRootTest`, `SmallPartsTest` | request parsing, `Range`, the path rules, JSON escaping, the info document, the rate meter |
 | `RecipeShareTest`, `QrScanTest` | the share code against the shared vectors, every field's range, refused codes; a generated code read back from a live view frame, a photo, small and off centre, light on dark; what a code holds; which pictures a press added and which to read; the photo's read size |

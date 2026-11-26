@@ -150,7 +150,7 @@ class ParamsWritesTest {
                 assertArrayEquals(factoryRows(), cur, "the factory store decodes to the factory rows");
                 cur[R_QUAL] = base;           // a camera set to this quality
                 int[] edit = staged(r, cur, base);
-                apply(store, writes(cur, edit, storedSub(store, edit)));
+                apply(store, writes(cur, edit, storedSub(store, edit))); storeLook(store, edit);
                 store.put(ID_QFMT, Q_FMT_CODE[edit[R_QUAL]]); store.put(ID_QJPG, Q_JPG_CODE[edit[R_QUAL]]);   // when quality was not dirty the store already held it
                 assertArrayEquals(edit, load(store), r.name + " over " + Q_LABEL[base] + ": what was stored is not what reads back");
             }
@@ -166,7 +166,7 @@ class ParamsWritesTest {
         for (int i : path) {
             int[] cur = load(store);
             int[] edit = staged(Recipes.ALL[i], cur, Q_FINE);
-            apply(store, writes(cur, edit, storedSub(store, edit)));
+            apply(store, writes(cur, edit, storedSub(store, edit))); storeLook(store, edit);
             int[] back = load(store);
             assertArrayEquals(edit, back, Recipes.ALL[i].name + " after " + (i > 0 ? Recipes.ALL[i - 1].name : "factory"));
             // and a second ENTER has nothing left to do

@@ -120,6 +120,23 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private int menuLevel = DevTools.LEVEL_APP, menuPage = PAGE_ROWS;   // which menu, and whether it shows rows or a read-only page
     private int menuSel = 0, settleIdx = DevTools.SETTLE_DEFAULT;   // menu: highlighted row · developer menu: chosen settle delay
     private int langChoice = Lang.AUTO;                         // the Language row: Lang.AUTO or a language
+    // the picture profile (IspProfiles): the staged rows' look goes to the image processor through the root helper
+    private boolean ispClear;                                   // a retired profile was saved: the helper must run "off" once
+    private IspProfiles.Look ispStored;                         // the look of the recipe last stored: the profile rows' "cur", applied again on every start
+    private IspProfiles.Look ispLive;                           // what the image processor holds, as far as the app knows
+    private boolean ispKnown, ispRunning, ispQueued;            // ispLive is known · the helper is running · the rows changed meanwhile
+    private IspProfiles.Look ispRunningLook;                    // the look the running helper applies
+    private int ispPolls, ispResends;
+    private String ispCmd;                                      // the running helper's command line, sent again when the shell dropped it
+    private final Runnable ispApplySoon = new Runnable() { public void run() { ispSync(true); } };
+    // the live-preview parameters last given to this camera object: a step that leaves them as they are (a profile chip)
+    // costs no camera round trip. Null after the camera is opened again or the store is written
+    private Map<String, String> previewSent;
+    private final Runnable ispPoll = new Runnable() { public void run() { ispCheck(); } };
+    private String ispModel, ispFw;                             // this camera, as IspBodies and the helper's body file know it
+    private int probePolls, probeResends;
+    private String probeCmd;
+    private final Runnable probePoll = new Runnable() { public void run() { probeCheck(); } };
     private static final int PAGE_ROWS = 0, PAGE_ABOUT = 1, PAGE_TRANSFER = 2;
     private TransferMode transfer;                              // Transfer to phone, while its page is open (null otherwise)
     private boolean transferSync;                               // the page was opened as Sync recipes: same link, its own words
@@ -128,7 +145,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private SponsorLine sponsor;
     private LinearLayout chips;
     private final TextView[] chipLabel = new TextView[N], chipValue = new TextView[N];
-    private final View[] chip = new View[N];
+    private final View[] chip = new View[N], chipSep = new View[N];   // chipSep: the line before a chip that starts a group
     private final Handler handler = new Handler();
     private final Runnable hideToast = new Runnable() { public void run() { toast.setVisibility(View.GONE); } };
     // press / hold of the three keys that have both: centre (pick / favorite), MENU (exit / app menu), trash (hide / factory)
@@ -176,12 +193,20 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         super.onCreate(b);
         setContentView(R.layout.main);
         prefs = getPreferences(MODE_PRIVATE);
-        recipe = Math.max(0, Math.min(Recipes.ALL.length - 1, prefs.getInt("recipe", 0)));
+        recipe = Library.restoredIndex(prefs.getInt("recipe", 0));
         favStored = prefs.getString(Favorites.PREF, "");
         favs = Favorites.decode(favStored, library);
         wheelGroup = Favorites.wheelGroup(prefs.getString("wheelGroup", null));
         settleIdx = DevTools.clampSettle(prefs.getInt("settle", DevTools.SETTLE_DEFAULT));
         langChoice = Lang.parseChoice(prefs.getString("language", null));
+        String savedLook = prefs.getString("ispLook", null);
+        ispStored = Params.lookFrom(savedLook);
+        if (Params.retiredLook(savedLook)) {                     // updated with it on: forget it, and take it out of the ISP on resume
+            ispClear = true;
+            prefs.edit().putString("ispLook", Params.lookText(null)).commit();
+            persistLook(null);
+        }
+        ispModel = KeyProbe.prop("model.name"); ispFw = KeyProbe.firmware();
         panel = findViewById(R.id.panel);
         picker = (PickerView) findViewById(R.id.picker);
         chipScroll = (HorizontalScrollView) findViewById(R.id.chipscroll);
@@ -265,8 +290,14 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
      * now and the end of every log — so a user attaches one thing. Replaced on every save.
      */
     private void saveReport() {
+        if (cardRoot() == null) { showToast(Lang.t("report_need_card"), 4000); return; }
+        if (!startProbe()) writeReport();                       // with a probe, writeReport follows its answer
+    }
+
+    private void writeReport() {
         File root = cardRoot();
         if (root == null) { showToast(Lang.t("report_need_card"), 4000); return; }
+        File probe = probeDir();
         String flat = null;
         try { if (camera != null) flat = camera.getParameters().flatten(); } catch (Throwable t) {}
         String head = CardLog.header(KeyProbe.prop("model.name"), KeyProbe.firmware(), KeyProbe.prop("version.platform"), androidVersion(), versionName(),
@@ -277,9 +308,31 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
                             CardLog.app(Recipes.displayName(library.get(recipe)), !dirty(), edited(), Lang.choiceCode(langChoice)
                                     + (langChoice == Lang.AUTO ? " (" + Lang.CODES[Lang.current()] + ")" : ""),
                                     library.customNames().size(), skipped, favs.size()),
-                            CardLog.state(cur), flat));
+                            CardLog.state(cur), flat, probe == null ? null : new File(probe, "log"), ispReport(root),
+                            new File(ispDir(), "log"), BootReceiver.dir() == null ? null : new File(BootReceiver.dir(), "log"),
+                            BootReceiver.dir() == null ? null : new File(BootReceiver.dir(), "boot.log")));
             showToast(Lang.t("report_saved", CardLog.DIR + "/" + CardLog.REPORT), 8000);   // long enough to read the path
         } catch (Throwable t) { showToast(Lang.t("report_failed", String.valueOf(t.getMessage())), 0); }
+    }
+
+    /**
+     * The report's ISP lines: free space where the app and the helper write (app data is a ramdisk; a full one fails
+     * every profile with "No space left on device") and the files the app keeps there, biggest first
+     */
+    private String ispReport(File card) {
+        StringBuilder sb = new StringBuilder();
+        File app = getFilesDir().getParentFile();
+        String[][] where = { { "app", getFilesDir().getPath() }, { "data", Environment.getDataDirectory().getPath() },
+                             { "card", card.getPath() } };
+        for (String[] w : where) {
+            try {
+                android.os.StatFs s = new android.os.StatFs(w[1]);
+                long block = s.getBlockSize();
+                sb.append(CardLog.storage(w[0], block * s.getAvailableBlocks(), block * s.getBlockCount())).append('\n');
+            } catch (Throwable t) { sb.append(w[0]).append(" storage unreadable: ").append(t).append('\n'); }
+        }
+        try { sb.append("app files ").append(CardLog.biggest(app, 8)).append('\n'); } catch (Throwable t) {}
+        return sb.toString();
     }
 
     /** a preview line, once per change: the same failure on every key press would bury the rest */
@@ -306,6 +359,13 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
 
     private void buildChips() {
         for (int i : ORDER) {
+            View sep = new View(this);
+            sep.setBackgroundColor(DIM);
+            LinearLayout.LayoutParams sp = new LinearLayout.LayoutParams(dp(1), LinearLayout.LayoutParams.MATCH_PARENT);
+            sp.rightMargin = dp(5); sp.topMargin = dp(4); sp.bottomMargin = dp(4);
+            sep.setLayoutParams(sp);
+            chips.addView(sep);
+            chipSep[i] = sep;
             LinearLayout c = new LinearLayout(this);
             c.setOrientation(LinearLayout.VERTICAL);
             c.setGravity(Gravity.CENTER_HORIZONTAL);
@@ -315,7 +375,12 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             c.setLayoutParams(lp);
             TextView l = new TextView(this); l.setTextSize(9);                    // its text is set by render(), in the display language
             TextView v = new TextView(this); v.setTextSize(13); v.setTypeface(Typeface.DEFAULT_BOLD); v.setSingleLine(true);
-            c.addView(l); c.addView(v);
+            // WRAP_CONTENT, not the vertical layout's default MATCH_PARENT: a TextView of fixed width never asks for a
+            // new layout when its text grows, so the chip kept its first width and cut a longer value (S-Log2) short
+            int wrap = LinearLayout.LayoutParams.WRAP_CONTENT;
+            LinearLayout.LayoutParams ll = new LinearLayout.LayoutParams(wrap, wrap);
+            ll.gravity = Gravity.LEFT;                                            // the label sits at the card's left; the value stays centred
+            c.addView(l, ll); c.addView(v, new LinearLayout.LayoutParams(wrap, wrap));
             chips.addView(c);
             chip[i] = c; chipLabel[i] = l; chipValue[i] = v;
         }
@@ -353,6 +418,11 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         if (last >= 0) recipe = last;
         lastPreviewLog = ""; origFlat = null;
         resumed = true;
+        // the image processor is RAM only: a power cycle since the app last ran has made it stock. Without a stored
+        // profile it is stock either way (leaving the app puts the stored one back), so nothing needs running
+        ispKnown = ispStored == null && !ispClear; ispLive = null; ispClear = false;
+        BootReceiver.appOpened();                                // the keep-alive loop lets go of the root shell
+        pullState();
         try {
             openCamera();
             origFlat = camera.getParameters().flatten();
@@ -375,6 +445,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         Method open = cx.getMethod("open", int.class, Class.forName("com.sony.scalar.hardware.CameraEx$OpenOptions"));
         cameraEx = open.invoke(null, 0, null);
         camera = (Camera) cx.getMethod("getNormalCamera").invoke(cameraEx);
+        previewSent = null;
     }
 
     /** lets go of the camera: its decoder refuses every photo while the app holds it (Playback) */
@@ -434,6 +505,14 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         // leave the live parameters equal to what is STORED (not to the launch snapshot): the camera writes some live
         // values (exposure bias, WB fine-tune) straight back into the settings store, which would undo a fresh store
         try { if (camera != null) { load(); System.arraycopy(cur, 0, edit, 0, N); applyPreview(); } } catch (Throwable t) {}
+        try {                                                    // the stored profile, not one being tried
+            System.arraycopy(cur, 0, edit, 0, N);
+            handler.removeCallbacks(ispApplySoon); handler.removeCallbacks(ispPoll);
+            if (probeCmd != null) { handler.removeCallbacks(probePoll); probeCmd = null; writeReport(); }   // a report asked for is not lost
+            // a loop, not one apply: the camera rewrites gamma at its own times (ISP init, after boot) with the app gone
+            if (ispStored != null && BootReceiver.startLoop(this, ispStored)) { ispRunning = false; ispQueued = false; }
+            else { ispRunning = false; ispSync(true); }
+        } catch (Throwable t) {}
         try { if (camera != null) camera.stopPreview(); } catch (Throwable t) {}
         try { if (cameraEx != null) cameraEx.getClass().getMethod("release").invoke(cameraEx); } catch (Throwable t) {}
         cameraEx = null; camera = null;
@@ -463,9 +542,11 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
                 int id = ROW_ID[i];
                 if (id == SUB_SLOT) { int sid = Recipes.subId(cur[R_PE]); cur[i] = edit[i] = sid == 0 ? 0 : rdu(sid); continue; }
                 if (id == QUALITY_SLOTS) { cur[i] = edit[i] = readQuality(); continue; }
+                if (id == ISP || id == NO_SLOT) continue;       // the profile rows: below; LOOK has no slot
                 cur[i] = edit[i] = Params.fromStore(id, NativeBackup.readByte(id));
             }
         } catch (Throwable t) { showToast(Lang.t("status_read_failed", String.valueOf(t.getMessage())), 0); log(CardLog.FAIL, "read: " + t); }
+        Params.putLook(ispStored, cur); Params.putLook(ispStored, edit);   // the store has no profile: the app keeps the stored one
     }
 
     private void stageRecipe() {
@@ -519,6 +600,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private void writeAll(boolean confirmed) {
         if (!confirmed && qualityChanges()) { openPrompt(P_QUALITY, 0); return; }
         if (!dirty()) { showToast(Lang.t("status_already_picked"), 2500); return; }
+        previewSent = null;                                      // the store write may move the camera's parameters
         int storedSub = storedSub();
         int n = Params.dirtyRows(cur, edit, storedSub);
         List<Params.Write> ws = Params.writes(cur, edit, storedSub);
@@ -541,6 +623,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         if (written > 0) NativeBackup.sync();                    // Backup_sync_all is void: nothing to catch, nothing to report
         boolean ok = msg == null;
         if (ok) log(CardLog.WRITE, CardLog.written(what, ws));
+        if (ok) storeLook();
         if (ok) msg = Lang.t(n == 1 ? "status_picked_one" : "status_picked_many", n);
         // what was written is now the look: keep it on the chips — re-staging the recipe would drop edits just applied
         // to a built-in one ("Apply only"); after a refusal, the recipe is staged again, ready to retry
@@ -848,6 +931,210 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         return true;
     }
 
+    // ------------------------------------------------------------ Picture profile: the root helper writes the ISP
+    private static final int ISP_SETTLE_MS = 1000, ISP_POLL_MS = 250;
+
+    /** the folder the helper reads its profile from and writes its log and state into */
+    private File ispDir() { return new File(getFilesDir(), "isp"); }
+
+    /** a write went in: the staged profile is now the stored one, applied again on every start */
+    private void storeLook() {
+        IspProfiles.Look l = Params.look(edit);
+        ispStored = l == null ? null : l.normal();
+        prefs.edit().putString("ispLook", Params.lookText(ispStored)).commit();
+        persistLook(ispStored);                                  // the SD card copy the boot receiver reads
+    }
+
+    /**
+     * Writes the look tag to the SD card so the boot receiver can apply it at power-on. SharedPreferences live on a
+     * ramdisk and are lost; the card is persistent. When l is null, the file is removed (no profile to apply at boot).
+     */
+    private static void persistLook(IspProfiles.Look l) {
+        try {
+            File dir = BootReceiver.dir();
+            if (dir == null) return;
+            File f = new File(dir, "look.txt");
+            if (l == null) { f.delete(); return; }
+            dir.mkdirs();
+            FileOutputStream o = new FileOutputStream(f);
+            try { o.write(Params.lookText(l).getBytes()); } finally { o.close(); }
+        } catch (Throwable t) {}                                 // best-effort: opening the app still restores the profile
+    }
+
+    private static boolean same(IspProfiles.Look a, IspProfiles.Look b) { return a == null ? b == null : a.equals(b); }
+
+    /**
+     * Brings the image processor to the staged rows' look, like the live preview does for the camera's parameters.
+     * {@code now}: at once; otherwise once the rows have stopped changing for a moment, so stepping a chip through its
+     * values runs the helper only where it stops.
+     */
+    private void ispSync(boolean now) {
+        handler.removeCallbacks(ispApplySoon);
+        IspProfiles.Look want = Params.look(edit);
+        if (ispKnown && same(want, ispLive)) return;
+        if (!now) { handler.postDelayed(ispApplySoon, ISP_SETTLE_MS); return; }
+        if (ispRunning || probeCmd != null) { ispQueued = true; return; }   // the shell runs one command at a time
+        ispApply(want);
+    }
+
+    /** runs the helper for {@code l} (null restores the camera's setters), then reads its log until it answers */
+    private void ispApply(IspProfiles.Look l) {
+        File dir = ispDir(), log = new File(dir, "log");
+        String helper = getApplicationInfo().nativeLibraryDir + "/librlisp.so";
+        String cmd = IspProfiles.command(helper, l == null ? "off" : "apply", dir.getPath());
+        ispLive = l; ispKnown = true;                            // also when it fails: not tried again until the rows change
+        String[] no = IspBodies.refusal(ispModel, ispFw);
+        if (no != null) {                                        // this body or firmware has no row: the helper is not run
+            if (l != null) showToast(Lang.t(no[0], no[1]), 5000);
+            return;
+        }
+        try {
+            if (cmd == null) throw new IllegalStateException("command too long");
+            if (!dir.isDirectory() && !dir.mkdirs()) throw new IllegalStateException("cannot create " + dir);
+            writeBody(dir);
+            if (l != null) {
+                FileOutputStream o = new FileOutputStream(new File(dir, "profile.bin"));
+                try { o.write(IspProfiles.encode(l)); } finally { o.close(); }
+            } else {
+                new File(dir, "state.bin").delete();
+            }
+            try {
+                File sd = BootReceiver.dir();
+                if (sd != null) {
+                    sd.mkdirs();
+                    writeBody(sd);
+                    if (l != null) {
+                        new File(sd, "stop").delete();
+                        FileOutputStream bo = new FileOutputStream(new File(sd, "profile.bin"));
+                        try { bo.write(IspProfiles.encode(l)); } finally { bo.close(); }
+                    } else {
+                        new FileOutputStream(new File(sd, "stop")).close();
+                        new File(sd, "state.bin").delete();          // stock is read fresh next time, not an old style's
+                    }
+                }
+            } catch (Throwable ignored) {}
+            log.delete();
+            NativeShell.exec(cmd);
+        } catch (Throwable t) {
+            log(CardLog.FAIL, "isp: " + t);
+            showToast(Lang.t("isp_error", String.valueOf(t.getMessage())), 0);
+            return;
+        }
+        ispRunning = true; ispRunningLook = l; ispPolls = 0; ispResends = 0; ispCmd = cmd;
+        handler.postDelayed(ispPoll, ISP_POLL_MS);
+    }
+
+    /** one look at the helper's log: its answer, or another look a little later, or no answer at all. Only a problem is said */
+    private void ispCheck() {
+        String text = null;
+        try { text = readSmall(new File(ispDir(), "log")); } catch (Throwable t) {}
+        int r = IspProfiles.result(text);
+        ++ispPolls;
+        if (IspProfiles.resend(text, ispPolls, ispResends)) {    // the keep-alive loop was still letting go of the shell
+            ispResends++; ispPolls = 0;
+            try { NativeShell.exec(ispCmd); } catch (Throwable t) {}
+            handler.postDelayed(ispPoll, ISP_POLL_MS); return;
+        }
+        if (IspProfiles.keepWaiting(text, ispPolls)) { handler.postDelayed(ispPoll, ISP_POLL_MS); return; }
+        ispRunning = false;
+        log(r == IspProfiles.R_OK || r == IspProfiles.R_OFF ? CardLog.INFO : CardLog.FAIL,
+                "isp " + (ispRunningLook == null ? "off" : ispRunningLook.toString()) + ": " + (text == null ? "no log" : text.trim().replace('\n', ' ')));
+        String msg = null;
+        switch (r) {
+            case IspProfiles.R_OK: syncState(); break;
+            case IspProfiles.R_OFF: break;
+            case IspProfiles.R_REFUSED: { String[] no = IspBodies.refusal(IspProfiles.resultLine(text)); msg = Lang.t(no[0], no[1]); break; }
+            case IspProfiles.R_MISMATCH: msg = Lang.t("isp_mismatch"); break;
+            case IspProfiles.R_PENDING: msg = Lang.t("isp_no_root"); break;
+            default: msg = Lang.t("isp_error", String.valueOf(IspProfiles.resultLine(text)));
+        }
+        if (msg != null) showToast(msg, 5000);
+        if (ispQueued) { ispQueued = false; ispSync(true); }
+    }
+
+    /** the helper's body file in {@code dir}: which model and firmware this is, so it picks its row of bodies.h */
+    private void writeBody(File dir) throws java.io.IOException {
+        FileOutputStream o = new FileOutputStream(new File(dir, "body"));
+        try { o.write(IspBodies.bodyFile(ispModel, ispFw).getBytes("US-ASCII")); } finally { o.close(); }
+    }
+
+    /** where the bug report's probe runs: its own folder, so its log never mixes with the loop's or the app's */
+    private static File probeDir() {
+        File d = BootReceiver.dir();
+        return d == null ? null : new File(d, "PROBE");
+    }
+
+    /** polls (of 250 ms) the probe gets: a body with no usable row scans all its RAM, which takes a while (60 s) */
+    private static final int PROBE_POLLS = 240;
+
+    /**
+     * Starts the read-only probe the bug report carries (rlisp probe: which row this camera is, where av-cam sits, the
+     * live tables); false when it cannot run now, and the report goes without a fresh one.
+     */
+    private boolean startProbe() {
+        File dir = probeDir();
+        if (dir == null || ispRunning) return false;             // the shell runs one command at a time
+        String cmd = IspProfiles.command(getApplicationInfo().nativeLibraryDir + "/librlisp.so", "probe", dir.getPath());
+        if (cmd == null) return false;
+        try {
+            dir.mkdirs();
+            writeBody(dir);
+            new File(dir, "log").delete();
+            NativeShell.exec(cmd);
+        } catch (Throwable t) { log(CardLog.FAIL, "probe: " + t); return false; }
+        probeCmd = cmd; probePolls = 0; probeResends = 0;
+        showToast(Lang.t("report_probing"), 0);
+        handler.postDelayed(probePoll, ISP_POLL_MS);
+        return true;
+    }
+
+    private void probeCheck() {
+        String text = null;
+        try { text = readSmall(new File(probeDir(), "log")); } catch (Throwable t) {}
+        ++probePolls;
+        if (IspProfiles.resend(text, probePolls, probeResends)) {
+            probeResends++; probePolls = 0;
+            try { NativeShell.exec(probeCmd); } catch (Throwable t) {}
+            handler.postDelayed(probePoll, ISP_POLL_MS); return;
+        }
+        if (IspProfiles.result(text) == IspProfiles.R_PENDING && probePolls < PROBE_POLLS) { handler.postDelayed(probePoll, ISP_POLL_MS); return; }
+        probeCmd = null;
+        writeReport();
+        if (ispQueued) { ispQueued = false; ispSync(true); }
+    }
+
+    /** state.bin (stock matrix + the matrix last written) to the card, for the boot / keep-alive loop */
+    private void syncState() { copyState(ispDir(), BootReceiver.dir()); }
+
+    /** the loop may have written the matrix since: its state.bin is the newest, or the app takes our matrix for stock */
+    private void pullState() { copyState(BootReceiver.dir(), ispDir()); }
+
+    private static void copyState(File from, File to) {
+        try {
+            if (from == null || to == null) return;
+            File src = new File(from, "state.bin");
+            if (!src.exists()) return;
+            to.mkdirs();
+            FileInputStream in = new FileInputStream(src);
+            try {
+                FileOutputStream out = new FileOutputStream(new File(to, "state.bin"));
+                try { byte[] buf = new byte[512]; int n; while ((n = in.read(buf)) > 0) out.write(buf, 0, n); }
+                finally { out.close(); }
+            } finally { in.close(); }
+        } catch (Throwable ignored) {}
+    }
+
+    /** a short text file the app may read, whole; null when it is not there */
+    private static String readSmall(File f) throws java.io.IOException {
+        if (!f.exists()) return null;
+        FileInputStream in = new FileInputStream(f);
+        try {
+            byte[] b = new byte[4096]; int n = 0, r;
+            while (n < b.length && (r = in.read(b, n, b.length - n)) > 0) n += r;
+            return new String(b, 0, n, "UTF-8");
+        } finally { in.close(); }
+    }
+
     // ------------------------------------------------------------ Transfer to phone (app menu): a page that serves the card over Wi-Fi
     /**
      * the camera's hotspot and the server up, the page showing how it goes — refreshed by every event and once a second.
@@ -1042,7 +1329,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         cardPainter.setTypeface(UiFont.of(this, Lang.current()));
         cardPainter.useStudioFonts(getAssets());
         String[] rows = { Lang.t("share_shape"), Lang.t("share_save"), Lang.t("share_show_qr") };
-        qr.card(cardPainter, RecipeCardLayout.of(cardShape), shareRecipe, shareModules, shareSize, rows,
+        qr.card(cardPainter, RecipeCardLayout.of(cardShape, shareRecipe), shareRecipe, shareModules, shareSize, rows,
                 RecipeCardLayout.LABEL[cardShape], shareRow, Keys.hints(Keys.H_SHARE, caps));
     }
 
@@ -1065,7 +1352,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
      */
     private void saveCard() {
         final Recipes.Recipe r = shareRecipe;
-        final RecipeCardLayout l = RecipeCardLayout.of(cardShape);
+        final RecipeCardLayout l = RecipeCardLayout.of(cardShape, r);
         final boolean[] modules = shareModules;
         final int size = shareSize;
         final File dcim = new File(cardRoot(), "DCIM");
@@ -1473,6 +1760,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
                 if (fromPhoto) renderScan(Lang.t("qr_scan_shutter"));
                 return;
             }
+            case QrScan.NEWER: showToast(Lang.t("qr_newer"), 6000); closeQr(); return;
             case QrScan.UNREADABLE: showToast(Lang.t("qr_unreadable"), 6000); closeQr(); return;
         }
         Recipes.Recipe r = RecipeShare.decode(text);
@@ -1748,11 +2036,14 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private void applyPreview() {
         if (camera == null) return;
         try {
-            Camera.Parameters p = camera.getParameters();
             Map<String, String> wanted = Params.preview(edit);
+            if (previewOk && wanted.equals(previewSent)) return;  // only profile rows moved: the camera already has the rest
+            previewSent = null;
+            Camera.Parameters p = camera.getParameters();
             for (Map.Entry<String, String> e : wanted.entrySet()) p.set(e.getKey(), e.getValue());
             camera.setParameters(p);
             previewOk = true;
+            previewSent = wanted;
             Camera.Parameters back = camera.getParameters();     // what the camera kept: a dropped value throws nothing (#104)
             Map<String, String> got = new java.util.HashMap<String, String>();
             for (String k : wanted.keySet()) got.put(k, back.get(k));
@@ -1761,6 +2052,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             String mode = back.get(CardLog.MODE_KEY);              // read anyway: a dial turned with the app open costs nothing more
             if (mode != null && !mode.equals(lastMode)) { log(CardLog.INFO, "mode " + lastMode + " > " + mode); lastMode = mode; }
         } catch (Throwable t) { previewOk = false; previewErr = String.valueOf(t.getMessage()); logPreview("parameters refused: " + previewErr); }
+        finally { ispSync(false); }                              // the profile rows: the image processor, a moment later
     }
 
     // ------------------------------------------------------------ UI
@@ -1811,6 +2103,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             }
             for (int i : ORDER) {
                 chip[i].setVisibility(rowVisible(i) ? View.VISIBLE : View.GONE);
+                chipSep[i].setVisibility(Params.separatorBefore(i, edit) ? View.VISIBLE : View.GONE);
                 boolean sel = i == row && !onActions, ch = rowDirty(i), foc = sel && focus;
                 chip[i].setBackgroundResource(foc ? R.drawable.chip_sel : sel ? R.drawable.chip_hi : R.drawable.chip);
                 chipLabel[i].setText(Params.rowName(i));

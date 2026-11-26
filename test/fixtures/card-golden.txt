@@ -1,0 +1,186 @@
+# Recipe Lab (camera) recipe card, in English: what it lists and where; the same file is in Recipe Lab Studio.
+# Written by RecipeCardGoldenTest (RECIPELAB_WRITE_GOLDEN=1 tools/test.sh RecipeCardGolden), never by hand.
+# cells|share code|label=value|...  (every built-in recipe, then every style, effect and option, white balance,
+#   DRO, exposure and picture profile setting)
+# layout|shape,profile,effect|headerTop,nameTop,rowHeight,labelSize,valueTop,valueSize,scanTop|qr|scan band|name|groups|cells
+#   each rectangle left,top,right,bottom; a list of them separated by ';'
+cells|AQAAAwMDAAcHDwYAAENhcmQ|Creative Style=Standard|Saturation=0|Contrast=0|Sharpness=0|White balance=Auto|Exposure=0 EV|DRO=Auto
+cells|AQADAwMDAAcHDwYAAENhcmQ|Creative Style=Portrait|Saturation=0|Contrast=0|Sharpness=0|White balance=Auto|Exposure=0 EV|DRO=Auto
+cells|AQACAwMDAAcHDwYAAENhcmQ|Creative Style=Neutral|Saturation=0|Contrast=0|Sharpness=0|White balance=Auto|Exposure=0 EV|DRO=Auto
+cells|AQABAwMDAAcHDwYAAENhcmQ|Creative Style=Vivid|Saturation=0|Contrast=0|Sharpness=0|White balance=Auto|Exposure=0 EV|DRO=Auto
+cells|AQABBQQDAAcHDwYAAENhcmQ|Creative Style=Vivid|Saturation=+2|Contrast=+1|Sharpness=0|White balance=Auto|Exposure=0 EV|DRO=Auto
+cells|AQACAAIDAAgHDwYAAENhcmQ|Creative Style=Neutral|Saturation=-3|Contrast=-1|Sharpness=0|White balance=Auto A1|Exposure=0 EV|DRO=Auto
+cells|AQACAAADAAcGDwYAAENhcmQ|Creative Style=Neutral|Saturation=-3|Contrast=-3|Sharpness=0|White balance=Auto M1|Exposure=0 EV|DRO=Auto
+cells|AQAIAQEDAAgHEgYFAENhcmQ|Picture Effect=Soft high-key · Blue|White balance=Auto A1|Exposure=+1.0 EV
+cells|AQAABAMDAAcHDwYAAENhcmQ|Creative Style=Standard|Saturation=+1|Contrast=0|Sharpness=0|White balance=Auto|Exposure=0 EV|DRO=Auto
+cells|AQABBgUDAAcHDwYAAENhcmQ|Creative Style=Vivid|Saturation=+3|Contrast=+2|Sharpness=0|White balance=Auto|Exposure=0 EV|DRO=Auto
+cells|AQADAwIDAAgHEAYAAENhcmQ|Creative Style=Portrait|Saturation=0|Contrast=-1|Sharpness=0|White balance=Auto A1|Exposure=+0.3 EV|DRO=Auto
+cells|AQAAAgUDAAoIDgYAAENhcmQ|Creative Style=Standard|Saturation=-1|Contrast=+2|Sharpness=0|White balance=Auto A3 G1|Exposure=-0.3 EV|DRO=Auto
+cells|AQAAAAYEAAYIDwYAAENhcmQ|Creative Style=Standard|Saturation=-3|Contrast=+3|Sharpness=+1|White balance=Auto B1 G1|Exposure=0 EV|DRO=Auto
+cells|AQAABAMDAAoHDwYAAENhcmQ|Creative Style=Standard|Saturation=+1|Contrast=0|Sharpness=0|White balance=Auto A3|Exposure=0 EV|DRO=Auto
+cells|AQAAAwQDAAcHDwYAAENhcmQ|Creative Style=Standard|Saturation=0|Contrast=+1|Sharpness=0|White balance=Auto|Exposure=0 EV|DRO=Auto
+cells|AQADAQIDAAcHDwYAAENhcmQ|Creative Style=Portrait|Saturation=-2|Contrast=-1|Sharpness=0|White balance=Auto|Exposure=0 EV|DRO=Auto
+cells|AQADAQQDAAcHDwYAAENhcmQ|Creative Style=Portrait|Saturation=-2|Contrast=+1|Sharpness=0|White balance=Auto|Exposure=0 EV|DRO=Auto
+cells|AQACAAECAAcHDgMAAENhcmQ|Creative Style=Neutral|Saturation=-3|Contrast=-2|Sharpness=-1|White balance=Auto|Exposure=-0.3 EV|DRO=Level 3
+cells|AQACAAYDAAcHDgAAAENhcmQ|Creative Style=Neutral|Saturation=-3|Contrast=+3|Sharpness=0|White balance=Auto|Exposure=-0.3 EV|DRO=Off
+cells|AQAFAwQEAAcHDwYAAENhcmQ|Creative Style=B&W|Saturation=0|Contrast=+1|Sharpness=+1|White balance=Auto|Exposure=0 EV|DRO=Auto
+cells|AQAFAwQEKAcHDwYAAENhcmQ|Creative Style=B&W|Saturation=0|Contrast=+1|Sharpness=+1|White balance=4000K|Exposure=0 EV|DRO=Auto
+cells|AQAFAwMDGQcHDwYHAENhcmQ|Picture Effect=HC mono|White balance=2500K|Exposure=0 EV
+cells|AQAFAwQEOAcLDwYAAENhcmQ|Creative Style=B&W|Saturation=0|Contrast=+1|Sharpness=+1|White balance=5600K G4|Exposure=0 EV|DRO=Auto
+cells|AQAMAwMDAAcHDwYAAENhcmQ|Creative Style=Sepia|Saturation=0|Contrast=0|Sharpness=0|White balance=Auto|Exposure=0 EV|DRO=Auto
+cells|AQAIAQEDAAYIEQYAAENhcmQ|Creative Style=Light|Saturation=-2|Contrast=-2|Sharpness=0|White balance=Auto B1 G1|Exposure=+0.7 EV|DRO=Auto
+cells|AQABBgUDAAYHDgYAAENhcmQ|Creative Style=Vivid|Saturation=+3|Contrast=+2|Sharpness=0|White balance=Auto B1|Exposure=-0.3 EV|DRO=Auto
+cells|AQAABAQDAAgIEAYAAENhcmQ|Creative Style=Standard|Saturation=+1|Contrast=+1|Sharpness=0|White balance=Auto A1 G1|Exposure=+0.3 EV|DRO=Auto
+cells|AQAAAwMDAAYIDwYAAENhcmQ|Creative Style=Standard|Saturation=0|Contrast=0|Sharpness=0|White balance=Auto B1 G1|Exposure=0 EV|DRO=Auto
+cells|AQADAQEDAAgHEAYAAENhcmQ|Creative Style=Portrait|Saturation=-2|Contrast=-2|Sharpness=0|White balance=Auto A1|Exposure=+0.3 EV|DRO=Auto
+cells|AQADAAEDAAgGEQYAAENhcmQ|Creative Style=Portrait|Saturation=-3|Contrast=-2|Sharpness=0|White balance=Auto A1 M1|Exposure=+0.7 EV|DRO=Auto
+cells|AQADAgIDAAoIEQYAAENhcmQ|Creative Style=Portrait|Saturation=-1|Contrast=-1|Sharpness=0|White balance=Auto A3 G1|Exposure=+0.7 EV|DRO=Auto
+cells|AQADAQEDAAgIEAYAAENhcmQ|Creative Style=Portrait|Saturation=-2|Contrast=-2|Sharpness=0|White balance=Auto A1 G1|Exposure=+0.3 EV|DRO=Auto
+cells|AQAABQQDAAoIEAYAAENhcmQ|Creative Style=Standard|Saturation=+2|Contrast=+1|Sharpness=0|White balance=Auto A3 G1|Exposure=+0.3 EV|DRO=Auto
+cells|AQAAAwMDAAcIEAYAAENhcmQ|Creative Style=Standard|Saturation=0|Contrast=0|Sharpness=0|White balance=Auto G1|Exposure=+0.3 EV|DRO=Auto
+cells|AQAABAQDAAkIEAYAAENhcmQ|Creative Style=Standard|Saturation=+1|Contrast=+1|Sharpness=0|White balance=Auto A2 G1|Exposure=+0.3 EV|DRO=Auto
+cells|AQAABgQEAAcHDgYAAENhcmQ|Creative Style=Standard|Saturation=+3|Contrast=+1|Sharpness=+1|White balance=Auto|Exposure=-0.3 EV|DRO=Auto
+cells|AQAGBgQDAAYHDgYAAENhcmQ|Creative Style=Clear|Saturation=+3|Contrast=+1|Sharpness=0|White balance=Auto B1|Exposure=-0.3 EV|DRO=Auto
+cells|AQAHBgUEAAYHDgYAAENhcmQ|Creative Style=Deep|Saturation=+3|Contrast=+2|Sharpness=+1|White balance=Auto B1|Exposure=-0.3 EV|DRO=Auto
+cells|AQACAgMDIAcHEAMAAENhcmQ|Creative Style=Neutral|Saturation=-1|Contrast=0|Sharpness=0|White balance=3200K|Exposure=+0.3 EV|DRO=Level 3
+cells|AQACAQADMgkKEAMAAENhcmQ|Creative Style=Neutral|Saturation=-2|Contrast=-3|Sharpness=0|White balance=5000K A2 G3|Exposure=+0.3 EV|DRO=Level 3
+cells|AQAFAwUFAAcHEAYAAENhcmQ|Creative Style=B&W|Saturation=0|Contrast=+2|Sharpness=+2|White balance=Auto|Exposure=+0.3 EV|DRO=Auto
+cells|AQAFAwUGAAcHDwYAAENhcmQ|Creative Style=B&W|Saturation=0|Contrast=+2|Sharpness=+3|White balance=Auto|Exposure=0 EV|DRO=Auto
+cells|AQAFAwMDAAcHEAYHAENhcmQ|Picture Effect=HC mono|White balance=Auto|Exposure=+0.3 EV
+cells|AQAAAQIDNwYGDwYAAENhcmQ|Creative Style=Standard|Saturation=-2|Contrast=-1|Sharpness=0|White balance=5500K B1 M1|Exposure=0 EV|DRO=Auto
+cells|AQACAwMDIAcGEAYAAENhcmQ|Creative Style=Neutral|Saturation=0|Contrast=0|Sharpness=0|White balance=3200K M1|Exposure=+0.3 EV|DRO=Auto
+cells|AQAAAwIDPAkHDwMAAENhcmQ|Creative Style=Standard|Saturation=0|Contrast=-1|Sharpness=0|White balance=6000K A2|Exposure=0 EV|DRO=Level 3
+cells|AQACAQEDAAcHDwUAAENhcmQ|Creative Style=Neutral|Saturation=-2|Contrast=-2|Sharpness=0|White balance=Auto|Exposure=0 EV|DRO=Level 5
+cells|AQAABgUDAAkHDgYAAENhcmQ|Creative Style=Standard|Saturation=+3|Contrast=+2|Sharpness=0|White balance=Auto A2|Exposure=-0.3 EV|DRO=Auto
+cells|AQACAQQDAAYIEAYAAENhcmQ|Creative Style=Neutral|Saturation=-2|Contrast=+1|Sharpness=0|White balance=Auto B1 G1|Exposure=+0.3 EV|DRO=Auto
+cells|AQACAAYEAAcHDwAAAENhcmQ|Creative Style=Neutral|Saturation=-3|Contrast=+3|Sharpness=+1|White balance=Auto|Exposure=0 EV|DRO=Off
+cells|AQAAAAIDAAoGDwYEAENhcmQ|Picture Effect=Retro|White balance=Auto A3 M1|Exposure=0 EV
+cells|AQABBQUDAAULDwYAAENhcmQ|Creative Style=Vivid|Saturation=+2|Contrast=+2|Sharpness=0|White balance=Auto B2 G4|Exposure=0 EV|DRO=Auto
+cells|AQAFAwYEAAcHDwYHAENhcmQ|Picture Effect=HC mono|White balance=Auto|Exposure=0 EV
+cells|AQAFAwUFAAcHDwYAAENhcmQ|Creative Style=B&W|Saturation=0|Contrast=+2|Sharpness=+2|White balance=Auto|Exposure=0 EV|DRO=Auto
+cells|AQAFAwECAAcHDwYAAENhcmQ|Creative Style=B&W|Saturation=0|Contrast=-2|Sharpness=-1|White balance=Auto|Exposure=0 EV|DRO=Auto
+cells|AQAABAQDAAcHDwYAAENhcmQ|Creative Style=Standard|Saturation=+1|Contrast=+1|Sharpness=0|White balance=Auto|Exposure=0 EV|DRO=Auto
+cells|AQAAAgUDAAgHDwYAAENhcmQ|Creative Style=Standard|Saturation=-1|Contrast=+2|Sharpness=0|White balance=Auto A1|Exposure=0 EV|DRO=Auto
+cells|AQACAAIDAAgHDwMAAENhcmQ|Creative Style=Neutral|Saturation=-3|Contrast=-1|Sharpness=0|White balance=Auto A1|Exposure=0 EV|DRO=Level 3
+cells|AQAFAwUEAAcHDwYAAENhcmQ|Creative Style=B&W|Saturation=0|Contrast=+2|Sharpness=+1|White balance=Auto|Exposure=0 EV|DRO=Auto
+cells|AQACAgIDAAcHDwYAAENhcmQ|Creative Style=Neutral|Saturation=-1|Contrast=-1|Sharpness=0|White balance=Auto|Exposure=0 EV|DRO=Auto
+cells|AQAABAQDAAgGDwYAAENhcmQ|Creative Style=Standard|Saturation=+1|Contrast=+1|Sharpness=0|White balance=Auto A1 M1|Exposure=0 EV|DRO=Auto
+cells|AQADAwMCAAgGDwYAAENhcmQ|Creative Style=Portrait|Saturation=0|Contrast=0|Sharpness=-1|White balance=Auto A1 M1|Exposure=0 EV|DRO=Auto
+cells|AQACAwMDAAcHDwYAAENhcmQ|Creative Style=Neutral|Saturation=0|Contrast=0|Sharpness=0|White balance=Auto|Exposure=0 EV|DRO=Auto
+cells|AQACAAACAAcHDwUAAENhcmQ|Creative Style=Neutral|Saturation=-3|Contrast=-3|Sharpness=-1|White balance=Auto|Exposure=0 EV|DRO=Level 5
+cells|AQABBAQEAAcHDwYAAENhcmQ|Creative Style=Vivid|Saturation=+1|Contrast=+1|Sharpness=+1|White balance=Auto|Exposure=0 EV|DRO=Auto
+cells|AQAFAwYEAAcHDwYAAENhcmQ|Creative Style=B&W|Saturation=0|Contrast=+3|Sharpness=+1|White balance=Auto|Exposure=0 EV|DRO=Auto
+cells|AQACAAIDAAkHEAYAAENhcmQ|Creative Style=Neutral|Saturation=-3|Contrast=-1|Sharpness=0|White balance=Auto A2|Exposure=+0.3 EV|DRO=Auto
+cells|AQABBgYDAAcHDwYAAENhcmQ|Creative Style=Vivid|Saturation=+3|Contrast=+3|Sharpness=0|White balance=Auto|Exposure=0 EV|DRO=Auto
+cells|AQAIAAEDAAcHEQYAAENhcmQ|Creative Style=Light|Saturation=-3|Contrast=-2|Sharpness=0|White balance=Auto|Exposure=+0.7 EV|DRO=Auto
+cells|AQAABQQDAAkGEAYAAENhcmQ|Creative Style=Standard|Saturation=+2|Contrast=+1|Sharpness=0|White balance=Auto A2 M1|Exposure=+0.3 EV|DRO=Auto
+cells|AQABBgQDAAcHDwYAAENhcmQ|Creative Style=Vivid|Saturation=+3|Contrast=+1|Sharpness=0|White balance=Auto|Exposure=0 EV|DRO=Auto
+cells|AQAAAAEDAAgFEAYEAENhcmQ|Picture Effect=Retro|White balance=Auto A1 M2|Exposure=+0.3 EV
+cells|AQAFAwQDAAcHEAYAAENhcmQ|Creative Style=B&W|Saturation=0|Contrast=+1|Sharpness=0|White balance=Auto|Exposure=+0.3 EV|DRO=Auto
+cells|AQAFAwQEAAcHDwYAAENhcmQ|Creative Style=B&W|Saturation=0|Contrast=+1|Sharpness=+1|White balance=Auto|Exposure=0 EV|DRO=Auto
+cells|AQAFAwQEAAcHDwYAAENhcmQ|Creative Style=B&W|Saturation=0|Contrast=+1|Sharpness=+1|White balance=Auto|Exposure=0 EV|DRO=Auto
+cells|AQAFAwYBAAcHEQYAAENhcmQ|Creative Style=B&W|Saturation=0|Contrast=+3|Sharpness=-2|White balance=Auto|Exposure=+0.7 EV|DRO=Auto
+cells|AQAFAwUFAAcHDwYAAENhcmQ|Creative Style=B&W|Saturation=0|Contrast=+2|Sharpness=+2|White balance=Auto|Exposure=0 EV|DRO=Auto
+cells|AgAAAwMDAAcHDwAAAAEBDwcBAAUgBwdDYXJk|Creative Style=Standard|Saturation=0|Contrast=0|Sharpness=0|White balance=Auto|Exposure=0 EV|DRO=Off|Gamma=S-Log2|Colour mode=S-Gamut3|Black level=0|Black gamma=0|Knee=Off|Colour saturation=0|Colour phase=0|S-curve=0
+cells|AgAAAwMDAAcHDwAAAAICDwcBAAUgBwdDYXJk|Creative Style=Standard|Saturation=0|Contrast=0|Sharpness=0|White balance=Auto|Exposure=0 EV|DRO=Off|Gamma=S-Log3|Colour mode=S-Gamut3.Cine|Black level=0|Black gamma=0|Knee=Off|Colour saturation=0|Colour phase=0|S-curve=0
+cells|AgAAAwMDAAcHDwAAAAIBDwcBAAUgBwdDYXJk|Creative Style=Standard|Saturation=0|Contrast=0|Sharpness=0|White balance=Auto|Exposure=0 EV|DRO=Off|Gamma=S-Log3|Colour mode=S-Gamut3|Black level=0|Black gamma=0|Knee=Off|Colour saturation=0|Colour phase=0|S-curve=0
+cells|AgAAAwMDAAcHDwAAAAMADwcBAAUgBwdDYXJk|Creative Style=Standard|Saturation=0|Contrast=0|Sharpness=0|White balance=Auto|Exposure=0 EV|DRO=Off|Gamma=ITU709|Colour mode=ITU709 Matrix|Black level=0|Black gamma=0|Knee=Off|Colour saturation=0|Colour phase=0|S-curve=0
+cells|AgAAAwMDAAcHDwAAAAQDDwcBAAUgBwdDYXJk|Creative Style=Standard|Saturation=0|Contrast=0|Sharpness=0|White balance=Auto|Exposure=0 EV|DRO=Off|Gamma=HLG|Colour mode=BT.2020|Black level=0|Black gamma=0|Knee=Off|Colour saturation=0|Colour phase=0|S-curve=0
+cells|AgAAAwMDAAcHDwAAAAUADwcBAAUgBwdDYXJk|Creative Style=Standard|Saturation=0|Contrast=0|Sharpness=0|White balance=Auto|Exposure=0 EV|DRO=Off|Gamma=Movie|Colour mode=ITU709 Matrix|Black level=0|Black gamma=0|Knee=Off|Colour saturation=0|Colour phase=0|S-curve=0
+cells|AgAAAwMDAAcHDwAAAAYADwcBAAUgBwdDYXJk|Creative Style=Standard|Saturation=0|Contrast=0|Sharpness=0|White balance=Auto|Exposure=0 EV|DRO=Off|Gamma=Still|Colour mode=ITU709 Matrix|Black level=0|Black gamma=0|Knee=Off|Colour saturation=0|Colour phase=0|S-curve=0
+cells|AgAAAwMDAAcHDwAAAAcADwcBAAUgBwdDYXJk|Creative Style=Standard|Saturation=0|Contrast=0|Sharpness=0|White balance=Auto|Exposure=0 EV|DRO=Off|Gamma=Cine1|Colour mode=ITU709 Matrix|Black level=0|Black gamma=0|Knee=Off|Colour saturation=0|Colour phase=0|S-curve=0
+cells|AgAAAwMDAAcHDwAAAAgADwcBAAUgBwdDYXJk|Creative Style=Standard|Saturation=0|Contrast=0|Sharpness=0|White balance=Auto|Exposure=0 EV|DRO=Off|Gamma=Cine2|Colour mode=ITU709 Matrix|Black level=0|Black gamma=0|Knee=Off|Colour saturation=0|Colour phase=0|S-curve=0
+cells|AgAAAwMDAAcHDwAAAAkADwcBAAUgBwdDYXJk|Creative Style=Standard|Saturation=0|Contrast=0|Sharpness=0|White balance=Auto|Exposure=0 EV|DRO=Off|Gamma=Cine3|Colour mode=ITU709 Matrix|Black level=0|Black gamma=0|Knee=Off|Colour saturation=0|Colour phase=0|S-curve=0
+cells|AgAAAwMDAAcHDwAAAAoADwcBAAUgBwdDYXJk|Creative Style=Standard|Saturation=0|Contrast=0|Sharpness=0|White balance=Auto|Exposure=0 EV|DRO=Off|Gamma=Cine4|Colour mode=ITU709 Matrix|Black level=0|Black gamma=0|Knee=Off|Colour saturation=0|Colour phase=0|S-curve=0
+cells|AgAAAwMDAAcHDwAAAAsADwcBAAUgBwdDYXJk|Creative Style=Standard|Saturation=0|Contrast=0|Sharpness=0|White balance=Auto|Exposure=0 EV|DRO=Off|Gamma=ITU709(800%)|Colour mode=ITU709 Matrix|Black level=0|Black gamma=0|Knee=Off|Colour saturation=0|Colour phase=0|S-curve=0
+cells|AQAAAQUCAAcHDwYAAENhcmQ|Creative Style=Standard|Saturation=-2|Contrast=+2|Sharpness=-1|White balance=Auto|Exposure=0 EV|DRO=Auto
+cells|AQABAgQDAAcHDwYAAENhcmQ|Creative Style=Vivid|Saturation=-1|Contrast=+1|Sharpness=0|White balance=Auto|Exposure=0 EV|DRO=Auto
+cells|AQACAwMEAAcHDwYAAENhcmQ|Creative Style=Neutral|Saturation=0|Contrast=0|Sharpness=+1|White balance=Auto|Exposure=0 EV|DRO=Auto
+cells|AQADBAIFAAcHDwYAAENhcmQ|Creative Style=Portrait|Saturation=+1|Contrast=-1|Sharpness=+2|White balance=Auto|Exposure=0 EV|DRO=Auto
+cells|AQAEBQEBAAcHDwYAAENhcmQ|Creative Style=Landscape|Saturation=+2|Contrast=-2|Sharpness=-2|White balance=Auto|Exposure=0 EV|DRO=Auto
+cells|AQAFBgACAAcHDwYAAENhcmQ|Creative Style=B&W|Saturation=+3|Contrast=-3|Sharpness=-1|White balance=Auto|Exposure=0 EV|DRO=Auto
+cells|AQAGAAYDAAcHDwYAAENhcmQ|Creative Style=Clear|Saturation=-3|Contrast=+3|Sharpness=0|White balance=Auto|Exposure=0 EV|DRO=Auto
+cells|AQAHAQUEAAcHDwYAAENhcmQ|Creative Style=Deep|Saturation=-2|Contrast=+2|Sharpness=+1|White balance=Auto|Exposure=0 EV|DRO=Auto
+cells|AQAIAgQFAAcHDwYAAENhcmQ|Creative Style=Light|Saturation=-1|Contrast=+1|Sharpness=+2|White balance=Auto|Exposure=0 EV|DRO=Auto
+cells|AQAJAwMBAAcHDwYAAENhcmQ|Creative Style=Sunset|Saturation=0|Contrast=0|Sharpness=-2|White balance=Auto|Exposure=0 EV|DRO=Auto
+cells|AQAKBAICAAcHDwYAAENhcmQ|Creative Style=Night|Saturation=+1|Contrast=-1|Sharpness=-1|White balance=Auto|Exposure=0 EV|DRO=Auto
+cells|AQALBQEDAAcHDwYAAENhcmQ|Creative Style=Autumn|Saturation=+2|Contrast=-2|Sharpness=0|White balance=Auto|Exposure=0 EV|DRO=Auto
+cells|AQAMAAYFAAcHDwYAAENhcmQ|Creative Style=Sepia|Saturation=-3|Contrast=+3|Sharpness=+2|White balance=Auto|Exposure=0 EV|DRO=Auto
+cells|AQAAAwMDAAcHDwYBAENhcmQ|Picture Effect=Toy camera · Normal|White balance=Auto|Exposure=0 EV
+cells|AQAAAwMDAAcHDwYBAUNhcmQ|Picture Effect=Toy camera · Cool|White balance=Auto|Exposure=0 EV
+cells|AQAAAwMDAAcHDwYBAkNhcmQ|Picture Effect=Toy camera · Warm|White balance=Auto|Exposure=0 EV
+cells|AQAAAwMDAAcHDwYBA0NhcmQ|Picture Effect=Toy camera · Green|White balance=Auto|Exposure=0 EV
+cells|AQAAAwMDAAcHDwYBBENhcmQ|Picture Effect=Toy camera · Magenta|White balance=Auto|Exposure=0 EV
+cells|AQAAAwMDAAcHDwYCAENhcmQ|Picture Effect=Pop colour|White balance=Auto|Exposure=0 EV
+cells|AQAAAwMDAAcHDwYDAENhcmQ|Picture Effect=Posterization · Colour|White balance=Auto|Exposure=0 EV
+cells|AQAAAwMDAAcHDwYDAUNhcmQ|Picture Effect=Posterization · B&W|White balance=Auto|Exposure=0 EV
+cells|AQAAAwMDAAcHDwYEAENhcmQ|Picture Effect=Retro|White balance=Auto|Exposure=0 EV
+cells|AQAAAwMDAAcHDwYFAENhcmQ|Picture Effect=Soft high-key · Blue|White balance=Auto|Exposure=0 EV
+cells|AQAAAwMDAAcHDwYFAUNhcmQ|Picture Effect=Soft high-key · Pink|White balance=Auto|Exposure=0 EV
+cells|AQAAAwMDAAcHDwYFAkNhcmQ|Picture Effect=Soft high-key · Green|White balance=Auto|Exposure=0 EV
+cells|AQAAAwMDAAcHDwYGAENhcmQ|Picture Effect=Part colour · Red|White balance=Auto|Exposure=0 EV
+cells|AQAAAwMDAAcHDwYGAUNhcmQ|Picture Effect=Part colour · Green|White balance=Auto|Exposure=0 EV
+cells|AQAAAwMDAAcHDwYGAkNhcmQ|Picture Effect=Part colour · Blue|White balance=Auto|Exposure=0 EV
+cells|AQAAAwMDAAcHDwYGA0NhcmQ|Picture Effect=Part colour · Yellow|White balance=Auto|Exposure=0 EV
+cells|AQAAAwMDAAcHDwYHAENhcmQ|Picture Effect=HC mono|White balance=Auto|Exposure=0 EV
+cells|AQAAAwMDAAcHDwYIAENhcmQ|Picture Effect=Soft focus|White balance=Auto|Exposure=0 EV
+cells|AQAAAwMDAAcHDwYJAENhcmQ|Picture Effect=HDR art|White balance=Auto|Exposure=0 EV
+cells|AQAAAwMDAAcHDwYKAENhcmQ|Picture Effect=Rich-tone mono|White balance=Auto|Exposure=0 EV
+cells|AQAAAwMDAAcHDwYLAENhcmQ|Picture Effect=Miniature|White balance=Auto|Exposure=0 EV
+cells|AQAAAwMDAAcHDwYMAENhcmQ|Picture Effect=Illustration|White balance=Auto|Exposure=0 EV
+cells|AQAAAwMDAAcHDwYNAENhcmQ|Picture Effect=Watercolour|White balance=Auto|Exposure=0 EV
+cells|AQAAAwMDAQcHDwYAAENhcmQ|Creative Style=Standard|Saturation=0|Contrast=0|Sharpness=0|White balance=As set|Exposure=0 EV|DRO=Auto
+cells|AQAAAwMDGQAODwYAAENhcmQ|Creative Style=Standard|Saturation=0|Contrast=0|Sharpness=0|White balance=2500K B7 G7|Exposure=0 EV|DRO=Auto
+cells|AQAAAwMDOAoHDwYAAENhcmQ|Creative Style=Standard|Saturation=0|Contrast=0|Sharpness=0|White balance=5600K A3|Exposure=0 EV|DRO=Auto
+cells|AQAAAwMDYwcDDwYAAENhcmQ|Creative Style=Standard|Saturation=0|Contrast=0|Sharpness=0|White balance=9900K M4|Exposure=0 EV|DRO=Auto
+cells|AQAAAwMDAA4ADwYAAENhcmQ|Creative Style=Standard|Saturation=0|Contrast=0|Sharpness=0|White balance=Auto A7 M7|Exposure=0 EV|DRO=Auto
+cells|AQAAAwMDAAcHDwAAAENhcmQ|Creative Style=Standard|Saturation=0|Contrast=0|Sharpness=0|White balance=Auto|Exposure=0 EV|DRO=Off
+cells|AQAAAwMDAAcHDwEAAENhcmQ|Creative Style=Standard|Saturation=0|Contrast=0|Sharpness=0|White balance=Auto|Exposure=0 EV|DRO=Level 1
+cells|AQAAAwMDAAcHDwIAAENhcmQ|Creative Style=Standard|Saturation=0|Contrast=0|Sharpness=0|White balance=Auto|Exposure=0 EV|DRO=Level 2
+cells|AQAAAwMDAAcHDwMAAENhcmQ|Creative Style=Standard|Saturation=0|Contrast=0|Sharpness=0|White balance=Auto|Exposure=0 EV|DRO=Level 3
+cells|AQAAAwMDAAcHDwQAAENhcmQ|Creative Style=Standard|Saturation=0|Contrast=0|Sharpness=0|White balance=Auto|Exposure=0 EV|DRO=Level 4
+cells|AQAAAwMDAAcHDwUAAENhcmQ|Creative Style=Standard|Saturation=0|Contrast=0|Sharpness=0|White balance=Auto|Exposure=0 EV|DRO=Level 5
+cells|AQAAAwMDAAcHDwYAAENhcmQ|Creative Style=Standard|Saturation=0|Contrast=0|Sharpness=0|White balance=Auto|Exposure=0 EV|DRO=Auto
+cells|AQAAAwMDAAcHAAYAAENhcmQ|Creative Style=Standard|Saturation=0|Contrast=0|Sharpness=0|White balance=Auto|Exposure=-5.0 EV|DRO=Auto
+cells|AQAAAwMDAAcHBAYAAENhcmQ|Creative Style=Standard|Saturation=0|Contrast=0|Sharpness=0|White balance=Auto|Exposure=-3.7 EV|DRO=Auto
+cells|AQAAAwMDAAcHCAYAAENhcmQ|Creative Style=Standard|Saturation=0|Contrast=0|Sharpness=0|White balance=Auto|Exposure=-2.3 EV|DRO=Auto
+cells|AQAAAwMDAAcHDAYAAENhcmQ|Creative Style=Standard|Saturation=0|Contrast=0|Sharpness=0|White balance=Auto|Exposure=-1.0 EV|DRO=Auto
+cells|AQAAAwMDAAcHEAYAAENhcmQ|Creative Style=Standard|Saturation=0|Contrast=0|Sharpness=0|White balance=Auto|Exposure=+0.3 EV|DRO=Auto
+cells|AQAAAwMDAAcHFAYAAENhcmQ|Creative Style=Standard|Saturation=0|Contrast=0|Sharpness=0|White balance=Auto|Exposure=+1.7 EV|DRO=Auto
+cells|AQAAAwMDAAcHGAYAAENhcmQ|Creative Style=Standard|Saturation=0|Contrast=0|Sharpness=0|White balance=Auto|Exposure=+3.0 EV|DRO=Auto
+cells|AQAAAwMDAAcHHAYAAENhcmQ|Creative Style=Standard|Saturation=0|Contrast=0|Sharpness=0|White balance=Auto|Exposure=+4.3 EV|DRO=Auto
+cells|AgAAAwMDAAcHDwAAAAEADwcBAAUgBwdDYXJk|Creative Style=Standard|Saturation=0|Contrast=0|Sharpness=0|White balance=Auto|Exposure=0 EV|DRO=Off|Gamma=S-Log2|Colour mode=ITU709 Matrix|Black level=0|Black gamma=0|Knee=Off|Colour saturation=0|Colour phase=0|S-curve=0
+cells|AgAAAwMDAAcHDwAAAAIADwcBAAUgBwdDYXJk|Creative Style=Standard|Saturation=0|Contrast=0|Sharpness=0|White balance=Auto|Exposure=0 EV|DRO=Off|Gamma=S-Log3|Colour mode=ITU709 Matrix|Black level=0|Black gamma=0|Knee=Off|Colour saturation=0|Colour phase=0|S-curve=0
+cells|AgAAAwMDAAcHDwAAAAMADwcBAAUgBwdDYXJk|Creative Style=Standard|Saturation=0|Contrast=0|Sharpness=0|White balance=Auto|Exposure=0 EV|DRO=Off|Gamma=ITU709|Colour mode=ITU709 Matrix|Black level=0|Black gamma=0|Knee=Off|Colour saturation=0|Colour phase=0|S-curve=0
+cells|AgAAAwMDAAcHDwAAAAQADwcBAAUgBwdDYXJk|Creative Style=Standard|Saturation=0|Contrast=0|Sharpness=0|White balance=Auto|Exposure=0 EV|DRO=Off|Gamma=HLG|Colour mode=ITU709 Matrix|Black level=0|Black gamma=0|Knee=Off|Colour saturation=0|Colour phase=0|S-curve=0
+cells|AgAAAwMDAAcHDwAAAAICCwoCWgMsBAxDYXJk|Creative Style=Standard|Saturation=0|Contrast=0|Sharpness=0|White balance=Auto|Exposure=0 EV|DRO=Off|Gamma=S-Log3|Colour mode=S-Gamut3.Cine|Black level=-4|Black gamma=+3 · Wide|Knee=90% · -2|Colour saturation=+12|Colour phase=-3|S-curve=+5
+cells|AgAAAwMDAAcHDwAAAAMDFgIAUAkMDQFDYXJk|Creative Style=Standard|Saturation=0|Contrast=0|Sharpness=0|White balance=Auto|Exposure=0 EV|DRO=Off|Gamma=ITU709|Colour mode=BT.2020|Black level=+7|Black gamma=-5 · Narrow|Knee=80% · +4|Colour saturation=-20|Colour phase=+6|S-curve=-6
+cells|AgAAAwMDAAcHDwAAAAQDAA4BaQBAAA5DYXJk|Creative Style=Standard|Saturation=0|Contrast=0|Sharpness=0|White balance=Auto|Exposure=0 EV|DRO=Off|Gamma=HLG|Colour mode=BT.2020|Black level=-15|Black gamma=+7 · Middle|Knee=105% · -5|Colour saturation=+32|Colour phase=-7|S-curve=+7
+cells|AgAAAwMDAAcHDwAAAAEBHgACSwoADgBDYXJk|Creative Style=Standard|Saturation=0|Contrast=0|Sharpness=0|White balance=Auto|Exposure=0 EV|DRO=Off|Gamma=S-Log2|Colour mode=S-Gamut3|Black level=+15|Black gamma=-7 · Wide|Knee=75% · +5|Colour saturation=-32|Colour phase=+7|S-curve=-7
+cells|AgAAAwMDAAcHDwAAAAIADwcBAAUAAAdDYXJk|Creative Style=Standard|Saturation=0|Contrast=0|Sharpness=0|White balance=Auto|Exposure=0 EV|DRO=Off|Gamma=S-Log3|Colour mode=ITU709 Matrix|Black level=0|Black gamma=0|Knee=Off|Colour saturation=-32|Colour phase=-7|S-curve=0
+cells|AgAAAwMDAAcHDwAAAAEADwcBAAUgBwpDYXJk|Creative Style=Standard|Saturation=0|Contrast=0|Sharpness=0|White balance=Auto|Exposure=0 EV|DRO=Off|Gamma=S-Log2|Colour mode=ITU709 Matrix|Black level=0|Black gamma=0|Knee=Off|Colour saturation=0|Colour phase=0|S-curve=+3
+cells|AgAAAwMDAAcHDwAAAAUADwcBAAUgBwdDYXJk|Creative Style=Standard|Saturation=0|Contrast=0|Sharpness=0|White balance=Auto|Exposure=0 EV|DRO=Off|Gamma=Movie|Colour mode=ITU709 Matrix|Black level=0|Black gamma=0|Knee=Off|Colour saturation=0|Colour phase=0|S-curve=0
+cells|AgAAAwMDAAcHDwAAAAYADwcBAAUgBwdDYXJk|Creative Style=Standard|Saturation=0|Contrast=0|Sharpness=0|White balance=Auto|Exposure=0 EV|DRO=Off|Gamma=Still|Colour mode=ITU709 Matrix|Black level=0|Black gamma=0|Knee=Off|Colour saturation=0|Colour phase=0|S-curve=0
+cells|AgAAAwMDAAcHDwAAAAcADwcBAAUgBwdDYXJk|Creative Style=Standard|Saturation=0|Contrast=0|Sharpness=0|White balance=Auto|Exposure=0 EV|DRO=Off|Gamma=Cine1|Colour mode=ITU709 Matrix|Black level=0|Black gamma=0|Knee=Off|Colour saturation=0|Colour phase=0|S-curve=0
+cells|AgAAAwMDAAcHDwAAAAgADwcBAAUgBwdDYXJk|Creative Style=Standard|Saturation=0|Contrast=0|Sharpness=0|White balance=Auto|Exposure=0 EV|DRO=Off|Gamma=Cine2|Colour mode=ITU709 Matrix|Black level=0|Black gamma=0|Knee=Off|Colour saturation=0|Colour phase=0|S-curve=0
+cells|AgAAAwMDAAcHDwAAAAkADwcBAAUgBwdDYXJk|Creative Style=Standard|Saturation=0|Contrast=0|Sharpness=0|White balance=Auto|Exposure=0 EV|DRO=Off|Gamma=Cine3|Colour mode=ITU709 Matrix|Black level=0|Black gamma=0|Knee=Off|Colour saturation=0|Colour phase=0|S-curve=0
+cells|AgAAAwMDAAcHDwAAAAoADwcBAAUgBwdDYXJk|Creative Style=Standard|Saturation=0|Contrast=0|Sharpness=0|White balance=Auto|Exposure=0 EV|DRO=Off|Gamma=Cine4|Colour mode=ITU709 Matrix|Black level=0|Black gamma=0|Knee=Off|Colour saturation=0|Colour phase=0|S-curve=0
+cells|AgAAAwMDAAcHDwAAAAsADwcBAAUgBwdDYXJk|Creative Style=Standard|Saturation=0|Contrast=0|Sharpness=0|White balance=Auto|Exposure=0 EV|DRO=Off|Gamma=ITU709(800%)|Colour mode=ITU709 Matrix|Black level=0|Black gamma=0|Knee=Off|Colour saturation=0|Colour phase=0|S-curve=0
+cells|AgAAAwMDAAcHDwAAAAoCCwoCWgMsBAxDYXJk|Creative Style=Standard|Saturation=0|Contrast=0|Sharpness=0|White balance=Auto|Exposure=0 EV|DRO=Off|Gamma=Cine4|Colour mode=S-Gamut3.Cine|Black level=-4|Black gamma=+3 · Wide|Knee=90% · -2|Colour saturation=+12|Colour phase=-3|S-curve=+5
+cells|AgAAAwMDAAcHDwAAAAUDFgIAUAkMDQFDYXJk|Creative Style=Standard|Saturation=0|Contrast=0|Sharpness=0|White balance=Auto|Exposure=0 EV|DRO=Off|Gamma=Movie|Colour mode=BT.2020|Black level=+7|Black gamma=-5 · Narrow|Knee=80% · +4|Colour saturation=-20|Colour phase=+6|S-curve=-6
+cells|AgAAAwMDAAcHDwAAAAYAAA4BaQBAAA5DYXJk|Creative Style=Standard|Saturation=0|Contrast=0|Sharpness=0|White balance=Auto|Exposure=0 EV|DRO=Off|Gamma=Still|Colour mode=ITU709 Matrix|Black level=-15|Black gamma=+7 · Middle|Knee=105% · -5|Colour saturation=+32|Colour phase=-7|S-curve=+7
+cells|AgAAAwMDAAcHDwAAAAsBHgACSwoADgBDYXJk|Creative Style=Standard|Saturation=0|Contrast=0|Sharpness=0|White balance=Auto|Exposure=0 EV|DRO=Off|Gamma=ITU709(800%)|Colour mode=S-Gamut3|Black level=+15|Black gamma=-7 · Wide|Knee=75% · +5|Colour saturation=-32|Colour phase=+7|S-curve=-7
+cells|AgAAAwMDAAcHDwAAAAcADwcBAAUgBwpDYXJk|Creative Style=Standard|Saturation=0|Contrast=0|Sharpness=0|White balance=Auto|Exposure=0 EV|DRO=Off|Gamma=Cine1|Colour mode=ITU709 Matrix|Black level=0|Black gamma=0|Knee=Off|Colour saturation=0|Colour phase=0|S-curve=+3
+cells|AgAAAwMDAAcHDwAJAAoDDwQAXwUgBwdDYXJk|Picture Effect=HDR art|White balance=Auto|Exposure=0 EV|Gamma=Cine4|Colour mode=BT.2020|Black level=0|Black gamma=-3 · Narrow|Knee=95%|Colour saturation=0|Colour phase=0|S-curve=0
+layout|4:5,false,false|84,224,100,26,36,36,1280|320,800,760,1240|0,1280,1080,1316|72,224,1008,304|72,372,1008,412;72,612,384,652;384,612,1008,652|72,412,1008,512;72,512,384,612;384,512,696,612;696,512,1008,612;72,652,384,752;384,652,696,752;696,652,1008,752
+layout|4:5,false,true|84,224,100,26,36,36,1280|320,800,760,1240|0,1280,1080,1316|72,224,1008,304|72,372,1008,412;72,512,384,552;384,512,1008,552|72,412,1008,512;72,552,384,652;384,552,696,652
+layout|4:5,true,false|72,184,68,24,28,30,1280|348,856,732,1240|0,1280,1080,1316|72,184,1008,264|72,276,1008,316;72,452,384,492;384,452,1008,492;72,560,1008,600|72,316,1008,384;72,384,384,452;384,384,696,452;696,384,1008,452;72,492,384,560;384,492,696,560;696,492,1008,560;72,600,384,668;384,600,696,668;696,600,1008,668;72,668,384,736;384,668,696,736;696,668,1008,736;72,736,384,804;384,736,696,804
+layout|4:5,true,true|72,184,68,24,28,30,1280|348,856,732,1240|0,1280,1080,1316|72,184,1008,264|72,276,1008,316;72,384,384,424;384,384,1008,424;72,492,1008,532|72,316,1008,384;72,424,384,492;384,424,696,492;72,532,384,600;384,532,696,600;696,532,1008,600;72,600,384,668;384,600,696,668;696,600,1008,668;72,668,384,736;384,668,696,736
+layout|1:1,false,false|72,200,72,26,30,32,800|588,340,1008,760|536,800,1080,836|72,200,1008,280|72,312,548,352;72,640,548,680;72,752,548,792|72,352,548,424;72,424,548,496;72,496,548,568;72,568,548,640;72,680,548,752;72,792,548,864;72,864,548,936
+layout|1:1,false,true|72,200,72,26,30,32,800|588,340,1008,760|536,800,1080,836|72,200,1008,280|72,312,548,352;72,424,548,464;72,536,548,576|72,352,548,424;72,464,548,536;72,576,548,648
+layout|1:1,true,false|72,200,72,26,30,30,780|608,340,1008,740|556,780,1080,816|72,200,1008,280|72,312,328,352;72,640,328,680;72,752,328,792;328,312,584,352|72,352,328,424;72,424,328,496;72,496,328,568;72,568,328,640;72,680,328,752;72,792,328,864;72,864,328,936;328,352,584,424;328,424,584,496;328,496,584,568;328,568,584,640;328,640,584,712;328,712,584,784;328,784,584,856;328,856,584,928
+layout|1:1,true,true|72,200,72,26,30,30,780|608,340,1008,740|556,780,1080,816|72,200,1008,280|72,312,328,352;72,424,328,464;72,536,328,576;328,312,584,352|72,352,328,424;72,464,328,536;72,576,328,648;328,352,584,424;328,424,584,496;328,496,584,568;328,568,584,640;328,640,584,712;328,712,584,784;328,784,584,856;328,856,584,928
+layout|9:16,false,false|270,420,105,26,36,36,1614|280,1050,800,1570|0,1614,1080,1650|72,420,1008,500|72,570,1008,610;72,820,384,860;384,820,1008,860|72,610,1008,715;72,715,384,820;384,715,696,820;696,715,1008,820;72,860,384,965;384,860,696,965;696,860,1008,965
+layout|9:16,false,true|270,420,105,26,36,36,1614|280,1050,800,1570|0,1614,1080,1650|72,420,1008,500|72,570,1008,610;72,715,384,755;384,715,1008,755|72,610,1008,715;72,755,384,860;384,755,696,860
+layout|9:16,true,false|270,380,76,26,32,32,1616|300,1092,780,1572|0,1616,1080,1652|72,380,1008,460|72,468,1008,508;72,660,384,700;384,660,1008,700;72,776,1008,816|72,508,1008,584;72,584,384,660;384,584,696,660;696,584,1008,660;72,700,384,776;384,700,696,776;696,700,1008,776;72,816,384,892;384,816,696,892;696,816,1008,892;72,892,384,968;384,892,696,968;696,892,1008,968;72,968,384,1044;384,968,696,1044
+layout|9:16,true,true|270,380,76,26,32,32,1616|300,1092,780,1572|0,1616,1080,1652|72,380,1008,460|72,468,1008,508;72,584,384,624;384,584,1008,624;72,700,1008,740|72,508,1008,584;72,624,384,700;384,624,696,700;72,740,384,816;384,740,696,816;696,740,1008,816;72,816,384,892;384,816,696,892;696,816,1008,892;72,892,384,968;384,892,696,968

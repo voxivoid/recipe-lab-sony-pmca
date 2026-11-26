@@ -63,13 +63,17 @@ final class CardPainter {
         float[] name = l.nameRect();
         line(c, recipe.name, name[0], name[1], 64, INK, TITLE, name[2] - name[0], false);
 
+        String[] titles = RecipeCardLayout.groupTitles(l.groups.length);
+        for (int i = 0; i < titles.length; i++) {
+            float[] g = l.groups[i];
+            line(c, titles[i].toUpperCase(java.util.Locale.US), g[0], g[1] + RecipeCardLayout.TITLE_TOP, RecipeCardLayout.TITLE_SIZE, DUSK[0], PLATE, g[2] - g[0] - 24, false);
+        }
         String[][] cells = RecipeCardLayout.cells(recipe);
-        boolean roomy = l.rowHeight > 90;
-        for (int i = 0; i < cells.length; i++) {
+        for (int i = 0; i < cells.length && i < l.cells.length; i++) {
             float[] cell = l.cells[i];
             float w = cell[2] - cell[0] - 24;
-            line(c, cells[i][0], cell[0], cell[1], 26, FAINT, LABEL, w, false);
-            line(c, cells[i][1], cell[0], cell[1] + (roomy ? 36 : 32), roomy ? 36 : 32, INK, VALUE, w, false);
+            line(c, cells[i][0], cell[0], cell[1], l.labelSize, FAINT, LABEL, w, false);
+            line(c, cells[i][1], cell[0], cell[1] + l.valueTop, l.valueSize, INK, VALUE, w, false);
         }
 
         float[] t = l.tile();
