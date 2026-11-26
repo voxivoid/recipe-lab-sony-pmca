@@ -513,6 +513,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             if (ispStored != null && BootReceiver.startLoop(this, ispStored)) { ispRunning = false; ispQueued = false; }
             else { ispRunning = false; ispSync(true); }
         } catch (Throwable t) {}
+        // what photos taken from here on get: the stored profile, or none where this body cannot run one (Studio reads it)
+        ProfileLog.record(cardRoot(), IspBodies.refusal(ispModel, ispFw) == null ? ispStored : null);
         try { if (camera != null) camera.stopPreview(); } catch (Throwable t) {}
         try { if (cameraEx != null) cameraEx.getClass().getMethod("release").invoke(cameraEx); } catch (Throwable t) {}
         cameraEx = null; camera = null;

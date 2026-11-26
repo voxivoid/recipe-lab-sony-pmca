@@ -59,6 +59,8 @@ src/com/voxivoid/recipelab/
   CardLog.java                 the shareable logs on the card, RECIPLAB/LOGS: LOG.TXT (opens, writes, failures, preview
                                values the camera did not keep, the shutter, crashes) and DIFF.TXT (the snapshot tool),
                                line format and roll-over — no Android, covered by test/
+  ProfileLog.java              RECIPLAB/PROFILES.TXT: which picture profile the camera held from when, for Recipe Lab
+                               Studio — no Android, covered by test/
   Library.java                 one index over the table's recipes and the custom ones after it: the wheel, the panel's
                                count — no Android, covered by test/
   NameEntry.java               the name editor: placeholder, capitals, delete, walking the keyboard grid — no Android,
@@ -264,6 +266,18 @@ neither a build nor `tools/test.sh` can say anything about them.
 How the profile survives a power cycle (boot event, keep-alive loop, the shell's limits, what failed): read
 [PICTURE-PROFILES.md](PICTURE-PROFILES.md) before changing `BootReceiver`, `IspProfiles.bootCommand` or the `isp*`
 code in `MainActivity`.
+
+**Which profile a photo was taken with.** The ISP is not in the maker notes, so a photo cannot say. `ProfileLog`
+keeps `RECIPLAB/PROFILES.TXT` (8.3, next to `LOGS/`): a head with `format: 1`, then one line per change, the camera's
+time (`CardLog.now`, the clock Exif uses) and format 3's profile keys, e.g.
+`2026-11-26 14:03:27  gamma=s-log3 color-mode=s-gamut3-cine ... s-curve=0`, or `gamma=off`. A line goes in on
+leaving the app (`onPause`: the stored profile, or off on a body that cannot run one) and at power-on
+(`BootReceiver`: what it sent, else off), only when it differs from the last. Past 16 KB the file keeps its last 100
+lines; a file in a newer format is left alone. Recipe Lab Studio reads it on import (over Wi-Fi as
+`/files/RECIPLAB/PROFILES.TXT`, or over USB) and gives each photo the line in force when it was taken.
+`test/fixtures/profile-log-vectors.tsv` (`RECIPELAB_WRITE_GOLDEN=1 tools/test.sh ProfileLog`) is copied to Studio,
+which reads every line of it back. A new curve or colour mode needs no new `format` (Studio takes a line it cannot
+read as unknown, not wrong); a change to how a line is laid out does.
 
 RAM only, on the bodies and firmware listed in `jni/rlisp/bodies.h` (see [Bodies](#bodies) below; the README's
 Picture profiles section says which have been tried). A picture profile is part of a recipe — the GAMMA chip and the nine after it — but its look goes to

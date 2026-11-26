@@ -1,0 +1,31 @@
+# Recipe Lab (camera) PROFILES.TXT lines: share code of a recipe with the profile (or off), a tab, the line.
+# Written by ProfileLogTest (RECIPELAB_WRITE_GOLDEN=1 tools/test.sh ProfileLog), never by hand; the same file is in Recipe Lab Studio.
+# The file starts with:
+#   # Recipe Lab: the picture profile on from each time (camera clock). Recipe Lab Studio reads it
+#   # to know which profile a photo was taken with. Written by the camera app; do not edit.
+#   format: 1
+off	2026-11-26 14:00:00  gamma=off
+AgAAAwMDAAcHDwAAAAEADwcBAAUgBwdMb2c	2026-11-26 14:00:07  gamma=s-log2 color-mode=camera black-level=0 black-gamma=0 black-gamma-range=middle knee=off knee-slope=0 color-saturation=0 color-phase=0 s-curve=0
+AgAAAwMDAAcHDwAAAAIADwcBAAUgBwdMb2c	2026-11-26 14:00:14  gamma=s-log3 color-mode=camera black-level=0 black-gamma=0 black-gamma-range=middle knee=off knee-slope=0 color-saturation=0 color-phase=0 s-curve=0
+AgAAAwMDAAcHDwAAAAMADwcBAAUgBwdMb2c	2026-11-26 14:00:21  gamma=itu709 color-mode=camera black-level=0 black-gamma=0 black-gamma-range=middle knee=off knee-slope=0 color-saturation=0 color-phase=0 s-curve=0
+AgAAAwMDAAcHDwAAAAQADwcBAAUgBwdMb2c	2026-11-26 14:00:28  gamma=hlg color-mode=camera black-level=0 black-gamma=0 black-gamma-range=middle knee=off knee-slope=0 color-saturation=0 color-phase=0 s-curve=0
+AgAAAwMDAAcHDwAAAAICCwoCWgMsBAxMb2c	2026-11-26 14:00:35  gamma=s-log3 color-mode=s-gamut3-cine black-level=-4 black-gamma=+3 black-gamma-range=wide knee=90 knee-slope=-2 color-saturation=+12 color-phase=-3 s-curve=+5
+AgAAAwMDAAcHDwAAAAMDFgIAUAkMDQFMb2c	2026-11-26 14:00:42  gamma=itu709 color-mode=bt2020 black-level=+7 black-gamma=-5 black-gamma-range=narrow knee=80 knee-slope=+4 color-saturation=-20 color-phase=+6 s-curve=-6
+AgAAAwMDAAcHDwAAAAQDAA4BaQBAAA5Mb2c	2026-11-26 14:00:49  gamma=hlg color-mode=bt2020 black-level=-15 black-gamma=+7 black-gamma-range=middle knee=105 knee-slope=-5 color-saturation=+32 color-phase=-7 s-curve=+7
+AgAAAwMDAAcHDwAAAAEBHgACSwoADgBMb2c	2026-11-26 14:00:56  gamma=s-log2 color-mode=s-gamut3 black-level=+15 black-gamma=-7 black-gamma-range=wide knee=75 knee-slope=+5 color-saturation=-32 color-phase=+7 s-curve=-7
+AgAAAwMDAAcHDwAAAAIADwcBAAUAAAdMb2c	2026-11-26 14:01:03  gamma=s-log3 color-mode=camera black-level=0 black-gamma=0 black-gamma-range=middle knee=off knee-slope=0 color-saturation=-32 color-phase=-7 s-curve=0
+AgAAAwMDAAcHDwAAAAEADwcBAAUgBwpMb2c	2026-11-26 14:01:10  gamma=s-log2 color-mode=camera black-level=0 black-gamma=0 black-gamma-range=middle knee=off knee-slope=0 color-saturation=0 color-phase=0 s-curve=+3
+AgAAAwMDAAcHDwAAAAUADwcBAAUgBwdMb2c	2026-11-26 14:01:17  gamma=movie color-mode=camera black-level=0 black-gamma=0 black-gamma-range=middle knee=off knee-slope=0 color-saturation=0 color-phase=0 s-curve=0
+AgAAAwMDAAcHDwAAAAYADwcBAAUgBwdMb2c	2026-11-26 14:01:24  gamma=still color-mode=camera black-level=0 black-gamma=0 black-gamma-range=middle knee=off knee-slope=0 color-saturation=0 color-phase=0 s-curve=0
+AgAAAwMDAAcHDwAAAAcADwcBAAUgBwdMb2c	2026-11-26 14:01:31  gamma=cine1 color-mode=camera black-level=0 black-gamma=0 black-gamma-range=middle knee=off knee-slope=0 color-saturation=0 color-phase=0 s-curve=0
+AgAAAwMDAAcHDwAAAAgADwcBAAUgBwdMb2c	2026-11-26 14:01:38  gamma=cine2 color-mode=camera black-level=0 black-gamma=0 black-gamma-range=middle knee=off knee-slope=0 color-saturation=0 color-phase=0 s-curve=0
+AgAAAwMDAAcHDwAAAAkADwcBAAUgBwdMb2c	2026-11-26 14:01:45  gamma=cine3 color-mode=camera black-level=0 black-gamma=0 black-gamma-range=middle knee=off knee-slope=0 color-saturation=0 color-phase=0 s-curve=0
+AgAAAwMDAAcHDwAAAAoADwcBAAUgBwdMb2c	2026-11-26 14:01:52  gamma=cine4 color-mode=camera black-level=0 black-gamma=0 black-gamma-range=middle knee=off knee-slope=0 color-saturation=0 color-phase=0 s-curve=0
+AgAAAwMDAAcHDwAAAAsADwcBAAUgBwdMb2c	2026-11-26 14:01:59  gamma=itu709-800 color-mode=camera black-level=0 black-gamma=0 black-gamma-range=middle knee=off knee-slope=0 color-saturation=0 color-phase=0 s-curve=0
+AgAAAwMDAAcHDwAAAAoCCwoCWgMsBAxMb2c	2026-11-26 14:02:06  gamma=cine4 color-mode=s-gamut3-cine black-level=-4 black-gamma=+3 black-gamma-range=wide knee=90 knee-slope=-2 color-saturation=+12 color-phase=-3 s-curve=+5
+AgAAAwMDAAcHDwAAAAUDFgIAUAkMDQFMb2c	2026-11-26 14:02:13  gamma=movie color-mode=bt2020 black-level=+7 black-gamma=-5 black-gamma-range=narrow knee=80 knee-slope=+4 color-saturation=-20 color-phase=+6 s-curve=-6
+AgAAAwMDAAcHDwAAAAYAAA4BaQBAAA5Mb2c	2026-11-26 14:02:20  gamma=still color-mode=camera black-level=-15 black-gamma=+7 black-gamma-range=middle knee=105 knee-slope=-5 color-saturation=+32 color-phase=-7 s-curve=+7
+AgAAAwMDAAcHDwAAAAsBHgACSwoADgBMb2c	2026-11-26 14:02:27  gamma=itu709-800 color-mode=s-gamut3 black-level=+15 black-gamma=-7 black-gamma-range=wide knee=75 knee-slope=+5 color-saturation=-32 color-phase=+7 s-curve=-7
+AgAAAwMDAAcHDwAAAAcADwcBAAUgBwpMb2c	2026-11-26 14:02:34  gamma=cine1 color-mode=camera black-level=0 black-gamma=0 black-gamma-range=middle knee=off knee-slope=0 color-saturation=0 color-phase=0 s-curve=+3
+AgAAAwMDAAcHDwAAAAoDAA4CXwAnAApMb2c	2026-11-26 14:02:41  gamma=cine4 color-mode=bt2020 black-level=-15 black-gamma=+7 black-gamma-range=wide knee=95 knee-slope=-5 color-saturation=+7 color-phase=-7 s-curve=+3
+AgAAAwMDAAcHDwAAAAQBHgAASwoZDgRMb2c	2026-11-26 14:02:48  gamma=hlg color-mode=s-gamut3 black-level=+15 black-gamma=-7 black-gamma-range=narrow knee=75 knee-slope=+5 color-saturation=-7 color-phase=+7 s-curve=-3
