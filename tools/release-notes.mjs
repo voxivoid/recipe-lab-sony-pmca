@@ -2,7 +2,7 @@
 // The release notes people read on the Releases page, from one file written with the /release-notes skill.
 //
 //   node tools/release-notes.mjs show [vX.Y.Z]          the notes as markdown (next.md without a version)
-//   node tools/release-notes.mjs github-start|github-end the release body around the generated commit list (.releaserc.js,
+//   node tools/release-notes.mjs github-start|github-end [X.Y.Z]  the release body around the generated commit list (.releaserc.js,
 //                                                       dev-build.yml)
 //   node tools/release-notes.mjs github vX.Y.Z           that release's body as it should be, from its notes and current body
 //   node tools/release-notes.mjs archive X.Y.Z           release-notes/next.md -> release-notes/vX.Y.Z.md (git mv)
@@ -52,6 +52,12 @@ export function githubBody(notes, currentBody) {
   return text ? `${markdown(notes)}\n\n${open(summary)}${text}\n\n</details>\n` : `${markdown(notes)}\n`;
 }
 
+/** The notes file behind a release body being generated, or undefined. semantic-release generates the notes twice:
+ *  before `archive` (next.md) and again after the release commit, when they are in vX.Y.Z.md. */
+export function pendingNotes(tag, dir = DIR) {
+  return ['next', tag].filter(Boolean).map((n) => join(dir, `${n}.md`)).find((f) => existsSync(f));
+}
+
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const [command, arg] = process.argv.slice(2);
   const tag = arg ? `v${arg.replace(/^v/, '')}` : undefined;
@@ -59,10 +65,12 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     process.stdout.write(`${markdown(load(tag))}\n`);
   } else if (command === 'github-start') {
     // semantic-release joins the notes of its plugins in order: this opens the fold before the generated commit
-    // list, github-end closes it after. No next.md: both print nothing and the body is the generated list alone.
-    if (existsSync(NEXT)) process.stdout.write(`${markdown(load())}\n\n${open('Commits')}`);
+    // list, github-end closes it after. Neither next.md nor the version's file: both print nothing and the body is
+    // the generated list alone.
+    const file = pendingNotes(tag);
+    if (file) process.stdout.write(`${markdown(readFileSync(file, 'utf8'))}\n\n${open('Commits')}`);
   } else if (command === 'github-end') {
-    if (existsSync(NEXT)) process.stdout.write('\n</details>\n');
+    if (pendingNotes(tag)) process.stdout.write('\n</details>\n');
   } else if (command === 'github') {
     if (!tag) throw new Error('usage: github vX.Y.Z');
     const current = execFileSync('gh', ['release', 'view', tag, '--json', 'body', '--jq', '.body'], { encoding: 'utf8' });

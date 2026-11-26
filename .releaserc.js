@@ -18,7 +18,7 @@ export default {
     ],
     // The release's body is the reviewed notes (release-notes/next.md) with the generated commit list folded below.
     // semantic-release joins the notes of its plugins in order, so the first exec opens a <details>, the second closes it.
-    ['@semantic-release/exec', { generateNotesCmd: 'node tools/release-notes.mjs github-start' }],
+    ['@semantic-release/exec', { generateNotesCmd: 'node tools/release-notes.mjs github-start ${nextRelease.version}' }],
     [
       '@semantic-release/release-notes-generator',
       {
@@ -38,7 +38,7 @@ export default {
         },
       },
     ],
-    ['@semantic-release/exec', { generateNotesCmd: 'node tools/release-notes.mjs github-end' }],
+    ['@semantic-release/exec', { generateNotesCmd: 'node tools/release-notes.mjs github-end ${nextRelease.version}' }],
     [
       '@semantic-release/exec',
       {
