@@ -34,7 +34,7 @@ src/com/voxivoid/recipelab/
   Params.java                  the parameter rows: slot ids, store encodings, preview parameters, chip
                                navigation, HUD strings — pure functions, no Android, covered by test/
   Recipes.java                 the 89-entry table (the factory look, FACTORY, first in Sony, then the 76 others, then the
-                               twelve picture profiles in Profiles), brands,
+                               twelve picture profiles in Pic Profiles), brands,
                                GROUP_START / GROUP_COUNT, list navigation
   Favorites.java               the favorites list: stored by name in the app's preferences, and how the browser
                                walks the All, Favorites and Custom groups, and the wheel's loop — pure functions, no
@@ -265,8 +265,8 @@ How the profile survives a power cycle (boot event, keep-alive loop, the shell's
 [PICTURE-PROFILES.md](PICTURE-PROFILES.md) before changing `BootReceiver`, `IspProfiles.bootCommand` or the `isp*`
 code in `MainActivity`.
 
-RAM only, on the bodies and firmware listed in `jni/rlisp/bodies.h` (see [Bodies](#bodies) below; the A6000 on 3.21
-is the one proven). A picture profile is part of a recipe — the GAMMA chip and the nine after it — but its look goes to
+RAM only, on the bodies and firmware listed in `jni/rlisp/bodies.h` (see [Bodies](#bodies) below; the README's
+Picture profiles section says which have been tried). A picture profile is part of a recipe — the GAMMA chip and the nine after it — but its look goes to
 the ISP's SRAM, not to the settings store. On the A6000 3.21:
 
 | what | where | how |
@@ -308,7 +308,7 @@ camera's preview parameters as they were (any profile chip) skips the camera rou
 stays quick on those chips. A successful write
 (`writeAll`) makes the staged look the stored one (`storeLook`); leaving the app (`onPause`) puts the stored one back. On
 `onResume` the processor may have been reset by a power cycle, so a stored look is applied again; with none stored the
-helper is not run at all. The built-in Pic Profiles group holds the six published pairings, Standard, auto WB, DRO off.
+helper is not run at all. The built-in Pic Profiles group holds the twelve built-in profiles, Standard, auto WB, DRO off.
 The GAMMA chip and the Pic Profiles group show on every body. `IspBodies.status(model, firmware)` decides what runs:
 only a supported body runs the helper's `apply` and gets the boot loop; on any other `ispApply` does not run the helper and
 says why in a toast (`IspBodies.refusal`: update the firmware to X, not confirmed yet, or not supported yet). A body that
@@ -349,8 +349,7 @@ does not report its model is not supported.
 - `MainActivity.ispApply` writes the file, deletes the old log, runs the helper and polls the log every 250 ms for 5 s
   (`IspProfiles.result`). It runs one at a time, and a change made meanwhile runs next. Only a problem is said (a toast);
   every run goes to `LOG.TXT` with the look and the helper's log.
-- A profile recipe cannot be shared as a QR code: share code version 1 has no room for it (`RecipeShare.encode` gives
-  none, Share says so). Nor is it in `LINKS.TXT`.
+- A profile recipe is shared as a version 2 share code (QR, link and `LINKS.TXT`); one without a profile stays version 1.
 
 - *Hold MENU → Save a bug report* first runs `librlisp.so probe` in `RECIPLAB/ISP/PROBE/` (read only: never writes a
   setter or the ISP) and puts its log in `REPORT.TXT` under `PROBE`. A body with no row gets a RAM search for the gamma

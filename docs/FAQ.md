@@ -124,14 +124,15 @@ No. The camera's custom-key list is fixed in firmware and apps cannot add themse
 
 ## Can I get S-Log, V-Log or a flat profile?
 
-On an A6000 with firmware 3.21, yes: the **Profiles** group has S-Log2, S-Log3, HLG and ITU709, and the GAMMA
-chip adds a profile to any recipe, with black level, black gamma, knee, colour saturation, colour phase and an S-curve
-to shape it ([Picture profiles](../README.md#picture-profiles)). The A6000 has no Picture Profile menu and cannot store a
-gamma curve, so the app writes the curve into the camera's memory: it lasts until the camera is switched off, and the
-app puts it back each time it opens. GAMMA also has Sony's own Movie, Still, Cine1–4 and ITU709(800%) curves, taken
-from the A6500's firmware. V-Log and S-Cinetone are not there.
+On some bodies, yes. The **Pic Profiles** group has S-Log2, S-Log3, HLG, ITU709 and Sony's own Movie, Still, Cine1–4
+and ITU709(800%) curves (taken from the A6500's firmware), and the GAMMA chip adds a profile to any recipe, with black
+level, black gamma, knee, colour saturation, colour phase and an S-curve to shape it. The app writes the curve into the
+camera's memory: it lasts until the camera is switched off, and the app puts it back at the next power-on.
 
-On every other body, no. The flattest thing available is a low-contrast Creative Style recipe, which is not the same
+Which cameras have been tried, and which are switched on but not tried yet, is listed under
+[Picture profiles](../README.md#picture-profiles). V-Log and S-Cinetone are not there.
+
+On any other body, no. The flattest thing available is a low-contrast Creative Style recipe, which is not the same
 thing.
 
 ## Are there sample photos of each recipe?
