@@ -315,6 +315,7 @@ final class CardLog {
     }
 
     private static void write(File f, String text, boolean append) throws IOException {
+        CardGuard.ensure(f);
         FileWriter w = new FileWriter(f, append);
         try { w.write(text); } finally { w.close(); }
     }

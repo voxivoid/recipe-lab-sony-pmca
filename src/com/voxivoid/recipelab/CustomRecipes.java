@@ -256,12 +256,15 @@ final class CustomRecipes {
      */
     static Entry save(File dir, Recipes.Recipe r, String madeOn, String oldFile) throws IOException {
         if (!dir.isDirectory() && !dir.mkdirs()) throw new IOException("cannot create " + dir);
+        if (oldFile == null && CardGuard.blocked() && recipeFiles(dir) >= CardGuard.MAX_IN_CAMERA)
+            throw new IOException(Lang.t("camera_recipes_full", CardGuard.MAX_IN_CAMERA));
         List<String> taken = new ArrayList<String>();
         String[] names = dir.list();
         if (names != null) for (String n : names) if (oldFile == null || !n.equalsIgnoreCase(oldFile)) taken.add(n);
         String file = fileName(r.name, taken);
         File tmp = new File(dir, TMP), target = new File(dir, file);
         if (tmp.exists()) remove(tmp);                                  // left by a save the camera was switched off in
+        CardGuard.ensure(tmp);
         FileOutputStream out = new FileOutputStream(tmp);
         try {
             out.write(RecipeFormats.write(r, madeOn).getBytes(UTF8));
@@ -277,6 +280,40 @@ final class CustomRecipes {
         if (!tmp.renameTo(target)) { tmp.delete(); throw new IOException("cannot write " + target); }
         if (oldFile != null && !same) new File(dir, oldFile).delete();
         return new Entry(r, file);
+    }
+
+    private static boolean isRecipeFile(File f) {
+        String n = f.getName();
+        return !n.startsWith(".") && n.toLowerCase(Locale.US).endsWith(EXT.toLowerCase(Locale.US)) && f.isFile();
+    }
+
+    private static int recipeFiles(File dir) {
+        File[] files = dir.listFiles();
+        int n = 0;
+        if (files != null) for (File f : files) if (isRecipeFile(f)) n++;
+        return n;
+    }
+
+    /**
+     * On a card that can take no new file ({@link CardGuard}) the recipes live in {@code kept}, in the camera: this copies
+     * in the card's recipes it does not hold yet, up to {@link CardGuard#MAX_IN_CAMERA}. A copy that fails is skipped.
+     */
+    static void adopt(File card, File kept) {
+        File[] files = card == null ? null : card.listFiles();
+        if (files == null || (!kept.isDirectory() && !kept.mkdirs())) return;
+        Arrays.sort(files, new Comparator<File>() { public int compare(File a, File b) { return a.getName().compareToIgnoreCase(b.getName()); } });
+        int held = recipeFiles(kept);
+        for (File f : files) {
+            if (held >= CardGuard.MAX_IN_CAMERA) return;
+            File to = new File(kept, f.getName());
+            if (!isRecipeFile(f) || f.length() > MAX_BYTES || to.exists()) continue;
+            try {
+                byte[] bytes = read(f);
+                FileOutputStream out = new FileOutputStream(to);
+                try { out.write(bytes); } finally { out.close(); }
+                held++;
+            } catch (IOException e) { to.delete(); }
+        }
     }
 
     /** removes a recipe's file */
@@ -323,6 +360,7 @@ final class CustomRecipes {
         if (target.isFile() && Arrays.equals(read(target), bytes)) return false;
         File tmp = new File(dir, LINKS_TMP);
         if (tmp.exists()) remove(tmp);
+        CardGuard.ensure(tmp);
         FileOutputStream out = new FileOutputStream(tmp);
         try {
             out.write(bytes);
