@@ -63,6 +63,8 @@ jobs:
           java-version: '17'
       - name: Run the unit tests
         run: ./tools/test.sh
+      - name: Run the release tooling tests
+        run: node --test tools/*.test.mjs
       # The tests only write under out/; anything else is a script writing where it should not.
       - name: Working tree must be clean
         run: git diff --exit-code

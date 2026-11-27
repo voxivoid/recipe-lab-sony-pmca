@@ -1,0 +1,62 @@
+name: release-notes-sync
+
+# Rewrites a published release's body from its notes (release-notes/vX.Y.Z.md): the notes on top, the commit list
+# folded below. For a release whose notes were missing or changed afterwards; new releases do not need it.
+#
+# Runs from main (older tags do not have this workflow); the tag is an input:
+#   gh workflow run release-notes-sync.yml -f tag=v1.5.0              shows the change, applies nothing
+#   gh workflow run release-notes-sync.yml -f tag=v1.5.0 -f apply=true
+# The tool and the notes come from main, so a fix to them applies to older tags too.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag, e.g. v1.5.0'
+        required: true
+        type: string
+      apply:
+        description: 'Write the notes. Unchecked, the log shows the current and the new text and nothing changes'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-notes-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check the tag
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          case "$TAG" in v[0-9]*.[0-9]*.[0-9]*) ;; *) echo "::error::$TAG is not a release tag (vX.Y.Z)"; exit 1 ;; esac
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          sparse-checkout: |
+            tools
+            release-notes
+      - name: GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ inputs.tag }}
+          APPLY: ${{ inputs.apply }}
+        run: |
+          node tools/release-notes.mjs github "$TAG" > body.md
+          if [ "$APPLY" = "true" ]; then
+            gh release edit "$TAG" --notes-file body.md
+            echo "$TAG: GitHub release body updated"
+          else
+            echo "--- now"; gh release view "$TAG" --json body --jq .body
+            echo "--- new"; cat body.md
+            echo "---"
+          fi
