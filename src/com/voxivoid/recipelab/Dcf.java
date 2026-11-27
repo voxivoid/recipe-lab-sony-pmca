@@ -2,6 +2,8 @@ package com.voxivoid.recipelab;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 
@@ -40,4 +42,39 @@ final class Dcf {
         if (!fd.matches("[1-9][0-9]{2}") || !nd.matches("[0-9]{4}")) return null;
         return new int[] { Integer.parseInt(fd), Integer.parseInt(nd) };
     }
+
+    /**
+     * The numbers of the newest photo under DCIM, any kind (RAW, JPEG …), as {@link #numbers} gives them: the highest
+     * folder, then the highest file in it; null when there is none. The camera numbers each new shot after it. Folders
+     * are looked in from the highest down, stopping at the first that holds one, so leaving the app lists one folder.
+     */
+    static int[] newest(File dcim) {
+        File[] all = dcim == null ? null : dcim.listFiles();
+        if (all == null) return null;
+        List<File> folders = new ArrayList<File>();
+        for (File f : all) if (f.isDirectory() && folder(f.getName()) > 0) folders.add(f);
+        Collections.sort(folders, new Comparator<File>() {
+            @Override public int compare(File a, File b) { return folder(b.getName()) - folder(a.getName()); }
+        });
+        int[] best = null;
+        for (File f : folders) {
+            if (best != null && folder(f.getName()) < best[0]) break;
+            String[] names = f.list();
+            if (names == null) continue;
+            for (String n : names) {
+                int[] k = numbers(new File(f, n).getPath());
+                if (k != null && (best == null || compare(k, best) > 0)) best = k;
+            }
+        }
+        return best;
+    }
+
+    /** a DCF folder name's number (100MSDCF → 100); 0 for a name that is not one */
+    private static int folder(String name) {
+        if (name.length() != 8 || !name.substring(0, 3).matches("[1-9][0-9]{2}")) return 0;
+        return Integer.parseInt(name.substring(0, 3));
+    }
+
+    /** orders two {@link #numbers}: by folder, then by file */
+    static int compare(int[] a, int[] b) { return a[0] != b[0] ? a[0] - b[0] : a[1] - b[1]; }
 }

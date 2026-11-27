@@ -28,19 +28,46 @@ final class RecipeFormatV3 implements RecipeFormat {
         int at = v2.indexOf(from);
         if (at < 0) throw new IllegalStateException("format 2 wrote no format line");
         StringBuilder s = new StringBuilder(v2.substring(0, at)).append("\nformat: 3\n").append(v2.substring(at + from.length()));
-        IspProfiles.Look l = r.look == null ? null : r.look.normal();
-        if (l == null) { line(s, "gamma", "off", gammas()); return s.toString(); }
-        line(s, "gamma", IspProfiles.CURVE_CODES[l.curve], gammas());
-        line(s, "color-mode", IspProfiles.GAMUT_CODES[l.gamut], join(IspProfiles.GAMUT_CODES, 0));
-        line(s, "black-level", signed(l.black), range(IspProfiles.BLACK_MAX));
-        line(s, "black-gamma", signed(l.blackGamma), range(IspProfiles.BGAMMA_MAX));
-        line(s, "black-gamma-range", IspProfiles.RANGE_CODES[l.range], join(IspProfiles.RANGE_CODES, 0));
-        line(s, "knee", l.knee == IspProfiles.KNEE_OFF ? "off" : String.valueOf(l.knee), "off, or the point in percent: " + IspProfiles.KNEE_MIN + " .. " + IspProfiles.KNEE_MAX);
-        line(s, "knee-slope", signed(l.slope), range(IspProfiles.SLOPE_MAX));
-        line(s, "color-saturation", signed(l.sat), range(IspProfiles.SAT_MAX));
-        line(s, "color-phase", signed(l.phase), range(IspProfiles.PHASE_MAX));
-        line(s, "s-curve", signed(l.contrast), range(IspProfiles.CONTRAST_MAX));
+        String[][] kv = profileValues(r.look);
+        for (int i = 0; i < kv.length; i++) line(s, kv[i][0], kv[i][1], comment(i));
         return s.toString();
+    }
+
+    /**
+     * The profile's keys and values in file order, as a file writes them (and {@link ProfileLog}'s lines): just
+     * {@code gamma: off} for no profile.
+     */
+    static String[][] profileValues(IspProfiles.Look look) {
+        IspProfiles.Look l = look == null ? null : look.normal();
+        if (l == null) return new String[][] { { "gamma", "off" } };
+        return new String[][] {
+            { "gamma", IspProfiles.CURVE_CODES[l.curve] },
+            { "color-mode", IspProfiles.GAMUT_CODES[l.gamut] },
+            { "black-level", signed(l.black) },
+            { "black-gamma", signed(l.blackGamma) },
+            { "black-gamma-range", IspProfiles.RANGE_CODES[l.range] },
+            { "knee", l.knee == IspProfiles.KNEE_OFF ? "off" : String.valueOf(l.knee) },
+            { "knee-slope", signed(l.slope) },
+            { "color-saturation", signed(l.sat) },
+            { "color-phase", signed(l.phase) },
+            { "s-curve", signed(l.contrast) },
+        };
+    }
+
+    /** the comment after the i-th of {@link #profileValues}' lines: what the key takes */
+    private static String comment(int i) {
+        switch (i) {
+            case 0: return gammas();
+            case 1: return join(IspProfiles.GAMUT_CODES, 0);
+            case 2: return range(IspProfiles.BLACK_MAX);
+            case 3: return range(IspProfiles.BGAMMA_MAX);
+            case 4: return join(IspProfiles.RANGE_CODES, 0);
+            case 5: return "off, or the point in percent: " + IspProfiles.KNEE_MIN + " .. " + IspProfiles.KNEE_MAX;
+            case 6: return range(IspProfiles.SLOPE_MAX);
+            case 7: return range(IspProfiles.SAT_MAX);
+            case 8: return range(IspProfiles.PHASE_MAX);
+            default: return range(IspProfiles.CONTRAST_MAX);
+        }
     }
 
     public CustomRecipes.Parsed read(Map<String, String> kv, String fileName) {

@@ -48,13 +48,15 @@ public class BootReceiver extends BroadcastReceiver {
         appSeen = true;
         try {
             String lookText = readSmall(new File(dir, "look.txt"));
-            if (lookText == null) { logBoot(dir, "no look.txt"); return; }
-            if (Params.retiredLook(lookText.trim())) { new File(dir, "look.txt").delete(); logBoot(dir, "retired profile, removed"); return; }
+            if (lookText == null) { logBoot(dir, "no look.txt"); profile(null); return; }
+            if (Params.retiredLook(lookText.trim())) { new File(dir, "look.txt").delete(); logBoot(dir, "retired profile, removed"); profile(null); return; }
             String model = KeyProbe.prop("model.name"), fw = KeyProbe.firmware();
-            if (!IspBodies.bootAllowed(model, fw)) { logBoot(dir, "not on this body: " + IspBodies.bodyFile(model, fw).trim().replace('\n', ' ')); return; }
+            if (!IspBodies.bootAllowed(model, fw)) { logBoot(dir, "not on this body: " + IspBodies.bodyFile(model, fw).trim().replace('\n', ' ')); profile(null); return; }
             IspProfiles.Look look = Params.lookFrom(lookText.trim());
-            if (look == null) { logBoot(dir, "look parse failed: " + lookText.trim()); return; }
-            logBoot(dir, startLoop(c, look) ? "sent: " + look : "not sent: " + look);
+            if (look == null) { logBoot(dir, "look parse failed: " + lookText.trim()); profile(null); return; }
+            boolean sent = startLoop(c, look);
+            logBoot(dir, sent ? "sent: " + look : "not sent: " + look);
+            profile(sent ? look : null);
         } catch (Throwable t) {
             logBoot(dir, "onReceive crashed: " + t);
         }
@@ -83,6 +85,9 @@ public class BootReceiver extends BroadcastReceiver {
             return false;
         }
     }
+
+    /** what photos taken from power-on get, for Recipe Lab Studio ({@link ProfileLog}) */
+    private static void profile(IspProfiles.Look l) { ProfileLog.record(Environment.getExternalStorageDirectory(), l); }
 
     /** one line to boot.log in the profile dir, and to LOG.TXT on the card */
     private static void logBoot(File dir, String msg) {
